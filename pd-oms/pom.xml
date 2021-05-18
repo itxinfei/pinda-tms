@@ -19,7 +19,6 @@
 			<artifactId>httpclient</artifactId>
 			<version>${httpclient.version}</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpcore</artifactId>
@@ -142,7 +141,6 @@
 			<version>${drools.version}</version>
 		</dependency>
 		<!--规则-->
-
 	</dependencies>
 
 	<build>
@@ -153,5 +151,4 @@
 			</plugin>
 		</plugins>
 	</build>
-
 </project>
