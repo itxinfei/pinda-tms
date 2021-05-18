@@ -6,7 +6,6 @@ import java.lang.annotation.*;
 /**
  * 开启声明式缓存功能
  */
-
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
 @Documented
