@@ -2,14 +2,14 @@ spring:
   cloud:
     nacos:
       discovery:
-        server-addr: 111.231.76.210:58848
+        server-addr: 47.94.207.39:8848
         group: pinda-tms
-        namespace: c035ed13-9d51-4a81-9573-9162320515cc
+        namespace: f422e93d-2e54-4251-94f5-1fbfeaf689b3
       config:
-        server-addr: 111.231.76.210:58848
+        server-addr: 47.94.207.39:8848
         file-extension: yml
         group: pinda-tms
-        namespace: c035ed13-9d51-4a81-9573-9162320515cc
+        namespace: f422e93d-2e54-4251-94f5-1fbfeaf689b3
 
   # jackson时间格式化
   jackson:
