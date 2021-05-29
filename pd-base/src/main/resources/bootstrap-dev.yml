@@ -4,14 +4,14 @@ spring:
       username: tms
       password: itheima123
       discovery:
-        server-addr: 68.79.63.42:8848
+        server-addr: 47.94.207.39:8848
         group: pinda-tms
-        namespace: 6107f553-3214-48d8-89c3-945f8446e3d9
+        namespace: f422e93d-2e54-4251-94f5-1fbfeaf689b3
       config:
-        server-addr: 68.79.63.42:8848
+        server-addr: 47.94.207.39:8848
         file-extension: yml
         group: pinda-tms
-        namespace: 6107f553-3214-48d8-89c3-945f8446e3d9
+        namespace: f422e93d-2e54-4251-94f5-1fbfeaf689b3
 
   # jackson时间格式化
   jackson:
