@@ -1,16 +1,16 @@
 spring:
   cloud:
     nacos:
-      username: tms
-      password: itheima123
+      username: pinda
+      password: pinda
       discovery:
         server-addr: 47.94.207.39:8848
-        group: pinda-tms
+        group: pinda
         namespace: f422e93d-2e54-4251-94f5-1fbfeaf689b3
       config:
         server-addr: 47.94.207.39:8848
         file-extension: yml
-        group: pinda-tms
+        group: pinda
         namespace: f422e93d-2e54-4251-94f5-1fbfeaf689b3
 
   # jackson时间格式化

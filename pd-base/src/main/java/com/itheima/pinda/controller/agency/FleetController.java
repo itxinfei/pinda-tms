@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("sys/agency/fleet")
 public class FleetController {
+
     @Autowired
     private IPdFleetService fleetService;
 
