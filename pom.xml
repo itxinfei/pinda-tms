@@ -29,6 +29,7 @@
         <module>pd-aggregation</module>
         <module>pd-druid</module>
         <module>pd-netty</module>
+        <module>pd-authority</module>
     </modules>
 
     <properties>
