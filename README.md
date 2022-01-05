@@ -5,7 +5,6 @@
 后台管理：http://pinda.itheima.net/#/login
 
 ### 一、关联仓库
-- 品达物流-前端工程：https://gitee.com/itxinfei/pinda-front
 - 品达物流-通用权限：https://gitee.com/itxinfei/pinda-authority
 - 品达物流-集信达：https://gitee.com/itxinfei/jixinda.git
 ### 二、项目介绍
