@@ -100,9 +100,7 @@ public class TransforCenterBusinessController {
     }
 
     @ApiOperation(value = "更新车辆类型")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "id", value = "车辆类型id", required = true, example = "1", paramType = "{path}")
-    })
+    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "车辆类型id", required = true, example = "1", paramType = "{path}")})
     @PutMapping("/truckType/{id}")
     public TruckTypeVo updateTruckType(@PathVariable(name = "id") String id, @RequestBody TruckTypeVo vo) {
         vo.setId(id);
@@ -117,19 +115,9 @@ public class TransforCenterBusinessController {
     }
 
     @ApiOperation(value = "获取车辆类型分页数据")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "page", value = "页码", required = true, example = "1"),
-            @ApiImplicitParam(name = "pageSize", value = "页尺寸", required = true, example = "10"),
-            @ApiImplicitParam(name = "name", value = "车辆类型名称"),
-            @ApiImplicitParam(name = "allowableLoad", value = "车型载重"),
-            @ApiImplicitParam(name = "allowableVolume", value = "车型体积")
-    })
+    @ApiImplicitParams({@ApiImplicitParam(name = "page", value = "页码", required = true, example = "1"), @ApiImplicitParam(name = "pageSize", value = "页尺寸", required = true, example = "10"), @ApiImplicitParam(name = "name", value = "车辆类型名称"), @ApiImplicitParam(name = "allowableLoad", value = "车型载重"), @ApiImplicitParam(name = "allowableVolume", value = "车型体积")})
     @GetMapping("/truckType/page")
-    public PageResponse<TruckTypeVo> findTruckTypeByPage(@RequestParam(name = "page") Integer page,
-                                                         @RequestParam(name = "pageSize") Integer pageSize,
-                                                         @RequestParam(name = "name", required = false) String name,
-                                                         @RequestParam(name = "allowableLoad", required = false) BigDecimal allowableLoad,
-                                                         @RequestParam(name = "allowableVolume", required = false) BigDecimal allowableVolume) {
+    public PageResponse<TruckTypeVo> findTruckTypeByPage(@RequestParam(name = "page") Integer page, @RequestParam(name = "pageSize") Integer pageSize, @RequestParam(name = "name", required = false) String name, @RequestParam(name = "allowableLoad", required = false) BigDecimal allowableLoad, @RequestParam(name = "allowableVolume", required = false) BigDecimal allowableVolume) {
         // TODO: 2020/1/8 载重与体积查询条件，是否使用基于该值的上下区间浮动查询
         PageResponse<TruckTypeDto> truckTypeDtoPage = truckTypeFeign.findByPage(page, pageSize, name, allowableLoad, allowableVolume);
         Set<String> goodsTypeSet = new HashSet<>();
@@ -168,9 +156,7 @@ public class TransforCenterBusinessController {
     }
 
     @ApiOperation(value = "获取车辆类型详情")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "id", value = "车辆类型id", required = true, example = "1", paramType = "{path}")
-    })
+    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "车辆类型id", required = true, example = "1", paramType = "{path}")})
     @GetMapping("/truckType/{id}")
     public TruckTypeVo findTruckTypeById(@PathVariable(name = "id") String id) {
         TruckTypeDto dto = truckTypeFeign.fineById(id);
@@ -195,9 +181,7 @@ public class TransforCenterBusinessController {
     }
 
     @ApiOperation(value = "删除车辆类型")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "id", value = "车辆类型id", required = true, example = "1", paramType = "{path}")
-    })
+    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "车辆类型id", required = true, example = "1", paramType = "{path}")})
     @DeleteMapping("/truckType/{id}")
     public Result deleteTruckType(@PathVariable(name = "id") String id) {
         // TODO: 2020/1/7 检查车辆类型与其他数据关联，存在关联不可删除，不存在关联即删除
@@ -218,9 +202,7 @@ public class TransforCenterBusinessController {
     }
 
     @ApiOperation(value = "更新线路类型")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "id", value = "线路类型id", required = true, example = "1", paramType = "{path}")
-    })
+    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "线路类型id", required = true, example = "1", paramType = "{path}")})
     @PutMapping("/transportLineType/{id}")
     public TransportLineTypeVo updateTransportLineType(@PathVariable(name = "id") String id, @RequestBody TransportLineTypeVo vo) {
         vo.setId(id);
@@ -232,19 +214,9 @@ public class TransforCenterBusinessController {
     }
 
     @ApiOperation(value = "获取线路类型分页数据")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "page", value = "页码", required = true, example = "1"),
-            @ApiImplicitParam(name = "pageSize", value = "页尺寸", required = true, example = "10"),
-            @ApiImplicitParam(name = "typeNumber", value = "类型编号"),
-            @ApiImplicitParam(name = "name", value = "类型名称"),
-            @ApiImplicitParam(name = "agencyType", value = "机构类型")
-    })
+    @ApiImplicitParams({@ApiImplicitParam(name = "page", value = "页码", required = true, example = "1"), @ApiImplicitParam(name = "pageSize", value = "页尺寸", required = true, example = "10"), @ApiImplicitParam(name = "typeNumber", value = "类型编号"), @ApiImplicitParam(name = "name", value = "类型名称"), @ApiImplicitParam(name = "agencyType", value = "机构类型")})
     @GetMapping("/transportLineType/page")
-    public PageResponse<TransportLineTypeVo> findTransportLineTypeByPage(@RequestParam(name = "page") Integer page,
-                                                                         @RequestParam(name = "pageSize") Integer pageSize,
-                                                                         @RequestParam(name = "typeNumber", required = false) String typeNumber,
-                                                                         @RequestParam(name = "name", required = false) String name,
-                                                                         @RequestParam(name = "agencyType", required = false) Integer agencyType) {
+    public PageResponse<TransportLineTypeVo> findTransportLineTypeByPage(@RequestParam(name = "page") Integer page, @RequestParam(name = "pageSize") Integer pageSize, @RequestParam(name = "typeNumber", required = false) String typeNumber, @RequestParam(name = "name", required = false) String name, @RequestParam(name = "agencyType", required = false) Integer agencyType) {
         PageResponse<TransportLineTypeDto> transportLineTypeDtoPage = transportLineTypeFeign.findByPage(page, pageSize, typeNumber, name, agencyType);
         //加工数据
         List<TransportLineTypeDto> transportLineTypeDtoList = transportLineTypeDtoPage.getItems();
@@ -283,9 +255,7 @@ public class TransforCenterBusinessController {
     }
 
     @ApiOperation(value = "获取线路类型详情")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "id", value = "线路类型id", required = true, example = "1", paramType = "{path}")
-    })
+    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "线路类型id", required = true, example = "1", paramType = "{path}")})
     @GetMapping("/transportLineType/{id}")
     public TransportLineTypeVo findTransportLineTypeById(@PathVariable(name = "id") String id) {
         TransportLineTypeDto dto = transportLineTypeFeign.fineById(id);
@@ -310,9 +280,7 @@ public class TransforCenterBusinessController {
     }
 
     @ApiOperation(value = "删除线路类型")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "id", value = "线路类型id", required = true, example = "1", paramType = "{path}")
-    })
+    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "线路类型id", required = true, example = "1", paramType = "{path}")})
     @DeleteMapping("/transportLineType/{id}")
     public Result deleteGoodsType(@PathVariable(name = "id") String id) {
         // TODO: 2020/1/8 需检查线路类型与其他数据关联，存在关联不可删除，不存在则删除
@@ -337,9 +305,7 @@ public class TransforCenterBusinessController {
     }
 
     @ApiOperation(value = "更新车队信息")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "id", value = "车队id", required = true, example = "1", paramType = "{path}")
-    })
+    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "车队id", required = true, example = "1", paramType = "{path}")})
     @PutMapping("/fleet/{id}")
     public FleetVo updateFleet(@PathVariable(name = "id") String id, @RequestBody FleetVo vo) {
         vo.setId(id);
@@ -357,19 +323,9 @@ public class TransforCenterBusinessController {
     }
 
     @ApiOperation(value = "获取车队分页数据")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "page", value = "页码", required = true, example = "1"),
-            @ApiImplicitParam(name = "pageSize", value = "页尺寸", required = true, example = "10"),
-            @ApiImplicitParam(name = "name", value = "车队名称"),
-            @ApiImplicitParam(name = "fleetNumber", value = "车队编号"),
-            @ApiImplicitParam(name = "manager", value = "负责人id")
-    })
+    @ApiImplicitParams({@ApiImplicitParam(name = "page", value = "页码", required = true, example = "1"), @ApiImplicitParam(name = "pageSize", value = "页尺寸", required = true, example = "10"), @ApiImplicitParam(name = "name", value = "车队名称"), @ApiImplicitParam(name = "fleetNumber", value = "车队编号"), @ApiImplicitParam(name = "manager", value = "负责人id")})
     @GetMapping("/fleet/page")
-    public PageResponse<FleetVo> findFleetByPage(@RequestParam(name = "page") Integer page,
-                                                 @RequestParam(name = "pageSize") Integer pageSize,
-                                                 @RequestParam(name = "name", required = false) String name,
-                                                 @RequestParam(name = "manager", required = false) String manager,
-                                                 @RequestParam(name = "fleetNumber", required = false) String fleetNumber) {
+    public PageResponse<FleetVo> findFleetByPage(@RequestParam(name = "page") Integer page, @RequestParam(name = "pageSize") Integer pageSize, @RequestParam(name = "name", required = false) String name, @RequestParam(name = "manager", required = false) String manager, @RequestParam(name = "fleetNumber", required = false) String fleetNumber) {
         PageResponse<FleetDto> fleetDtoPage = fleetFeign.findByPage(page, pageSize, name, fleetNumber, manager);
         //加工数据
         List<FleetDto> fleetDtoList = fleetDtoPage.getItems();
@@ -408,9 +364,7 @@ public class TransforCenterBusinessController {
     }
 
     @ApiOperation(value = "获取车队详情")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "id", value = "车队id", required = true, example = "1", paramType = "{path}")
-    })
+    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "车队id", required = true, example = "1", paramType = "{path}")})
     @GetMapping("/fleet/{id}")
     public FleetVo findFleetById(@PathVariable(name = "id") String id) {
         FleetDto dto = fleetFeign.fineById(id);
@@ -436,9 +390,7 @@ public class TransforCenterBusinessController {
     }
 
     @ApiOperation(value = "删除车队")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "id", value = "车队id", required = true, example = "1", paramType = "{path}")
-    })
+    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "车队id", required = true, example = "1", paramType = "{path}")})
     @DeleteMapping("/fleet/{id}")
     public Result deleteFleet(@PathVariable(name = "id") String id) {
         fleetFeign.disable(id);
@@ -465,9 +417,7 @@ public class TransforCenterBusinessController {
     }
 
     @ApiOperation(value = "更新车辆信息")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "id", value = "车辆id", required = true, example = "1", paramType = "{path}")
-    })
+    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "车辆id", required = true, example = "1", paramType = "{path}")})
     @PutMapping("/truck/{id}")
     public TruckVo updateTruck(@PathVariable(name = "id") String id, @RequestBody TruckVo vo) {
         vo.setId(id);
@@ -488,19 +438,9 @@ public class TransforCenterBusinessController {
     }
 
     @ApiOperation(value = "获取车辆分页数据")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "page", value = "页码", required = true, example = "1"),
-            @ApiImplicitParam(name = "pageSize", value = "页尺寸", required = true, example = "10"),
-            @ApiImplicitParam(name = "truckTypeId", value = "车辆类型id"),
-            @ApiImplicitParam(name = "licensePlate", value = "车牌号码"),
-            @ApiImplicitParam(name = "fleetId", value = "所属车队id")
-    })
+    @ApiImplicitParams({@ApiImplicitParam(name = "page", value = "页码", required = true, example = "1"), @ApiImplicitParam(name = "pageSize", value = "页尺寸", required = true, example = "10"), @ApiImplicitParam(name = "truckTypeId", value = "车辆类型id"), @ApiImplicitParam(name = "licensePlate", value = "车牌号码"), @ApiImplicitParam(name = "fleetId", value = "所属车队id")})
     @GetMapping("/truck/page")
-    public PageResponse<TruckVo> findTruckByPage(@RequestParam(name = "page") Integer page,
-                                                 @RequestParam(name = "pageSize") Integer pageSize,
-                                                 @RequestParam(name = "truckTypeId", required = false) String truckTypeId,
-                                                 @RequestParam(name = "licensePlate", required = false) String licensePlate,
-                                                 @RequestParam(name = "fleetId", required = false) String fleetId) {
+    public PageResponse<TruckVo> findTruckByPage(@RequestParam(name = "page") Integer page, @RequestParam(name = "pageSize") Integer pageSize, @RequestParam(name = "truckTypeId", required = false) String truckTypeId, @RequestParam(name = "licensePlate", required = false) String licensePlate, @RequestParam(name = "fleetId", required = false) String fleetId) {
         PageResponse<TruckDto> truckDtoPage = truckFeign.findByPage(page, pageSize, truckTypeId, licensePlate, fleetId);
         //加工数据
         List<TruckDto> truckDtoList = truckDtoPage.getItems();
@@ -538,9 +478,7 @@ public class TransforCenterBusinessController {
     }
 
     @ApiOperation(value = "获取车辆详情")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "id", value = "车辆id", required = true, example = "1", paramType = "{path}")
-    })
+    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "车辆id", required = true, example = "1", paramType = "{path}")})
     @GetMapping("/truck/{id}")
     public TruckVo findTruckById(@PathVariable(name = "id") String id) {
         TruckDto dto = truckFeign.fineById(id);
@@ -583,9 +521,7 @@ public class TransforCenterBusinessController {
     }
 
     @ApiOperation(value = "删除车辆")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "id", value = "车辆id", required = true, example = "1", paramType = "{path}")
-    })
+    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "车辆id", required = true, example = "1", paramType = "{path}")})
     @DeleteMapping("/truck/{id}")
     public Result deleteTruck(@PathVariable(name = "id") String id) {
         truckFeign.disable(id);
@@ -593,9 +529,7 @@ public class TransforCenterBusinessController {
     }
 
     @ApiOperation(value = "保存车辆行驶证信息")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "id", value = "车辆id", required = true, example = "1", paramType = "{path}")
-    })
+    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "车辆id", required = true, example = "1", paramType = "{path}")})
     @PostMapping("/truck/{id}/license")
     public TruckLicenseVo saveTruckLicense(@PathVariable(name = "id") String id, @RequestBody TruckLicenseVo vo) {
         TruckLicenseDto dto = new TruckLicenseDto();
@@ -622,9 +556,7 @@ public class TransforCenterBusinessController {
     }
 
     @ApiOperation(value = "获取车辆行驶证详情")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "id", value = "车辆id", required = true, example = "1", paramType = "{path}")
-    })
+    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "车辆id", required = true, example = "1", paramType = "{path}")})
     @GetMapping("/truck/{id}/license")
     public TruckLicenseVo findTruckLicenseById(@PathVariable(name = "id") String id) {
         TruckDto dto = truckFeign.fineById(id);
@@ -652,9 +584,7 @@ public class TransforCenterBusinessController {
     }
 
     @ApiOperation(value = "获取车辆车次信息")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "id", value = "车辆id", required = true, example = "1", paramType = "{path}")
-    })
+    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "车辆id", required = true, example = "1", paramType = "{path}")})
     @GetMapping("/truck/{id}/transportTrips")
     public List<TruckDriverVo> findTruckTransportTrips(@PathVariable(name = "id") String id) {
         List<TruckDriverVo> voList = new ArrayList<>();
@@ -702,9 +632,7 @@ public class TransforCenterBusinessController {
     }
 
     @ApiOperation(value = "更新线路")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "id", value = "线路id", required = true, example = "1", paramType = "{path}")
-    })
+    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "线路id", required = true, example = "1", paramType = "{path}")})
     @PutMapping("/transportLine/{id}")
     public TransportLineVo updateTransportLine(@PathVariable(name = "id") String id, @RequestBody TransportLineVo vo) {
         vo.setId(id);
@@ -728,19 +656,9 @@ public class TransforCenterBusinessController {
     }
 
     @ApiOperation(value = "获取线路分页数据")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "page", value = "页码", required = true, example = "1"),
-            @ApiImplicitParam(name = "pageSize", value = "页尺寸", required = true, example = "10"),
-            @ApiImplicitParam(name = "name", value = "线路名称"),
-            @ApiImplicitParam(name = "lineNumber", value = "线路编号"),
-            @ApiImplicitParam(name = "transportLineTypeId", value = "线路类型id")
-    })
+    @ApiImplicitParams({@ApiImplicitParam(name = "page", value = "页码", required = true, example = "1"), @ApiImplicitParam(name = "pageSize", value = "页尺寸", required = true, example = "10"), @ApiImplicitParam(name = "name", value = "线路名称"), @ApiImplicitParam(name = "lineNumber", value = "线路编号"), @ApiImplicitParam(name = "transportLineTypeId", value = "线路类型id")})
     @GetMapping("/transportLine/page")
-    public PageResponse<TransportLineVo> findTransportLineByPage(@RequestParam(name = "page") Integer page,
-                                                                 @RequestParam(name = "pageSize") Integer pageSize,
-                                                                 @RequestParam(name = "name", required = false) String name,
-                                                                 @RequestParam(name = "transportLineTypeId", required = false) String transportLineTypeId,
-                                                                 @RequestParam(name = "lineNumber", required = false) String lineNumber) {
+    public PageResponse<TransportLineVo> findTransportLineByPage(@RequestParam(name = "page") Integer page, @RequestParam(name = "pageSize") Integer pageSize, @RequestParam(name = "name", required = false) String name, @RequestParam(name = "transportLineTypeId", required = false) String transportLineTypeId, @RequestParam(name = "lineNumber", required = false) String lineNumber) {
         PageResponse<TransportLineDto> transportLineDtoPage = transportLineFeign.findByPage(page, pageSize, lineNumber, name, transportLineTypeId);
         //加工数据
         List<TransportLineDto> transportLineDtoList = transportLineDtoPage.getItems();
@@ -789,9 +707,7 @@ public class TransforCenterBusinessController {
     }
 
     @ApiOperation(value = "获取线路详情")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "id", value = "线路id", required = true, example = "1", paramType = "{path}")
-    })
+    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "线路id", required = true, example = "1", paramType = "{path}")})
     @GetMapping("/transportLine/{id}")
     public TransportLineVo findTransportLineById(@PathVariable(name = "id") String id) {
         TransportLineDto dto = transportLineFeign.fineById(id);
@@ -841,9 +757,7 @@ public class TransforCenterBusinessController {
     }
 
     @ApiOperation(value = "删除线路")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "id", value = "线路id", required = true, example = "1", paramType = "{path}")
-    })
+    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "线路id", required = true, example = "1", paramType = "{path}")})
     @DeleteMapping("/transportLine/{id}")
     public Result deleteTransportLine(@PathVariable(name = "id") String id) {
         // TODO: 2020/1/10 注意检查线路，及其关联数据，确定是否可以删除
@@ -866,9 +780,7 @@ public class TransforCenterBusinessController {
     }
 
     @ApiOperation(value = "更新车次")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "id", value = "车次id", required = true, example = "1", paramType = "{path}")
-    })
+    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "车次id", required = true, example = "1", paramType = "{path}")})
     @PutMapping("/transportLine/trips/{id}")
     public TransportTripsVo updateTransportTrips(@PathVariable(name = "id") String id, @RequestBody TransportTripsVo vo) {
         vo.setId(id);
@@ -884,9 +796,7 @@ public class TransforCenterBusinessController {
     }
 
     @ApiOperation(value = "获取车次列表")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "transportLineId", value = "线路id")
-    })
+    @ApiImplicitParams({@ApiImplicitParam(name = "transportLineId", value = "线路id")})
     @GetMapping("/transportLine/trips")
     public List<TransportTripsVo> findAllTransportLineTrips(@RequestParam(name = "transportLineId", required = false) String transportLineId) {
         List<TransportTripsDto> transportTripsDtoList = transportTripsFeign.findAll(transportLineId, null);
@@ -958,9 +868,7 @@ public class TransforCenterBusinessController {
     }
 
     @ApiOperation(value = "获取车次详情")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "id", value = "车次id", required = true, example = "1", paramType = "{path}")
-    })
+    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "车次id", required = true, example = "1", paramType = "{path}")})
     @GetMapping("/transportLine/trips/{id}")
     public TransportTripsVo findTransportLineTripsById(@PathVariable(name = "id") String id) {
         TransportTripsDto dto = transportTripsFeign.fineById(id);
@@ -1023,9 +931,7 @@ public class TransforCenterBusinessController {
     }
 
     @ApiOperation(value = "删除车次")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "id", value = "车次id", required = true, example = "1", paramType = "{path}")
-    })
+    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "车次id", required = true, example = "1", paramType = "{path}")})
     @DeleteMapping("/transportLine/trips/{id}")
     public Result deleteTransportLineTrips(@PathVariable(name = "id") String id) {
         // TODO: 2020/1/10 需检查车次与其他关联数据的联系，决定是否可以删除
@@ -1034,9 +940,7 @@ public class TransforCenterBusinessController {
     }
 
     @ApiOperation(value = "车次-安排车辆和司机")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "id", value = "车次id", required = true, example = "1", paramType = "{path}")
-    })
+    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "车次id", required = true, example = "1", paramType = "{path}")})
     @PostMapping("/transportLine/trips/{id}/truckDriver")
     public Result saveTransportTripsTruck(@PathVariable(name = "id") String id, @RequestBody List<TruckDriverVo> truckDriverVoList) {
         //保存车辆安排信息
@@ -1054,19 +958,9 @@ public class TransforCenterBusinessController {
     }
 
     @ApiOperation(value = "获取司机分页数据")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "page", value = "页码", required = true, example = "1"),
-            @ApiImplicitParam(name = "pageSize", value = "页尺寸", required = true, example = "10"),
-            @ApiImplicitParam(name = "name", value = "司机名称"),
-            @ApiImplicitParam(name = "username", value = "司机账号"),
-            @ApiImplicitParam(name = "fleetId", value = "车队id")
-    })
+    @ApiImplicitParams({@ApiImplicitParam(name = "page", value = "页码", required = true, example = "1"), @ApiImplicitParam(name = "pageSize", value = "页尺寸", required = true, example = "10"), @ApiImplicitParam(name = "name", value = "司机名称"), @ApiImplicitParam(name = "username", value = "司机账号"), @ApiImplicitParam(name = "fleetId", value = "车队id")})
     @GetMapping("/driver/page")
-    public PageResponse<DriverVo> findDriverByPage(@RequestParam(name = "page") Integer page,
-                                                   @RequestParam(name = "pageSize") Integer pageSize,
-                                                   @RequestParam(name = "name", required = false) String name,
-                                                   @RequestParam(name = "username", required = false) String username,
-                                                   @RequestParam(name = "fleetId", required = false) String fleetId) {
+    public PageResponse<DriverVo> findDriverByPage(@RequestParam(name = "page") Integer page, @RequestParam(name = "pageSize") Integer pageSize, @RequestParam(name = "name", required = false) String name, @RequestParam(name = "username", required = false) String username, @RequestParam(name = "fleetId", required = false) String fleetId) {
         List<DriverVo> driverVoList = new ArrayList<>();
         Long total = 0L;
         Long pages = 0L;
@@ -1122,7 +1016,7 @@ public class TransforCenterBusinessController {
             List<TransportTripsTruckDriverDto> transportTripsTruckDriverDtoList = transportTripsFeign.findAllTruckDriverTransportTrips(null, null, driverVo.getUserId());
             transportTripsTruckDriverDtoList.forEach(transportTripsTruckDriverDto -> {
                 TransportTripsDto transportTripsDto = transportTripsFeign.fineById(transportTripsTruckDriverDto.getTransportTripsId());
-                if (transportTripsDto != null&&StringUtils.isNotEmpty(transportTripsDto.getTransportLineId())) {
+                if (transportTripsDto != null && StringUtils.isNotEmpty(transportTripsDto.getTransportLineId())) {
                     TransportLineDto transportLineDto = transportLineFeign.fineById(transportTripsDto.getTransportLineId());
                     if (transportLineDto != null) {
                         TruckDriverVo vo = new TruckDriverVo();
@@ -1153,9 +1047,7 @@ public class TransforCenterBusinessController {
     }
 
     @ApiOperation(value = "获取司机基本信息详情")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "id", value = "司机id", required = true, example = "1", paramType = "{path}")
-    })
+    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "司机id", required = true, example = "1", paramType = "{path}")})
     @GetMapping("/driver/{id}")
     public DriverVo findDriverById(@PathVariable(name = "id") String id) {
         DriverVo vo = new DriverVo();
@@ -1184,9 +1076,7 @@ public class TransforCenterBusinessController {
     }
 
     @ApiOperation(value = "保存司机信息")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "id", value = "司机id", required = true, example = "1", paramType = "{path}")
-    })
+    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "司机id", required = true, example = "1", paramType = "{path}")})
     @PutMapping("/driver/{id}")
     public DriverVo saveDriver(@PathVariable(name = "id") String id, @RequestBody DriverVo vo) {
         TruckDriverDto driverDto = driverFeign.findOneDriver(id);
@@ -1203,9 +1093,7 @@ public class TransforCenterBusinessController {
     }
 
     @ApiOperation(value = "获取司机车辆安排")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "id", value = "司机id", required = true, example = "1", paramType = "{path}")
-    })
+    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "司机id", required = true, example = "1", paramType = "{path}")})
     @GetMapping("/driver/{id}/truck")
     public List<TruckDriverVo> findDriverTruckById(@PathVariable(name = "id") String id) {
         List<TruckDriverVo> voList = new ArrayList<>();
@@ -1248,9 +1136,7 @@ public class TransforCenterBusinessController {
     }
 
     @ApiOperation(value = "获取司机驾驶证信息")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "id", value = "司机id", required = true, example = "1", paramType = "{path}")
-    })
+    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "司机id", required = true, example = "1", paramType = "{path}")})
     @GetMapping("/driverLicense/{id}")
     public DriverLicenseVo findDriverLicenseById(@PathVariable(name = "id") String id) {
         TruckDriverLicenseDto dto = driverFeign.findOneDriverLicense(id);

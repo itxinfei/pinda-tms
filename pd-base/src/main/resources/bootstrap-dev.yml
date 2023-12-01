@@ -4,15 +4,14 @@ spring:
       username: pinda
       password: pinda
       discovery:
-        server-addr: 47.94.207.39:8848
-        group: pinda
-        namespace: f422e93d-2e54-4251-94f5-1fbfeaf689b3
+        server-addr: 127.0.0.1:8848
+        group: pinda-tms
+        namespace: 1cb93ce4-dc0e-4730-b759-d35fd7ed93c3
       config:
-        server-addr: 47.94.207.39:8848
+        server-addr: 127.0.0.1:8848
         file-extension: yml
-        group: pinda
-        namespace: f422e93d-2e54-4251-94f5-1fbfeaf689b3
-
+        group: pinda-tms
+        namespace: 1cb93ce4-dc0e-4730-b759-d35fd7ed93c3
   # jackson时间格式化
   jackson:
     time-zone: ${spring.jackson.time-zone}
@@ -22,36 +21,35 @@ spring:
       max-file-size: ${spring.servlet.multipart.max-file-size}
       max-request-size: ${spring.servlet.multipart.max-request-size}
       enabled: ${spring.servlet.multipart.enabled}
-
   datasource:
-      druid:
-          type: ${spring.datasource.druid.type}
-          driver-class-name: ${spring.datasource.druid.driver-class-name}
-          url: ${spring.datasource.druid.url}
-          username: ${spring.datasource.druid.username}
-          password: ${spring.datasource.druid.password}
-          initial-size: ${spring.datasource.druid.initial-size}
-          max-active: ${spring.datasource.druid.max-active}
-          min-idle: ${spring.datasource.druid.min-idle}
-          max-wait: ${spring.datasource.druid.max-wait}
-          pool-prepared-statements: ${spring.datasource.druid.pool-prepared-statements}
-          max-pool-prepared-statement-per-connection-size: ${spring.datasource.druid.max-pool-prepared-statement-per-connection-size}
-          time-between-eviction-runs-millis: ${spring.datasource.druid.time-between-eviction-runs-millis}
-          min-evictable-idle-time-millis: ${spring.datasource.druid.min-evictable-idle-time-millis}
-          test-while-idle: ${spring.datasource.druid.test-while-idle}
-          test-on-borrow: ${spring.datasource.druid.test-on-borrow}
-          test-on-return: ${spring.datasource.druid.test-on-return}
-          stat-view-servlet:
-              enabled: ${spring.datasource.druid.stat-view-servlet.stat-view-servlet}
-              url-pattern: ${spring.datasource.druid.stat-view-servlet.url-pattern}
-          filter:
-              stat:
-                  log-slow-sql: ${spring.datasource.druid.filter.stat.log-slow-sql}
-                  slow-sql-millis: ${spring.datasource.druid.filter.stat.slow-sql-millis}
-                  merge-sql: ${spring.datasource.druid.filter.stat.merge-sql}
-              wall:
-                  config:
-                      multi-statement-allow: ${spring.datasource.druid.filter.wall.config.multi-statement-allow}
+    druid:
+      type: ${spring.datasource.druid.type}
+      driver-class-name: ${spring.datasource.druid.driver-class-name}
+      url: ${spring.datasource.druid.url}
+      username: ${spring.datasource.druid.username}
+      password: ${spring.datasource.druid.password}
+      initial-size: ${spring.datasource.druid.initial-size}
+      max-active: ${spring.datasource.druid.max-active}
+      min-idle: ${spring.datasource.druid.min-idle}
+      max-wait: ${spring.datasource.druid.max-wait}
+      pool-prepared-statements: ${spring.datasource.druid.pool-prepared-statements}
+      max-pool-prepared-statement-per-connection-size: ${spring.datasource.druid.max-pool-prepared-statement-per-connection-size}
+      time-between-eviction-runs-millis: ${spring.datasource.druid.time-between-eviction-runs-millis}
+      min-evictable-idle-time-millis: ${spring.datasource.druid.min-evictable-idle-time-millis}
+      test-while-idle: ${spring.datasource.druid.test-while-idle}
+      test-on-borrow: ${spring.datasource.druid.test-on-borrow}
+      test-on-return: ${spring.datasource.druid.test-on-return}
+      stat-view-servlet:
+        enabled: ${spring.datasource.druid.stat-view-servlet.stat-view-servlet}
+        url-pattern: ${spring.datasource.druid.stat-view-servlet.url-pattern}
+      filter:
+        stat:
+          log-slow-sql: ${spring.datasource.druid.filter.stat.log-slow-sql}
+          slow-sql-millis: ${spring.datasource.druid.filter.stat.slow-sql-millis}
+          merge-sql: ${spring.datasource.druid.filter.stat.merge-sql}
+        wall:
+          config:
+            multi-statement-allow: ${spring.datasource.druid.filter.wall.config.multi-statement-allow}
 
 #mybatis
 mybatis-plus:

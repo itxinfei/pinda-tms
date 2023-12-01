@@ -6,17 +6,17 @@ spring:
     database: ${pinda.redis.database}
   cloud:
     nacos:
-      username: tms
-      password: itheima123
+      username: pinda
+      password: pinda
       discovery:
-        server-addr: 68.79.63.42:8848
+        server-addr: 127.0.0.1:8848
         group: pinda-tms
-        namespace: 6107f553-3214-48d8-89c3-945f8446e3d9
+        namespace: 1cb93ce4-dc0e-4730-b759-d35fd7ed93c3
       config:
-        server-addr: 68.79.63.42:8848
+        server-addr: 127.0.0.1:8848
         file-extension: yml
         group: pinda-tms
-        namespace: 6107f553-3214-48d8-89c3-945f8446e3d9
+        namespace: 1cb93ce4-dc0e-4730-b759-d35fd7ed93c3
 
   # jackson时间格式化
   jackson:

@@ -27,7 +27,8 @@ public class BaiduMapUtils {
         System.out.println("线路耗时"+time+"秒");
     }
 
-    private static String AK = "UEBQm9c3KZ5LrsO2C2qsOAs1eSdLvlzM";
+    //private static String AK = "UEBQm9c3KZ5LrsO2C2qsOAs1eSdLvlzM";
+    private static String AK = "MyAeKeu4fGvFmtvIbp9LYLweDEivzNAS";
 
     /**
      * 调用百度地图地理编码服务接口，根据地址获取坐标（经度、纬度）
