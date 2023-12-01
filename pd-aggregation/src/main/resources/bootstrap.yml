@@ -7,7 +7,6 @@ server:
   connection-timeout: 50000ms
 #  servlet:
 #    context-path: /
-
 spring:
   application:
     name: pd-aggregation

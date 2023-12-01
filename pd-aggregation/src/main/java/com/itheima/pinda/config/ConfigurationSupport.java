@@ -54,11 +54,7 @@ public class ConfigurationSupport extends WebMvcConfigurationSupport {
      */
     @Bean
     public Jackson2ObjectMapperBuilderCustomizer jackson2ObjectMapperBuilderCustomizer() {
-        return builder -> builder
-                .deserializerByType(Enum.class, EnumDeserializer.INSTANCE)
-                .deserializerByType(LocalDateTime.class, new LocalDateTimeDeserializer(DateTimeFormatter.ofPattern(DateUtils.DEFAULT_DATE_TIME_FORMAT)))
-                .deserializerByType(LocalDate.class, new LocalDateDeserializer(DateTimeFormatter.ofPattern(DateUtils.DEFAULT_DATE_FORMAT)))
-                .deserializerByType(LocalTime.class, new LocalTimeDeserializer(DateTimeFormatter.ofPattern(DateUtils.DEFAULT_TIME_FORMAT)));
+        return builder -> builder.deserializerByType(Enum.class, EnumDeserializer.INSTANCE).deserializerByType(LocalDateTime.class, new LocalDateTimeDeserializer(DateTimeFormatter.ofPattern(DateUtils.DEFAULT_DATE_TIME_FORMAT))).deserializerByType(LocalDate.class, new LocalDateDeserializer(DateTimeFormatter.ofPattern(DateUtils.DEFAULT_DATE_FORMAT))).deserializerByType(LocalTime.class, new LocalTimeDeserializer(DateTimeFormatter.ofPattern(DateUtils.DEFAULT_TIME_FORMAT)));
 
     }
 
@@ -71,16 +67,11 @@ public class ConfigurationSupport extends WebMvcConfigurationSupport {
                 // 选择哪些接口去暴露
                 .select()
                 // 扫描的包
-                .apis(RequestHandlerSelectors.basePackage("com.itheima.pinda.controller"))
-                .paths(PathSelectors.any())
-                .build();
+                .apis(RequestHandlerSelectors.basePackage("com.itheima.pinda.controller")).paths(PathSelectors.any()).build();
     }
 
     private ApiInfo apiInfo() {
-        return new ApiInfoBuilder()
-                .title("品达物流管理数据聚合服务--Swagger文档")
-                .version("1.0")
-                .build();
+        return new ApiInfoBuilder().title("品达物流管理数据聚合服务--Swagger文档").version("1.0").build();
     }
 
     /**
@@ -124,13 +115,7 @@ public class ConfigurationSupport extends WebMvcConfigurationSupport {
             //反序列化时，属性不存在的兼容处理
             this.getDeserializationConfig().withoutFeatures(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
-            SimpleModule simpleModule = new SimpleModule()
-                    .addSerializer(BigInteger.class, ToStringSerializer.instance)
-                    .addSerializer(BigDecimal.class, new BigDecimalSerializer())
-                    .addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(DateTimeFormatter.ofPattern(DateUtils.DEFAULT_DATE_TIME_FORMAT)))
-                    .addSerializer(LocalDate.class, new LocalDateSerializer(DateTimeFormatter.ofPattern(DateUtils.DEFAULT_DATE_FORMAT)))
-                    .addSerializer(LocalTime.class, new LocalTimeSerializer(DateTimeFormatter.ofPattern(DateUtils.DEFAULT_TIME_FORMAT)))
-                    .addSerializer(Date.class, new DateSerializer(false, new SimpleDateFormat(DateUtils.DEFAULT_DATE_TIME_FORMAT)));
+            SimpleModule simpleModule = new SimpleModule().addSerializer(BigInteger.class, ToStringSerializer.instance).addSerializer(BigDecimal.class, new BigDecimalSerializer()).addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(DateTimeFormatter.ofPattern(DateUtils.DEFAULT_DATE_TIME_FORMAT))).addSerializer(LocalDate.class, new LocalDateSerializer(DateTimeFormatter.ofPattern(DateUtils.DEFAULT_DATE_FORMAT))).addSerializer(LocalTime.class, new LocalTimeSerializer(DateTimeFormatter.ofPattern(DateUtils.DEFAULT_TIME_FORMAT))).addSerializer(Date.class, new DateSerializer(false, new SimpleDateFormat(DateUtils.DEFAULT_DATE_TIME_FORMAT)));
 
             this.registerModule(simpleModule);
             //处理空指针时设置的值
