@@ -1,0 +1,30 @@
+docker run -d \
+-e PREFER_HOST_MODE=ip \
+-e MODE=standalone \
+-e SPRING_DATASOURCE_PLATFORM=mysql \
+-e MYSQL_MASTER_SERVICE_HOST=127.0.0.1 \
+-e MYSQL_MASTER_SERVICE_PORT=3306 \
+-e MYSQL_MASTER_SERVICE_USER=root \
+-e MYSQL_MASTER_SERVICE_PASSWORD=root \
+-e MYSQL_MASTER_SERVICE_DB_NAME=nacos \
+-e MYSQL_SLAVE_SERVICE_HOST=127.0.0.1 \
+-e MYSQL_SLAVE_SERVICE_PORT=3306 \
+-v /home/dockerdata/nacos/logs:/home/nacos/logs \
+-p 8848:8848 \
+--name nacos \
+--restart=always \
+nacos/nacos-server:1.1.4
+
+
+docker run -d \
+--name nacos \
+-e PREFER_HOST_MODE=hostname \
+-e MODE=standalone \
+-e SPRING_DATASOURCE_PLATFORM=mysql \
+-e MYSQL_SERVICE_HOST=127.0.0.1 \
+-e MYSQL_SERVICE_PORT=3306 \
+-e MYSQL_SERVICE_USER=root \
+-e MYSQL_SERVICE_PASSWORD=root \
+-e MYSQL_SERVICE_DB_NAME=nacos \
+--network=host \
+nacos/nacos-server
