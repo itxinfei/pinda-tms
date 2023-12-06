@@ -10,6 +10,11 @@ docker run -id --name canal_mysql \
 -v /mnt/canal_mysql:/var/lib/mysql \
 -p 13306:3306 \
 -e MYSQL_ROOT_PASSWORD=123456 mysql:5.7
+
+# nacos
+docker run --name nacos -d -p 8848:8848 --privileged=true -e MODE=standalone nacos/nacos-server:1.4.2
+
+
 # druid
 wget https://archive.apache.org/dist/incubator/druid/0.15.0-incubating/apache-druid-0.15.0-incubating-bin.tar.gz
 
@@ -21,6 +26,16 @@ java -jar zipkin-server-2.12.2-exec.jar --STORAGE_TYPE=mysql --MYSQL_HOST=127.0.
 
 # seata
 docker run -d --name seata -p 8091:8091 seataio/seata-server:latest
+
+# fastdfs
+docker run -dti --network=host --name tracker -v /var/fdfs/tracker:/var/fdfs delron/fastdfs tracker
+bind_addr=${101.43.184.54}
+vim storage.conf
+tracker_server=${101.43.184.54}:22122
+vim client.conf
+tracker_server=${101.43.184.54}:22122
+docker run -dti --network=host --name storage -e TRACKER_SERVER=101.43.184.54:22122 -v /var/fdfs/storage:/var/fdfs delron/fastdfs storage
+
 
 # kafka
 docker run -id --name kafka -p 9092:9092 -e KAFKA_BROKER_ID=0 -e KAFKA_ZOOKEEPER_CONNECT=101.43.184.54:2181 -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://101.43.184.54:9092 -e KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092 -v /etc/localtime:/etc/localtime wurstmeister/kafka

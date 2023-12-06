@@ -1,15 +1,22 @@
 spring:
+  redis:
+    host: ${pinda.redis.ip}
+    password: ${pinda.redis.password}
+    port: ${pinda.redis.port}
+    database: ${pinda.redis.database}
   cloud:
     nacos:
+      username: pinda
+      password: pinda
       discovery:
-        server-addr: 111.231.76.210:58848
+        server-addr: 101.43.184.54:8848
         group: pinda-tms
-        namespace: c035ed13-9d51-4a81-9573-9162320515cc
+        namespace: 1cb93ce4-dc0e-4730-b759-d35fd7ed93c3
       config:
-        server-addr: 111.231.76.210:58848
+        server-addr: 101.43.184.54:8848
         file-extension: yml
         group: pinda-tms
-        namespace: c035ed13-9d51-4a81-9573-9162320515cc
+        namespace: 1cb93ce4-dc0e-4730-b759-d35fd7ed93c3
 
   # jackson时间格式化
   jackson:
@@ -51,6 +58,37 @@ spring:
                   config:
                       multi-statement-allow: ${spring.datasource.druid.filter.wall.config.multi-statement-allow}
 
+j2cache:
+  cache-clean-mode: passive
+  allow-null-values: true
+  redis-client: lettuce #指定redis客户端使用lettuce，也可以使用Jedis
+  l2-cache-open: true #开启二级缓存
+  broadcast: net.oschina.j2cache.cache.support.redis.SpringRedisPubSubPolicy
+  #  broadcast: jgroups
+  L1: #指定一级缓存提供者为caffeine
+    provider_class: caffeine
+  L2: #指定二级缓存提供者为redis
+    provider_class: net.oschina.j2cache.cache.support.redis.SpringRedisProvider
+    config_section: lettuce
+  sync_ttl_to_redis: true
+  default_cache_null_object: false
+  serialization: fst  #序列化方式：fst、kyro、Java
+caffeine:
+  properties: /caffeine.properties   # 这个配置文件需要放在项目中
+lettuce:
+  mode: single
+  namespace:
+  storage: generic
+  channel: j2cache
+  scheme: redis
+  hosts: ${pinda.redis.ip}:${pinda.redis.port}
+  password: ${pinda.redis.password}
+  database: ${pinda.redis.database}
+  sentinelMasterId:
+  maxTotal: 100
+  maxIdle: 10
+  minIdle: 10
+  timeout: 10000
 
 #mybatis
 mybatis-plus:
@@ -77,5 +115,3 @@ mybatis-plus:
     call-setters-on-nulls: ${mybatis-plus.configuration.call-setters-on-nulls}
     jdbc-type-for-null: ${mybatis-plus.configuration.jdbc-type-for-null}
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
-
-

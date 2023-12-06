@@ -1,5 +1,5 @@
 module.exports = {
-  title: '微服务权限管理平台',
+  title: '品达物流',
   onlinePreview: 'http://127.0.0.1:8012/onlinePreview?url=',
   druid: {
     authority: {
