@@ -7,7 +7,6 @@ import com.itheima.j2cache.utils.CacheKeyBuilder;
 import com.itheima.j2cache.utils.SpringApplicationContextUtils;
 import net.oschina.j2cache.CacheChannel;
 import org.aspectj.lang.ProceedingJoinPoint;
-import org.aspectj.lang.Signature;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.context.ApplicationContext;
 import org.springframework.util.StringUtils;
