@@ -1,9 +1,8 @@
 package com.itheima.pinda.controller;
 
-import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.google.common.collect.Lists;
+import com.itheima.pinda.DTO.angency.AgencyScopeDto;
 import com.itheima.pinda.authority.api.AreaApi;
 import com.itheima.pinda.authority.api.OrgApi;
 import com.itheima.pinda.authority.api.RoleApi;
@@ -17,11 +16,12 @@ import com.itheima.pinda.base.R;
 import com.itheima.pinda.common.utils.EntCoordSyncJob;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
-import com.itheima.pinda.DTO.angency.AgencyScopeDto;
 import com.itheima.pinda.feign.agency.AgencyScopeFeign;
 import com.itheima.pinda.util.BeanUtil;
 import com.itheima.pinda.vo.base.AreaSimpleVo;
-import com.itheima.pinda.vo.base.angency.*;
+import com.itheima.pinda.vo.base.angency.AgencyScopeVo;
+import com.itheima.pinda.vo.base.angency.AgencySimpleVo;
+import com.itheima.pinda.vo.base.angency.AgencyVo;
 import com.itheima.pinda.vo.base.userCenter.SysUserVo;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
@@ -32,7 +32,9 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
