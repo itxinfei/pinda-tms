@@ -1,7 +1,8 @@
 'use strict'
 const settings = require('./src/settings.js')
 const path = require('path')
-function resolve (dir) {
+
+function resolve(dir) {
   return path.join(__dirname, dir)
 }
 
@@ -20,6 +21,9 @@ const proxyUrl = process.env.VUE_APP_BASE_API
 // console.log(process.env)
 
 // All configuration item explanations can be find in https://cli.vuejs.org/config/
+
+const port = process.env.port || process.env.npm_config_port || 9528 // dev port
+
 module.exports = {
   /**
    * You will need to set publicPath if you plan to deploy your site under a sub path,
@@ -33,37 +37,59 @@ module.exports = {
   assetsDir: 'static',
   lintOnSave: process.env.NODE_ENV === 'development',
   productionSourceMap: false,
+
   devServer: {
-    // port: port,
-    open: true,
-    overlay: {
-      warnings: false,
-      errors: true
-    },
-    contentBase: './',
-    proxy: {
-      // change xxx-api/login => ≥mock/login
-      // detail: https://cli.vuejs.org/config/#devserver-proxy
-      [proxyUrl]: {
-        target: targetUrl,
-        changeOrigin: true,
-        pathRewrite: {
-          ['^' + proxyUrl]: proxyUrl
-        }
+    port: port, open: true, overlay: {
+      warnings: false, errors: true
+    }, proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8760', changeOrigin: true
       }
     }
   },
+
+  // devServer: {
+  //   // port: port,
+  //   //port: port,
+  //   open: true,
+  //   overlay: {
+  //     warnings: false,
+  //     errors: true
+  //   },
+  //   contentBase: './',
+  //   proxy: {
+  //     // change xxx-api/login => ≥mock/login
+  //     // detail: https://cli.vuejs.org/config/#devserver-proxy
+  //     /**
+  //      * /api/web-manager/user/login
+  //      */
+  //     '/api': {
+  //       target: 'http://127.0.0.1:8760',
+  //       changeOrigin: true,
+  //       ws: true,
+  //       pathRewrite: {
+  //        '^/api':''
+  //       }
+  //     }
+  //   /*  [proxyUrl]: {
+  //       target: targetUrl,
+  //       changeOrigin: true,
+  //       pathRewrite: {
+  //         ['^' + proxyUrl]: proxyUrl
+  //       }
+  //     }*/
+  //   }
+  // },
   configureWebpack: {
     // provide the app's title in webpack's name field, so that
     // it can be accessed in index.html to inject the correct title.
-    name: name,
-    resolve: {
+    name: name, resolve: {
       alias: {
         '@': resolve('src')
       }
     }
   },
-  chainWebpack (config) {
+  chainWebpack(config) {
     config.plugins.delete('preload') // TODO: need test
     config.plugins.delete('prefetch') // TODO: need test
 
@@ -97,47 +123,35 @@ module.exports = {
 
     config
       // https://webpack.js.org/configuration/devtool/#development
-      .when(process.env.NODE_ENV === 'development',
-        config => config.devtool('cheap-source-map')
-      )
+      .when(process.env.NODE_ENV === 'development', config => config.devtool('cheap-source-map'))
 
     config
-      .when(process.env.NODE_ENV !== 'development',
-        config => {
-          config
-            .plugin('ScriptExtHtmlWebpackPlugin')
-            .after('html')
-            .use('script-ext-html-webpack-plugin', [{
-              // `runtime` must same as runtimeChunk name. default is `runtime`
-              inline: /runtime\..*\.js$/
-            }])
-            .end()
-          config
-            .optimization.splitChunks({
-              chunks: 'all',
-              cacheGroups: {
-                libs: {
-                  name: 'chunk-libs',
-                  test: /[\\/]node_modules[\\/]/,
-                  priority: 10,
-                  chunks: 'initial' // only package third parties that are initially dependent
-                },
-                elementUI: {
-                  name: 'chunk-elementUI', // split elementUI into a single package
-                  priority: 20, // the weight needs to be larger than libs and app or it will be packaged into libs or app
-                  test: /[\\/]node_modules[\\/]_?element-ui(.*)/ // in order to adapt to cnpm
-                },
-                commons: {
-                  name: 'chunk-commons',
-                  test: resolve('src/components'), // can customize your rules
-                  minChunks: 3, //  minimum common number
-                  priority: 5,
-                  reuseExistingChunk: true
-                }
-              }
-            })
-          config.optimization.runtimeChunk('single')
-        }
-      )
+      .when(process.env.NODE_ENV !== 'development', config => {
+        config
+          .plugin('ScriptExtHtmlWebpackPlugin')
+          .after('html')
+          .use('script-ext-html-webpack-plugin', [{
+            // `runtime` must same as runtimeChunk name. default is `runtime`
+            inline: /runtime\..*\.js$/
+          }])
+          .end()
+        config
+          .optimization.splitChunks({
+          chunks: 'all', cacheGroups: {
+            libs: {
+              name: 'chunk-libs', test: /[\\/]node_modules[\\/]/, priority: 10, chunks: 'initial' // only package third parties that are initially dependent
+            }, elementUI: {
+              name: 'chunk-elementUI', // split elementUI into a single package
+              priority: 20, // the weight needs to be larger than libs and app or it will be packaged into libs or app
+              test: /[\\/]node_modules[\\/]_?element-ui(.*)/ // in order to adapt to cnpm
+            }, commons: {
+              name: 'chunk-commons', test: resolve('src/components'), // can customize your rules
+              minChunks: 3, //  minimum common number
+              priority: 5, reuseExistingChunk: true
+            }
+          }
+        })
+        config.optimization.runtimeChunk('single')
+      })
   }
 }

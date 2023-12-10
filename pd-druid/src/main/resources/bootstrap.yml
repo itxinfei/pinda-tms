@@ -10,7 +10,7 @@ spring:
   application:
     name: pd-druid
   profiles:
-      active: dev
+      active: prod
   main:
     allow-bean-definition-overriding: true
 
