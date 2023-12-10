@@ -4,11 +4,11 @@ spring:
       username: pinda
       password: pinda
       discovery:
-        server-addr: 101.43.184.54:8848
+        server-addr: 192.168.1.80:8848
         group: pinda-tms
         namespace: 1cb93ce4-dc0e-4730-b759-d35fd7ed93c3
       config:
-        server-addr: 101.43.184.54:8848
+        server-addr: 192.168.1.80:8848
         file-extension: yml
         group: pinda-tms
         namespace: 1cb93ce4-dc0e-4730-b759-d35fd7ed93c3

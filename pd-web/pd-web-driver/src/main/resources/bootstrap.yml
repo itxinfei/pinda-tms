@@ -13,7 +13,7 @@ spring:
     name: pd-web-driver
   # 环境 dev|test|prod
   profiles:
-    active: dev
+    active: prod
   main:
     allow-bean-definition-overriding: true
 
