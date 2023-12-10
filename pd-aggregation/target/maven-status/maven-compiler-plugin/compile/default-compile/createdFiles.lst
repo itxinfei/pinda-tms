@@ -1,0 +1,16 @@
+com\itheima\pinda\AggregationApplication.class
+com\itheima\pinda\config\ConfigurationSupport$JacksonObjectMapper.class
+com\itheima\pinda\service\impl\WebManagerServiceImpl.class
+com\itheima\pinda\service\impl\CourierServiceImpl.class
+com\itheima\pinda\config\ConfigurationSupport.class
+com\itheima\pinda\service\impl\DriverServiceImpl.class
+com\itheima\pinda\controller\WebManagerController.class
+com\itheima\pinda\service\CourierService.class
+com\itheima\pinda\service\DriverService.class
+com\itheima\pinda\config\MybatisPlusConfig.class
+com\itheima\pinda\service\WebManagerService.class
+com\itheima\pinda\mapper\DriverMapper.class
+com\itheima\pinda\mapper\CourierMapper.class
+com\itheima\pinda\mapper\WebManagerMapper.class
+com\itheima\pinda\controller\AppDriverController.class
+com\itheima\pinda\controller\AppCourierController.class

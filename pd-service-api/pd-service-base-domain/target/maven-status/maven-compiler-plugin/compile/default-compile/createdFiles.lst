@@ -1,0 +1,15 @@
+com\itheima\pinda\DTO\angency\FleetDto.class
+com\itheima\pinda\DTO\truck\TruckDto.class
+com\itheima\pinda\DTO\base\GoodsTypeDto.class
+com\itheima\pinda\DTO\truck\TruckTypeDto.class
+com\itheima\pinda\DTO\transportline\TransportTripsDto.class
+com\itheima\pinda\DTO\transportline\TransportTripsTruckDriverDto.class
+com\itheima\pinda\DTO\transportline\TransportLineTypeDto.class
+com\itheima\pinda\DTO\angency\AgencyScopeDto.class
+com\itheima\pinda\DTO\transportline\TransportLineDto.class
+com\itheima\pinda\DTO\base\AreaDto.class
+com\itheima\pinda\DTO\user\CourierScopeDto.class
+com\itheima\pinda\DTO\user\TruckDriverDto.class
+com\itheima\pinda\DTO\truck\TruckInsuranceDto.class
+com\itheima\pinda\DTO\user\TruckDriverLicenseDto.class
+com\itheima\pinda\DTO\truck\TruckLicenseDto.class

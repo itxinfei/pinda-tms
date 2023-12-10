@@ -1,0 +1,11 @@
+E:\MyCode\pinda-tms-java\pd-service-api\pd-service-base-api\src\main\java\com\itheima\pinda\feign\agency\AgencyScopeFeign.java
+E:\MyCode\pinda-tms-java\pd-service-api\pd-service-base-api\src\main\java\com\itheima\pinda\feign\user\DriverFeign.java
+E:\MyCode\pinda-tms-java\pd-service-api\pd-service-base-api\src\main\java\com\itheima\pinda\feign\user\CourierScopeFeign.java
+E:\MyCode\pinda-tms-java\pd-service-api\pd-service-base-api\src\main\java\com\itheima\pinda\feign\transportline\TransportLineTypeFeign.java
+E:\MyCode\pinda-tms-java\pd-service-api\pd-service-base-api\src\main\java\com\itheima\pinda\feign\truck\TruckTypeFeign.java
+E:\MyCode\pinda-tms-java\pd-service-api\pd-service-base-api\src\main\java\com\itheima\pinda\feign\common\GoodsTypeFeign.java
+E:\MyCode\pinda-tms-java\pd-service-api\pd-service-base-api\src\main\java\com\itheima\pinda\feign\truck\TruckLicenseFeign.java
+E:\MyCode\pinda-tms-java\pd-service-api\pd-service-base-api\src\main\java\com\itheima\pinda\feign\truck\TruckFeign.java
+E:\MyCode\pinda-tms-java\pd-service-api\pd-service-base-api\src\main\java\com\itheima\pinda\feign\agency\FleetFeign.java
+E:\MyCode\pinda-tms-java\pd-service-api\pd-service-base-api\src\main\java\com\itheima\pinda\feign\transportline\TransportLineFeign.java
+E:\MyCode\pinda-tms-java\pd-service-api\pd-service-base-api\src\main\java\com\itheima\pinda\feign\transportline\TransportTripsFeign.java

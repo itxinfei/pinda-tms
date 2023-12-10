@@ -1,0 +1,513 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="ALL" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="a1a7a8eb-c1ba-44bc-b1e7-3f4d15fca440" name="默认更改列表" comment="修改组件">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-user/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-user/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-validator/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-validator/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-validator/src/main/java/com/itheima/pinda/validator/config/ValidatorConfiguration.java" beforeDir="false" afterPath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-validator/src/main/java/com/itheima/pinda/validator/config/ValidatorConfiguration.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-validator/src/main/java/com/itheima/pinda/validator/controller/FormValidatorController.java" beforeDir="false" afterPath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-validator/src/main/java/com/itheima/pinda/validator/controller/FormValidatorController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-validator/src/main/java/com/itheima/pinda/validator/extract/DefaultConstraintExtractImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-validator/src/main/java/com/itheima/pinda/validator/extract/DefaultConstraintExtractImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-validator/src/main/java/com/itheima/pinda/validator/mateconstraint/IConstraintConverter.java" beforeDir="false" afterPath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-validator/src/main/java/com/itheima/pinda/validator/mateconstraint/IConstraintConverter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-validator/src/main/java/com/itheima/pinda/validator/mateconstraint/impl/BaseConstraintConverter.java" beforeDir="false" afterPath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-validator/src/main/java/com/itheima/pinda/validator/mateconstraint/impl/BaseConstraintConverter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-validator/src/main/java/com/itheima/pinda/validator/mateconstraint/impl/NotNullConstraintConverter.java" beforeDir="false" afterPath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-validator/src/main/java/com/itheima/pinda/validator/mateconstraint/impl/NotNullConstraintConverter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-validator/src/main/java/com/itheima/pinda/validator/mateconstraint/impl/OtherConstraintConverter.java" beforeDir="false" afterPath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-validator/src/main/java/com/itheima/pinda/validator/mateconstraint/impl/OtherConstraintConverter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-validator/src/main/java/com/itheima/pinda/validator/mateconstraint/impl/RangeConstraintConverter.java" beforeDir="false" afterPath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-validator/src/main/java/com/itheima/pinda/validator/mateconstraint/impl/RangeConstraintConverter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-validator/src/main/java/com/itheima/pinda/validator/mateconstraint/impl/RegExConstraintConverter.java" beforeDir="false" afterPath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-validator/src/main/java/com/itheima/pinda/validator/mateconstraint/impl/RegExConstraintConverter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-validator/src/main/java/com/itheima/pinda/validator/model/ConstraintInfo.java" beforeDir="false" afterPath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-validator/src/main/java/com/itheima/pinda/validator/model/ConstraintInfo.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-validator/src/main/java/com/itheima/pinda/validator/model/FieldValidatorDesc.java" beforeDir="false" afterPath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-validator/src/main/java/com/itheima/pinda/validator/model/FieldValidatorDesc.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-validator/src/main/java/com/itheima/pinda/validator/model/ValidConstraint.java" beforeDir="false" afterPath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-validator/src/main/java/com/itheima/pinda/validator/model/ValidConstraint.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-validator/src/main/java/com/itheima/pinda/validator/wrapper/HttpServletRequestValidatorWrapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-validator/src/main/java/com/itheima/pinda/validator/wrapper/HttpServletRequestValidatorWrapper.java" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="CodeStyleSettingsInfer">
+    <option name="done" value="true" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Dockerfile" />
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="PUSH_TAGS">
+      <GitPushTagMode>
+        <option name="argument" value="--tags" />
+        <option name="title" value="All" />
+      </GitPushTagMode>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="MavenImportPreferences">
+    <option name="generalSettings">
+      <MavenGeneralSettings>
+        <option name="localRepository" value="E:\developServer\Repository" />
+        <option name="mavenHome" value="$PROJECT_DIR$/../../developServer/apache-maven-3.6.1" />
+        <option name="useMavenConfig" value="true" />
+        <option name="userSettingsFile" value="E:\developServer\apache-maven-3.6.1\conf\settings.xml" />
+      </MavenGeneralSettings>
+    </option>
+    <option name="importingSettings">
+      <MavenImportingSettings>
+        <option name="jdkForImporter" value="1.8" />
+        <option name="vmOptionsForImporter" value="-Xmx1024m" />
+      </MavenImportingSettings>
+    </option>
+  </component>
+  <component name="MavenRunner">
+    <option name="jreName" value="1.8" />
+    <option name="skipTests" value="true" />
+  </component>
+  <component name="ProjectCodeStyleSettingsMigration">
+    <option name="version" value="1" />
+  </component>
+  <component name="ProjectId" id="1siA9TsPqwilyI4DKYrcDGqnjIY" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true">
+    <ConfirmationsSetting value="2" id="Add" />
+    <ConfirmationsSetting value="2" id="添加" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="flattenModules" value="true" />
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+    <option name="showVisibilityIcons" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RequestMappingsPanelOrder0&quot;: &quot;0&quot;,
+    &quot;RequestMappingsPanelOrder1&quot;: &quot;1&quot;,
+    &quot;RequestMappingsPanelWidth0&quot;: &quot;75&quot;,
+    &quot;RequestMappingsPanelWidth1&quot;: &quot;75&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;last_opened_file_path&quot;: &quot;E:/MyCode/pinda-tms-java/pd-authority/pd-tools/pd-tools-xss&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;settings.editor.splitter.proportion&quot;: &quot;0.26069248&quot;,
+    &quot;spring.configuration.checksum&quot;: &quot;846b7ca01995b25b80d85109cff065c4&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  }
+}</component>
+  <component name="ReactorSettings">
+    <option name="notificationShown" value="true" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="E:\MyCode\pinda-tms-java\pd-authority\pd-tools\pd-tools-xss" />
+      <recent name="E:\MyCode\pinda-tms-java\pd-authority\pd-tools\pd-tools-validator" />
+      <recent name="E:\MyCode\pinda-tms-java\pd-authority\pd-tools\pd-tools-user" />
+      <recent name="E:\MyCode\pinda-tms-java\pd-authority\pd-tools\pd-tools-swagger2" />
+      <recent name="E:\MyCode\pinda-tms-java\pd-authority\pd-tools\pd-tools-log" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="E:\MyCode\pinda-tms-java\pd-authority\pd-apps\pd-auth\pd-auth-server" />
+      <recent name="E:\MyCode\pinda-tms-java\pd-aggregation\src\main\docker" />
+      <recent name="E:\MyCode\pinda-tms-java" />
+    </key>
+  </component>
+  <component name="RunDashboard">
+    <option name="configurationTypes">
+      <set>
+        <option value="SpringBootApplicationConfigurationType" />
+        <option value="docker-deploy" />
+      </set>
+    </option>
+  </component>
+  <component name="RunManager" selected="JUnit.UserServiceTest.getTestUser">
+    <configuration default="true" type="ArquillianJUnit" factoryName="" nameIsGenerated="true">
+      <option name="arquillianRunConfiguration">
+        <value>
+          <option name="containerStateName" value="" />
+        </value>
+      </option>
+      <option name="TEST_OBJECT" value="class" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="CaptchaTest" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.itheima.test.CaptchaTest" />
+      <module name="pd-auth-server" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.itheima.test.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="UserServiceTest.getTestUser" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="pd-auth-server" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.itheima.pinda.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="com.itheima.pinda" />
+      <option name="MAIN_CLASS_NAME" value="com.itheima.pinda.UserServiceTest" />
+      <option name="METHOD_NAME" value="getTestUser" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="AggregationApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+      <module name="pd-aggregation" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.itheima.pinda.AggregationApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="AuthorityApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" temporary="true" nameIsGenerated="true">
+      <module name="pd-auth-server" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.itheima.pinda.AuthorityApplication" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.itheima.pinda.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="BaseApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+      <module name="pd-base" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.itheima.pinda.BaseApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="DispatchApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+      <module name="pd-dispatch" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.itheima.pinda.DispatchApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="DruidApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+      <module name="pd-druid" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.itheima.pinda.DruidApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="NettyApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+      <module name="pd-netty" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.itheima.pinda.NettyApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="OmsApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+      <module name="pd-oms" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.itheima.pinda.OmsApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="UserApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+      <module name="pd-user" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.itheima.pinda.UserApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="WebCourierApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+      <module name="pd-web-courier" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.itheima.pinda.WebCourierApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="WebCustomerApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+      <module name="pd-web-customer" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.itheima.pinda.WebCustomerApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="WebDriverApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+      <module name="pd-web-driver" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.itheima.pinda.WebDriverApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="WebManagerApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+      <module name="pd-web-manager" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.itheima.pinda.WebManagerApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="WorkApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+      <module name="pd-work" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.itheima.pinda.WorkApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="ZuulServerApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="pd-gateway" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.itheima.pinda.ZuulServerApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <list>
+      <item itemvalue="JUnit.UserServiceTest.getTestUser" />
+      <item itemvalue="Spring Boot.ZuulServerApplication" />
+      <item itemvalue="Spring Boot.DruidApplication" />
+      <item itemvalue="Spring Boot.WorkApplication" />
+      <item itemvalue="Spring Boot.AggregationApplication" />
+      <item itemvalue="Spring Boot.BaseApplication" />
+      <item itemvalue="Spring Boot.DispatchApplication" />
+      <item itemvalue="Spring Boot.NettyApplication" />
+      <item itemvalue="Spring Boot.OmsApplication" />
+      <item itemvalue="Spring Boot.UserApplication" />
+      <item itemvalue="Spring Boot.WebCourierApplication" />
+      <item itemvalue="Spring Boot.WebCustomerApplication" />
+      <item itemvalue="Spring Boot.WebDriverApplication" />
+      <item itemvalue="Spring Boot.WebManagerApplication" />
+      <item itemvalue="Spring Boot.AuthorityApplication" />
+      <item itemvalue="应用程序.CaptchaTest" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Spring Boot.AuthorityApplication" />
+        <item itemvalue="JUnit.UserServiceTest.getTestUser" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="ServiceViewManager">
+    <option name="viewStates">
+      <list>
+        <serviceView>
+          <option name="contentProportion" value="0.11201299" />
+          <treeState>
+            <expand>
+              <path>
+                <item name="services root" type="e789fda9:ObjectUtils$Sentinel" />
+                <item name="Spring Boot" type="7427dc5b:ServiceModel$ServiceGroupNode" />
+              </path>
+              <path>
+                <item name="services root" type="e789fda9:ObjectUtils$Sentinel" />
+                <item name="Spring Boot" type="7427dc5b:ServiceModel$ServiceGroupNode" />
+                <item name="失败" type="7427dc5b:ServiceModel$ServiceGroupNode" />
+              </path>
+            </expand>
+            <select />
+          </treeState>
+        </serviceView>
+      </list>
+    </option>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="应用程序级" UseSingleDictionary="true" transferred="true" />
+  <component name="SvnConfiguration">
+    <configuration>C:\Users\User\AppData\Roaming\Subversion</configuration>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="a1a7a8eb-c1ba-44bc-b1e7-3f4d15fca440" name="默认更改列表" comment="" />
+      <created>1621344884693</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1621344884693</updated>
+      <workItem from="1621344891116" duration="72000" />
+      <workItem from="1621344980707" duration="3609000" />
+      <workItem from="1621390672820" duration="3840000" />
+      <workItem from="1622251578939" duration="2074000" />
+      <workItem from="1622254587889" duration="2852000" />
+      <workItem from="1627366721562" duration="1775000" />
+      <workItem from="1627372577808" duration="696000" />
+      <workItem from="1627562173325" duration="3609000" />
+      <workItem from="1628227594150" duration="287000" />
+      <workItem from="1628390251715" duration="10000" />
+      <workItem from="1629781711917" duration="848000" />
+      <workItem from="1701340078069" duration="1732000" />
+      <workItem from="1701341947371" duration="2738000" />
+      <workItem from="1701345643247" duration="2121000" />
+      <workItem from="1701398657783" duration="5263000" />
+      <workItem from="1701407337724" duration="5108000" />
+      <workItem from="1701413153685" duration="7563000" />
+      <workItem from="1701428461090" duration="13651000" />
+      <workItem from="1701515451687" duration="10761000" />
+      <workItem from="1701527819823" duration="4566000" />
+      <workItem from="1701653601532" duration="9147000" />
+      <workItem from="1701664082478" duration="9890000" />
+      <workItem from="1701676041370" duration="387000" />
+      <workItem from="1701677748413" duration="10088000" />
+      <workItem from="1701743135783" duration="2160000" />
+      <workItem from="1701746756020" duration="2422000" />
+      <workItem from="1701760160131" duration="421000" />
+      <workItem from="1701763883033" duration="996000" />
+      <workItem from="1701828820813" duration="446000" />
+      <workItem from="1701829269891" duration="24000" />
+      <workItem from="1701829296074" duration="4711000" />
+      <workItem from="1701960334870" duration="1072000" />
+      <workItem from="1702020342032" duration="6246000" />
+      <workItem from="1702032982279" duration="401000" />
+      <workItem from="1702033707873" duration="10391000" />
+      <workItem from="1702092874848" duration="3477000" />
+      <workItem from="1702112518829" duration="876000" />
+      <workItem from="1702115906774" duration="1898000" />
+      <workItem from="1702119412381" duration="15671000" />
+      <workItem from="1702172454923" duration="2775000" />
+    </task>
+    <task id="LOCAL-00001" summary="修复已知错误">
+      <created>1621346457714</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1621346457714</updated>
+    </task>
+    <task id="LOCAL-00002" summary="更新READM.md">
+      <created>1622253751791</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1622253751791</updated>
+    </task>
+    <task id="LOCAL-00003" summary="补充文件">
+      <created>1627367754790</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1627367754790</updated>
+    </task>
+    <task id="LOCAL-00004" summary="补充文件">
+      <created>1627367865525</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1627367865525</updated>
+    </task>
+    <task id="LOCAL-00005" summary="补充文件">
+      <created>1627367907925</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1627367907925</updated>
+    </task>
+    <task id="LOCAL-00006" summary="补充文件">
+      <created>1627566415433</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1627566415433</updated>
+    </task>
+    <task id="LOCAL-00007" summary="图片缺失">
+      <created>1628227796364</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1628227796364</updated>
+    </task>
+    <task id="LOCAL-00008" summary="更新资料">
+      <created>1629782064916</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1629782064916</updated>
+    </task>
+    <task id="LOCAL-00009" summary="更新资料">
+      <created>1629782149269</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1629782149269</updated>
+    </task>
+    <task id="LOCAL-00010" summary="修复启动异常错误。">
+      <created>1701444902076</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1701444902076</updated>
+    </task>
+    <task id="LOCAL-00011" summary="添加配置文件">
+      <created>1701444983849</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1701444983849</updated>
+    </task>
+    <task id="LOCAL-00012" summary="添加配置文件">
+      <created>1701445130919</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1701445130919</updated>
+    </task>
+    <task id="LOCAL-00013" summary="删除大文件">
+      <created>1701829222835</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1701829222835</updated>
+    </task>
+    <task id="LOCAL-00014" summary="修改组件">
+      <created>1702174387450</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1702174387450</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
+    <MESSAGE value="修复已知错误" />
+    <MESSAGE value="更新READM.md" />
+    <MESSAGE value="补充文件" />
+    <MESSAGE value="图片缺失" />
+    <MESSAGE value="更新资料" />
+    <MESSAGE value="修复启动异常错误。" />
+    <MESSAGE value="添加配置文件" />
+    <MESSAGE value="删除大文件" />
+    <MESSAGE value="修改组件" />
+    <option name="LAST_COMMIT_MESSAGE" value="修改组件" />
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
+  </component>
+</project>

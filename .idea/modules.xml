@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/pd-aggregation/pd-aggregation.iml" filepath="$PROJECT_DIR$/pd-aggregation/pd-aggregation.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pd-authority/pd-apps/pd-auth/pd-auth-entity/pd-auth-entity.iml" filepath="$PROJECT_DIR$/pd-authority/pd-apps/pd-auth/pd-auth-entity/pd-auth-entity.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pd-authority/pd-apps/pd-auth/pd-auth-server/pd-auth-server.iml" filepath="$PROJECT_DIR$/pd-authority/pd-apps/pd-auth/pd-auth-server/pd-auth-server.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pd-base/pd-base.iml" filepath="$PROJECT_DIR$/pd-base/pd-base.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pd-common/pd-common.iml" filepath="$PROJECT_DIR$/pd-common/pd-common.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pd-dispatch/pd-dispatch.iml" filepath="$PROJECT_DIR$/pd-dispatch/pd-dispatch.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pd-druid/pd-druid.iml" filepath="$PROJECT_DIR$/pd-druid/pd-druid.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pd-authority/pd-apps/pd-gateway/pd-gateway.iml" filepath="$PROJECT_DIR$/pd-authority/pd-apps/pd-gateway/pd-gateway.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pd-netty/pd-netty.iml" filepath="$PROJECT_DIR$/pd-netty/pd-netty.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pd-oms/pd-oms.iml" filepath="$PROJECT_DIR$/pd-oms/pd-oms.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pd-service-api/pd-service-aggregation-api/pd-service-aggregation-api.iml" filepath="$PROJECT_DIR$/pd-service-api/pd-service-aggregation-api/pd-service-aggregation-api.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pd-service-api/pd-service-aggregation-domain/pd-service-aggregation-domain.iml" filepath="$PROJECT_DIR$/pd-service-api/pd-service-aggregation-domain/pd-service-aggregation-domain.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pd-service-api/pd-service-base-api/pd-service-base-api.iml" filepath="$PROJECT_DIR$/pd-service-api/pd-service-base-api/pd-service-base-api.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pd-service-api/pd-service-base-domain/pd-service-base-domain.iml" filepath="$PROJECT_DIR$/pd-service-api/pd-service-base-domain/pd-service-base-domain.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pd-service-api/pd-service-oms-api/pd-service-oms-api.iml" filepath="$PROJECT_DIR$/pd-service-api/pd-service-oms-api/pd-service-oms-api.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pd-service-api/pd-service-oms-domain/pd-service-oms-domain.iml" filepath="$PROJECT_DIR$/pd-service-api/pd-service-oms-domain/pd-service-oms-domain.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pd-service-api/pd-service-user-api/pd-service-user-api.iml" filepath="$PROJECT_DIR$/pd-service-api/pd-service-user-api/pd-service-user-api.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pd-service-api/pd-service-user-domain/pd-service-user-domain.iml" filepath="$PROJECT_DIR$/pd-service-api/pd-service-user-domain/pd-service-user-domain.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pd-service-api/pd-service-work-api/pd-service-work-api.iml" filepath="$PROJECT_DIR$/pd-service-api/pd-service-work-api/pd-service-work-api.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pd-service-api/pd-service-work-domain/pd-service-work-domain.iml" filepath="$PROJECT_DIR$/pd-service-api/pd-service-work-domain/pd-service-work-domain.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-common/pd-tools-common.iml" filepath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-common/pd-tools-common.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-core/pd-tools-core.iml" filepath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-core/pd-tools-core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-databases/pd-tools-databases.iml" filepath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-databases/pd-tools-databases.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-dozer/pd-tools-dozer.iml" filepath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-dozer/pd-tools-dozer.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-j2cache/pd-tools-j2cache.iml" filepath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-j2cache/pd-tools-j2cache.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-jwt/pd-tools-jwt.iml" filepath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-jwt/pd-tools-jwt.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-log/pd-tools-log.iml" filepath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-log/pd-tools-log.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-swagger2/pd-tools-swagger2.iml" filepath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-swagger2/pd-tools-swagger2.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-user/pd-tools-user.iml" filepath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-user/pd-tools-user.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-validator/pd-tools-validator.iml" filepath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-validator/pd-tools-validator.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-xss/pd-tools-xss.iml" filepath="$PROJECT_DIR$/pd-authority/pd-tools/pd-tools-xss/pd-tools-xss.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pd-user/pd-user.iml" filepath="$PROJECT_DIR$/pd-user/pd-user.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pd-web/pd-web-courier/pd-web-courier.iml" filepath="$PROJECT_DIR$/pd-web/pd-web-courier/pd-web-courier.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pd-web/pd-web-customer/pd-web-customer.iml" filepath="$PROJECT_DIR$/pd-web/pd-web-customer/pd-web-customer.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pd-web/pd-web-driver/pd-web-driver.iml" filepath="$PROJECT_DIR$/pd-web/pd-web-driver/pd-web-driver.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pd-web/pd-web-manager/pd-web-manager.iml" filepath="$PROJECT_DIR$/pd-web/pd-web-manager/pd-web-manager.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pd-work/pd-work.iml" filepath="$PROJECT_DIR$/pd-work/pd-work.iml" />
+    </modules>
+  </component>
+</project>

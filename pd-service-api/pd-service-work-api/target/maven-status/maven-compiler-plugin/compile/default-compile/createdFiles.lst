@@ -1,0 +1,4 @@
+com\itheima\pinda\feign\DriverJobFeign.class
+com\itheima\pinda\feign\TransportTaskFeign.class
+com\itheima\pinda\feign\TransportOrderFeign.class
+com\itheima\pinda\feign\PickupDispatchTaskFeign.class
