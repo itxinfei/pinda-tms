@@ -54,6 +54,6 @@ public interface MenuService extends IService<Menu> {
      * @param userId
      * @return
      */
-    List<Menu> findVisibleMenu(String group, Long userId);
+    List<Menu> findVisibleMenu(String group, String userId);
 
 }

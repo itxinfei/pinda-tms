@@ -26,7 +26,6 @@ import static com.baomidou.mybatisplus.annotation.SqlCondition.LIKE;
  * 实体类
  * 菜单
  * </p>
- *
  */
 @Data
 @NoArgsConstructor
@@ -120,9 +119,7 @@ public class Menu extends Entity<Long> {
 
 
     @Builder
-    public Menu(Long id, Long createUser, LocalDateTime createTime, Long updateUser, LocalDateTime updateTime,
-                String name, String describe, Boolean isPublic, String path, String component,
-                Boolean isEnable, Integer sortValue, String icon, String group, Long parentId) {
+    public Menu(Long id, Long createUser, LocalDateTime createTime, Long updateUser, LocalDateTime updateTime, String name, String describe, Boolean isPublic, String path, String component, Boolean isEnable, Integer sortValue, String icon, String group, Long parentId) {
         this.id = id;
         this.createUser = createUser;
         this.createTime = createTime;

@@ -30,7 +30,6 @@ import static com.itheima.pinda.utils.StrPool.DEF_PARENT_ID;
  * 业务实现类
  * 菜单
  * </p>
- *
  */
 @Slf4j
 @Service
@@ -54,7 +53,7 @@ public class MenuServiceImpl extends ServiceImpl<MenuMapper, Menu> implements Me
      * @return
      */
     @Override
-    public List<Menu> findVisibleMenu(String group, Long userId) {
+    public List<Menu> findVisibleMenu(String group, String userId) {
         String key = CacheKey.buildKey(userId);
         CacheObject cacheObject = cache.get(CacheKey.USER_MENU, key, (k) -> {
             List<Menu> visibleMenu = baseMapper.findVisibleMenu(group, userId);
@@ -69,8 +68,7 @@ public class MenuServiceImpl extends ServiceImpl<MenuMapper, Menu> implements Me
 
         //使用 this::getByIdWithCache 会导致无法读取缓存
 //        List<Menu> menuList = list.stream().map(this::getByIdWithCache).collect(Collectors.toList());
-        List<Menu> menuList = list.stream().map(((MenuService) AopContext.currentProxy())::getByIdWithCache)
-                .filter(Objects::nonNull).collect(Collectors.toList());
+        List<Menu> menuList = list.stream().map(((MenuService) AopContext.currentProxy())::getByIdWithCache).filter(Objects::nonNull).collect(Collectors.toList());
 
         if (StrUtil.isEmpty(group)) {
             return menuList;
@@ -78,6 +76,7 @@ public class MenuServiceImpl extends ServiceImpl<MenuMapper, Menu> implements Me
 
         return menuList.stream().filter((menu) -> group.equals(menu.getGroup())).collect(Collectors.toList());
     }
+
 
     @Override
     @Cacheable(value = CacheKey.MENU, key = "#id")

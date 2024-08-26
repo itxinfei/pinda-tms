@@ -27,11 +27,11 @@ import java.net.UnknownHostException;
  *
  * @author User
  */
+@Slf4j
 @SpringBootApplication
 @EnableDiscoveryClient
 @EnableAuthServer
 @EnableFeignClients(value = {"com.itheima.pinda",})
-@Slf4j
 @EnableAspectJAutoProxy(proxyTargetClass = true, exposeProxy = true)
 @EnableLoginArgResolver
 @EnableFormValidator

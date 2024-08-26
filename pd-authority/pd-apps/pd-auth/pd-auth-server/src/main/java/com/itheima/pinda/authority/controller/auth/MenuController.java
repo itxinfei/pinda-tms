@@ -1,4 +1,5 @@
 package com.itheima.pinda.authority.controller.auth;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -58,14 +59,12 @@ public class MenuController extends BaseController {
     private MenuService menuService;
     @Autowired
     private DozerUtils dozer;
+
     /**
      * 分页查询菜单
      */
     @ApiOperation(value = "分页查询菜单", notes = "分页查询菜单")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "current", value = "当前页", dataType = "long", paramType = "query", defaultValue = "1"),
-            @ApiImplicitParam(name = "size", value = "每页显示几条", dataType = "long", paramType = "query", defaultValue = "10"),
-    })
+    @ApiImplicitParams({@ApiImplicitParam(name = "current", value = "当前页", dataType = "long", paramType = "query", defaultValue = "1"), @ApiImplicitParam(name = "size", value = "每页显示几条", dataType = "long", paramType = "query", defaultValue = "10"),})
     @GetMapping("/page")
     @SysLog("分页查询菜单")
     public R<IPage<Menu>> page(Menu data) {
@@ -123,21 +122,18 @@ public class MenuController extends BaseController {
 
     /**
      * 查询用户可用的所有资源
+     *
      * @param group  菜单分组
      * @param userId 指定用户id
      */
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "group", value = "菜单组", dataType = "string", paramType = "query"),
-            @ApiImplicitParam(name = "userId", value = "用户id", dataType = "long", paramType = "query"),
-    })
+    @ApiImplicitParams({@ApiImplicitParam(name = "group", value = "菜单组", dataType = "string", paramType = "query"), @ApiImplicitParam(name = "userId", value = "用户id", dataType = "long", paramType = "query"),})
     @ApiOperation(value = "查询用户可用的所有菜单", notes = "查询用户可用的所有菜单")
     @GetMapping
     @Deprecated
-    public R<List<MenuTreeDTO>> myMenus(@RequestParam(value = "group", required = false) String group,
-                                        @RequestParam(value = "userId", required = false) Long userId) {
-        if (userId == null || userId <= 0) {
+    public R<List<MenuTreeDTO>> myMenus(@RequestParam(value = "group", required = false) String group, @RequestParam(value = "userId", required = false) String userId) {
+      /*  if (userId == null || userId <= 0) {
             userId = getUserId();
-        }
+        }*/
         List<Menu> list = menuService.findVisibleMenu(group, userId);
         List<MenuTreeDTO> treeList = dozer.mapList(list, MenuTreeDTO.class);
 
@@ -145,6 +141,9 @@ public class MenuController extends BaseController {
         return success(tree);
     }
 
+    /**
+     * @return
+     */
     private List<VueRouter> buildSuperAdminRouter() {
         List<VueRouter> tree = new ArrayList<>();
         List<VueRouter> children = new ArrayList<>();
@@ -154,9 +153,7 @@ public class MenuController extends BaseController {
         defaults.setComponent("Layout");
         defaults.setHidden(false);
         defaults.setAlwaysShow(true);
-        defaults.setMeta(RouterMeta.builder()
-                .title("系统设置").icon("el-icon-coin").breadcrumb(true)
-                .build());
+        defaults.setMeta(RouterMeta.builder().title("系统设置").icon("el-icon-coin").breadcrumb(true).build());
         defaults.setId(-1L);
         defaults.setChildren(children);
 
@@ -169,31 +166,39 @@ public class MenuController extends BaseController {
 
     /**
      * 查询用户可用的所有菜单路由树
+     *
      * @param group
      * @param userId
      */
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "group", value = "菜单组", dataType = "string", paramType = "query"),
-            @ApiImplicitParam(name = "userId", value = "用户id", dataType = "long", paramType = "query"),
-    })
+    @ApiImplicitParams({@ApiImplicitParam(name = "group", value = "菜单组", dataType = "string", paramType = "query"), @ApiImplicitParam(name = "userId", value = "用户id", dataType = "long", paramType = "query"),})
     @ApiOperation(value = "查询用户可用的所有菜单路由树", notes = "查询用户可用的所有菜单路由树")
     @GetMapping("/router")
-    public R<List<VueRouter>> myRouter(@RequestParam(value = "group", required = false) String group,
-                                       @RequestParam(value = "userId", required = false) Long userId, HttpServletRequest request) {
-        if (userId == null || userId <= 0) {
+    public R<List<VueRouter>> myRouter(@RequestParam(value = "group", required = false) String group, @RequestParam(value = "userId", required = false) String userId, HttpServletRequest request) {
+        System.out.println("查询用户可用的所有菜单路由树");
+      /*  if (userId == null || userId <= 0) {
             userId = getUserId();
         }
-        if(userId == 0){
+        if (userId == 0) {
             String userToken = request.getHeader("token");
             JwtUserInfo userInfo = jwtTokenServerUtils.getUserInfo(userToken);
             userId = userInfo.getUserId();
-        }
-        log.info("userId: {}", userId);
+        }*/
         List<Menu> list = menuService.findVisibleMenu(group, userId);
+        log.info("查询用户可用的所有菜单路由树:{}", list);
         List<VueRouter> treeList = dozer.mapList(list, VueRouter.class);
-        return success(TreeUtil.build(treeList));
+        log.info("查询用户可用的所有菜单路由树:{}", treeList);
+
+        List<VueRouter> build = TreeUtil.build(treeList);
+        log.info("查询用户可用的所有菜单路由树:{}", build);
+        if (build == null) {
+            return success(buildSuperAdminRouter());
+        }
+        return success(build);
     }
 
+    /**
+     * @return
+     */
     @ApiOperation(value = "查询超管菜单路由树", notes = "查询超管菜单路由树")
     @GetMapping("/admin/router")
     public R<List<VueRouter>> adminRouter() {

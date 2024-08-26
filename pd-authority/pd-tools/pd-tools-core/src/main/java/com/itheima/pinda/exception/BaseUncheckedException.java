@@ -2,7 +2,6 @@ package com.itheima.pinda.exception;
 
 /**
  * 非运行期异常基类，所有自定义非运行时异常继承该类
- *
  */
 public class BaseUncheckedException extends RuntimeException implements BaseException {
 
@@ -29,12 +28,13 @@ public class BaseUncheckedException extends RuntimeException implements BaseExce
         this.code = code;
         this.message = String.format(format, args);
     }
-	
+
 
     @Override
     public String getMessage() {
         return message;
     }
+
     @Override
     public int getCode() {
         return code;

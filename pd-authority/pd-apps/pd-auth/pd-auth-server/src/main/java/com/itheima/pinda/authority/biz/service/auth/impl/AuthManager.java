@@ -102,7 +102,12 @@ public class AuthManager {
         return R.success(loginDTO);
     }
 
-    //生成jwt token
+    /**
+     * 生成jwt token
+     *
+     * @param user
+     * @return
+     */
     private Token generateUserToken(User user) {
         JwtUserInfo userInfo = new JwtUserInfo(user.getId(), user.getAccount(), user.getName(), user.getOrgId(), user.getStationId());
 

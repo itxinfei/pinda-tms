@@ -6,7 +6,6 @@ import com.itheima.pinda.exception.code.BaseExceptionCode;
 /**
  * 业务异常
  * 用于在处理业务逻辑时，进行抛出的异常。
- *
  */
 public class BizException extends BaseUncheckedException {
 

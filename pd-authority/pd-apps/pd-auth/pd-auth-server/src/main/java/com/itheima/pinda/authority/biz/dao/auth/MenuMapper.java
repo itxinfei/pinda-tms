@@ -26,5 +26,5 @@ public interface MenuMapper extends BaseMapper<Menu> {
      * @param userId
      * @return
      */
-    List<Menu> findVisibleMenu(@Param("group") String group, @Param("userId") Long userId);
+    List<Menu> findVisibleMenu(@Param("group") String group, @Param("userId") String userId);
 }

@@ -8,7 +8,6 @@ import lombok.ToString;
 
 /**
  * 用户查询对象
- *
  */
 @Data
 @AllArgsConstructor

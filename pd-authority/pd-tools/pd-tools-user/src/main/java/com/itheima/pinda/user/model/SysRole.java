@@ -8,7 +8,6 @@ import lombok.ToString;
 
 /**
  * 角色
- *
  */
 @Data
 @NoArgsConstructor

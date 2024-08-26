@@ -6,7 +6,7 @@
         <artifactId>pd-tools</artifactId>
         <groupId>com.itheima</groupId>
         <version>1.0.0</version>
-        <relativePath>../</relativePath>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -16,6 +16,12 @@
     <description>Jwt token 模块</description>
 
     <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
+
         <dependency>
             <groupId>com.itheima</groupId>
             <artifactId>pd-tools-common</artifactId>

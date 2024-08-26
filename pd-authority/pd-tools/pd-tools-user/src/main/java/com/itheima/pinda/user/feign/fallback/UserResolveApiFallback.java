@@ -11,7 +11,6 @@ import org.springframework.stereotype.Component;
 
 /**
  * 用户API熔断
- *
  */
 @Component
 @Slf4j
