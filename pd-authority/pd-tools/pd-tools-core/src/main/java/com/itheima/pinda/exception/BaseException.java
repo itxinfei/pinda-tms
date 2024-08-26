@@ -2,7 +2,6 @@ package com.itheima.pinda.exception;
 
 /**
  * 异常接口类
- *
  */
 public interface BaseException {
 

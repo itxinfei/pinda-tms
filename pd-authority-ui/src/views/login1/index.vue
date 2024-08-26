@@ -170,7 +170,7 @@
       <!--</el-dropdown-menu>-->
       <!--</el-dropdown>-->
     </el-form>
-    <span class="login-footer">© 2020 - 品达物流集团</span>
+    <span class="login-footer">© 2024 - 品达物流</span>
   </div>
 </template>
 

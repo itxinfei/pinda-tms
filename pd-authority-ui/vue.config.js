@@ -43,7 +43,7 @@ module.exports = {
       warnings: false, errors: true
     }, proxy: {
       '/api': {
-        target: 'http://127.0.0.1:8760', changeOrigin: true
+        target: 'http://127.0.0.1:8760/api', changeOrigin: true
       }
     }
   },

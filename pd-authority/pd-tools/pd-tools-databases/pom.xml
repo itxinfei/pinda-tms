@@ -6,7 +6,7 @@
         <artifactId>pd-tools</artifactId>
         <groupId>com.itheima</groupId>
         <version>1.0.0</version>
-        <relativePath>../</relativePath>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>

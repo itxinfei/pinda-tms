@@ -15,7 +15,6 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
  * 公共配置类, 一些公共工具配置
- *
  */
 public class LoginArgResolverConfig implements WebMvcConfigurer {
     @Lazy
@@ -42,10 +41,7 @@ public class LoginArgResolverConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         if (getHandlerInterceptor() != null) {
             String[] commonPathPatterns = getExcludeCommonPathPatterns();
-            registry.addInterceptor(getHandlerInterceptor())
-                    .addPathPatterns("/**")
-                    .order(10)
-                    .excludePathPatterns(commonPathPatterns);
+            registry.addInterceptor(getHandlerInterceptor()).addPathPatterns("/**").order(10).excludePathPatterns(commonPathPatterns);
             WebMvcConfigurer.super.addInterceptors(registry);
         }
     }
@@ -60,30 +56,13 @@ public class LoginArgResolverConfig implements WebMvcConfigurer {
      * @return
      */
     protected String[] getExcludeCommonPathPatterns() {
-        String[] urls = {
-                "/error",
-                "/login",
-                "/v2/api-docs",
-                "/v2/api-docs-ext",
-                "/swagger-resources/**",
-                "/webjars/**",
+        String[] urls = {"/error", "/login", "/v2/api-docs", "/v2/api-docs-ext", "/swagger-resources/**", "/webjars/**",
 
-                "/",
-                "/csrf",
+                "/", "/csrf",
 
-                "/META-INF/resources/**",
-                "/resources/**",
-                "/static/**",
-                "/public/**",
-                "classpath:/META-INF/resources/**",
-                "classpath:/resources/**",
-                "classpath:/static/**",
-                "classpath:/public/**",
+                "/META-INF/resources/**", "/resources/**", "/static/**", "/public/**", "classpath:/META-INF/resources/**", "classpath:/resources/**", "classpath:/static/**", "classpath:/public/**",
 
-                "/cache/**",
-                "/swagger-ui.html**",
-                "/doc.html**"
-        };
+                "/cache/**", "/swagger-ui.html**", "/doc.html**"};
         return urls;
     }
 }

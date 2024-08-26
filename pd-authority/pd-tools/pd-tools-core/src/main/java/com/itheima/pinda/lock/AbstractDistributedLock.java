@@ -2,7 +2,6 @@ package com.itheima.pinda.lock;
 
 /**
  * 分布式锁抽象类
- *
  */
 public abstract class AbstractDistributedLock implements DistributedLock {
 

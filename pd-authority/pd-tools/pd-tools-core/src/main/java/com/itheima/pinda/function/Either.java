@@ -8,7 +8,6 @@ import org.apache.commons.lang3.tuple.Pair;
 /**
  * 封装异常 stream 流的异常
  * https://mp.weixin.qq.com/s/jBXYj-w0woXtPPUxGhD8Ug
- *
  */
 public class Either<L, R> {
     /**

@@ -28,3 +28,8 @@ spring:
         metadata:
           management.context-path: ${server.servlet.context-path:}${spring.mvc.servlet.path:}${management.endpoints.web.base-path:}
           #http://localhost:8760/api/gate/actuator
+logging:
+  level:
+    root: debug
+
+

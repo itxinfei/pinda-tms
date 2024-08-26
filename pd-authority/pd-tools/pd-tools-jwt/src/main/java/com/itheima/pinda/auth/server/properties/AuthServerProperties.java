@@ -8,12 +8,12 @@ import static com.itheima.pinda.auth.server.properties.AuthServerProperties.PREF
 
 /**
  * 认证服务端 属性
- *
  */
 @Data
 @NoArgsConstructor
 @ConfigurationProperties(prefix = PREFIX)
 public class AuthServerProperties {
+
     public static final String PREFIX = "authentication";
 
     private TokenInfo user;

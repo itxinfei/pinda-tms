@@ -5,7 +5,6 @@ package com.itheima.pinda.lock;
  * 例如：
  * RETRY_TIMES=100，SLEEP_MILLIS=100
  * RETRY_TIMES * SLEEP_MILLIS = 10000 意味着如果一直获取不了锁，最长会等待10秒后抛超时异常
- *
  */
 public interface DistributedLock {
 

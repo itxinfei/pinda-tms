@@ -13,6 +13,7 @@ public interface BaseExceptionCode {
 
     /**
      * 异常消息
+     *
      * @return
      */
     String getMsg();

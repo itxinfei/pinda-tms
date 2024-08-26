@@ -12,7 +12,6 @@ import lombok.AllArgsConstructor;
 
 /**
  * JwtToken 客户端工具
- *
  */
 @AllArgsConstructor
 public class JwtTokenClientUtils {

@@ -9,12 +9,13 @@ import static com.itheima.pinda.auth.client.properties.AuthClientProperties.PREF
 
 /**
  * 客户端认证配置
- *
  */
-@ConfigurationProperties(prefix = PREFIX)
+
 @Data
 @NoArgsConstructor
+@ConfigurationProperties(prefix = PREFIX)
 public class AuthClientProperties {
+
     public static final String PREFIX = "authentication";
 
     private TokenInfo user;
@@ -30,5 +31,4 @@ public class AuthClientProperties {
          */
         private String pubKey;
     }
-
 }

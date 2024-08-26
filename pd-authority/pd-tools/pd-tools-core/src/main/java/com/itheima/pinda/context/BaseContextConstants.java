@@ -2,7 +2,6 @@ package com.itheima.pinda.context;
 
 /**
  * 常量工具类
- *
  */
 public class BaseContextConstants {
     /**

@@ -3,7 +3,6 @@ package com.itheima.pinda.exception;
 /**
  * 非业务异常
  * 用于在处理非业务逻辑时，进行抛出的异常。
- *
  */
 public class CommonException extends BaseCheckedException {
 

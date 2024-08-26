@@ -19,7 +19,6 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 
 /**
  * Token转化SysUser
- *
  */
 @Slf4j
 public class ContextArgumentResolver implements HandlerMethodArgumentResolver {
@@ -49,10 +48,7 @@ public class ContextArgumentResolver implements HandlerMethodArgumentResolver {
      * @return 包装对象
      */
     @Override
-    public Object resolveArgument(MethodParameter methodParameter,
-                                  ModelAndViewContainer modelAndViewContainer,
-                                  NativeWebRequest nativeWebRequest,
-                                  WebDataBinderFactory webDataBinderFactory) {
+    public Object resolveArgument(MethodParameter methodParameter, ModelAndViewContainer modelAndViewContainer, NativeWebRequest nativeWebRequest, WebDataBinderFactory webDataBinderFactory) {
         Long userId = BaseContextHandler.getUserId();
         String account = BaseContextHandler.getAccount();
         String name = BaseContextHandler.getName();
@@ -60,26 +56,14 @@ public class ContextArgumentResolver implements HandlerMethodArgumentResolver {
         Long stationId = BaseContextHandler.getStationId();
 
         //以下代码为 根据 @LoginUser 注解来注入 SysUser 对象
-        SysUser user = SysUser.builder()
-                .id(userId)
-                .account(account)
-                .name(name)
-                .orgId(orgId)
-                .stationId(stationId)
-                .build();
+        SysUser user = SysUser.builder().id(userId).account(account).name(name).orgId(orgId).stationId(stationId).build();
 
         try {
             LoginUser loginUser = methodParameter.getParameterAnnotation(LoginUser.class);
             boolean isFull = loginUser.isFull();
 
             if (isFull || loginUser.isStation() || loginUser.isOrg() || loginUser.isRoles()) {
-                R<SysUser> result = userResolveApi.getById(NumberHelper.longValueOf0(userId),
-                        UserQuery.builder()
-                                .full(isFull)
-                                .org(loginUser.isOrg())
-                                .station(loginUser.isStation())
-                                .roles(loginUser.isRoles())
-                                .build());
+                R<SysUser> result = userResolveApi.getById(NumberHelper.longValueOf0(userId), UserQuery.builder().full(isFull).org(loginUser.isOrg()).station(loginUser.isStation()).roles(loginUser.isRoles()).build());
                 if (result.getIsSuccess() && result.getData() != null) {
                     return result.getData();
                 }

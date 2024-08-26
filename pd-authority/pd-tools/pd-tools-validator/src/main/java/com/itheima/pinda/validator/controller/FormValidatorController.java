@@ -75,7 +75,7 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
  * @Range(min=,max=,message=) 被注释的元素必须在合适的范围内
  * <p>
  */
-@RequestMapping
+//@RequestMapping
 public class FormValidatorController {
 
     private final static String FORM_VALIDATOR_URL = "/form/validator";

@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 /**
  * 用户操作API
- *
  */
 @FeignClient(name = "${pinda.feign.authority-server:pinda-auth-server}", fallbackFactory = UserResolveApiFallback.class)
 public interface UserResolveApi {
