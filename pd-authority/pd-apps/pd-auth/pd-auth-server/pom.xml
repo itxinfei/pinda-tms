@@ -104,10 +104,10 @@
             <artifactId>pd-tools-validator</artifactId>
         </dependency>
 
-        <dependency>
+      <!--  <dependency>
             <groupId>com.itheima</groupId>
             <artifactId>pd-tools-xss</artifactId>
-        </dependency>
+        </dependency>-->
 
         <dependency>
             <groupId>com.alibaba.cloud</groupId>

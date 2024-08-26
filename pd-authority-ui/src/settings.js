@@ -4,7 +4,8 @@ module.exports = {
   druid: {
     authority: {
       /*"development": 'http://127.0.0.1:8764/druid',*/
-      "development": 'http://127.0.0.1:8760/api/web-manager',
+     /* "development": 'http://127.0.0.1:8760/api/web-manager',*/
+      "development": 'http://127.0.0.1:8764/druid',
       "production": 'http://39.100.244.120:8764/druid',
     },
     file: {

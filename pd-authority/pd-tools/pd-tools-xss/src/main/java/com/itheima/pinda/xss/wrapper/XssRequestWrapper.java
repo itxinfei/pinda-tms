@@ -13,7 +13,6 @@ import static com.itheima.pinda.xss.utils.XssUtils.xssClean;
 
 /**
  * 跨站攻击请求包装器
- *
  */
 @Slf4j
 public class XssRequestWrapper extends HttpServletRequestWrapper {

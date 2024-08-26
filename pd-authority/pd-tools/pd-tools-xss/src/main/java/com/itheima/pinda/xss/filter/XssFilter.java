@@ -22,7 +22,6 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * 跨站工具 过滤器
- *
  */
 @Slf4j
 public class XssFilter implements Filter {
@@ -77,8 +76,7 @@ public class XssFilter implements Filter {
     }
 
     @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-            throws IOException, ServletException {
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         log.debug("XSS fiter [XSSFilter] starting");
         // 判断uri是否包含项目名称
         String uriPath = ((HttpServletRequest) request).getRequestURI();

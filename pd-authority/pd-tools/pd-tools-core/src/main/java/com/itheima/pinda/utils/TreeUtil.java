@@ -13,7 +13,6 @@ import org.springframework.util.CollectionUtils;
 
 /**
  * list列表 转换成tree列表
- *
  */
 public class TreeUtil {
 
@@ -38,9 +37,9 @@ public class TreeUtil {
                 if (parent != children) {
                     //parent != children 这个来判断自己的孩子不允许是自己，因为有时候，根节点的parent会被设置成为自己
                     if (id.equals(children.getParentId())) {
-//                        if (parent.getChildren() == null) {
-//                            parent.setChildren(new ArrayList<T>());
-//                        }
+                        if (parent.getChildren() == null) {
+                            parent.setChildren(new ArrayList<T>());
+                        }
                         parent.initChildren();
                         parent.getChildren().add(children);
                     }
@@ -58,7 +57,7 @@ public class TreeUtil {
             allIds.add(baseNode.getId());
         }
 
-//        List<? extends Serializable> allIds = treeNodes.stream().map(node -> node.getId()).collect(Collectors.toList());
+       //List<? extends Serializable> allIds = treeNodes.stream().map(node -> node.getId()).collect(Collectors.toList());
         for (T baseNode : treeNodes) {
             if (!allIds.contains(baseNode.getParentId()) || selfIdEqSelfParent.contains(baseNode.getParentId())) {
                 trees.add(baseNode);

@@ -2,7 +2,6 @@ package com.itheima.pinda.exception;
 
 /**
  * 运行期异常基类
- *
  */
 public abstract class BaseCheckedException extends Exception implements BaseException {
 

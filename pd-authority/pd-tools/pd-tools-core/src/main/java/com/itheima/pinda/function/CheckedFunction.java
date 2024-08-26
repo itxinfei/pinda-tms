@@ -2,7 +2,6 @@ package com.itheima.pinda.function;
 
 /**
  * 处理异常的 函数
- *
  */
 @FunctionalInterface
 public interface CheckedFunction<T, R> {

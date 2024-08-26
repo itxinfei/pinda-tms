@@ -11,6 +11,7 @@
 
     <artifactId>pd-service-api</artifactId>
     <packaging>pom</packaging>
+
     <modules>
         <module>pd-service-base-api</module>
         <module>pd-service-oms-api</module>
@@ -30,9 +31,14 @@
             <artifactId>springfox-swagger2</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.hibernate</groupId>
+            <groupId>org.hibernate.validator</groupId>
             <artifactId>hibernate-validator</artifactId>
             <version>6.0.18.Final</version>
         </dependency>
+       <!-- <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-validator</artifactId>
+            <version>6.0.18.Final</version>
+        </dependency>-->
     </dependencies>
 </project>

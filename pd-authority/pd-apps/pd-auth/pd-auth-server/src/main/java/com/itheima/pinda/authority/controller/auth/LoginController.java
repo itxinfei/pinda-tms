@@ -37,7 +37,6 @@ public class LoginController extends BaseController {
     @Autowired
     private ValidateCodeService validateCodeService;
 
-
     /**
      * 登录认证
      */
@@ -47,7 +46,9 @@ public class LoginController extends BaseController {
         log.info("account={}", login.getAccount());
         if (this.validateCodeService.check(login.getKey(), login.getCode())) {
             return this.authManager.login(login.getAccount(), login.getPassword());
+
         }
+        log.info("登录成功！");
         return this.success(null);
     }
 

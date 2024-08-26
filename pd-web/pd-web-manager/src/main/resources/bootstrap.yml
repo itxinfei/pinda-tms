@@ -13,7 +13,7 @@ spring:
     name: pd-web-manager
   # 环境 dev|test|prod
   profiles:
-    active: prod
+    active: dev
   main:
     allow-bean-definition-overriding: true
 

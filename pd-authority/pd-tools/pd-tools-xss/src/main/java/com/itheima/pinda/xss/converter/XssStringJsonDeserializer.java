@@ -14,7 +14,6 @@ import com.itheima.pinda.xss.utils.XssUtils;
 
 /**
  * 过滤跨站脚本的 反序列化工具
- *
  */
 public class XssStringJsonDeserializer extends JsonDeserializer<String> {
     @Override
