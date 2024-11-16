@@ -1,85 +1,100 @@
-# 品达物流-TMS（项目维护中...）
-![输入图片说明](docs/pinda.jpg)
-### 演示地址：
+# 品达物流-TMS
 
-后台管理：http://pinda.itheima.net/#/login
+![品达物流-TMS](docs/pinda.jpg)
 
-### 一、关联仓库
-- 品达物流-通用权限：https://gitee.com/itxinfei/pinda-authority
-- 品达物流-集信达：https://gitee.com/itxinfei/jixinda.git
-### 二、项目介绍
-本项目名称为品达物流TMS，TMS全称为：Transportation Management System，即运输管理系统，是对运输作业从运力资源准备到最终货物抵达目的地的全流程管理。
-TMS系统适用于运输公司、各企业下面的运输队等，它主要包括订单管理、配载作业、调度分配、行车管理、GPS车辆定位系统、车辆管理、线路管理、车次管理、
-人员管理、数据报表、基本信息维护等模块。该系统对车辆、驾驶员、线路等进行全面详细的统计考核，能大大提高运作效率，降低运输成本，使公司能够在激烈的市场竞争中处于领先地位。
+**欢迎加入我们的项目维护团队！**
 
-本项目从用户层面可以分为四个端：TMS后台系统管理端、客户端App、快递员端App、司机端App。
+### 演示地址
 
-TMS后台系统管理端：公司内部管理员用户使用，可以进行基础数据维护、订单管理、运单管理等
-客户端App：App名称为品达速运，外部客户使用，可以寄件、查询物流信息等
-快递员端App：App名称为品达快递员，公司内部的快递员使用，可以接收取派件任务等
-司机端App：App名称为品达司机宝，公司内部的司机使用，可以接收运输任务、上报位置信息等
+- **后台管理**: [访问链接](http://pinda.itheima.net/#/login)
+- **QQ交流群**: 661543188
 
-### 三、项目架构
-#### 1、系统架构
-![输入图片说明](docs/系统架构.png)
-#### 2、微服务架构
-![输入图片说明](docs/微服务架构.png)
-#### 3、软件架构体系
-![输入图片说明](docs/软件架构体系.png)
-### 四、技术架构
+### 关联仓库
 
-![输入图片说明](docs/技术架构1.png)
+- **品达物流-通用权限**: [Gitee 仓库](https://gitee.com/itxinfei/pinda-authority)
+- **品达物流-集信达**: [Gitee 仓库](https://gitee.com/itxinfei/jixinda.git)
 
-![输入图片说明](docs/技术架构.png)
+### 项目简介
 
-### 五、整体业务流程
+**品达物流TMS** (Transportation Management System) 是一个运输管理系统，覆盖了从运力准备到货物交付的整个流程。系统主要功能模块包括但不限于：
 
-![输入图片说明](docs/整体业务流程.png)
+- 订单管理
+- 配载作业
+- 调度分配
+- 行车管理
+- GPS车辆定位
+- 车辆管理
+- 线路管理
+- 车次管理
+- 人员管理
+- 数据报表
+- 基础信息维护
 
-### 六、项目结构
+系统旨在提高运营效率，降低成本，并通过全面详尽的统计与评估提升市场竞争力。
 
-pd_aggregation:存放聚合之后的数据，便于查询
+#### 用户端口
 
-pd_base:存放TMS的基础数据，例如：车队、车辆、线路等
+- **TMS后台系统管理端**: 供公司内部管理员进行基础数据维护及运营管理。
+- **客户端App (品达速运)**: 客户用于寄件及追踪物流状态。
+- **快递员端App (品达快递员)**: 快递员接收并处理收派件任务。
+- **司机端App (品达司机宝)**: 司机接收运输指令并更新位置信息。
 
-pd_dispatch:存放定时任务相关数据
+### 项目架构
 
-pd_oms:存放订单相关数据
+#### 系统架构
+![系统架构](docs/系统架构.png)
 
-pd_users:存放C端用户相关数据
+#### 微服务架构
+![微服务架构](docs/微服务架构.png)
 
-pd_work:存放作业相关数据，例如快递员的取件作业、司机的运输作业等
+#### 软件架构体系
+![软件架构体系](docs/软件架构体系.png)
+
+### 技术架构
+
+![技术架构1](docs/技术架构1.png)
+![技术架构](docs/技术架构.png)
+
+### 整体业务流程
+
+![整体业务流程](docs/整体业务流程.png)
+
+### 项目结构
+
+- `pd_aggregation`: 存储聚合数据，便于查询。
+- `pd_base`: TMS基础数据存储，如车队、车辆等。
+- `pd_dispatch`: 定时任务数据。
+- `pd_oms`: 订单相关数据。
+- `pd_users`: C端用户数据。
+- `pd_work`: 作业相关数据，比如快递员与司机的任务。
 
 ### 数据库设计
 
-| 数据库名       | 说明                                                         |
-| -------------- | ------------------------------------------------------------ |
-| pd_base        | 基础数据数据库，存储TMS项目中的基础数据，例如：货物类型、车辆类型、车队、线路、车次等基础数据 |
-| pd_users       | 用户数据库，存储TMS项目中的C端用户相关数据，例如：用户信息、地址簿等数据 |
-| pd_oms         | 订单数据库，存储TMS项目中的订单相关数据，例如：货物信息、订单信息、订单位置信息等数据 |
-| pd_work        | 物流作业数据库，存储TMS项目中的运输作业相关数据，例如：快递员取派件任务、运输任务、司机作业单、运单等数据 |
-| pd_aggregation | 数据聚合数据库，将其他业务数据库中的数据统一聚合到当前数据库，提供查询功能 |
-| pd_dispatch    | 智能调度数据库，存储TMS项目中智能调度服务产生的相关数据，例如：订单分类、缓存路线等数据 |
-| pd_auth        | 通用权限数据库，存储权限相关数据，例如：资源、菜单、权限、岗位、组织、角色等数据，此数据库存储的是企业内部员工用户相关数据 |
-| customer_auth  | 通用C端用户数据库，存储C端登录用户相关数据，例如：用户认证信息、登录记录等数据 |
+| 数据库名      | 描述                                                         |
+| ------------- | ------------------------------------------------------------ |
+| `pd_base`     | 存储TMS的基础数据。                                          |
+| `pd_users`    | 存储C端用户的个人信息。                                      |
+| `pd_oms`      | 订单信息存储。                                               |
+| `pd_work`     | 物流作业数据。                                               |
+| `pd_aggregation` | 聚合查询数据。                                              |
+| `pd_dispatch` | 智能调度相关数据。                                           |
+| `pd_auth`     | 企业内员工权限数据。                                         |
+| `customer_auth` | C端用户认证信息。                                           |
 
-### 缺少jar问题
+### Maven依赖配置
 
- maven工程中使用到了通用权限系统中的两个jar，对应的maven坐标如下： 
+项目中用到了两个自定义Maven依赖，其坐标如下：
 
-```
+```xml
 <dependency>
-    <groupId>com.itheima</groupId>
-    <artifactId>pd-auth-entity</artifactId>
-    <version>1.0.0</version>
+  <groupId>com.itheima</groupId>
+  <artifactId>pd-auth-entity</artifactId>
+  <version>1.0.0</version>
 </dependency>
 <dependency>
-    <groupId>com.itheima</groupId>
-    <artifactId>pd-auth-api</artifactId>
-    <version>1.0.0</version>
+  <groupId>com.itheima</groupId>
+  <artifactId>pd-auth-api</artifactId>
+  <version>1.0.0</version>
 </dependency>
-```
 
- 这两个jar在maven中央仓库是没有的，我们自己搭建了maven私服来管理这两个jar，这就需要在本地maven的settings.xml中进行私服的配置： 
-
- 详细配置参照settings.xml
+这些依赖不在Maven中央仓库中，需要配置本地Maven私服来获取它们。请参考settings.xml文档进行配置。
