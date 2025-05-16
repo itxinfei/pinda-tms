@@ -1,7 +1,5 @@
 <div align="center">
 
-![品达物流-TMS](docs/pinda.jpg)
-
 # 🚚 品达物流-TMS  
 **运输全流程管理解决方案 | 适用于运输公司与企业运输队**  
 
