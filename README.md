@@ -1,4 +1,3 @@
-<div align="center">
 
 # 🚚 品达物流-TMS  
 **运输全流程管理解决方案 | 适用于运输公司与企业运输队**  
@@ -12,8 +11,6 @@
   <img alt="Maven" src="https://img.shields.io/badge/maven-3.3%2B-yellowgreen">
   <img alt="License" src="https://img.shields.io/badge/license-Apache-green">
 </p>
-
-</div>
 
 ---
 
