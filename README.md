@@ -1,16 +1,21 @@
-![品达物流-TMS](docs/pinda.jpg)
+<div align="center">
 
----
+![品达物流-TMS](docs/pinda.jpg)
 
 # 🚚 品达物流-TMS  
 **运输全流程管理解决方案 | 适用于运输公司与企业运输队**  
+
 🚀 项目地址：[https://gitee.com/itxinfei/pinda-tms](https://gitee.com/itxinfei/pinda-tms)  
 👥 QQ交流群：[661543188](https://qm.qq.com/cgi-bin/qm/qr?k=9yLlyD1dRBL97xmBKw43zRt0-6xg8ohb&jump_from=webapi)  
 📧 邮箱支持：[747011882@qq.com](http://mail.qq.com/cgi-bin/qm_share?t=qm_mailme&email=f0hLSE9OTkdHTT8ODlEcEBI)  
 
-![JDK 1.8+](https://img.shields.io/badge/JDK-1.8%2B-brightgreen)  
-![Maven 3.3+](https://img.shields.io/badge/maven-3.3%2B-yellowgreen)  
-![License Apache](https://img.shields.io/badge/license-Apache-green)  
+<p align="center">
+  <img alt="JDK" src="https://img.shields.io/badge/JDK-1.8%2B-brightgreen">
+  <img alt="Maven" src="https://img.shields.io/badge/maven-3.3%2B-yellowgreen">
+  <img alt="License" src="https://img.shields.io/badge/license-Apache-green">
+</p>
+
+</div>
 
 ---
 
