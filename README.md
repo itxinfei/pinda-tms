@@ -3,10 +3,34 @@
 # 🚚 品达物流-TMS  
 **运输全流程管理解决方案 | 适用于运输公司与企业运输队**  
 
-  <img alt="JDK" src="https://img.shields.io/badge/JDK-1.8%2B-brightgreen">
-  <img alt="Maven" src="https://img.shields.io/badge/maven-3.3%2B-yellowgreen">
-  <img alt="License" src="https://img.shields.io/badge/license-Apache-green">
-<!-- 前端 --> <img alt="前端" src="https://img.shields.io/badge/前端-Vue3%20+%20Weex-blueviolet"> <img alt="前端框架" src="https://img.shields.io/badge/前端框架-ECharts%20+%20Vant-orange"> <!-- 后端 --> <img alt="后端框架" src="https://img.shields.io/badge/后端-SpringCloud%20+%20MyBatis-green"> <img alt="网关" src="https://img.shields.io/badge/网关-SpringCloudGateway-brightgreen"> <!-- 大数据 --> <img alt="大数据" src="https://img.shields.io/badge/大数据-Spark%20+%20Hive%20+%20HBase-red"> <!-- 数据库 --> <img alt="数据库" src="https://img.shields.io/badge/数据库-MySQL%20+%20MongoDB%20+%20Redis-yellowgreen"> <!-- 中间件 --> <img alt="消息队列" src="https://img.shields.io/badge/消息队列-Kafka%20+%20RocketMQ-blue"> <img alt="配置中心" src="https://img.shields.io/badge/配置中心-Nacos%20+%20Sentinel-orange"> <!-- 监控 --> <img alt="监控" src="https://img.shields.io/badge/监控-Prometheus%20+%20SkyWalking-purple"> 
+![JDK](https://img.shields.io/badge/JDK-1.8%2B-brightgreen)
+![Maven](https://img.shields.io/badge/maven-3.3%2B-yellowgreen)
+![License](https://img.shields.io/badge/license-Apache-green)
+![前端](https://img.shields.io/badge/前端-Vue3%20+%20Weex-blueviolet)
+![前端框架](https://img.shields.io/badge/前端框架-ECharts%20+%20Vant-orange)
+![后端框架](https://img.shields.io/badge/后端-SpringCloud%20+%20MyBatis-green)
+![网关](https://img.shields.io/badge/网关-SpringCloudGateway-brightgreen)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-2.2.5.RELEASE-brightgreen)
+![Spring Cloud](https://img.shields.io/badge/Spring%20Cloud-Hoxton.SR3-blue)
+![Spring Cloud Alibaba](https://img.shields.io/badge/Spring%20Cloud%20Alibaba-2.2.1.RELEASE-orange)
+![MyBatis Plus](https://img.shields.io/badge/MyBatis%20Plus-3.3.0-blueviolet)
+![Swagger UI](https://img.shields.io/badge/Swagger-2.9.2-yellowgreen)
+![Lombok](https://img.shields.io/badge/Lombok-1.18.4-yellow)
+![Shiro](https://img.shields.io/badge/Shiro-1.4.0-red)
+![Druid](https://img.shields.io/badge/Druid-1.1.22-lightgrey)
+![Drools](https://img.shields.io/badge/Drools-6.5.0.Final-purple)
+![Seata](https://img.shields.io/badge/Seata-1.2.0-pink)
+![大数据](https://img.shields.io/badge/大数据-Spark%20+%20Hive%20+%20HBase-red)
+![数据库](https://img.shields.io/badge/数据库-MySQL%20+%20MongoDB%20+%20Redis-yellowgreen)
+![MySQL](https://img.shields.io/badge/MySQL-5.1.47-orange)
+![MongoDB](https://img.shields.io/badge/MongoDB-3.9.1-green)
+![Redis](https://img.shields.io/badge/Redis-通用版本-red)
+![消息队列](https://img.shields.io/badge/消息队列-Kafka%20+%20RocketMQ-blue)
+![配置中心](https://img.shields.io/badge/配置中心-Nacos%20+%20Sentinel-orange)
+![HTTPClient](https://img.shields.io/badge/HttpClient-4.5.11-brown)
+![监控](https://img.shields.io/badge/监控-Prometheus%20+%20SkyWalking-purple)
+![Commons Lang](https://img.shields.io/badge/Commons%20Lang-2.6-teal)
+![Commons IO](https://img.shields.io/badge/Commons%20IO-2.5-darkgreen)
 
 </div>
 
