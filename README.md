@@ -3,7 +3,7 @@
 **运输全流程管理解决方案 | 适用于运输公司与企业运输队**  
 
 🚀 项目地址：[https://gitee.com/itxinfei/pinda-tms](https://gitee.com/itxinfei/pinda-tms)  
-👥 QQ交流群：[661543188](https://qm.qq.com/cgi-bin/qm/qr?k=9yLlyD1dRBL97xmBKw43zRt0-6xg8ohb&jump_from=webapi)  
+👥 QQ交流群：[661543188](https://qm.qq.com/cgi-bin/qm/qr?k=gNgch-wCkfUu-QbI7DZSudrax2BN7vY0&jump_from=webapi&authKey=QHSRnxQvu+h5S3AXGn/DSHrVPiFQAYEk6bSlCE1lS276SFjQAUagV4FG7bHf0OSM)  
 📧 邮箱支持：[747011882@qq.com](http://mail.qq.com/cgi-bin/qm_share?t=qm_mailme&email=f0hLSE9OTkdHTT8ODlEcEBI)  
 
 <p align="center">
@@ -166,7 +166,7 @@
 ---
 
 ## 📱 关注微信公众号  
-![微信公众号二维码](我的微信公众号.jpg)  
+![微信公众号二维码](docs/心飞为你飞.jpg)  
 **获取最新更新动态与技术支持文档**
 
 ---
