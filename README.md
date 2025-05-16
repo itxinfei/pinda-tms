@@ -6,11 +6,15 @@
 👥 QQ交流群：[661543188](https://qm.qq.com/cgi-bin/qm/qr?k=gNgch-wCkfUu-QbI7DZSudrax2BN7vY0&jump_from=webapi&authKey=QHSRnxQvu+h5S3AXGn/DSHrVPiFQAYEk6bSlCE1lS276SFjQAUagV4FG7bHf0OSM)  
 📧 邮箱支持：[747011882@qq.com](http://mail.qq.com/cgi-bin/qm_share?t=qm_mailme&email=f0hLSE9OTkdHTT8ODlEcEBI)  
 
-<p align="center">
+
   <img alt="JDK" src="https://img.shields.io/badge/JDK-1.8%2B-brightgreen">
   <img alt="Maven" src="https://img.shields.io/badge/maven-3.3%2B-yellowgreen">
   <img alt="License" src="https://img.shields.io/badge/license-Apache-green">
-</p>
+<!-- 前端 --> <img alt="前端" src="https://img.shields.io/badge/前端-Vue3%20+%20Weex-blueviolet"> <img alt="前端框架" src="https://img.shields.io/badge/前端框架-ECharts%20+%20Vant-orange"> <!-- 后端 --> <img alt="后端框架" src="https://img.shields.io/badge/后端-SpringCloud%20+%20MyBatis-green"> <img alt="网关" src="https://img.shields.io/badge/网关-SpringCloudGateway-brightgreen"> <!-- 大数据 --> <img alt="大数据" src="https://img.shields.io/badge/大数据-Spark%20+%20Hive%20+%20HBase-red"> <!-- 数据库 --> <img alt="数据库" src="https://img.shields.io/badge/数据库-MySQL%20+%20MongoDB%20+%20Redis-yellowgreen"> <!-- 中间件 --> <img alt="消息队列" src="https://img.shields.io/badge/消息队列-Kafka%20+%20RocketMQ-blue"> <img alt="配置中心" src="https://img.shields.io/badge/配置中心-Nacos%20+%20Sentinel-orange"> <!-- 监控 --> <img alt="监控" src="https://img.shields.io/badge/监控-Prometheus%20+%20SkyWalking-purple"> 
+
+
+
+
 
 ---
 
