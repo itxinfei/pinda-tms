@@ -92,21 +92,27 @@ public class AccessFilter extends BaseFilter {
         // 如果从缓存获取不到当前用户的资源权限，需要查询数据库获取，然后再放入缓存
         if (userResource == null) {
             ResourceQueryDTO resourceQueryDTO = new ResourceQueryDTO();
-            resourceQueryDTO.setUserId(new Long(userId));
+            resourceQueryDTO.setUserId(Long.valueOf(userId));
             //通过Feign调用服务，查询当前用户拥有的权限
             R<List<Resource>> result = resourceApi.visible(resourceQueryDTO);
+
             if (result.getData() != null) {
                 List<Resource> userResourceList = result.getData();
-                userResource = userResourceList.stream().map((Resource r) -> {
-                    return r.getMethod() + r.getUrl();
-                }).collect(Collectors.toList());
+                userResource = userResourceList.stream()
+                        .map(r -> r.getMethod() + r.getUrl())
+                        .collect(Collectors.toList());
                 cacheChannel.set(CacheKey.USER_RESOURCE, userId, userResource);
             }
         }
 
-        long count = userResource.stream().filter((String r) -> {
-            return permission.startsWith(r);
-        }).count();
+        // 若用户资源仍为空，初始化为空列表，避免后续空指针
+        if (userResource == null) {
+            userResource = java.util.Collections.emptyList();
+        }
+
+        long count = userResource.stream()
+                .filter(r -> permission.startsWith(r))
+                .count();
 
         if (count > 0) {
             //有访问权限
