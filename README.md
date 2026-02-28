@@ -130,48 +130,8 @@
 
 ---
 
-## 💾 数据库设计  
-| 数据库名          | 数据量级     | 核心表设计                                                                 |
-|-------------------|--------------|----------------------------------------------------------------------------|
-| `pd_base`         | 500万+       | 车辆表（字段含VIN码/载重/容积/年检日期）                                    |
-| `pd_oms`          | 1亿+         | 订单分表（按月份拆分，使用ShardingSphere）                                  |
-| `pd_tracking`     | 10亿+        | 轨迹点表（GeoHash索引加速查询）                                            |
-| `druid_realtime`  | 实时写入     | Kafka数据实时摄入，支持秒级延迟                                            |
 
----
 
-## 🧰 Maven私仓配置  
-### 依赖配置说明  
-```xml
-<!-- settings.xml 配置示例 -->
-<profiles>
-  <profile>
-    <repositories>
-      <repository>
-        <id>gitee-repo</id>
-        <url>https://gitee.com/itxinfei/pinda-tms/repository/archive</url>
-      </repository>
-    </repositories>
-  </profile>
-</profiles>
-```
-
-### 核心自定义依赖  
-```xml
-<!-- 权限校验模块 -->
-<dependency>
-  <groupId>com.itheima</groupId>
-  <artifactId>pd-auth-entity</artifactId>
-  <version>1.0.0</version>
-</dependency>
-
-<!-- 通用工具类 -->
-<dependency>
-  <groupId>com.itheima</groupId>
-  <artifactId>pd-common-utils</artifactId>
-  <version>1.0.0</version>
-</dependency>
-```
 
 ---
 
