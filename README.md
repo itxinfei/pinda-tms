@@ -34,6 +34,11 @@
 
 </div>
 
+## 📱 关注微信公众号  
+![微信公众号二维码](docs/心飞为你飞.jpg)  
+🚀 项目地址：[https://gitee.com/itxinfei/pinda-tms](https://gitee.com/itxinfei/pinda-tms)  
+👥 QQ交流群：[661543188](https://qm.qq.com/cgi-bin/qm/qr?k=gNgch-wCkfUu-QbI7DZSudrax2BN7vY0&jump_from=webapi&authKey=QHSRnxQvu+h5S3AXGn/DSHrVPiFQAYEk6bSlCE1lS276SFjQAUagV4FG7bHf0OSM)  
+📧 邮箱支持：[747011882@qq.com](http://mail.qq.com/cgi-bin/qm_share?t=qm_mailme&email=f0hLSE9OTkdHTT8ODlEcEBI)
 
 ## 📌 项目简介  
 **品达物流-TMS**（Transportation Management System）是一款面向运输公司的全流程管理系统，覆盖从运力资源准备到货物交付的全生命周期管理。  
