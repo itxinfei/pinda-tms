@@ -289,16 +289,28 @@ public class CourierController {
         pickupDispatchTaskFeign.updateById(id, taskPickupDispatchDTO);
         log.info("更新取派件任务 ID:{},PARAMS:{}", id, taskPickupDispatchDTO);
 
-        //插入
+        // 【P0优化】揽收时更新运单状态
+        // 由于下单时已预生成运单，这里应该一定能查询到
+        // 如果运单已存在，更新状态为"已装车"；如果不存在（异常情况），则创建
         TransportOrderDTO transportOrderDTO = transportOrderFeign.findByOrderId(pickupDispatchDetailDTO.getOrderNumber());
-        log.info("查询是否存在运单:{}", transportOrderDTO);
+        log.info("查询运单:{}", transportOrderDTO);
         if (transportOrderDTO == null || StringUtils.isBlank(transportOrderDTO.getId())) {
+            // 异常情况：运单不存在（理论上不应该发生，因为下单时已预生成）
+            log.warn("订单[{}]未找到运单，创建新运单", pickupDispatchDetailDTO.getOrderNumber());
             TransportOrderDTO transportDTO = new TransportOrderDTO();
             transportDTO.setOrderId(pickupDispatchDetailDTO.getOrderNumber());
             transportDTO.setStatus(TransportOrderStatus.CREATED.getCode());
             transportDTO.setSchedulingStatus(TransportOrderSchedulingStatus.TO_BE_SCHEDULED.getCode());
             transportOrderFeign.save(transportDTO);
-            log.info("不存在运单 创建新运单:{}", transportDTO);
+            log.info("创建新运单:{}", transportDTO);
+        } else {
+            // 正常情况：更新运单状态为"已装车"
+            TransportOrderDTO transportOrderUpdate = new TransportOrderDTO();
+            transportOrderUpdate.setId(transportOrderDTO.getId());
+            transportOrderUpdate.setStatus(TransportOrderStatus.LOADED.getCode()); // 2-已装车
+            transportOrderFeign.updateById(transportOrderUpdate);
+            log.info("订单[{}]已揽收，运单[{}]状态更新为[已装车(2)]",
+                pickupDispatchDetailDTO.getOrderNumber(), transportOrderDTO.getId());
         }
 
         return Result.ok();

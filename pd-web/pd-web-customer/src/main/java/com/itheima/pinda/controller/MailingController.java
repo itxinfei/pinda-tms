@@ -26,6 +26,8 @@ import com.itheima.pinda.enums.OrderType;
 import com.itheima.pinda.enums.pickuptask.PickupDispatchTaskAssignedStatus;
 import com.itheima.pinda.enums.pickuptask.PickupDispatchTaskStatus;
 import com.itheima.pinda.enums.pickuptask.PickupDispatchTaskType;
+import com.itheima.pinda.enums.transportorder.TransportOrderSchedulingStatus;
+import com.itheima.pinda.enums.transportorder.TransportOrderStatus;
 import com.itheima.pinda.feign.*;
 import com.itheima.pinda.feign.agency.AgencyScopeFeign;
 import com.itheima.pinda.feign.user.CourierScopeFeign;
@@ -214,6 +216,18 @@ public class MailingController {
             cargoDto.setOrderId(orderDTO.getId());
             cargoFeign.save(cargoDto);
         }
+
+        // 【P0优化】订单确认时预生成运单，参考大厂标准流程
+        // 优势：1. 揽收前已有运单号，可提前打印面单
+        //       2. 调度任务无需兜底创建逻辑
+        //       3. 订单和运单状态更同步
+        log.info("订单[{}]已创建，预生成运单", orderDTO.getId());
+        TransportOrderDTO transportOrder = new TransportOrderDTO();
+        transportOrder.setOrderId(orderDTO.getId());
+        transportOrder.setStatus(TransportOrderStatus.CREATED.getCode());                        // 1-新建
+        transportOrder.setSchedulingStatus(TransportOrderSchedulingStatus.TO_BE_SCHEDULED.getCode()); // 1-待调度
+        transportOrderFeign.save(transportOrder);
+        log.info("订单[{}]预生成运单[{}]成功", orderDTO.getId(), transportOrder.getId());
 
         log.info("下单分配网点:{},快递员:{}", agencyId, courierId);
 
