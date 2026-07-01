@@ -21,6 +21,7 @@ import com.itheima.pinda.feign.TransportOrderFeign;
 import com.itheima.pinda.mapper.TaskTransportMapper;
 import com.itheima.pinda.service.ITaskTransportService;
 import com.itheima.pinda.service.ITransportOrderTaskService;
+import com.itheima.pinda.state.StateTransitionValidator;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,6 +55,9 @@ public class TaskTransportServiceImpl extends
 
     @Autowired
     private ITransportOrderTaskService transportOrderTaskService;
+
+    @Autowired
+    private StateTransitionValidator stateTransitionValidator;
 
     @Override
     public TaskTransport saveTaskTransport(TaskTransport taskTransport) {
@@ -106,11 +110,26 @@ public class TaskTransportServiceImpl extends
             return false;
         }
 
+        // 获取当前运输任务
+        TaskTransport taskTransport = getById(id);
+        if (taskTransport == null) {
+            log.warn("运输任务[{}]不存在", id);
+            return false;
+        }
+
+        // 状态流转校验
+        Integer targetStatus = TransportTaskStatus.IN_PROGRESS.getCode();
+        if (!stateTransitionValidator.validateTransportTaskTransition(taskTransport.getStatus(), targetStatus)) {
+            log.error("运输任务[{}]状态流转非法：当前状态[{}]不能流转到[{}]",
+                id, taskTransport.getStatus(), targetStatus);
+            return false;
+        }
+
         // 发车确认：状态从待执行(1)→进行中(2)
         LambdaUpdateWrapper<TaskTransport> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(TaskTransport::getId, id)
                 .eq(TaskTransport::getStatus, TransportTaskStatus.PENDING.getCode())
-                .set(TaskTransport::getStatus, TransportTaskStatus.IN_PROGRESS.getCode())
+                .set(TaskTransport::getStatus, targetStatus)
                 .set(TaskTransport::getActualDepartureTime, LocalDateTime.now())
                 .set(TaskTransport::getUpdateTime, LocalDateTime.now());
         boolean result = update(wrapper);
@@ -127,11 +146,26 @@ public class TaskTransportServiceImpl extends
             return false;
         }
 
+        // 获取当前运输任务
+        TaskTransport taskTransport = getById(id);
+        if (taskTransport == null) {
+            log.warn("运输任务[{}]不存在", id);
+            return false;
+        }
+
+        // 状态流转校验
+        Integer targetStatus = TransportTaskStatus.WAITING_CONFIRM.getCode();
+        if (!stateTransitionValidator.validateTransportTaskTransition(taskTransport.getStatus(), targetStatus)) {
+            log.error("运输任务[{}]状态流转非法：当前状态[{}]不能流转到[{}]",
+                id, taskTransport.getStatus(), targetStatus);
+            return false;
+        }
+
         // 到达确认：状态从进行中(2)→待确认(3)
         LambdaUpdateWrapper<TaskTransport> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(TaskTransport::getId, id)
                 .eq(TaskTransport::getStatus, TransportTaskStatus.IN_PROGRESS.getCode())
-                .set(TaskTransport::getStatus, TransportTaskStatus.WAITING_CONFIRM.getCode())
+                .set(TaskTransport::getStatus, targetStatus)
                 .set(TaskTransport::getActualArrivalTime, LocalDateTime.now())
                 .set(TaskTransport::getUpdateTime, LocalDateTime.now());
         boolean result = update(wrapper);
@@ -148,15 +182,41 @@ public class TaskTransportServiceImpl extends
             return false;
         }
 
+        // 获取当前运输任务
+        TaskTransport taskTransport = getById(id);
+        if (taskTransport == null) {
+            log.warn("运输任务[{}]不存在", id);
+            return false;
+        }
+
+        // 状态流转校验
+        Integer targetStatus = TransportTaskStatus.COMPLETED.getCode();
+        if (!stateTransitionValidator.validateTransportTaskTransition(taskTransport.getStatus(), targetStatus)) {
+            log.error("运输任务[{}]状态流转非法：当前状态[{}]不能流转到[{}]",
+                id, taskTransport.getStatus(), targetStatus);
+            return false;
+        }
+
         // 交付确认：状态从待确认(3)→已完成(4)
         LambdaUpdateWrapper<TaskTransport> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(TaskTransport::getId, id)
                 .eq(TaskTransport::getStatus, TransportTaskStatus.WAITING_CONFIRM.getCode())
-                .set(TaskTransport::getStatus, TransportTaskStatus.COMPLETED.getCode())
+                .set(TaskTransport::getStatus, targetStatus)
                 .set(TaskTransport::getActualDeliveryTime, LocalDateTime.now())
                 .set(TaskTransport::getUpdateTime, LocalDateTime.now());
         boolean result = update(wrapper);
         log.info("运输任务[{}]交付确认结果: {}", id, result ? "成功" : "失败");
+
+        // 如果交付成功，触发状态同步
+        if (result) {
+            try {
+                syncStatusOnComplete(id);
+            } catch (Exception e) {
+                log.error("运输任务[{}]交付后状态同步失败", id, e);
+                // 不抛出异常，避免影响交付流程
+            }
+        }
+
         return result;
     }
 
