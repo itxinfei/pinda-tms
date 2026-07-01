@@ -28,7 +28,9 @@ import com.itheima.pinda.enums.pickuptask.PickupDispatchTaskStatus;
 import com.itheima.pinda.enums.pickuptask.PickupDispatchTaskType;
 import com.itheima.pinda.enums.transportorder.TransportOrderSchedulingStatus;
 import com.itheima.pinda.enums.transportorder.TransportOrderStatus;
+import com.itheima.pinda.event.OrderConfirmedEvent;
 import com.itheima.pinda.feign.*;
+import com.itheima.pinda.mq.EventPublisher;
 import com.itheima.pinda.feign.agency.AgencyScopeFeign;
 import com.itheima.pinda.feign.user.CourierScopeFeign;
 import com.itheima.pinda.future.PdCompletableFuture;
@@ -73,8 +75,9 @@ public class MailingController {
     private final IMemberService memberService;
     private final AddressBookFeign addressBookFeign;
     private final CourierScopeFeign courierScopeFeign;
+    private final EventPublisher eventPublisher;
 
-    public MailingController(AgencyScopeFeign agencyScopeFeign, OrgApi orgApi, TransportTaskFeign transportTaskFeign, TransportOrderFeign transportOrderFeign, UserApi userApi, AreaApi areaApi, PickupDispatchTaskFeign pickupDispatchTaskFeign, OrderFeign orderFeign, CargoFeign cargoFeign, IMemberService memberService, AddressBookFeign addressBookFeign, CourierScopeFeign courierScopeFeign) {
+    public MailingController(AgencyScopeFeign agencyScopeFeign, OrgApi orgApi, TransportTaskFeign transportTaskFeign, TransportOrderFeign transportOrderFeign, UserApi userApi, AreaApi areaApi, PickupDispatchTaskFeign pickupDispatchTaskFeign, OrderFeign orderFeign, CargoFeign cargoFeign, IMemberService memberService, AddressBookFeign addressBookFeign, CourierScopeFeign courierScopeFeign, EventPublisher eventPublisher) {
         this.agencyScopeFeign = agencyScopeFeign;
         this.orgApi = orgApi;
         this.transportTaskFeign = transportTaskFeign;
@@ -87,6 +90,7 @@ public class MailingController {
         this.memberService = memberService;
         this.addressBookFeign = addressBookFeign;
         this.courierScopeFeign = courierScopeFeign;
+        this.eventPublisher = eventPublisher;
     }
 
     private OrderDTO buildOrderAndPrice(MailingSaveDTO entity) {
@@ -228,6 +232,25 @@ public class MailingController {
         transportOrder.setSchedulingStatus(TransportOrderSchedulingStatus.TO_BE_SCHEDULED.getCode()); // 1-待调度
         transportOrderFeign.save(transportOrder);
         log.info("订单[{}]预生成运单[{}]成功", orderDTO.getId(), transportOrder.getId());
+
+        // 【P1优化】发布订单确认事件（异步处理）
+        // 触发后续业务逻辑：智能调度、消息通知等
+        try {
+            OrderConfirmedEvent event = new OrderConfirmedEvent(
+                this,
+                orderDTO.getId(),
+                orderDTO.getOrderNo(),
+                orderDTO.getMemberId(),
+                orderDTO.getAmount(),
+                orderDTO.getSenderAddress(),
+                orderDTO.getReceiverAddress()
+            );
+            eventPublisher.publishOrderConfirmed(event);
+            log.info("[事件发布] 订单确认事件发布成功: orderId={}", orderDTO.getId());
+        } catch (Exception e) {
+            log.error("[事件发布] 订单确认事件发布失败: orderId=" + orderDTO.getId(), e);
+            // 事件发布失败不影响主流程，订单已经创建成功
+        }
 
         log.info("下单分配网点:{},快递员:{}", agencyId, courierId);
 
