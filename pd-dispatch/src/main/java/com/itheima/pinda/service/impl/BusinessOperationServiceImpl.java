@@ -66,16 +66,13 @@ public class BusinessOperationServiceImpl implements IBusinessOperationService {
                 if (orderClassify.isNew()) {
                     // 新订单  更新运单信息
                     orderClassify.getOrders().forEach(item -> {
-                        // 创建运单（如果不存在则创建，已存在则直接返回）
+                        // 【P0优化】查询运单（下单时已预生成，理论上应该存在）
                         TransportOrderDTO transportOrderDto = transportOrderFeign.findByOrderId(item.getId());
                         if (transportOrderDto == null) {
-                            transportOrderDto = new TransportOrderDTO();
-                            transportOrderDto.setOrderId(item.getId());
-                            // 使用运单状态枚举，确保状态一致
-                            transportOrderDto.setStatus(TransportOrderStatus.CREATED.getCode());
-                            transportOrderDto.setSchedulingStatus(TransportOrderSchedulingStatus.TO_BE_SCHEDULED.getCode());
-                            transportOrderDto = transportOrderFeign.save(transportOrderDto);
-                            log.info("创建运单: {}", transportOrderDto.getId());
+                            // 理论上不应该发生，如果发生说明订单确认逻辑有问题
+                            log.error("订单[{}]未找到关联运单，请检查订单确认逻辑！", item.getId());
+                            // 抛出异常，而不是兜底创建，便于快速定位问题
+                            throw new RuntimeException("订单[" + item.getId() + "]未找到关联运单，请先确认订单");
                         }
                         transportOrderIds.add(transportOrderDto.getId());
 
