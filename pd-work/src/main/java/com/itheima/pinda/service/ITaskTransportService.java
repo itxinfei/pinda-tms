@@ -42,4 +42,37 @@ public interface ITaskTransportService extends IService<TaskTransport> {
      * @return 运输任务列表
      */
     List<TaskTransport> findAll(List<String> ids, String id, Integer status, TaskTransportDTO dto);
+
+    /**
+     * 更新运输任务状态 - 发车确认
+     *
+     * @param id 运输任务ID
+     * @return 是否成功
+     */
+    boolean depart(String id);
+
+    /**
+     * 更新运输任务状态 - 到达确认
+     *
+     * @param id 运输任务ID
+     * @return 是否成功
+     */
+    boolean arrive(String id);
+
+    /**
+     * 更新运输任务状态 - 交付确认
+     *
+     * @param id 运输任务ID
+     * @return 是否成功
+     */
+    boolean deliver(String id);
+
+    /**
+     * 运输任务完成后，联动更新订单和运单状态
+     * 运输任务完成(4) → 订单状态更新为已签收(23009) → 运单状态更新为已完成
+     *
+     * @param id 运输任务ID
+     * @return 是否成功
+     */
+    boolean syncStatusOnComplete(String id);
 }

@@ -7,6 +7,8 @@ import com.itheima.pinda.common.utils.DateUtils;
 import com.itheima.pinda.entity.CacheLineDetailEntity;
 import com.itheima.pinda.enums.OrderStatus;
 import com.itheima.pinda.enums.driverjob.DriverJobStatus;
+import com.itheima.pinda.enums.transportorder.TransportOrderSchedulingStatus;
+import com.itheima.pinda.enums.transportorder.TransportOrderStatus;
 import com.itheima.pinda.enums.transporttask.TransportTaskAssignedStatus;
 import com.itheima.pinda.enums.transporttask.TransportTaskLoadingStatus;
 import com.itheima.pinda.enums.transporttask.TransportTaskStatus;
@@ -64,25 +66,34 @@ public class BusinessOperationServiceImpl implements IBusinessOperationService {
                 if (orderClassify.isNew()) {
                     // 新订单  更新运单信息
                     orderClassify.getOrders().forEach(item -> {
-//                        // 此处无需创建，由快递员交件时创建运单
-//                        TransportOrderDTO transportOrderDto = new TransportOrderDTO();
-//                        transportOrderDto.setStatus(TransportOrderStatus.CREATED.getCode());
-//                        transportOrderDto.setSchedulingStatus(TransportOrderSchedulingStatus.TO_BE_SCHEDULED.getCode());
-//                        transportOrderDto.setOrderId(item.getId());
-//                        transportOrderDto = transportOrderFeign.save(transportOrderDto);
-//                        transportOrderIds.add(transportOrderDto.getId());
+                        // 创建运单（如果不存在则创建，已存在则直接返回）
+                        TransportOrderDTO transportOrderDto = transportOrderFeign.findByOrderId(item.getId());
+                        if (transportOrderDto == null) {
+                            transportOrderDto = new TransportOrderDTO();
+                            transportOrderDto.setOrderId(item.getId());
+                            // 使用运单状态枚举，确保状态一致
+                            transportOrderDto.setStatus(TransportOrderStatus.CREATED.getCode());
+                            transportOrderDto.setSchedulingStatus(TransportOrderSchedulingStatus.TO_BE_SCHEDULED.getCode());
+                            transportOrderDto = transportOrderFeign.save(transportOrderDto);
+                            log.info("创建运单: {}", transportOrderDto.getId());
+                        }
+                        transportOrderIds.add(transportOrderDto.getId());
 
                         // 更新订单状态为待装车
                         OrderDTO orderDto = new OrderDTO();
                         orderDto.setStatus(OrderStatus.FOR_LOADING.getCode());
                         orderFeign.updateById(item.getId(), orderDto);
-                        log.info("更新订单状态为待装车:{}", item.getId());
+                        log.info("更新订单状态为待装车: {}", item.getId());
                     });
                 }
                 //  查询运单信息构建运单集合
-                List<String> orderIds = orderClassify.getOrders().stream().map(item -> item.getId()).collect(Collectors.toList());
+                List<String> orderIds = orderClassify.getOrders().stream()
+                        .map(OrderDTO::getId)
+                        .collect(Collectors.toList());
                 List<TransportOrderDTO> transportOrders = transportOrderFeign.findByOrderIds(orderIds);
-                transportOrderIds.addAll(transportOrders.stream().map(item -> item.getId()).collect(Collectors.toList()));
+                transportOrderIds.addAll(transportOrders.stream()
+                        .map(TransportOrderDTO::getId)
+                        .collect(Collectors.toList()));
             });
 
             // 创建运输任务
@@ -95,7 +106,7 @@ public class BusinessOperationServiceImpl implements IBusinessOperationService {
             taskTranSportDto.setTransportOrderIds(transportOrderIds);
             taskTranSportDto = transportTaskFeign.save(taskTranSportDto);
 
-            log.info("创建运输任务:{}", taskTranSportDto);
+            log.info("创建运输任务: {}", taskTranSportDto);
 
             // 线路管理运输任务 并返回
             result.put(cacheLineDetail.getTransportLineId(), taskTranSportDto);
