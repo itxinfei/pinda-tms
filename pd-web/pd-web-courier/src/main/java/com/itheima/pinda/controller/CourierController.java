@@ -20,6 +20,8 @@ import com.itheima.pinda.enums.pickuptask.PickupDispatchTaskStatus;
 import com.itheima.pinda.enums.pickuptask.PickupDispatchTaskType;
 import com.itheima.pinda.enums.transportorder.TransportOrderSchedulingStatus;
 import com.itheima.pinda.enums.transportorder.TransportOrderStatus;
+import com.itheima.pinda.event.OrderConfirmedEvent;
+import com.itheima.pinda.event.PickupCompletedEvent;
 import com.itheima.pinda.feign.*;
 import com.itheima.pinda.feign.common.GoodsTypeFeign;
 import com.itheima.pinda.feign.courier.AppCourierFeign;
@@ -75,8 +77,10 @@ public class CourierController {
 
     private final AppCourierFeign appCourierFeign;
 
+    private final EventPublisher eventPublisher;
 
-    public CourierController(AppCourierFeign appCourierFeign, MemberFeign memberFeign, OrgApi orgApi, TransportTaskFeign transportTaskFeign, TransportOrderFeign transportOrderFeign, GoodsTypeFeign goodsTypeFeign, PickupDispatchTaskFeign pickupDispatchTaskFeign, OrderFeign orderFeign, CargoFeign cargoFeign, AreaApi areaApi) {
+
+    public CourierController(AppCourierFeign appCourierFeign, MemberFeign memberFeign, OrgApi orgApi, TransportTaskFeign transportTaskFeign, TransportOrderFeign transportOrderFeign, GoodsTypeFeign goodsTypeFeign, PickupDispatchTaskFeign pickupDispatchTaskFeign, OrderFeign orderFeign, CargoFeign cargoFeign, AreaApi areaApi, EventPublisher eventPublisher) {
         this.appCourierFeign = appCourierFeign;
         this.memberFeign = memberFeign;
         this.pickupDispatchTaskFeign = pickupDispatchTaskFeign;
@@ -87,6 +91,7 @@ public class CourierController {
         this.transportOrderFeign = transportOrderFeign;
         this.transportTaskFeign = transportTaskFeign;
         this.orgApi = orgApi;
+        this.eventPublisher = eventPublisher;
     }
 
     @SneakyThrows
@@ -313,6 +318,24 @@ public class CourierController {
                 pickupDispatchDetailDTO.getOrderNumber(), transportOrderDTO.getId());
         }
 
+        // 【P1优化】发布揽收完成事件（异步处理）
+        // 触发后续业务逻辑：智能调度、消息通知等
+        try {
+            PickupCompletedEvent event = new PickupCompletedEvent(
+                this,
+                pickupDispatchDetailDTO.getOrderNumber(),
+                transportOrderDTO != null ? transportOrderDTO.getId() : null,
+                transportOrderDTO,
+                RequestContext.getUserId(),
+                id
+            );
+            eventPublisher.publishPickupCompleted(event);
+            log.info("[事件发布] 揽收完成事件发布成功: orderId={}", pickupDispatchDetailDTO.getOrderNumber());
+        } catch (Exception e) {
+            log.error("[事件发布] 揽收完成事件发布失败: orderId=" + pickupDispatchDetailDTO.getOrderNumber(), e);
+            // 事件发布失败不影响主流程
+        }
+
         return Result.ok();
     }
 
@@ -408,6 +431,26 @@ public class CourierController {
         pickupDispatchTaskDtoUpdate.setConfirmTime(LocalDateTime.now());
         pickupDispatchTaskFeign.updateById(pickupDispatchTaskDto.getId(), pickupDispatchTaskDtoUpdate);
         log.info("妥投 修改派送任务状态：{} ,{}", pickupDispatchTaskDto.getId(), pickupDispatchTaskDtoUpdate);
+
+        // 【P1优化】发布订单交付事件（异步处理）
+        // 触发后续业务逻辑：结算流程、消息通知等
+        try {
+            OrderDeliveredEvent event = new OrderDeliveredEvent(
+                this,
+                orderId,
+                transportOrderDto.getId(),
+                state,
+                null, // signRemark可以从参数中获取
+                pickupDispatchTaskDto.getId(),
+                RequestContext.getUserId()
+            );
+            eventPublisher.publishOrderDelivered(event);
+            log.info("[事件发布] 订单交付事件发布成功: orderId={}, signed={}", orderId, state);
+        } catch (Exception e) {
+            log.error("[事件发布] 订单交付事件发布失败: orderId=" + orderId, e);
+            // 事件发布失败不影响主流程
+        }
+
         return Result.ok();
     }
 
