@@ -32,14 +32,13 @@ public final class Rx {
     /**
      * 安全获取 R 中 List 类型的 data，失败或为空时返回不可变空集合。
      *
-     * @param r 远程调用结果
+     * @param r 远程调用结果（data 为 List 类型）
      * @param <T> 列表元素类型
      * @return 列表（不会为 null）
      */
-    @SuppressWarnings("unchecked")
-    public static <T> List<T> dataList(R<?> r) {
-        if (r != null && r.getIsSuccess() && r.getData() instanceof List) {
-            return (List<T>) r.getData();
+    public static <T> List<T> dataList(R<List<T>> r) {
+        if (r != null && r.getIsSuccess() && r.getData() != null) {
+            return r.getData();
         }
         return Collections.emptyList();
     }

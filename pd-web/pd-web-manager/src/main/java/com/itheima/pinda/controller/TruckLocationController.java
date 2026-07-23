@@ -18,7 +18,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
-import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
@@ -32,7 +32,7 @@ import java.util.List;
 @RestController
 @RequestMapping("transfor-center")
 @Api(tags = "位置查询")
-@Log
+@Slf4j
 public class TruckLocationController {
     @Autowired
     private UserApi userApi;
