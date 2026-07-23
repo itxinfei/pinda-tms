@@ -17,6 +17,7 @@ import com.itheima.pinda.common.enums.ErrorCode;
 import com.itheima.pinda.common.utils.EntCoordSyncJob;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
+import com.itheima.pinda.util.Rx;
 import com.itheima.pinda.enums.OrderStatus;
 import com.itheima.pinda.enums.driverjob.DriverJobStatus;
 import com.itheima.pinda.enums.pickuptask.PickupDispatchTaskAssignedStatus;
@@ -120,13 +121,15 @@ public class CargoController {
         driverJobDTO.setDriverId(driverId);
 
         log.info("待提货列表列表 PARAMS:{}", driverJobDTO);
+        // 修改点：远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
         PageResponse<DriverJobDTO> result = driverJobFeign.findByPage(driverJobDTO);
-        log.info("待提货列表列表 RESULT:{}", result.getItems());
-        if(result.getItems().size()>0){
+        List<DriverJobDTO> items = Rx.items(result);
+        log.info("待提货列表列表 RESULT:{}", items);
+        if(items.size()>0){
 // 查询地址
             Set<String> agencySet = new HashSet<>();
-            agencySet.addAll(result.getItems().stream().map(item -> item.getStartAgencyId()).collect(Collectors.toSet()));
-            agencySet.addAll(result.getItems().stream().map(item -> item.getEndAgencyId()).collect(Collectors.toSet()));
+            agencySet.addAll(items.stream().map(item -> item.getStartAgencyId()).collect(Collectors.toSet()));
+            agencySet.addAll(items.stream().map(item -> item.getEndAgencyId()).collect(Collectors.toSet()));
             CompletableFuture<List<Org>> agencyListFuture = PdCompletableFuture.agencyListFuture(orgApi, null, agencySet, null);
             List<Org> agencyList = agencyListFuture.get();
 
@@ -138,7 +141,7 @@ public class CargoController {
 
             CompletableFuture<Map> areaMapFuture = PdCompletableFuture.areaMapFuture(areaApi, null, areaSet);
 
-            Set<String> taskTransportSet = result.getItems().stream().map(item -> item.getTaskTransportId()).collect(Collectors.toSet());
+            Set<String> taskTransportSet = items.stream().map(item -> item.getTaskTransportId()).collect(Collectors.toSet());
             CompletableFuture<Map<String, TaskTransportDTO>> taskTransportFuture = PdCompletableFuture.taskTramsportMapFuture(transportTaskFeign, taskTransportSet);
 
             Map<String, TaskTransportDTO> taskTransportMap = taskTransportFuture.get();
@@ -155,7 +158,7 @@ public class CargoController {
             }).collect(Collectors.toMap(AgencyVo::getId, vo -> vo));
 
 
-            List<CargoTranTaskDTO> cargoTranTaskDTOS = result.getItems().stream().map(item -> new CargoTranTaskDTO(item, taskTransportMap, agencyMap)).collect(Collectors.toList());
+            List<CargoTranTaskDTO> cargoTranTaskDTOS = items.stream().map(item -> new CargoTranTaskDTO(item, taskTransportMap, agencyMap)).collect(Collectors.toList());
 
             log.info("待提货列表,转换后的数据：{}", cargoTranTaskDTOS);
             if (CollectionUtils.isEmpty(cargoTranTaskDTOS)) {
@@ -212,10 +215,12 @@ public class CargoController {
         driverJobDTO.setId(keyword);
 
         log.info("历史列表 PARAMS:{}", driverJobDTO);
+        // 修改点：远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
         PageResponse<DriverJobDTO> result = driverJobFeign.findByPage(driverJobDTO);
-        log.info("历史列表 RESULT:{}", result.getItems());
+        List<DriverJobDTO> items = Rx.items(result);
+        log.info("历史列表 RESULT:{}", items);
 
-        List<CargoTranTaskDTO> cargoTranTaskDTOS = result.getItems().stream().map(item -> CargoTranTaskDTO.builder()
+        List<CargoTranTaskDTO> cargoTranTaskDTOS = items.stream().map(item -> CargoTranTaskDTO.builder()
                 .taskNo(item.getTaskTransportId())
                 .actualArrivalTime(item.getActualArrivalTime())
                 .status(item.getStatus())
@@ -223,7 +228,7 @@ public class CargoController {
                 .build()).collect(Collectors.toList());
         log.info("历史列表 返回：{}", cargoTranTaskDTOS);
         return Result.ok().put("data", PageResponse.<CargoTranTaskDTO>builder()
-                .counts(result.getCounts()).page(page).pagesize(pagesize).pages(result.getPages())
+                .counts(result != null ? result.getCounts() : 0L).page(page).pagesize(pagesize).pages(result != null ? result.getPages() : 0L)
                 .items(cargoTranTaskDTOS).build());
 
     }
@@ -244,13 +249,13 @@ public class CargoController {
         driverJobDTO.setDriverId(driverId);
 
         log.info("在途任务 PARAMS:{}", driverJobDTO);
+        // 修改点：远程调用返回 PageResponse 可能为 null，统一判空避免 NPE
         PageResponse<DriverJobDTO> result = driverJobFeign.findByPage(driverJobDTO);
-        log.info("在途任务 RESULT:{}", result.getItems());
-
         // 在途只会有一个
-        if (result.getCounts() <= 0) {
+        if (result == null || result.getItems() == null || result.getCounts() <= 0) {
             return Result.ok().put("data", new CargoTranTaskDTO());
         }
+        log.info("在途任务 RESULT:{}", result.getItems());
         DriverJobDTO driverJob = result.getItems().get(0);
 
         Map<String, TaskTransportDTO> transportTaskDTOMap = new HashMap<>();
@@ -407,12 +412,24 @@ public class CargoController {
         }
 
         DriverJobDTO driverJob = driverJobFeign.findById(taskTransportDTO.getId());
+        if (driverJob == null) {
+            return Result.error(400, "司机作业单不存在");
+        }
         String taskTransportId = driverJob.getTaskTransportId();
+        if (StringUtils.isBlank(taskTransportId)) {
+            return Result.error(400, "运输任务ID为空");
+        }
         String startAgencyId = driverJob.getStartAgencyId();
-        R<Org> orgR = orgApi.get(Long.parseLong(startAgencyId));
-        Org org = orgR.getData();
+        // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
+        Org org = Rx.data(orgApi.get(Long.parseLong(startAgencyId)));
+        if (org == null) {
+            return Result.error(ErrorCode.ONTHEWAY, "起始机构不存在");
+        }
         // 获取全部运单
         TaskTransportDTO taskTransport = transportTaskFeign.findById(taskTransportId);
+        if (taskTransport == null) {
+            return Result.error(400, "运输任务不存在");
+        }
         // 修改司机作业单
         driverJobDTO = new DriverJobDTO();
         driverJobDTO.setStatus(DriverJobStatus.PROCESSING.getCode());
@@ -448,6 +465,10 @@ public class CargoController {
         for (String transportOrderId : transportOrderIds) {
             // 获取订单id
             TransportOrderDTO transportOrder = transportOrderFeign.findById(transportOrderId);
+            if (transportOrder == null || StringUtils.isBlank(transportOrder.getOrderId())) {
+                log.warn("运单不存在或无关联订单: transportOrderId={}", transportOrderId);
+                continue;
+            }
             String orderId = transportOrder.getOrderId();
             // 修改订单状态
             OrderDTO orderDTO = new OrderDTO();
@@ -463,22 +484,39 @@ public class CargoController {
     @ResponseBody
     @PutMapping("finish")
     public Result finish(@RequestBody TaskTransportDTO taskTransportDTO) {
+        if (taskTransportDTO == null || StringUtils.isBlank(taskTransportDTO.getId())) {
+            return Result.error(400, "运输任务ID不能为空");
+        }
 
         DriverJobDTO driverJob = driverJobFeign.findById(taskTransportDTO.getId());
+        if (driverJob == null) {
+            return Result.error(400, "司机作业单不存在");
+        }
         String taskTransportId = driverJob.getTaskTransportId();
+        if (StringUtils.isBlank(taskTransportId)) {
+            return Result.error(400, "运输任务ID为空");
+        }
         String endAgencyId = driverJob.getEndAgencyId();
-        R<Org> orgR = orgApi.get(Long.parseLong(endAgencyId));
-        Org org = orgR.getData();
+        // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
+        Org org = Rx.data(orgApi.get(Long.parseLong(endAgencyId)));
+        if (org == null) {
+            return Result.error(ErrorCode.ONTHEWAY, "目的机构不存在");
+        }
         // 获取全部运单
         TaskTransportDTO taskTransport = transportTaskFeign.findById(taskTransportId);
+        if (taskTransport == null) {
+            return Result.error(400, "运输任务不存在");
+        }
         // 修改司机作业单
         DriverJobDTO driverJobDTO = new DriverJobDTO();
+        driverJobDTO.setId(driverJob.getId());
         driverJobDTO.setStatus(DriverJobStatus.COMPLETED.getCode());
         driverJobDTO.setFinishHandover(org.getManager());
         driverJobDTO.setActualArrivalTime(LocalDateTime.now());
         driverJobFeign.updateById(driverJob.getId(), driverJobDTO);
         // 修改运输任务表
         TaskTransportDTO taskTransportUpdate = new TaskTransportDTO();
+        taskTransportUpdate.setId(taskTransport.getId());
         taskTransportUpdate.setIds(taskTransport.getIds());
         taskTransportUpdate.setTransportOrderIds(taskTransport.getTransportOrderIds());
         taskTransportUpdate.setStatus(TransportTaskStatus.COMPLETED.getCode());
@@ -539,8 +577,10 @@ public class CargoController {
                     //岗位id
                     Long stationId = StaticStation.COURIER_ID;
                     R<List<User>> userRs = userApi.list(null, stationId, null, Long.valueOf(endAgencyId));
-                    if (userRs.getData() != null && userRs.getData().size() > 0) {
-                        User user = userRs.getData().get(0);
+                    // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
+                    List<User> userList = Rx.dataList(userRs);
+                    if (!userList.isEmpty()) {
+                        User user = userList.get(0);
                         courierId = user.getId().toString();
                     }
                 }

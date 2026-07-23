@@ -118,7 +118,7 @@ public class SpringRedisGenericCache implements Level2Cache {
         try {
             k = (this.region + ":" + key).getBytes("utf-8");
         } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+            log.warn("UTF-8编码不支持，使用默认编码", e);
             k = (this.region + ":" + key).getBytes();
         }
         return k;

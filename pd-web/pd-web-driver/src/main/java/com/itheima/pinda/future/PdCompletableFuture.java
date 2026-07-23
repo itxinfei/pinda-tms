@@ -14,6 +14,7 @@ import com.itheima.pinda.common.utils.Constant;
 import com.itheima.pinda.feign.TransportTaskFeign;
 import com.itheima.pinda.feign.transportline.TransportTripsFeign;
 import com.itheima.pinda.util.BeanUtil;
+import com.itheima.pinda.util.Rx;
 import com.itheima.pinda.vo.AreaSimpleVo;
 import com.itheima.pinda.vo.SysUserVo;
 import org.apache.commons.lang3.StringUtils;
@@ -62,7 +63,8 @@ public class PdCompletableFuture {
     public static final CompletableFuture<List<Org>> agencyListFuture(OrgApi api, Integer agencyType, Set<String> ids, Long countyId) {
         return CompletableFuture.supplyAsync(() -> {
             R<List<Org>> result = api.list(agencyType, ids.stream().mapToLong(id -> Long.valueOf(id)).boxed().collect(Collectors.toList()), countyId, null, null);
-            if (result.getIsSuccess()) {
+            // 修改点：远程调用成功但 data 可能为 null，增加判空避免 NPE
+            if (result.getIsSuccess() && result.getData() != null) {
                 return result.getData();
             }
             return new ArrayList<>();
@@ -71,7 +73,8 @@ public class PdCompletableFuture {
 
     public static final CompletableFuture<Map> areaMapFuture(AreaApi api, Long parentId, Set<Long> areaSet) {
         R<List<Area>> result = api.findAll(parentId, new ArrayList<>(areaSet));
-        return CompletableFuture.supplyAsync(() -> result.getData().stream().map(area -> BeanUtil.parseArea2Vo(area)).collect(Collectors.toMap(AreaSimpleVo::getId, vo -> vo)));
+        // 修改点：远程调用结果 data 可能为 null，统一通过 Rx 安全取值，避免 NPE
+        return CompletableFuture.supplyAsync(() -> Rx.dataList(result).stream().map(area -> BeanUtil.parseArea2Vo(area)).collect(Collectors.toMap(AreaSimpleVo::getId, vo -> vo)));
     }
 
     public static CompletableFuture<Map> tripMapFuture(TransportTripsFeign feign, Set<String> tripSet) {

@@ -15,6 +15,7 @@ import com.itheima.pinda.feign.transportline.TransportTripsFeign;
 import com.itheima.pinda.feign.truck.TruckFeign;
 import com.itheima.pinda.feign.webManager.WebManagerFeign;
 import com.itheima.pinda.util.BeanUtil;
+import com.itheima.pinda.util.Rx;
 import com.itheima.pinda.vo.work.PointDTO;
 import com.itheima.pinda.vo.work.TaskTransportVo;
 import io.swagger.annotations.Api;
@@ -73,10 +74,13 @@ public class TransportTaskController {
             dto.setId(vo.getId());
             dto.setDriverName(vo.getDriverName());
         }
+        // 修改点：远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
         PageResponse<TaskTransportDTO> dtoPageResponse = webManagerFeign.findTaskTransportByPage(dto);
-        List<TaskTransportDTO> dtoList = dtoPageResponse.getItems();
+        List<TaskTransportDTO> dtoList = Rx.items(dtoPageResponse);
         List<TaskTransportVo> voList = dtoList.stream().map(taskTransportDTO -> BeanUtil.parseTaskTransportDTO2Vo(taskTransportDTO, transportTripsFeign, orgApi, userApi, truckFeign, transportOrderFeign, orderFeign, areaApi)).collect(Collectors.toList());
-        return PageResponse.<TaskTransportVo>builder().items(voList).pagesize(vo.getPageSize()).page(vo.getPage()).counts(dtoPageResponse.getCounts()).pages(dtoPageResponse.getPages()).build();
+        return PageResponse.<TaskTransportVo>builder().items(voList).pagesize(vo.getPageSize()).page(vo.getPage())
+                .counts(dtoPageResponse != null ? dtoPageResponse.getCounts() : 0L)
+                .pages(dtoPageResponse != null ? dtoPageResponse.getPages() : 0L).build();
     }
 
     @ApiOperation(value = "获取运输任务详情")
@@ -108,10 +112,12 @@ public class TransportTaskController {
         if (dto == null) {
             return pointDTOS;
         }
-        R<Org> startOrgR = orgApi.get(Long.parseLong(dto.getStartAgencyId()));
-        Org startOrg = startOrgR.getData();
-        R<Org> endOrgR = orgApi.get(Long.parseLong(dto.getEndAgencyId()));
-        Org endOrg = endOrgR.getData();
+        // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
+        Org startOrg = Rx.data(orgApi.get(Long.parseLong(dto.getStartAgencyId())));
+        Org endOrg = Rx.data(orgApi.get(Long.parseLong(dto.getEndAgencyId())));
+        if (startOrg == null || endOrg == null) {
+            return pointDTOS;
+        }
         PointDTO pointDTO1 = new PointDTO();
         pointDTO1.setName(startOrg.getName());
         pointDTO1.setMarkerPoints(startOrg.getLongitude(), startOrg.getLatitude());

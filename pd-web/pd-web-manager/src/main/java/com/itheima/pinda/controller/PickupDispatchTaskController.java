@@ -6,6 +6,7 @@ import com.itheima.pinda.authority.api.AreaApi;
 import com.itheima.pinda.authority.api.OrgApi;
 import com.itheima.pinda.authority.api.UserApi;
 import com.itheima.pinda.common.utils.PageResponse;
+import com.itheima.pinda.util.Rx;
 import com.itheima.pinda.feign.OrderFeign;
 import com.itheima.pinda.feign.PickupDispatchTaskFeign;
 import com.itheima.pinda.feign.webManager.WebManagerFeign;
@@ -80,10 +81,13 @@ public class PickupDispatchTaskController {
                 }
             }
         }
+        // 修改点：远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
         PageResponse<TaskPickupDispatchDTO> dtoPageResponse = webManagerFeign.findTaskPickupDispatchJobByPage(dto);
-        List<TaskPickupDispatchDTO> dtoList = dtoPageResponse.getItems();
+        List<TaskPickupDispatchDTO> dtoList = Rx.items(dtoPageResponse);
         List<TaskPickupDispatchVo> voList = dtoList.stream().map(taskPickupDispatchDTO -> BeanUtil.parseTaskPickupDispatchDTO2Vo(taskPickupDispatchDTO, orderFeign, areaApi, orgApi, userApi)).collect(Collectors.toList());
-        return PageResponse.<TaskPickupDispatchVo>builder().items(voList).pagesize(vo.getPageSize()).page(vo.getPage()).counts(dtoPageResponse.getCounts()).pages(dtoPageResponse.getPages()).build();
+        return PageResponse.<TaskPickupDispatchVo>builder().items(voList).pagesize(vo.getPageSize()).page(vo.getPage())
+                .counts(dtoPageResponse != null ? dtoPageResponse.getCounts() : 0L)
+                .pages(dtoPageResponse != null ? dtoPageResponse.getPages() : 0L).build();
     }
 
     @ApiOperation(value = "更新取派件任务")

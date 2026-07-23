@@ -199,7 +199,7 @@ public class CourierController {
 
         PageResponse<TaskPickupDispatchDTO> result = appCourierFeign.findByPage(appCourierQueryDTO);
         if (result.getItems() == null || result.getItems().size() == 0) {
-            Result.ok().put("count", 0);
+            return Result.ok().put("count", 0);
         }
         log.info("查询数量 params:{} result：{}", appCourierQueryDTO, result.getCounts());
         return Result.ok().put("count", result.getCounts());
@@ -212,10 +212,22 @@ public class CourierController {
     @GetMapping("detail")
     public Result detail(String id) {
         log.info("任务详情:{}", id);
+        if (StringUtils.isBlank(id)) {
+            return Result.error("任务ID不能为空");
+        }
         TaskPickupDispatchDTO pickupDispatchTaskDTO = pickupDispatchTaskFeign.findById(id);
+        if (pickupDispatchTaskDTO == null || StringUtils.isBlank(pickupDispatchTaskDTO.getOrderId())) {
+            return Result.error("取派件任务不存在");
+        }
         String orderId = pickupDispatchTaskDTO.getOrderId();
         OrderDTO orderDTO = orderFeign.findById(orderId);
+        if (orderDTO == null) {
+            return Result.error("订单不存在");
+        }
         List<OrderCargoDto> orderCargoDtos = cargoFeign.findAll(null, orderDTO.getId());
+        if (orderCargoDtos == null || orderCargoDtos.isEmpty()) {
+            return Result.error("货物信息不存在");
+        }
         OrderCargoDto orderCargoDto = orderCargoDtos.get(0);
 
         TransportOrderDTO transportOrder = transportOrderFeign.findByOrderId(orderId);
@@ -535,15 +547,19 @@ public class CourierController {
 
             transportTaskDTOs.stream().forEach(item -> {
                 if (null != item.getActualPickUpGoodsTime()) {
+                    // 修改点：orgMap 可能不含该机构 id，get 返回 null，先判空避免 NPE
+                    Org startOrg = orgMap.get(Long.valueOf(item.getStartAgencyId()));
                     routeArray.add(RouteDTO.builder()
                             .arrivalTime(item.getActualPickUpGoodsTime())
-                            .agencyName("快递在【" + orgMap.get(Long.valueOf(item.getStartAgencyId())).getName() + "】已装车，准备发往下一站")
+                            .agencyName("快递在【" + (startOrg != null ? startOrg.getName() : "") + "】已装车，准备发往下一站")
                             .build());
                 }
                 if (null != item.getActualArrivalTime()) {
+                    // 修改点：orgMap 可能不含该机构 id，get 返回 null，先判空避免 NPE
+                    Org endOrg = orgMap.get(Long.valueOf(item.getEndAgencyId()));
                     routeArray.add(RouteDTO.builder()
                             .arrivalTime(item.getActualArrivalTime())
-                            .agencyName("快递已到达【" + orgMap.get(Long.valueOf(item.getEndAgencyId())).getName() + "】")
+                            .agencyName("快递已到达【" + (endOrg != null ? endOrg.getName() : "") + "】")
                             .build());
                 }
             });

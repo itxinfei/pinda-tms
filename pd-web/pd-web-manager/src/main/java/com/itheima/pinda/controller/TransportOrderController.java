@@ -8,6 +8,7 @@ import com.itheima.pinda.authority.api.AreaApi;
 import com.itheima.pinda.authority.api.OrgApi;
 import com.itheima.pinda.authority.api.UserApi;
 import com.itheima.pinda.common.utils.PageResponse;
+import com.itheima.pinda.util.Rx;
 import com.itheima.pinda.enums.pickuptask.PickupDispatchTaskType;
 import com.itheima.pinda.feign.OrderFeign;
 import com.itheima.pinda.feign.PickupDispatchTaskFeign;
@@ -100,10 +101,13 @@ public class TransportOrderController {
                 }
             }
         }
+        // 修改点：远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
         PageResponse<TransportOrderDTO> dtoPageResponse = webManagerFeign.findTransportOrderByPage(dto);
-        List<TransportOrderDTO> dtoList = dtoPageResponse.getItems();
+        List<TransportOrderDTO> dtoList = Rx.items(dtoPageResponse);
         List<TransportOrderVo> voList = dtoList.stream().map(transportOrderDTO -> BeanUtil.parseTransportOrderDTO2Vo(transportOrderDTO, orderFeign, areaApi)).collect(Collectors.toList());
-        return PageResponse.<TransportOrderVo>builder().items(voList).pagesize(vo.getPageSize()).page(vo.getPage()).counts(dtoPageResponse.getCounts()).pages(dtoPageResponse.getPages()).build();
+        return PageResponse.<TransportOrderVo>builder().items(voList).pagesize(vo.getPageSize()).page(vo.getPage())
+                .counts(dtoPageResponse != null ? dtoPageResponse.getCounts() : 0L)
+                .pages(dtoPageResponse != null ? dtoPageResponse.getPages() : 0L).build();
     }
 
     @ApiOperation(value = "获取运单详情")
