@@ -215,7 +215,9 @@ import UserRole from './UserRole'
 import RoleAuthority from './RoleAuthority'
 import roleApi from '@/api/Role.js'
 
+import crud from '@/mixins/crud'
 export default {
+  mixins: [crud],
   name: 'RoleManage',
   components: { Pagination, RoleEdit, UserRole, RoleAuthority },
   filters: {
@@ -229,30 +231,13 @@ export default {
   },
   data() {
     return {
-      dialog: {
-        isVisible: false,
-        type: 'add'
-      },
+      apiModule: roleApi,
       userRoleDialog: {
         isVisible: false
       },
       roleAuthorityDialog: {
         isVisible: false
       },
-      tableKey: 0,
-      // total: 0,
-      queryParams: {},
-      sort: {},
-      selection: [],
-      // 以下已修改
-      loading: false,
-      tableData: {
-        total: 0
-      },
-      pagination: {
-        size: 10,
-        current: 1
-      }
     }
   },
   computed: {},
@@ -281,69 +266,10 @@ export default {
     roleAuthoritySuccess() {
       this.search()
     },
-    onSelectChange(selection) {
-      this.selection = selection
-    },
-    search() {
-      this.fetch({
-        ...this.queryParams,
-        ...this.sort
-      })
-    },
-    reset() {
-      this.queryParams = {}
-      this.sort = {}
-      this.$refs.table.clearSort()
-      this.$refs.table.clearFilter()
-      this.search()
-    },
     exportExcel() {
       this.$message({
         message: '待完善',
         type: 'warning'
-      })
-    },
-    singleDelete(row) {
-      this.$refs.table.toggleRowSelection(row, true)
-      this.batchDelete()
-    },
-    batchDelete() {
-      if (!this.selection.length) {
-        this.$message({
-          message: this.$t('tips.noDataSelected'),
-          type: 'warning'
-        })
-        return
-      }
-      this.$confirm(this.$t('tips.confirmDelete'), this.$t('common.tips'), {
-        confirmButtonText: this.$t('common.confirm'),
-        cancelButtonText: this.$t('common.cancel'),
-        type: 'warning'
-      })
-        .then(() => {
-          const ids = []
-          this.selection.forEach(u => {
-            ids.push(u.id)
-          })
-          this.delete(ids)
-        })
-        .catch(() => {
-          this.clearSelections()
-        })
-    },
-    clearSelections() {
-      this.$refs.table.clearSelection()
-    },
-    delete(ids) {
-      roleApi.delete({ ids: ids }).then(response => {
-        const res = response.data
-        if (res.isSuccess) {
-          this.$message({
-            message: this.$t('tips.deleteSuccess'),
-            type: 'success'
-          })
-        }
-        this.search()
       })
     },
     add() {
@@ -355,25 +281,6 @@ export default {
       this.$refs.edit.setRole(row)
       this.dialog.type = 'edit'
       this.dialog.isVisible = true
-    },
-    fetch(params = {}) {
-      this.loading = true
-      params.size = this.pagination.size
-      params.current = this.pagination.current
-      if (this.queryParams.timeRange) {
-        params.startCreateTime = this.queryParams.timeRange[0]
-        params.endCreateTime = this.queryParams.timeRange[1]
-      }
-      roleApi.page(params).then(response => {
-        const res = response.data
-        this.loading = false
-        this.tableData = res.data
-      })
-    },
-    sortChange(val) {
-      this.sort.field = val.prop
-      this.sort.order = val.order
-      this.search()
     },
     authResource(row) {
       this.roleAuthorityDialog.isVisible = true

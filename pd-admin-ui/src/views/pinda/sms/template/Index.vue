@@ -211,7 +211,9 @@ import SmsTemplateEdit from './Edit'
 import smsTemplateApi from '@/api/SmsTemplate.js'
 import { converEnum } from '@/utils/utils'
 
+import crud from '@/mixins/crud'
 export default {
+  mixins: [crud],
   name: 'SmsTemplateManage',
   components: { Pagination, SmsTemplateEdit },
   filters: {
@@ -225,24 +227,7 @@ export default {
   },
   data() {
     return {
-      dialog: {
-        isVisible: false,
-        type: 'add'
-      },
-      tableKey: 0,
-      // total: 0,
-      queryParams: {},
-      sort: {},
-      selection: [],
-      // 以下已修改
-      loading: false,
-      tableData: {
-        total: 0
-      },
-      pagination: {
-        size: 10,
-        current: 1
-      }
+      apiModule: smsTemplateApi,
     }
   },
   computed: {
@@ -260,69 +245,10 @@ export default {
     editSuccess() {
       this.search()
     },
-    onSelectChange(selection) {
-      this.selection = selection
-    },
-    search() {
-      this.fetch({
-        ...this.queryParams,
-        ...this.sort
-      })
-    },
-    reset() {
-      this.queryParams = {}
-      this.sort = {}
-      this.$refs.table.clearSort()
-      this.$refs.table.clearFilter()
-      this.search()
-    },
     exportExcel() {
       this.$message({
         message: '待完善',
         type: 'warning'
-      })
-    },
-    singleDelete(row) {
-      this.$refs.table.toggleRowSelection(row, true)
-      this.batchDelete()
-    },
-    batchDelete() {
-      if (!this.selection.length) {
-        this.$message({
-          message: this.$t('tips.noDataSelected'),
-          type: 'warning'
-        })
-        return
-      }
-      this.$confirm(this.$t('tips.confirmDelete'), this.$t('common.tips'), {
-        confirmButtonText: this.$t('common.confirm'),
-        cancelButtonText: this.$t('common.cancel'),
-        type: 'warning'
-      })
-        .then(() => {
-          const ids = []
-          this.selection.forEach(u => {
-            ids.push(u.id)
-          })
-          this.delete(ids)
-        })
-        .catch(() => {
-          this.clearSelections()
-        })
-    },
-    clearSelections() {
-      this.$refs.table.clearSelection()
-    },
-    delete(ids) {
-      smsTemplateApi.delete({ ids: ids }).then(response => {
-        const res = response.data
-        if (res.isSuccess) {
-          this.$message({
-            message: this.$t('tips.deleteSuccess'),
-            type: 'success'
-          })
-        }
-        this.search()
       })
     },
     add() {
@@ -334,28 +260,6 @@ export default {
       this.$refs.edit.setSmsTemplate(row)
       this.dialog.type = 'edit'
       this.dialog.isVisible = true
-    },
-    fetch(params = {}) {
-      this.loading = true
-      params.size = this.pagination.size
-      params.current = this.pagination.current
-      if (this.queryParams.timeRange) {
-        params.startCreateTime = this.queryParams.timeRange[0]
-        params.endCreateTime = this.queryParams.timeRange[1]
-      }
-      smsTemplateApi.page(params).then(response => {
-        const res = response.data
-        this.loading = false
-        if (res.isError) {
-          return
-        }
-        this.tableData = res.data
-      })
-    },
-    sortChange(val) {
-      this.sort.field = val.prop
-      this.sort.order = val.order
-      this.search()
     },
     filterChange(filters) {
       for (const key in filters) {
