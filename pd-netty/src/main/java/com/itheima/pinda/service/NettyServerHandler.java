@@ -43,8 +43,8 @@ public class NettyServerHandler extends ChannelInboundHandlerAdapter {
 
             //发送至kafka队列
             if (kafkaSender != null) {
-                boolean sent = kafkaSender.send(KafkaSender.MSG_TOPIC, message);
-                if (!sent) {
+                //修改点：KafkaSender.send 返回 ListenableFuture（异步）；异常时返回 null，故以 null 判定发送失败
+                if (kafkaSender.send(KafkaSender.MSG_TOPIC, message) == null) {
                     log.warn("[Kafka] 发送失败，消息已丢弃: topic={}, msg={}", KafkaSender.MSG_TOPIC, message);
                 }
             }

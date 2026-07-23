@@ -48,7 +48,7 @@ public class DruidServiceImpl implements DruidService {
         sqlTemplate += whereResult.sql;
         sqlTemplate += " GROUP BY businessId";
 
-        List<Map> idMaps = messageMapper.list(sqlTemplate, whereResult.values);
+        List<Map<String, Object>> idMaps = messageMapper.list(sqlTemplate, whereResult.values);
 
         if (CollectionUtils.isEmpty(idMaps)) {
             return Result.ok().put("data", new ArrayList<>());
@@ -64,7 +64,7 @@ public class DruidServiceImpl implements DruidService {
                                   "FROM tms_order_location WHERE id IN (" + inClause + ")";
 
         List<Object> inParams = new ArrayList<>(ids);
-        List<Map> messageEntities = messageMapper.list(querySqlTemplate, inParams);
+        List<Map<String, Object>> messageEntities = messageMapper.list(querySqlTemplate, inParams);
 
         return Result.ok().put("data", messageEntities);
     }
@@ -100,7 +100,7 @@ public class DruidServiceImpl implements DruidService {
         List<Object> allParams = new ArrayList<>(whereResult2.values);
         allParams.addAll(limitResult.values);
 
-        List<Map> messageEntities = messageMapper.list(latLngSqlTemplate, allParams);
+        List<Map<String, Object>> messageEntities = messageMapper.list(latLngSqlTemplate, allParams);
 
         baseMap.put("polyLinePath", messageEntities);
         return Result.ok().put("data", baseMap);
@@ -137,7 +137,7 @@ public class DruidServiceImpl implements DruidService {
             List<Object> allParams = new ArrayList<>(whereResult2.values);
             allParams.addAll(limitResult.values);
 
-            List<Map> messageEntities = messageMapper.list(latLngSqlTemplate, allParams);
+            List<Map<String, Object>> messageEntities = messageMapper.list(latLngSqlTemplate, allParams);
             linePointList.addAll(messageEntities);
             baseMap.put("list", messageEntities);
             baseMapList.add(baseMap);
