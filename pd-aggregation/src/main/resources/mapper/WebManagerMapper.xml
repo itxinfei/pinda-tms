@@ -46,9 +46,6 @@
             <if test="params.courierName != null and params.courierName != ''">
                 AND auth_user.name LIKE CONCAT('%',#{params.courierName},'%')
             </if>
-            <if test="params.courierName != null and params.courierName != ''">
-                AND auth_user.name LIKE CONCAT('%',#{params.courierName},'%')
-            </if>
             <if test="params.senderName != null and params.senderName != ''">
                 AND pdorder.sender_name LIKE CONCAT('%',#{params.senderName},'%')
             </if>

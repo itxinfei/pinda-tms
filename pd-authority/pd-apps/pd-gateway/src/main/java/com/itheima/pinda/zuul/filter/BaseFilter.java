@@ -8,7 +8,6 @@ import com.itheima.pinda.zuul.adapter.IgnoreTokenConfig;
 import com.netflix.zuul.ZuulFilter;
 import com.netflix.zuul.context.RequestContext;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.netflix.zuul.filters.Route;
@@ -94,9 +93,7 @@ public abstract class BaseFilter extends ZuulFilter {
 
     protected String getTokenFromRequest(String headerName, HttpServletRequest request) {
         String token = request.getHeader(headerName);
-        if (StringUtils.isBlank(token)) {
-            token = request.getParameter(headerName);
-        }
+        // 禁止从URL查询参数获取Token，防止Token泄露到访问日志和Referer头
         return token;
     }
 

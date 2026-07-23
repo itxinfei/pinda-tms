@@ -10,6 +10,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,6 +33,7 @@ public class PdTransportTripsTruckDriverServiceImpl extends ServiceImpl<PdTransp
     private CustomIdGenerator idGenerator;
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void batchSave(String truckTransportTripsId, List<PdTransportTripsTruckDriver> truckTransportTripsTruckDriverList) {
         LambdaQueryWrapper<PdTransportTripsTruckDriver> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         lambdaQueryWrapper.eq(PdTransportTripsTruckDriver::getTransportTripsId, truckTransportTripsId);

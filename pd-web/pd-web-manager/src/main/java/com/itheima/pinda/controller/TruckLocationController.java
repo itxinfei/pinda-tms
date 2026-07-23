@@ -81,9 +81,11 @@ public class TruckLocationController {
         String userId = transportTripsTruckDriverDto.getUserId();
         R<User> userR = userApi.get(Long.valueOf(userId));
         User user = userR.getData();
-        truckLocationVo.setName(user.getName());
-        truckLocationVo.setMobile(user.getMobile());
-        truckLocationVo.setAvatar(user.getAvatar());
+        if (userR != null && userR.getData() != null) {
+            truckLocationVo.setName(user.getName());
+            truckLocationVo.setMobile(user.getMobile());
+            truckLocationVo.setAvatar(user.getAvatar());
+        }
 
         return truckLocationVo;
     }

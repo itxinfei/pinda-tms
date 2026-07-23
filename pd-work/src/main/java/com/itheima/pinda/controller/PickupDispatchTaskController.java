@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.itheima.pinda.DTO.TaskPickupDispatchDTO;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.entity.TaskPickupDispatch;
+import com.itheima.pinda.common.exception.BusinessException;
 import com.itheima.pinda.enums.pickuptask.PickupDispatchTaskAssignedStatus;
 import com.itheima.pinda.service.ITaskPickupDispatchService;
 import lombok.extern.slf4j.Slf4j;
@@ -57,6 +58,10 @@ public class PickupDispatchTaskController {
     @PutMapping("/{id}")
     public TaskPickupDispatchDTO updateById(@PathVariable(name = "id") String id, @RequestBody TaskPickupDispatchDTO dto) {
         dto.setId(id);
+        TaskPickupDispatch existing = taskPickupDispatchService.getById(id);
+        if (existing == null) {
+            throw new BusinessException("取派件任务不存在: " + id);
+        }
         TaskPickupDispatch dispatch = new TaskPickupDispatch();
         BeanUtils.copyProperties(dto, dispatch);
         if (StringUtils.isNotEmpty(dispatch.getCourierId())) {

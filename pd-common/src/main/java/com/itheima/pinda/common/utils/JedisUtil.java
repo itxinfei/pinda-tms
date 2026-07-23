@@ -13,6 +13,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class JedisUtil implements Serializable {
 
     //private Logger log = Logger.getLogger(this.getClass());
@@ -1444,12 +1447,12 @@ public class JedisUtil implements Serializable {
         JedisUtil jedisUtil= JedisUtil.getInstance();
         JedisUtil.Strings strings=jedisUtil.new Strings();
         strings.set("nnn", "nnnn");
-        System.out.println("-----"+strings.get("nnn"));
+        log.debug("-----{}", strings.get("nnn"));
 
         Jedis jedis=JedisUtil.getInstance().getJedis();
         for (int i = 0; i < 10; i++) {
             jedis.set("test", "test");
-            System.out.println(i+"=="+jedis.get("test"));
+            log.debug("{}=={}", i, jedis.get("test"));
 
         }
         JedisUtil.getInstance().returnJedis(jedis);

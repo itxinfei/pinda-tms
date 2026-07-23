@@ -82,6 +82,9 @@ public class UserController {
         // 基本信息
         R<User> userR = userApi.get(Long.valueOf(driverId));
         User user = userR.getData();
+        if (user == null) {
+            return Result.error(404, "用户不存在");
+        }
         log.info("司机端-登录用户：{}", user);
         // 司机信息
         TruckDriverDto truckDriverDto = driverFeign.findOneDriver(driverId);
@@ -91,35 +94,42 @@ public class UserController {
         String truckId = null;
         String licensePlate = null;
         String transportTaskId = null;
-        DriverJobDTO driverJobDto = new DriverJobDTO();
-        driverJobDto.setStatus(DriverJobStatus.PROCESSING.getCode());
-        driverJobDto.setDriverId(driverId);
-        List<DriverJobDTO> driverJobDtos = driverJobFeign.findAll(driverJobDto);
-        log.info("司机端-在途任务：{}", driverJobDtos);
-        if (!CollectionUtils.isEmpty(driverJobDtos)) {
-            driverJobDto = driverJobDtos.get(0);
-            String taskTransportId = driverJobDto.getTaskTransportId();
-            TaskTransportDTO transportTaskDto = transportTaskFeign.findById(taskTransportId);
-            log.info("司机端-在途任务详情：{}", transportTaskDto);
-            if (transportTaskDto != null) {
-                transportTaskId = transportTaskDto.getId();
-                truckId = transportTaskDto.getTruckId();
-                TruckDto truckDto = truckFeign.fineById(truckId);
-                log.info("司机端-车辆信息：{}", truckDto);
-                licensePlate = truckDto.getLicensePlate();
+        if (truckDriverDto != null) {
+            DriverJobDTO driverJobDto = new DriverJobDTO();
+            driverJobDto.setStatus(DriverJobStatus.PROCESSING.getCode());
+            driverJobDto.setDriverId(driverId);
+            List<DriverJobDTO> driverJobDtos = driverJobFeign.findAll(driverJobDto);
+            log.info("司机端-在途任务：{}", driverJobDtos);
+            if (!CollectionUtils.isEmpty(driverJobDtos)) {
+                driverJobDto = driverJobDtos.get(0);
+                String taskTransportId = driverJobDto.getTaskTransportId();
+                TaskTransportDTO transportTaskDto = transportTaskFeign.findById(taskTransportId);
+                log.info("司机端-在途任务详情：{}", transportTaskDto);
+                if (transportTaskDto != null) {
+                    transportTaskId = transportTaskDto.getId();
+                    truckId = transportTaskDto.getTruckId();
+                    TruckDto truckDto = truckFeign.fineById(truckId);
+                    log.info("司机端-车辆信息：{}", truckDto);
+                    if (truckDto != null) {
+                        licensePlate = truckDto.getLicensePlate();
+                    }
+                }
             }
         }
         // 所属机构
         R<Org> orgR = orgApi.get(user.getOrgId());
         Org org = orgR.getData();
+        if (org == null) {
+            return Result.error(404, "机构不存在");
+        }
         FleetDto fleetDto = null;
         Org fleetOrg = null;
-        if (StringUtils.isNotEmpty(truckDriverDto.getFleetId())) {
+        if (truckDriverDto != null && StringUtils.isNotEmpty(truckDriverDto.getFleetId())) {
             // 车队信息
             fleetDto = fleetFeign.fineById(truckDriverDto.getFleetId());
             log.info("司机端-车队信息：{}", fleetDto);
             // 运转中心
-            if (StringUtils.isNotEmpty(fleetDto.getAgencyId())) {
+            if (fleetDto != null && StringUtils.isNotEmpty(fleetDto.getAgencyId())) {
                 R<Org> fleetOrgR = orgApi.get(Long.valueOf(fleetDto.getAgencyId()));
                 fleetOrg = fleetOrgR.getData();
             }

@@ -14,7 +14,9 @@ public class OrderClassifyOrderServiceImpl extends ServiceImpl<OrderClassifyOrde
         wrapper.eq(OrderClassifyOrderEntity::getOrderId, orderId);
 
         OrderClassifyOrderEntity entity = this.baseMapper.selectOne(wrapper);
-
+        if (entity == null) {
+            return null;
+        }
         return entity.getOrderClassifyId();
     }
 }

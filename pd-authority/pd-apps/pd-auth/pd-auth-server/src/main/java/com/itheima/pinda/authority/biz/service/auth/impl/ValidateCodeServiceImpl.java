@@ -21,9 +21,12 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * 验证码服务
  */
+@Slf4j
 @Service
 public class ValidateCodeServiceImpl implements ValidateCodeService {
 
@@ -80,7 +83,7 @@ public class ValidateCodeServiceImpl implements ValidateCodeService {
             captcha = new ChineseCaptcha(115, 42);
         }
         captcha.setCharType(2);
-        System.out.println(captcha.getClass().getSimpleName());
+        log.debug(captcha.getClass().getSimpleName());
         return captcha;
     }
 

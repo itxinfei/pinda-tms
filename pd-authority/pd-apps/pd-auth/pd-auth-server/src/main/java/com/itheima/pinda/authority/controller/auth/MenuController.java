@@ -174,7 +174,7 @@ public class MenuController extends BaseController {
     @ApiOperation(value = "查询用户可用的所有菜单路由树", notes = "查询用户可用的所有菜单路由树")
     @GetMapping("/router")
     public R<List<VueRouter>> myRouter(@RequestParam(value = "group", required = false) String group, @RequestParam(value = "userId", required = false) String userId, HttpServletRequest request) {
-        System.out.println("查询用户可用的所有菜单路由树");
+        log.info("查询用户可用的所有菜单路由树");
       /*  if (userId == null || userId <= 0) {
             userId = getUserId();
         }
