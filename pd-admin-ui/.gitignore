@@ -24,3 +24,6 @@ selenium-debug.log
 
 package-lock.json
 yarn.lock
+
+# 构建产物（由 npm run build 生成，含旧凭据/IP，禁止提交）
+pinda/
