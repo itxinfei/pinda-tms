@@ -28,3 +28,6 @@ yarn.lock
 # 构建产物（由 npm run build 生成于项目根，含旧凭据/IP，禁止提交）
 # 注意：必须前导斜杠锚定到本目录，避免误忽略 src/views/pinda/ 等源码目录
 /pinda/
+
+# 本地/CI 注入的环境变量（含生产 IP 等敏感值，禁止提交；由 .ci 或本地 .env.*.local 提供）
+.env.*.local
