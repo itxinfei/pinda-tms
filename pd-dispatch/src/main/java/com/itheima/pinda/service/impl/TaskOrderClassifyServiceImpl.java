@@ -27,6 +27,7 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import java.util.*;
@@ -58,6 +59,7 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
      * @return
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public List<OrderClassifyGroupDTO> execute(String agencyId, String jobId, String logId) {
         //用于存放当前机构下的订单
         List<OrderClassifyDTO> orderClassifyDTOS = new ArrayList<>();
@@ -175,16 +177,16 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
      * @return
      */
     private String getStartAgencyId(Order order) {
-        //根据当前订单获取发件人地址详细信息，包含省市区，例如：北京市昌平区建材城西路金燕龙办公楼
+        //根据当前订单获取发件人地址详细信息，包含省市区
         String address = senderFullAddress(order);
         if(StringUtils.isBlank(address)){
-            exceptionHappend("收件人地址不能为空");
+            exceptionHappend("发件人地址不能为空");
         }
 
         //调用百度地图工具类，根据地址获取对应的经纬度坐标
         String location = EntCoordSyncJob.getCoordinate(address);
         if(StringUtils.isBlank(location)){
-            exceptionHappend("收件人地址不正确");
+            exceptionHappend("发件人地址不正确");
         }
 
         log.info("根据地址{}获取对应的坐标值{}",address,location);

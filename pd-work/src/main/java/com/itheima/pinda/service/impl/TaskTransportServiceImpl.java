@@ -27,6 +27,7 @@ import com.itheima.pinda.service.state.IStatusTransitionHistoryService;
 import com.itheima.pinda.state.StateTransitionValidator;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -73,6 +74,41 @@ public class TaskTransportServiceImpl extends
         return userId != null ? userId : "system";
     }
 
+    /**
+     * 获取当前操作人名称，HTTP上下文为空或缺少名称头时返回 "system"
+     */
+    private String getCurrentOperatorName() {
+        String userName = RequestContext.getUserName();
+        return userName != null ? userName : "system";
+    }
+
+    /**
+     * 岗位ID常量（取自网关透传的 stationid，与鉴权中心 StaticStation 保持一致）
+     */
+    private static final Long STATION_DRIVER = 2L;
+    private static final Long STATION_COURIER = 3L;
+
+    /**
+     * 获取当前操作人类型（operatorType）
+     *
+     * <p>取值含义：1-客户 2-快递员 3-司机 4-系统 5-管理员。
+     * 依据网关透传的 stationid 映射：司机岗(2)→司机(3)，快递员岗(3)→快递员(2)；
+     * 其余已认证内部人员（如管理员）归为管理员(5)；无 HTTP 上下文（异步/定时任务）归为系统(4)。</p>
+     */
+    private Integer getCurrentOperatorType() {
+        Long stationId = RequestContext.getStationId();
+        if (stationId == null) {
+            return 4; // 系统
+        }
+        if (STATION_DRIVER.equals(stationId)) {
+            return 3; // 司机
+        }
+        if (STATION_COURIER.equals(stationId)) {
+            return 2; // 快递员
+        }
+        return 5; // 管理员（其余内部人员）
+    }
+
     @Override
     public TaskTransport saveTaskTransport(TaskTransport taskTransport) {
         taskTransport.setId(idGenerator.nextId(taskTransport) + "");
@@ -82,6 +118,72 @@ public class TaskTransportServiceImpl extends
         taskTransport.setLoadingStatus(TransportTaskLoadingStatus.EMPTY.getCode());
         save(taskTransport);
         return taskTransport;
+    }
+
+    /**
+     * 保存运输任务并关联运单（事务保护）
+     *
+     * @param taskTransport 运输任务
+     * @param transportOrderIds 关联的运单ID列表
+     * @return 保存后的运输任务
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public TaskTransport saveWithRelations(TaskTransport taskTransport, List<String> transportOrderIds) {
+        taskTransport.setId(idGenerator.nextId(taskTransport) + "");
+        taskTransport.setCreateTime(LocalDateTime.now());
+        taskTransport.setStatus(TransportTaskStatus.PENDING.getCode());
+        taskTransport.setAssignedStatus(TransportTaskAssignedStatus.TO_BE_DISTRIBUTED.getCode());
+        taskTransport.setLoadingStatus(TransportTaskLoadingStatus.EMPTY.getCode());
+        save(taskTransport);
+
+        if (transportOrderIds != null && !transportOrderIds.isEmpty()) {
+            List<TransportOrderTask> transportOrderTaskList = transportOrderIds.stream().map(transportOrderId -> {
+                TransportOrderTask transportOrderTask = new TransportOrderTask();
+                transportOrderTask.setTransportOrderId(transportOrderId);
+                transportOrderTask.setTransportTaskId(taskTransport.getId());
+                return transportOrderTask;
+            }).collect(Collectors.toList());
+            transportOrderTaskService.batchSaveTransportOrder(transportOrderTaskList);
+        }
+
+        return taskTransport;
+    }
+
+    /**
+     * 更新运输任务并重新关联运单（事务保护）
+     *
+     * @param id 运输任务ID
+     * @param dto 运输任务DTO
+     * @param transportOrderIds 关联的运单ID列表
+     * @return 是否成功
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean updateWithRelations(String id, TaskTransportDTO dto, List<String> transportOrderIds) {
+        dto.setId(id);
+        TaskTransport taskTransport = new TaskTransport();
+        BeanUtils.copyProperties(dto, taskTransport);
+        boolean updated = updateById(taskTransport);
+        if (!updated) {
+            return false;
+        }
+
+        // 删除旧关联关系
+        transportOrderTaskService.del(null, id);
+
+        // 保存新关联关系
+        if (transportOrderIds != null && !transportOrderIds.isEmpty()) {
+            List<TransportOrderTask> transportOrderTaskList = transportOrderIds.stream().map(transportOrderId -> {
+                TransportOrderTask transportOrderTask = new TransportOrderTask();
+                transportOrderTask.setTransportOrderId(transportOrderId);
+                transportOrderTask.setTransportTaskId(id);
+                return transportOrderTask;
+            }).collect(Collectors.toList());
+            transportOrderTaskService.batchSaveTransportOrder(transportOrderTaskList);
+        }
+
+        return true;
     }
 
     @Override
@@ -152,7 +254,7 @@ public class TaskTransportServiceImpl extends
             statusTransitionHistoryService.recordTransition(
                 3, id, id,
                 taskTransport.getStatus(), targetStatus,
-                operatorId, operatorId, 3, "发车确认"
+                operatorId, getCurrentOperatorName(), getCurrentOperatorType(), "发车确认"
             );
         }
         log.info("运输任务[{}]发车确认结果: {}", id, result ? "成功" : "失败");
@@ -196,7 +298,7 @@ public class TaskTransportServiceImpl extends
             statusTransitionHistoryService.recordTransition(
                 3, id, id,
                 taskTransport.getStatus(), targetStatus,
-                operatorId, operatorId, 3, "到达确认"
+                operatorId, getCurrentOperatorName(), getCurrentOperatorType(), "到达确认"
             );
         }
         log.info("运输任务[{}]到达确认结果: {}", id, result ? "成功" : "失败");
@@ -240,7 +342,7 @@ public class TaskTransportServiceImpl extends
             statusTransitionHistoryService.recordTransition(
                 3, id, id,
                 taskTransport.getStatus(), targetStatus,
-                operatorId, operatorId, 3, "交付确认"
+                operatorId, getCurrentOperatorName(), getCurrentOperatorType(), "交付确认"
             );
         }
         log.info("运输任务[{}]交付确认结果: {}", id, result ? "成功" : "失败");
