@@ -50,8 +50,8 @@ Base64 解码后为 `fabc:123456`，明文提交到代码库。
 **文件：** `src/settings.js` 第 9、12-13 行
 
 ```js
-"production": 'http://39.100.244.120:8764/druid',
-"production": 'http://39.100.244.120:8765/druid',
+"production": 'http://<PROD_HOST>:8764/druid',
+"production": 'http://<PROD_HOST>:8765/druid',
 ```
 
 生产基础设施 IP 地址和 Druid 监控 URL 硬编码在源码中。
