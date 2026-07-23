@@ -10,6 +10,7 @@ import com.itheima.pinda.service.ITransportOrderTaskService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -40,17 +41,7 @@ public class TransportTaskController {
     public TaskTransportDTO save(@RequestBody TaskTransportDTO dto) {
         TaskTransport transportOrder = new TaskTransport();
         BeanUtils.copyProperties(dto, transportOrder);
-        taskTransportService.saveTaskTransport(transportOrder);
-        //保存与运单的关联关系
-        if (dto.getTransportOrderIds() != null && dto.getTransportOrderIds().size() > 0) {
-            List<TransportOrderTask> transportOrderTaskList = dto.getTransportOrderIds().stream().map(transportOrderId -> {
-                TransportOrderTask transportOrderTask = new TransportOrderTask();
-                transportOrderTask.setTransportOrderId(transportOrderId);
-                transportOrderTask.setTransportTaskId(transportOrder.getId());
-                return transportOrderTask;
-            }).collect(Collectors.toList());
-            transportOrderTaskService.batchSaveTransportOrder(transportOrderTaskList);
-        }
+        taskTransportService.saveWithRelations(transportOrder, dto.getTransportOrderIds());
         TaskTransportDTO result = new TaskTransportDTO();
         BeanUtils.copyProperties(transportOrder, result);
         result.setTransportOrderIds(dto.getTransportOrderIds());
@@ -66,21 +57,8 @@ public class TransportTaskController {
      */
     @PutMapping("/{id}")
     public TaskTransportDTO updateById(@PathVariable(name = "id") String id, @RequestBody TaskTransportDTO dto) {
+        taskTransportService.updateWithRelations(id, dto, dto.getTransportOrderIds());
         dto.setId(id);
-        TaskTransport taskTransport = new TaskTransport();
-        BeanUtils.copyProperties(dto, taskTransport);
-        taskTransportService.updateById(taskTransport);
-        transportOrderTaskService.del(null, id);
-        //保存与运单的关联关系
-        if (dto.getTransportOrderIds() != null && dto.getTransportOrderIds().size() > 0) {
-            List<TransportOrderTask> transportOrderTaskList = dto.getTransportOrderIds().stream().map(transportOrderId -> {
-                TransportOrderTask transportOrderTask = new TransportOrderTask();
-                transportOrderTask.setTransportOrderId(transportOrderId);
-                transportOrderTask.setTransportTaskId(id);
-                return transportOrderTask;
-            }).collect(Collectors.toList());
-            transportOrderTaskService.batchSaveTransportOrder(transportOrderTaskList);
-        }
         return dto;
     }
 

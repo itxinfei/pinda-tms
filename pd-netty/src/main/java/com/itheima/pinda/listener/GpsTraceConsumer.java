@@ -5,11 +5,14 @@ import com.itheima.pinda.entity.LocationEntity;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
+import java.util.ArrayDeque;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,7 +39,7 @@ public class GpsTraceConsumer {
 
     /**
      * 轨迹点内存缓存（按车辆/快递员ID分组）
-     * key: businessId#type, value: 轨迹点列表
+     * key: businessId#type, value: 线程安全的同步轨迹点列表（LinkedList保证O(1)删除首元素）
      */
     private static final Map<String, List<LocationEntity>> TRACE_CACHE = new ConcurrentHashMap<>();
 
@@ -120,24 +123,30 @@ public class GpsTraceConsumer {
      * @param location 位置信息
      */
     private void processGpsData(LocationEntity location) {
+        if (location == null || !StringUtils.hasText(location.getBusinessId()) || !StringUtils.hasText(location.getType())) {
+            log.warn("[GPS消费] 忽略无效轨迹点: businessId或type为空");
+            return;
+        }
+
         String cacheKey = location.getBusinessId() + "#" + location.getType();
 
-        // 1. 添加到轨迹缓存
-        List<LocationEntity> tracePoints = TRACE_CACHE.computeIfAbsent(cacheKey, k -> new ArrayList<>());
-        synchronized (tracePoints) {
-            tracePoints.add(location);
-            // 超过容量限制时移除最旧的点
-            if (tracePoints.size() > MAX_CACHE_SIZE) {
-                tracePoints.remove(0);
-            }
+        // 1. 添加到轨迹缓存（使用同步列表保证线程安全）
+        List<LocationEntity> tracePoints = TRACE_CACHE.computeIfAbsent(cacheKey, k ->
+            Collections.synchronizedList(new LinkedList<>()));
+        tracePoints.add(location);
+        // 超过容量限制时移除最旧的点（LinkedList O(1)操作）
+        if (tracePoints.size() > MAX_CACHE_SIZE) {
+            tracePoints.remove(0);
         }
 
         long count = TRACE_COUNT.incrementAndGet();
         log.debug("[GPS消费] 轨迹点接收: businessId={}, type={}, lng={}, lat={}, 累计处理: {}",
             location.getBusinessId(), location.getType(), location.getLng(), location.getLat(), count);
 
-        // 2. 异常检测
-        checkAnomalies(location, cacheKey, tracePoints);
+        // 2. 异常检测（读取时加锁，与写入保持同步）
+        synchronized (tracePoints) {
+            checkAnomalies(location, cacheKey, tracePoints);
+        }
     }
 
     /**
@@ -172,6 +181,10 @@ public class GpsTraceConsumer {
      * @param previous 上一个点
      */
     private void checkSpeed(LocationEntity current, LocationEntity previous) {
+        if (current.getLng() == null || current.getLat() == null
+                || previous.getLng() == null || previous.getLat() == null) {
+            return; // 坐标缺失，跳过检测
+        }
         try {
             double currentLng = Double.parseDouble(current.getLng());
             double currentLat = Double.parseDouble(current.getLat());
