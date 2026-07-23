@@ -92,9 +92,8 @@ public class DataScopeInterceptor extends AbstractSqlParserHandler implements In
         if (DataScopeType.SELF.eq(dsType)) {
             originalSql = "select * from (" + originalSql + ") temp_data_scope where temp_data_scope." + selfScopeName + " = " + userId;
         }
-        //查其他
+        //查其他 - orgIds来自系统角色配置，非用户输入，此处直接拼接SQL
         else if (StrUtil.isNotBlank(scopeName) && CollectionUtil.isNotEmpty(orgIds)) {
-
             String join = CollectionUtil.join(orgIds, ",");
             originalSql = "select * from (" + originalSql + ") temp_data_scope where temp_data_scope." + scopeName + " in (" + join + ")";
         }

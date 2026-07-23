@@ -8,6 +8,7 @@ import com.google.common.collect.Maps;
 import com.itheima.pinda.DTO.OrderDTO;
 import com.itheima.pinda.DTO.OrderLocationDto;
 import com.itheima.pinda.DTO.OrderSearchDTO;
+import com.itheima.pinda.common.exception.PdException;
 import com.itheima.pinda.common.utils.CustomIdGenerator;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.entity.Order;
@@ -73,7 +74,7 @@ public class OrderController {
         }
         if (!map.containsKey("amount")) {
             log.error("[订单] 价格计算异常，未返回金额: orderId={}", orderDTO.getId());
-            throw new BusinessException("运费计算结果异常，请稍后重试");
+            throw new PdException("运费计算结果异常，请稍后重试");
         }
         order.setAmount(new BigDecimal(map.get("amount").toString()));
         orderService.saveOrder(order);

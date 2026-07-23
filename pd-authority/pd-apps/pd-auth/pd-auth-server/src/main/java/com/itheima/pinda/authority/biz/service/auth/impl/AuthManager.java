@@ -107,7 +107,7 @@ public class AuthManager {
         }
 
 
-        if (!user.getPassword().equalsIgnoreCase(passwordMd5)) {
+        if (!user.getPassword().equals(passwordMd5)) {
             this.userService.updatePasswordErrorNumById(user.getId());
             return R.fail("用户名或密码错误!");
         }
