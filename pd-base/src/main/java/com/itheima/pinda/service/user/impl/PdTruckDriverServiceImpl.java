@@ -62,10 +62,11 @@ public class PdTruckDriverServiceImpl extends ServiceImpl<PdTruckDriverMapper, P
 
     @Override
     public PdTruckDriver findOne(String userId) {
-        LambdaQueryWrapper<PdTruckDriver> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        if (StringUtils.isNotEmpty(userId)) {
-            lambdaQueryWrapper.eq(PdTruckDriver::getUserId, userId);
+        if (!StringUtils.isNotEmpty(userId)) {
+            return null;
         }
+        LambdaQueryWrapper<PdTruckDriver> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+        lambdaQueryWrapper.eq(PdTruckDriver::getUserId, userId);
         return getOne(lambdaQueryWrapper);
     }
 

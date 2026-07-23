@@ -6,6 +6,7 @@ import com.itheima.pinda.entity.LocationEntity;
 import com.itheima.pinda.service.KafkaSender;
 import io.swagger.annotations.Api;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,6 +20,9 @@ import org.springframework.web.bind.annotation.RestController;
 @Api(tags = "车辆轨迹服务")
 @Slf4j
 public class NettyController {
+    @Autowired
+    private KafkaSender kafkaSender;
+
     /**
      * 将车辆定位信息发送到kafka队列
      * @param locationEntity
@@ -27,8 +31,8 @@ public class NettyController {
     @PostMapping("/push")
     public Result push(@RequestBody LocationEntity locationEntity){
         String message = JSON.toJSONString(locationEntity);
-        KafkaSender.send(KafkaSender.MSG_TOPIC,message);//将消息发送到kafka队列
-        log.info("HTTP接口方式推送位置信息到kafka:{}",message);
+        kafkaSender.send(KafkaSender.MSG_TOPIC, message);
+        log.info("HTTP接口方式推送位置信息到kafka:{}", message);
         return Result.ok();
     }
 }

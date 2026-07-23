@@ -1,11 +1,8 @@
 package com.itheima.pinda.controller.truck;
 
-import com.itheima.pinda.entity.truck.PdTruck;
 import com.itheima.pinda.entity.truck.PdTruckLicense;
 import com.itheima.pinda.service.truck.IPdTruckLicenseService;
 import com.itheima.pinda.DTO.truck.TruckLicenseDto;
-
-import com.itheima.pinda.service.truck.IPdTruckService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,8 +21,6 @@ import org.springframework.beans.BeanUtils;
 public class TruckLicenseController {
     @Autowired
     private IPdTruckLicenseService truckLicenseService;
-    @Autowired
-    private IPdTruckService truckService;
 
     /**
      * 保存车辆行驶证信息
@@ -38,12 +33,6 @@ public class TruckLicenseController {
         PdTruckLicense pdTruckLicense = new PdTruckLicense();
         BeanUtils.copyProperties(dto, pdTruckLicense);
         pdTruckLicense = truckLicenseService.saveTruckLicense(pdTruckLicense);
-        if (dto.getId() == null) {
-            PdTruck truck = new PdTruck();
-            truck.setId(dto.getId());
-            truck.setTruckLicenseId(pdTruckLicense.getId());
-            truckService.saveTruck(truck);
-        }
         BeanUtils.copyProperties(pdTruckLicense, dto);
         return dto;
     }

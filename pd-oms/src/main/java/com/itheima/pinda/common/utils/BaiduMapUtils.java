@@ -12,23 +12,27 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.text.DecimalFormat;
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.Map;
 
 /**
  * 百度地图操作工具类
  */
+@Slf4j
 public class BaiduMapUtils {
     public static void main(String[] args) {
         String origin = getCoordinate("北京市育新花园小区");
         String destination = getCoordinate("北京市百度大厦");
         Double distance = getDistance(origin, destination);
-        System.out.println("订单距离："+distance + "米");
+        log.debug("订单距离：{}米", distance);
         Integer time = getTime(origin, destination);
-        System.out.println("线路耗时"+time+"秒");
+        log.debug("线路耗时{}秒", time);
     }
 
-    //private static String AK = "UEBQm9c3KZ5LrsO2C2qsOAs1eSdLvlzM";
-    private static String AK = "MyAeKeu4fGvFmtvIbp9LYLweDEivzNAS";
+    // API密钥通过配置注入，禁止硬编码AK到源码
+    // 可在启动时通过 -D参数传入：-Dbaidu.map.ak=xxx
+    private static String AK = System.getProperty("baidu.map.ak", "");
 
     /**
      * 调用百度地图地理编码服务接口，根据地址获取坐标（经度、纬度）
@@ -125,9 +129,13 @@ public class BaiduMapUtils {
             }
             in.close();
         } catch (MalformedURLException e) {
+            log.error("百度地图API URL异常: {}", httpUrl, e);
+            return "";
         } catch (IOException e) {
+            log.error("百度地图API请求IO异常: {}", httpUrl, e);
+            return "";
         }
-        System.out.println(json.toString());
+        log.debug(json.toString());
         return json.toString();
     }
 }

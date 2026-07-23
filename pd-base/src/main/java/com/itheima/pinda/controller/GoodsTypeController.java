@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -106,7 +107,7 @@ public class GoodsTypeController {
             }).collect(Collectors.toList());
             return goodsTypeDtoList;
         }
-        return null;
+        return Collections.emptyList();
     }
 
     /**
@@ -143,7 +144,7 @@ public class GoodsTypeController {
             return PageResponse.<GoodsTypeDto>builder().items(goodsTypeDtoList).counts(goodsTypePage.getTotal()).page(page).pages(goodsTypePage.getPages()).pagesize(pageSize).build();
         }
 
-        return null;
+        return PageResponse.<GoodsTypeDto>builder().items(Collections.emptyList()).counts(0L).page(page).pages(0L).pagesize(pageSize).build();
     }
 
     /**
@@ -158,7 +159,7 @@ public class GoodsTypeController {
         if(list != null && list.size() > 0){
             List<GoodsTypeDto> goodsTypeDtoList = list.stream().map(pdGoodsType -> {
                 List<PdTruckTypeGoodsType> truckTypeGoodsTypes = truckTypeGoodsTypeService.findAll(null, pdGoodsType.getId());
-                List<String> truckTypeIds = truckTypeGoodsTypes.stream().map(truckTypeGoodsType -> truckTypeGoodsType.getTruckTypeId()).collect(Collectors.toList());
+                List<String> truckTypeIds = truckTypeGoodsTypes.stream().map(pdTruckTypeGoodsType -> pdTruckTypeGoodsType.getTruckTypeId()).collect(Collectors.toList());
                 GoodsTypeDto goodsTypeDto = new GoodsTypeDto();
                 BeanUtils.copyProperties(pdGoodsType, goodsTypeDto);
                 goodsTypeDto.setTruckTypeIds(truckTypeIds);
@@ -166,7 +167,7 @@ public class GoodsTypeController {
             }).collect(Collectors.toList());
             return goodsTypeDtoList;
         }
-        return null;
+        return Collections.emptyList();
     }
 
     /**

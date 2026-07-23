@@ -53,13 +53,23 @@ public class OrderController {
     @PostMapping("")
     public OrderDTO save(@RequestBody OrderDTO orderDTO, HttpServletResponse res) {
         log.info("保存订单信息:{}", JSON.toJSONString(orderDTO));
+        if (orderDTO == null || orderDTO.getOrderCargoDto() == null) {
+            log.warn("[订单] 保存失败：orderDTO或orderCargoDto为空");
+            return null;
+        }
         Order order = new Order();
         order.setEstimatedArrivalTime(LocalDateTime.now().plus(2, ChronoUnit.DAYS));
         Map map = orderService.calculateAmount(orderDTO);
+        if (map == null || map.get("orderDto") == null) {
+            log.error("[订单] 计算运费失败，无法保存订单");
+            return null;
+        }
         log.info("实时计算运费:{}", map);
         orderDTO = (OrderDTO) map.get("orderDto");
         BeanUtils.copyProperties(orderDTO, order);
-        if ("send error msg".equals(orderDTO.getSenderAddress()) || "receive error msg".equals(orderDTO.getReceiverAddress())) {
+        if ("sender error msg".equals(orderDTO.getSenderAddress()) || "receiver error msg".equals(orderDTO.getReceiverAddress())) {
+            log.warn("[订单] 地址校验失败，订单未入库: senderAddr={}, receiverAddr={}",
+                orderDTO.getSenderAddress(), orderDTO.getReceiverAddress());
             return orderDTO;
         }
         order.setAmount(new BigDecimal(map.getOrDefault("amount", "23").toString()));
@@ -220,7 +230,9 @@ public class OrderController {
     public OrderLocationDto selectByOrderId(@RequestParam(name = "orderId") String orderId) {
         OrderLocationDto result = new OrderLocationDto();
         OrderLocation location = orderLocationService.getBaseMapper().selectOne(new QueryWrapper<OrderLocation>().eq("order_id", orderId).last(" limit 1"));
-        BeanUtils.copyProperties(location, result);
+        if (location != null) {
+            BeanUtils.copyProperties(location, result);
+        }
         return result;
     }
 
@@ -229,7 +241,7 @@ public class OrderController {
         String orderId = orderLocationDto.getOrderId();
         int result = 0;
         if (StringUtils.isNotBlank(orderId)) {
-            result = orderLocationService.getBaseMapper().delete(new UpdateWrapper<OrderLocation>().eq("order_id", orderLocationDto));
+            result = orderLocationService.getBaseMapper().delete(new UpdateWrapper<OrderLocation>().eq("order_id", orderId));
         }
         return result;
     }
