@@ -11,7 +11,7 @@ import com.itheima.pinda.entity.agency.PdAgencyScope;
 import com.itheima.pinda.entity.user.PdCourierScope;
 import com.itheima.pinda.service.agency.IPdAgencyScopeService;
 import com.itheima.pinda.service.user.IPdCourierScopeService;
-import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("scope")
-@Log
+@Slf4j
 public class ScopeController {
     @Autowired
     private IPdAgencyScopeService agencyScopService;
