@@ -59,8 +59,9 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
             return false;
         }
         // 通过角色编码判断是否为超级管理员，而非硬编码 userId==1
-        List<Long> roleIds = findRoleByUserId(userId);
-        return roleIds != null && roleIds.contains(INIT_ROLE_ID);
+        //修改点：findRoleByUserId 返回 List<Role>，需提取角色ID后与 INIT_ROLE_ID 比较
+        List<Role> roles = findRoleByUserId(userId);
+        return roles != null && roles.stream().anyMatch(role -> BizConstant.INIT_ROLE_ID.equals(role.getId()));
     }
 
     @Override
