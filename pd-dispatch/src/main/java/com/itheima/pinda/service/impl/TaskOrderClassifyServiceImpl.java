@@ -120,7 +120,7 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
                 orderClassifyOrderService.saveBatch(orderClassifyOrders);
             } else {
                 log.info("中转订单，查询分组信息");
-                List<String> orderIds = item.getOrders().stream().map(orderId -> orderId).collect(Collectors.toList());
+                List<String> orderIds = new ArrayList<>(item.getOrders());
                 log.info("当前分组的订单id：{}", orderIds);
                 LambdaQueryWrapper<OrderClassifyOrderEntity> wrapper = new LambdaQueryWrapper<>();
                 wrapper.in(OrderClassifyOrderEntity::getOrderId, orderIds);
