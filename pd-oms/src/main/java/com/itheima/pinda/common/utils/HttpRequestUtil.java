@@ -58,7 +58,6 @@ public class HttpRequestUtil {
             HttpPost httpPost = new HttpPost(url);
             RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(30000).setConnectionRequestTimeout(30000).setSocketTimeout(30000).build();
             httpPost.setConfig(requestConfig);
-            httpPost.setConfig(requestConfig);
             httpPost.addHeader("Content-type", "application/json; charset=utf-8");
             httpPost.setHeader("Accept", "application/json");
             response = httpClient.execute(httpPost);
@@ -266,7 +265,7 @@ public class HttpRequestUtil {
         HttpPost post = new HttpPost(url);
         String result = "";
         try {
-            StringEntity s = new StringEntity("");
+            StringEntity s = new StringEntity(json != null ? json.toJSONString() : "", StandardCharsets.UTF_8);
             s.setContentEncoding("UTF-8");
             s.setContentType("application/json");//发送json数据需要设置contentType
             post.addHeader("Content-Type", "application/json");
@@ -283,7 +282,7 @@ public class HttpRequestUtil {
     }
 
     public static String doPostWithBody(String url, JSONObject json) {
-        logger.info("请求参数--->" + json == null ? "" : json.toString());
+        logger.info("请求参数-->{}", json == null ? "null" : json.toString());
         long begin = System.currentTimeMillis();
         CloseableHttpClient httpclient = HttpClientBuilder.create().build();
         HttpPost post = new HttpPost(url);

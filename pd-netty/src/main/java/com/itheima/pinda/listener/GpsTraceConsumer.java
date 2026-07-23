@@ -7,6 +7,8 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import javax.annotation.PreDestroy;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -82,6 +84,14 @@ public class GpsTraceConsumer {
     static {
         // 每小时清理一次过期缓存
         CLEANUP_EXECUTOR.scheduleAtFixedRate(GpsTraceConsumer::cleanupExpiredCache, 1, 1, TimeUnit.HOURS);
+    }
+
+    /**
+     * 应用关闭时优雅关闭清理线程池
+     */
+    @PreDestroy
+    public void destroy() {
+        CLEANUP_EXECUTOR.shutdown();
     }
 
     /**

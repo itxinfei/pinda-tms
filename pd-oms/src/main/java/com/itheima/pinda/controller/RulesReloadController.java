@@ -8,6 +8,10 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.io.IOException;
 
+/**
+ * 规则热加载控制器
+ * 安全风险：当前缺少权限校验注解，生产环境建议添加 @PreAuthorize("hasRole('ADMIN')") 限制仅管理员可访问
+ */
 @RequestMapping("/rules")
 @Controller
 public class RulesReloadController {

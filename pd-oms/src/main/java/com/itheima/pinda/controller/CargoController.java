@@ -103,6 +103,9 @@ public class CargoController {
     @GetMapping("/{id}")
     public OrderCargoDto findById(@PathVariable(name = "id") String id) {
         OrderCargo orderCargo = orderCargoService.getById(id);
+        if (orderCargo == null) {
+            return null;
+        }
         OrderCargoDto dto = new OrderCargoDto();
         BeanUtils.copyProperties(orderCargo, dto);
         return dto;

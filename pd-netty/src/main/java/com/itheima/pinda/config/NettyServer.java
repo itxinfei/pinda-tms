@@ -7,6 +7,7 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.IdleStateHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import lombok.extern.slf4j.Slf4j;
@@ -39,8 +40,11 @@ public class NettyServer implements CommandLineRunner {
         subGroup = new NioEventLoopGroup();
         // 服务初始化工具，封装初始化服务的复杂代码
         server = new ServerBootstrap();
+    }
 
-        //配置netty服务端
+    @Override
+    public void run(String... args) throws Exception {
+        // 配置netty服务端（kafkaSender此时已注入完毕）
         server.group(mainGroup, subGroup)
                 .option(ChannelOption.SO_BACKLOG, 128)// 设置缓存
                 .childOption(ChannelOption.SO_KEEPALIVE, true)
@@ -48,21 +52,18 @@ public class NettyServer implements CommandLineRunner {
                 .childHandler(new ChannelInitializer<NioServerSocketChannel>() {
                     @Override
                     protected void initChannel(NioServerSocketChannel ch) {
+                        ch.pipeline().addLast(new IdleStateHandler(120, 0, 0, TimeUnit.SECONDS));
                         ch.pipeline().addLast(new NettyServerHandler(kafkaSender));
                     }
                 });//具体处理网络IO事件
 
-    }
-
-    public void start() {
         // 启动netty服务端，绑定端口
         this.future = server.bind(port);
-        log.info("Netty Server 启动完毕!!!!  端口：{}", port);
-    }
-
-    @Override
-    public void run(String... args) {
-        this.start();
+        this.future.sync();
+        if (!this.future.isSuccess()) {
+            throw new IllegalStateException("Netty 绑定端口失败: " + port, this.future.cause());
+        }
+        log.info("Netty Server 启动成功，端口：{}", port);
     }
 
     /**
