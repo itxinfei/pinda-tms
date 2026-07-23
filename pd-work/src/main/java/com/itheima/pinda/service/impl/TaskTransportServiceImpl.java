@@ -303,8 +303,13 @@ public class TaskTransportServiceImpl extends
                 TransportOrderDTO orderDTO = new TransportOrderDTO();
                 orderDTO.setStatus(TransportOrderStatus.ARRIVED_END.getCode());
                 orderDTO.setSchedulingStatus(TransportOrderSchedulingStatus.SCHEDULED.getCode());
-                transportOrderFeign.updateById(transportOrderId, orderDTO);
-                log.info("更新运单[{}]状态为: 到达终端网点({})", transportOrderId, TransportOrderStatus.ARRIVED_END.getCode());
+                try {
+                    transportOrderFeign.updateById(transportOrderId, orderDTO);
+                    log.info("更新运单[{}]状态为: 到达终端网点({})", transportOrderId, TransportOrderStatus.ARRIVED_END.getCode());
+                } catch (Exception e) {
+                    // 运单状态流转校验或远程调用失败时不影响整体交付流程，仅记录告警
+                    log.warn("更新运单[{}]状态为到达终端网点失败（可能状态流转不合法或远程调用异常）", transportOrderId, e);
+                }
             });
 
             // 6. 批量更新所有关联订单状态为已签收

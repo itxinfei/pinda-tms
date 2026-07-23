@@ -3,14 +3,14 @@ package com.itheima.pinda.feign.truck;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.DTO.truck.TruckDto;
+import com.itheima.pinda.feign.truck.hystrix.TruckFeignFallback;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 import springfox.documentation.annotations.ApiIgnore;
 
 import java.util.List;
 
-@FeignClient(name = "pd-base")
-@RequestMapping("base/truck")
+@FeignClient(value = "pd-base", fallback = TruckFeignFallback.class, path = "/base/truck")
 @ApiIgnore
 public interface TruckFeign {
     /**

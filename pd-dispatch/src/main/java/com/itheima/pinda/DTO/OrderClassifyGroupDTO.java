@@ -3,6 +3,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.util.List;
+import java.util.Objects;
 
 @Data
 @Builder
@@ -47,7 +48,7 @@ public class OrderClassifyGroupDTO {
      * @return
      */
     public boolean isNew() {
-        return this.startAgencyId.equals(this.currentAgencyId);
+        return Objects.equals(this.startAgencyId, this.currentAgencyId);
     }
 
     /**
