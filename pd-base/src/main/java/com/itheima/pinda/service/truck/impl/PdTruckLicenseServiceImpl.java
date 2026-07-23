@@ -35,8 +35,10 @@ public class PdTruckLicenseServiceImpl extends ServiceImpl<PdTruckLicenseMapper,
             // 处理车辆信息中的关联字段
             if (pdTruckLicense.getTruckId() != null) {
                 PdTruck pdTruck = truckService.getById(pdTruckLicense.getTruckId());
-                pdTruck.setTruckLicenseId(pdTruckLicense.getId());
-                truckService.updateById(pdTruck);
+                if (pdTruck != null) {
+                    pdTruck.setTruckLicenseId(pdTruckLicense.getId());
+                    truckService.updateById(pdTruck);
+                }
             }
         } else {
             baseMapper.updateById(pdTruckLicense);
