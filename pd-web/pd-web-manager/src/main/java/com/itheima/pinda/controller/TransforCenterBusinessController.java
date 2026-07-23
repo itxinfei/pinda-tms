@@ -15,6 +15,7 @@ import com.itheima.pinda.base.R;
 import com.itheima.pinda.common.utils.Constant;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
+import com.itheima.pinda.context.BaseContextHandler;
 import com.itheima.pinda.DTO.angency.FleetDto;
 import com.itheima.pinda.DTO.base.GoodsTypeDto;
 import com.itheima.pinda.DTO.truck.TruckDto;
@@ -33,6 +34,7 @@ import com.itheima.pinda.feign.truck.TruckTypeFeign;
 import com.itheima.pinda.feign.user.DriverFeign;
 import com.itheima.pinda.future.PdCompletableFuture;
 import com.itheima.pinda.util.BeanUtil;
+import com.itheima.pinda.util.Rx;
 import com.itheima.pinda.vo.base.angency.AgencySimpleVo;
 import com.itheima.pinda.vo.base.angency.AgencyVo;
 import com.itheima.pinda.vo.base.businessHall.GoodsTypeVo;
@@ -42,7 +44,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
-import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,7 +63,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("transfor-center/bussiness")
 @Api(tags = "转运中心管理-业务信息管理")
-@Log
+@Slf4j
 public class TransforCenterBusinessController {
     @Autowired
     private TruckTypeFeign truckTypeFeign;
@@ -121,7 +123,8 @@ public class TransforCenterBusinessController {
         // TODO: 2020/1/8 载重与体积查询条件，是否使用基于该值的上下区间浮动查询
         PageResponse<TruckTypeDto> truckTypeDtoPage = truckTypeFeign.findByPage(page, pageSize, name, allowableLoad, allowableVolume);
         Set<String> goodsTypeSet = new HashSet<>();
-        List<TruckTypeDto> truckTypeDtoList = truckTypeDtoPage.getItems();
+        // 修改点：远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
+        List<TruckTypeDto> truckTypeDtoList = Rx.items(truckTypeDtoPage);
         truckTypeDtoList.forEach(dto -> {
             if (dto.getGoodsTypeIds() != null) {
                 goodsTypeSet.addAll(dto.getGoodsTypeIds());
@@ -147,12 +150,14 @@ public class TransforCenterBusinessController {
                 }
             } catch (Exception e) {
                 // TODO: 2020/1/2 此处异常处理依赖于业务是否为弱关系，如强关系，则返回错误
-                e.printStackTrace();
+                log.error("操作异常", e);
             }
             return vo;
         }).collect(Collectors.toList());
 
-        return PageResponse.<TruckTypeVo>builder().items(truckTypeVoList).page(page).pagesize(pageSize).pages(truckTypeDtoPage.getPages()).counts(truckTypeDtoPage.getCounts()).build();
+        return PageResponse.<TruckTypeVo>builder().items(truckTypeVoList).page(page).pagesize(pageSize)
+                .pages(truckTypeDtoPage != null ? truckTypeDtoPage.getPages() : 0L)
+                .counts(truckTypeDtoPage != null ? truckTypeDtoPage.getCounts() : 0L).build();
     }
 
     @ApiOperation(value = "获取车辆类型详情")
@@ -174,7 +179,7 @@ public class TransforCenterBusinessController {
                 }).collect(Collectors.toList()));
             } catch (Exception e) {
                 // TODO: 2020/1/2 此处异常处理依赖于业务是否为弱关系，如强关系，则返回错误
-                e.printStackTrace();
+                log.error("操作异常", e);
             }
         }
         return vo;
@@ -195,7 +200,7 @@ public class TransforCenterBusinessController {
         TransportLineTypeDto dto = new TransportLineTypeDto();
         BeanUtils.copyProperties(vo, dto);
         // TODO: 2020/1/8 更新人信息 从token中获取
-        dto.setUpdater("1");
+        dto.setUpdater(BaseContextHandler.getUserId() != null ? String.valueOf(BaseContextHandler.getUserId()) : "system");
         TransportLineTypeDto resultDto = transportLineTypeFeign.saveTransportLineType(dto);
         BeanUtils.copyProperties(resultDto, vo);
         return vo;
@@ -219,7 +224,8 @@ public class TransforCenterBusinessController {
     public PageResponse<TransportLineTypeVo> findTransportLineTypeByPage(@RequestParam(name = "page") Integer page, @RequestParam(name = "pageSize") Integer pageSize, @RequestParam(name = "typeNumber", required = false) String typeNumber, @RequestParam(name = "name", required = false) String name, @RequestParam(name = "agencyType", required = false) Integer agencyType) {
         PageResponse<TransportLineTypeDto> transportLineTypeDtoPage = transportLineTypeFeign.findByPage(page, pageSize, typeNumber, name, agencyType);
         //加工数据
-        List<TransportLineTypeDto> transportLineTypeDtoList = transportLineTypeDtoPage.getItems();
+        // 修改点：远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
+        List<TransportLineTypeDto> transportLineTypeDtoList = Rx.items(transportLineTypeDtoPage);
         Set<String> userSet = new HashSet<>();
         transportLineTypeDtoList.forEach(transportLineTypeDto -> {
             if (transportLineTypeDto.getUpdater() != null) {
@@ -236,7 +242,7 @@ public class TransforCenterBusinessController {
                     vo.setUpdater((SysUserVo) userFuture.get().get(transportLineTypeDto.getUpdater()));
                 } catch (Exception e) {
                     // TODO: 2020/1/2 此处异常处理依赖于业务是否为弱关系，如强关系，则返回错误
-                    e.printStackTrace();
+                    log.error("操作异常", e);
                 }
             }
             if (transportLineTypeDto.getLastUpdateTime() != null) {
@@ -251,7 +257,10 @@ public class TransforCenterBusinessController {
             return vo;
         }).collect(Collectors.toList());
 
-        return PageResponse.<TransportLineTypeVo>builder().items(transportLineTypeVoList).counts(transportLineTypeDtoPage.getCounts()).page(page).pagesize(pageSize).pages(transportLineTypeDtoPage.getPages()).build();
+        return PageResponse.<TransportLineTypeVo>builder().items(transportLineTypeVoList)
+                .counts(transportLineTypeDtoPage != null ? transportLineTypeDtoPage.getCounts() : 0L)
+                .page(page).pagesize(pageSize)
+                .pages(transportLineTypeDtoPage != null ? transportLineTypeDtoPage.getPages() : 0L).build();
     }
 
     @ApiOperation(value = "获取线路类型详情")
@@ -271,9 +280,10 @@ public class TransforCenterBusinessController {
             vo.setEndAgencyTypeName(OrgType.getEnumByType(dto.getEndAgencyType()).getName());
         }
         if (dto.getUpdater() != null) {
-            R<User> result = userApi.get(Long.valueOf(dto.getUpdater()));
-            if (result.getIsSuccess() && result.getData() != null) {
-                vo.setUpdater(BeanUtil.parseUser2Vo(result.getData(), null, null));
+            // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
+            User updater = Rx.data(userApi.get(Long.valueOf(dto.getUpdater())));
+            if (updater != null) {
+                vo.setUpdater(BeanUtil.parseUser2Vo(updater, null, null));
             }
         }
         return vo;
@@ -328,7 +338,8 @@ public class TransforCenterBusinessController {
     public PageResponse<FleetVo> findFleetByPage(@RequestParam(name = "page") Integer page, @RequestParam(name = "pageSize") Integer pageSize, @RequestParam(name = "name", required = false) String name, @RequestParam(name = "manager", required = false) String manager, @RequestParam(name = "fleetNumber", required = false) String fleetNumber) {
         PageResponse<FleetDto> fleetDtoPage = fleetFeign.findByPage(page, pageSize, name, fleetNumber, manager);
         //加工数据
-        List<FleetDto> fleetDtoList = fleetDtoPage.getItems();
+        // 修改点：远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
+        List<FleetDto> fleetDtoList = Rx.items(fleetDtoPage);
         Set<Long> agencySet = new HashSet<>();
         Set<String> userSet = new HashSet<>();
         fleetDtoList.forEach(fleetDto -> {
@@ -354,13 +365,15 @@ public class TransforCenterBusinessController {
                 }
             } catch (Exception e) {
                 // TODO: 2020/1/2 此处异常处理依赖于业务是否为弱关系，如强关系，则返回错误
-                e.printStackTrace();
+                log.error("操作异常", e);
             }
             vo.setTruckCount(truckFeign.count(fleetDto.getId()));
             vo.setDriverCount(driverFeign.count(fleetDto.getId()));
             return vo;
         }).collect(Collectors.toList());
-        return PageResponse.<FleetVo>builder().items(fleetVoList).page(page).pagesize(pageSize).counts(fleetDtoPage.getCounts()).pages(fleetDtoPage.getPages()).build();
+        return PageResponse.<FleetVo>builder().items(fleetVoList).page(page).pagesize(pageSize)
+                .counts(fleetDtoPage != null ? fleetDtoPage.getCounts() : 0L)
+                .pages(fleetDtoPage != null ? fleetDtoPage.getPages() : 0L).build();
     }
 
     @ApiOperation(value = "获取车队详情")
@@ -372,16 +385,18 @@ public class TransforCenterBusinessController {
         BeanUtils.copyProperties(dto, vo);
         //负责人信息
         if (StringUtils.isNotEmpty(dto.getManager())) {
-            R<User> userResult = userApi.get(Long.valueOf(dto.getManager()));
-            if (userResult.getIsSuccess() && userResult.getData() != null) {
-                vo.setManager(BeanUtil.parseUser2Vo(userResult.getData(), null, null));
+            // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
+            User manager = Rx.data(userApi.get(Long.valueOf(dto.getManager())));
+            if (manager != null) {
+                vo.setManager(BeanUtil.parseUser2Vo(manager, null, null));
             }
         }
         //机构信息
         if (StringUtils.isNotEmpty(dto.getAgencyId())) {
-            R<Org> orgResult = orgApi.get(Long.valueOf(dto.getAgencyId()));
-            if (orgResult.getIsSuccess() && orgResult.getData() != null) {
-                vo.setAgency(BeanUtil.parseOrg2SimpleVo(orgResult.getData()));
+            // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
+            Org agency = Rx.data(orgApi.get(Long.valueOf(dto.getAgencyId())));
+            if (agency != null) {
+                vo.setAgency(BeanUtil.parseOrg2SimpleVo(agency));
             }
         }
         vo.setTruckCount(truckFeign.count(dto.getId()));
@@ -443,7 +458,8 @@ public class TransforCenterBusinessController {
     public PageResponse<TruckVo> findTruckByPage(@RequestParam(name = "page") Integer page, @RequestParam(name = "pageSize") Integer pageSize, @RequestParam(name = "truckTypeId", required = false) String truckTypeId, @RequestParam(name = "licensePlate", required = false) String licensePlate, @RequestParam(name = "fleetId", required = false) String fleetId) {
         PageResponse<TruckDto> truckDtoPage = truckFeign.findByPage(page, pageSize, truckTypeId, licensePlate, fleetId);
         //加工数据
-        List<TruckDto> truckDtoList = truckDtoPage.getItems();
+        // 修改点：远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
+        List<TruckDto> truckDtoList = Rx.items(truckDtoPage);
         Set<String> truckTypeSet = new HashSet<>();
         Set<String> fleetSet = new HashSet<>();
         truckDtoList.forEach(truckDto -> {
@@ -470,11 +486,13 @@ public class TransforCenterBusinessController {
                 }
             } catch (Exception e) {
                 // TODO: 2020/1/2 此处异常处理依赖于业务是否为弱关系，如强关系，则返回错误
-                e.printStackTrace();
+                log.error("操作异常", e);
             }
             return vo;
         }).collect(Collectors.toList());
-        return PageResponse.<TruckVo>builder().items(truckVoList).page(page).pagesize(pageSize).counts(truckDtoPage.getCounts()).pages(truckDtoPage.getPages()).build();
+        return PageResponse.<TruckVo>builder().items(truckVoList).page(page).pagesize(pageSize)
+                .counts(truckDtoPage != null ? truckDtoPage.getCounts() : 0L)
+                .pages(truckDtoPage != null ? truckDtoPage.getPages() : 0L).build();
     }
 
     @ApiOperation(value = "获取车辆详情")
@@ -501,15 +519,16 @@ public class TransforCenterBusinessController {
                 if (future.get() instanceof FleetVo) {
                     vo.setFleet((FleetVo) future.get());
                     if (vo.getFleet() != null && vo.getFleet().getAgency() != null && StringUtils.isNotEmpty(vo.getFleet().getAgency().getId())) {
-                        R<Org> result = orgApi.get(Long.valueOf(vo.getFleet().getAgency().getId()));
-                        if (result.getIsSuccess() && result.getData() != null) {
-                            vo.setAgency(BeanUtil.parseOrg2Vo(result.getData(), null, null));
+                        // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
+                        Org fleetAgency = Rx.data(orgApi.get(Long.valueOf(vo.getFleet().getAgency().getId())));
+                        if (fleetAgency != null) {
+                            vo.setAgency(BeanUtil.parseOrg2Vo(fleetAgency, null, null));
                         }
                     }
                 }
             } catch (Exception e) {
                 // TODO: 2020/1/2 此处异常处理依赖于业务是否为弱关系，如强关系，则返回错误
-                e.printStackTrace();
+                log.error("操作异常", e);
             }
 
         });
@@ -625,7 +644,9 @@ public class TransforCenterBusinessController {
             dto.setTransportLineTypeId(vo.getTransportLineType().getId());
         }
         // TODO: 2020/2/18 从token中获取所属机构id
-        dto.setAgencyId("1");
+        if (dto.getAgencyId() == null) {
+            dto.setAgencyId(BaseContextHandler.getOrgId() != null ? String.valueOf(BaseContextHandler.getOrgId()) : "1");
+        }
         TransportLineDto resultDto = transportLineFeign.saveTransportLine(dto);
         BeanUtils.copyProperties(resultDto, vo);
         return vo;
@@ -661,7 +682,8 @@ public class TransforCenterBusinessController {
     public PageResponse<TransportLineVo> findTransportLineByPage(@RequestParam(name = "page") Integer page, @RequestParam(name = "pageSize") Integer pageSize, @RequestParam(name = "name", required = false) String name, @RequestParam(name = "transportLineTypeId", required = false) String transportLineTypeId, @RequestParam(name = "lineNumber", required = false) String lineNumber) {
         PageResponse<TransportLineDto> transportLineDtoPage = transportLineFeign.findByPage(page, pageSize, lineNumber, name, transportLineTypeId);
         //加工数据
-        List<TransportLineDto> transportLineDtoList = transportLineDtoPage.getItems();
+        // 修改点：远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
+        List<TransportLineDto> transportLineDtoList = Rx.items(transportLineDtoPage);
         Set<Long> agencySet = new HashSet<>();
         Set<String> transportLineTypeSet = new HashSet<>();
         transportLineDtoList.forEach(dto -> {
@@ -699,11 +721,13 @@ public class TransforCenterBusinessController {
                 }
             } catch (Exception e) {
                 // TODO: 2020/1/2 此处异常处理依赖于业务是否为弱关系，如强关系，则返回错误
-                e.printStackTrace();
+                log.error("操作异常", e);
             }
             return vo;
         }).collect(Collectors.toList());
-        return PageResponse.<TransportLineVo>builder().items(transportLineVoList).page(page).pagesize(pageSize).pages(transportLineDtoPage.getPages()).counts(transportLineDtoPage.getCounts()).build();
+        return PageResponse.<TransportLineVo>builder().items(transportLineVoList).page(page).pagesize(pageSize)
+                .pages(transportLineDtoPage != null ? transportLineDtoPage.getPages() : 0L)
+                .counts(transportLineDtoPage != null ? transportLineDtoPage.getCounts() : 0L).build();
     }
 
     @ApiOperation(value = "获取线路详情")
@@ -751,7 +775,7 @@ public class TransforCenterBusinessController {
             }
         } catch (Exception e) {
             // TODO: 2020/1/2 此处异常处理依赖于业务是否为弱关系，如强关系，则返回错误
-            e.printStackTrace();
+            log.error("操作异常", e);
         }
         return vo;
     }
@@ -860,7 +884,7 @@ public class TransforCenterBusinessController {
                 }
             } catch (Exception e) {
                 // TODO: 2020/1/2 此处异常处理依赖于业务是否为弱关系，如强关系，则返回错误
-                e.printStackTrace();
+                log.error("操作异常", e);
             }
             vo.setPeriodName(Constant.TransportTripsPeriod.getEnumByPeriod(dto.getPeriod()) == null ? null : Constant.TransportTripsPeriod.getEnumByPeriod(dto.getPeriod()).getName());
             return vo;
@@ -924,7 +948,7 @@ public class TransforCenterBusinessController {
             vo.setTruckDrivers(truckDriverVoList);
         } catch (Exception e) {
             // TODO: 2020/1/2 此处异常处理依赖于业务是否为弱关系，如强关系，则返回错误
-            e.printStackTrace();
+            log.error("操作异常", e);
         }
         vo.setPeriodName(Constant.TransportTripsPeriod.getEnumByPeriod(dto.getPeriod()) == null ? null : Constant.TransportTripsPeriod.getEnumByPeriod(dto.getPeriod()).getName());
         return vo;
@@ -967,14 +991,17 @@ public class TransforCenterBusinessController {
         //判断是否存在车队id
         if (StringUtils.isNotEmpty(fleetId)) {
             //当车队id存在时，以tms truckDriver为主
+            // 修改点：远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
             PageResponse<TruckDriverDto> truckDriverDtoPage = driverFeign.findByPage(page, pageSize, fleetId);
-            total = truckDriverDtoPage.getCounts();
-            pages = truckDriverDtoPage.getPages();
-            truckDriverDtoPage.getItems().forEach(driverDto -> {
-                R<User> result = userApi.get(Long.valueOf(driverDto.getUserId()));
-                if (result.getIsSuccess() && result.getData() != null) {
+            List<TruckDriverDto> driverDtoList = Rx.items(truckDriverDtoPage);
+            total = truckDriverDtoPage != null ? truckDriverDtoPage.getCounts() : 0L;
+            pages = truckDriverDtoPage != null ? truckDriverDtoPage.getPages() : 0L;
+            driverDtoList.forEach(driverDto -> {
+                // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
+                User driverUser = Rx.data(userApi.get(Long.valueOf(driverDto.getUserId())));
+                if (driverUser != null) {
                     DriverVo driverVo = new DriverVo();
-                    BeanUtils.copyProperties(BeanUtil.parseUser2Vo(result.getData(), null, orgApi), driverVo);
+                    BeanUtils.copyProperties(BeanUtil.parseUser2Vo(driverUser, null, orgApi), driverVo);
                     if (driverDto.getFleetId() != null) {
                         FleetDto fleetDto = fleetFeign.fineById(driverDto.getFleetId());
                         FleetVo fleetVo = new FleetVo();
@@ -990,9 +1017,10 @@ public class TransforCenterBusinessController {
             if (result.getIsSuccess() && result.getData() != null) {
                 total = result.getData().getTotal();
                 pages = result.getData().getPages();
-                List<String> userIds = result.getData().getRecords().stream().map(user -> String.valueOf(user.getId())).collect(Collectors.toList());
+                // 修改点：records 可能为 null，统一通过 Rx 安全取值
+                List<String> userIds = Rx.list(result.getData().getRecords()).stream().map(user -> String.valueOf(user.getId())).collect(Collectors.toList());
                 Map<String, TruckDriverDto> driverDtoMap = driverFeign.findAllDriver(userIds, null).stream().collect(Collectors.toMap(TruckDriverDto::getUserId, dto -> dto));
-                result.getData().getRecords().forEach(user -> {
+                Rx.list(result.getData().getRecords()).forEach(user -> {
                     DriverVo driverVo = new DriverVo();
                     BeanUtils.copyProperties(BeanUtil.parseUser2Vo(user, null, orgApi), driverVo);
                     TruckDriverDto driverDto = driverDtoMap.get(String.valueOf(user.getId()));
@@ -1051,13 +1079,15 @@ public class TransforCenterBusinessController {
     @GetMapping("/driver/{id}")
     public DriverVo findDriverById(@PathVariable(name = "id") String id) {
         DriverVo vo = new DriverVo();
-        R<User> userResult = userApi.get(Long.valueOf(id));
-        if (userResult.getIsSuccess() && userResult.getData() != null) {
-            BeanUtils.copyProperties(BeanUtil.parseUser2Vo(userResult.getData(), null, null), vo);
-            if (userResult.getData().getOrgId() != null) {
-                R<Org> result = orgApi.get(userResult.getData().getOrgId());
-                if (result.getIsSuccess() && result.getData() != null) {
-                    vo.setAgency(BeanUtil.parseOrg2SimpleVo(result.getData()));
+        // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
+        User driverUser = Rx.data(userApi.get(Long.valueOf(id)));
+        if (driverUser != null) {
+            BeanUtils.copyProperties(BeanUtil.parseUser2Vo(driverUser, null, null), vo);
+            if (driverUser.getOrgId() != null) {
+                // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
+                Org driverOrg = Rx.data(orgApi.get(driverUser.getOrgId()));
+                if (driverOrg != null) {
+                    vo.setAgency(BeanUtil.parseOrg2SimpleVo(driverOrg));
                 }
             }
 

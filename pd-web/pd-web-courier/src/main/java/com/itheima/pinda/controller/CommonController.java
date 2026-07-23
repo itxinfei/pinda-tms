@@ -2,6 +2,7 @@ package com.itheima.pinda.controller;
 
 import com.itheima.pinda.authority.api.AreaApi;
 import com.itheima.pinda.common.utils.Result;
+import com.itheima.pinda.util.Rx;
 import com.itheima.pinda.vo.AreaSimpleVo;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
@@ -32,7 +33,8 @@ public class CommonController {
     })
     @GetMapping(value = "area/simple")
     public Result areaSimple(@RequestParam(value = "parentId") String parentId) {
-        return Result.ok().put("data", areaApi.findAll(StringUtils.isEmpty(parentId) ? null : Long.valueOf(parentId), null).getData().stream().map(area -> {
+        // 修改点：远程调用结果 data 可能为 null，统一通过 Rx 安全取值，避免 NPE
+        return Result.ok().put("data", Rx.dataList(areaApi.findAll(StringUtils.isEmpty(parentId) ? null : Long.valueOf(parentId), null)).stream().map(area -> {
             AreaSimpleVo vo = new AreaSimpleVo();
             if (area != null && area.getId() != null) {
                 BeanUtils.copyProperties(area, vo);

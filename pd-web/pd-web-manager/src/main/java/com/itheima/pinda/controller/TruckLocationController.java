@@ -12,6 +12,7 @@ import com.itheima.pinda.feign.TransportTaskFeign;
 import com.itheima.pinda.feign.transportline.TransportTripsFeign;
 import com.itheima.pinda.feign.truck.TruckFeign;
 import com.itheima.pinda.feign.truck.TruckTypeFeign;
+import com.itheima.pinda.util.Rx;
 import com.itheima.pinda.vo.base.transforCenter.business.TruckLocationVo;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
@@ -79,9 +80,9 @@ public class TruckLocationController {
 
         TransportTripsTruckDriverDto transportTripsTruckDriverDto = transportTripsTruckDriverDtos.get(0);
         String userId = transportTripsTruckDriverDto.getUserId();
-        R<User> userR = userApi.get(Long.valueOf(userId));
-        User user = userR.getData();
-        if (userR != null && userR.getData() != null) {
+        // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
+        User user = Rx.data(userApi.get(Long.valueOf(userId)));
+        if (user != null) {
             truckLocationVo.setName(user.getName());
             truckLocationVo.setMobile(user.getMobile());
             truckLocationVo.setAvatar(user.getAvatar());

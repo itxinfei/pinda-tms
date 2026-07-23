@@ -18,6 +18,7 @@ import com.itheima.pinda.common.utils.DateUtils;
 import com.itheima.pinda.common.utils.EntCoordSyncJob;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
+import com.itheima.pinda.util.Rx;
 import com.itheima.pinda.entity.AddressBook;
 import com.itheima.pinda.entity.Member;
 import com.itheima.pinda.enums.OrderPaymentStatus;
@@ -95,23 +96,32 @@ public class MailingController {
 
     private OrderDTO buildOrderAndPrice(MailingSaveDTO entity) {
         // 获取地址详细信息
+        if (StringUtils.isBlank(entity.getSendAddress()) || StringUtils.isBlank(entity.getReceiptAddress())) {
+            throw new IllegalArgumentException("收发地址不能为空");
+        }
         AddressBook sendAddress = addressBookFeign.detail(entity.getSendAddress());
+        if (sendAddress == null) {
+            throw new IllegalArgumentException("发货地址不存在");
+        }
         AddressBook receiptAddress = addressBookFeign.detail(entity.getReceiptAddress());
+        if (receiptAddress == null) {
+            throw new IllegalArgumentException("收货地址不存在");
+        }
         log.info("sendAddress:{},{} receiptAddress:{},{}", entity.getSendAddress(), sendAddress, entity.getReceiptAddress(), receiptAddress);
         OrderDTO orderAddDto = new OrderDTO();
         orderAddDto.setSenderName(sendAddress.getName());
         orderAddDto.setSenderPhone(sendAddress.getPhoneNumber());
-        orderAddDto.setSenderProvinceId(sendAddress.getProvinceId().toString());
-        orderAddDto.setSenderCityId(sendAddress.getCityId().toString());
-        orderAddDto.setSenderCountyId(sendAddress.getCountyId().toString());
+        if (sendAddress.getProvinceId() != null) orderAddDto.setSenderProvinceId(sendAddress.getProvinceId().toString());
+        if (sendAddress.getCityId() != null) orderAddDto.setSenderCityId(sendAddress.getCityId().toString());
+        if (sendAddress.getCountyId() != null) orderAddDto.setSenderCountyId(sendAddress.getCountyId().toString());
         orderAddDto.setSenderAddress(sendAddress.getAddress());
         orderAddDto.setSenderAddressId(entity.getSendAddress());
 
         orderAddDto.setReceiverName(receiptAddress.getName());
         orderAddDto.setReceiverPhone(receiptAddress.getPhoneNumber());
-        orderAddDto.setReceiverProvinceId(receiptAddress.getProvinceId().toString());
-        orderAddDto.setReceiverCityId(receiptAddress.getCityId().toString());
-        orderAddDto.setReceiverCountyId(receiptAddress.getCountyId().toString());
+        if (receiptAddress.getProvinceId() != null) orderAddDto.setReceiverProvinceId(receiptAddress.getProvinceId().toString());
+        if (receiptAddress.getCityId() != null) orderAddDto.setReceiverCityId(receiptAddress.getCityId().toString());
+        if (receiptAddress.getCountyId() != null) orderAddDto.setReceiverCountyId(receiptAddress.getCountyId().toString());
         orderAddDto.setReceiverAddress(receiptAddress.getAddress());
         orderAddDto.setReceiverAddressId(entity.getReceiptAddress());
 
@@ -294,8 +304,9 @@ public class MailingController {
         }
         String adcode = map.getOrDefault("adcode", "").toString();
         R<Area> r = areaApi.getByCode(adcode + "000000");
-        if (!r.getIsSuccess()) {
-            return Result.error(r.getMsg());
+        // 修改点：远程调用可能返回 null 包装，先判空避免 NPE
+        if (r == null || !r.getIsSuccess()) {
+            return Result.error(r != null ? r.getMsg() : "区域服务调用失败");
         }
         Area area = r.getData();
         if (area == null) {
@@ -416,8 +427,9 @@ public class MailingController {
         }
         String adcode = map.getOrDefault("adcode", "").toString();
         R<Area> r = areaApi.getByCode(adcode + "000000");
-        if (!r.getIsSuccess()) {
-            return Result.error(r.getMsg());
+        // 修改点：远程调用可能返回 null 包装，先判空避免 NPE
+        if (r == null || !r.getIsSuccess()) {
+            return Result.error(r != null ? r.getMsg() : "区域服务调用失败");
         }
         Area area = r.getData();
         if (area == null) {
@@ -774,27 +786,29 @@ public class MailingController {
             String phone = member.getPhone();
             orderSearchDto.setReceiverPhone(phone);
         }
+        // 修改点：远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
         PageResponse<OrderDTO> result = orderFeign.pageLikeForCustomer(orderSearchDto);
-        if (result.getItems().size() > 0) {
+        List<OrderDTO> items = Rx.items(result);
+        if (items.size() > 0) {
             // 地址信息
             Set<Long> addressSet = new HashSet<>();
-            addressSet.addAll(result.getItems().stream().filter(item -> item.getReceiverProvinceId() != null).map(item -> Long.valueOf(item.getReceiverProvinceId())).collect(Collectors.toSet()));
-            addressSet.addAll(result.getItems().stream().filter(item -> item.getReceiverCityId() != null).map(item -> Long.valueOf(item.getReceiverCityId())).collect(Collectors.toSet()));
-            addressSet.addAll(result.getItems().stream().filter(item -> item.getReceiverCountyId() != null).map(item -> Long.valueOf(item.getReceiverCountyId())).collect(Collectors.toSet()));
-            addressSet.addAll(result.getItems().stream().filter(item -> item.getSenderProvinceId() != null).map(item -> Long.valueOf(item.getSenderProvinceId())).collect(Collectors.toSet()));
-            addressSet.addAll(result.getItems().stream().filter(item -> item.getSenderCityId() != null).map(item -> Long.valueOf(item.getSenderCityId())).collect(Collectors.toSet()));
-            addressSet.addAll(result.getItems().stream().filter(item -> item.getSenderCountyId() != null).map(item -> Long.valueOf(item.getSenderCountyId())).collect(Collectors.toSet()));
+            addressSet.addAll(items.stream().filter(item -> item.getReceiverProvinceId() != null).map(item -> Long.valueOf(item.getReceiverProvinceId())).collect(Collectors.toSet()));
+            addressSet.addAll(items.stream().filter(item -> item.getReceiverCityId() != null).map(item -> Long.valueOf(item.getReceiverCityId())).collect(Collectors.toSet()));
+            addressSet.addAll(items.stream().filter(item -> item.getReceiverCountyId() != null).map(item -> Long.valueOf(item.getReceiverCountyId())).collect(Collectors.toSet()));
+            addressSet.addAll(items.stream().filter(item -> item.getSenderProvinceId() != null).map(item -> Long.valueOf(item.getSenderProvinceId())).collect(Collectors.toSet()));
+            addressSet.addAll(items.stream().filter(item -> item.getSenderCityId() != null).map(item -> Long.valueOf(item.getSenderCityId())).collect(Collectors.toSet()));
+            addressSet.addAll(items.stream().filter(item -> item.getSenderCountyId() != null).map(item -> Long.valueOf(item.getSenderCountyId())).collect(Collectors.toSet()));
             CompletableFuture<Map<Long, Area>> areaMapFuture = PdCompletableFuture.areaMapFuture(areaApi, null, addressSet);
 
             // 物品详细  数量
-            Set<String> cargoSet = result.getItems().stream().map(item -> item.getId()).collect(Collectors.toSet());
+            Set<String> cargoSet = items.stream().map(item -> item.getId()).collect(Collectors.toSet());
             CompletableFuture<Map<String, OrderCargoDto>> cargoMapFuture = PdCompletableFuture.cargoMapFuture(cargoFeign, cargoSet);
 
             // 运单
-            Set<String> transportOrderDTOSet = result.getItems().stream().map(item -> item.getId()).collect(Collectors.toSet());
+            Set<String> transportOrderDTOSet = items.stream().map(item -> item.getId()).collect(Collectors.toSet());
             CompletableFuture<Map<String, TransportOrderDTO>> transportOrderMapFuture = PdCompletableFuture.transportOrderMapFuture(transportOrderFeign, transportOrderDTOSet);
             //派送信息
-            Set<String> iPickupDispatchTaskSet = result.getItems().stream().map(item -> item.getId()).collect(Collectors.toSet());
+            Set<String> iPickupDispatchTaskSet = items.stream().map(item -> item.getId()).collect(Collectors.toSet());
             // 任务类型，1为取件任务，2为派件任务
             CompletableFuture<Map<String, TaskPickupDispatchDTO>> taskPickupDispatchPullMapFuture = PdCompletableFuture.taskTranSportMapFuture(pickupDispatchTaskFeign, iPickupDispatchTaskSet, PickupDispatchTaskType.PICKUP.getCode());
             CompletableFuture<Map<String, TaskPickupDispatchDTO>> taskPickupDispatchPushMapFuture = PdCompletableFuture.taskTranSportMapFuture(pickupDispatchTaskFeign, iPickupDispatchTaskSet, PickupDispatchTaskType.DISPATCH.getCode());
@@ -806,7 +820,7 @@ public class MailingController {
             Map<String, TaskPickupDispatchDTO> taskPickupDispatchPullMap = taskPickupDispatchPullMapFuture.get();
             Map<String, TaskPickupDispatchDTO> taskPickupDispatchPushMap = taskPickupDispatchPushMapFuture.get();
 
-            List<CustomerOrderDTO> newItem = result.getItems().stream().map(item -> {
+            List<CustomerOrderDTO> newItem = items.stream().map(item -> {
                 CustomerOrderDTO customerOrderDto = new CustomerOrderDTO(item, areaMap, cargoMap, transportOrderMap, taskPickupDispatchPullMap, taskPickupDispatchPushMap);
                 String id = customerOrderDto.getId();
                 List<RouteDTO> routeList = (List<RouteDTO>) route(id).get("data");
@@ -821,8 +835,8 @@ public class MailingController {
             return new Result().ok().put("data", PageResponse.<CustomerOrderDTO>builder()
                     .page(dto.getPage())
                     .pagesize(dto.getPagesize())
-                    .pages(result.getPages())
-                    .counts(result.getCounts())
+                    .pages(result != null ? result.getPages() : 0L)
+                    .counts(result != null ? result.getCounts() : 0L)
                     .items(newItem)
                     .build());
         } else {
@@ -887,11 +901,13 @@ public class MailingController {
             //快递员id
             String courierId = taskPickupDispatchCurrentDTO.getCourierId();
             if (courierId != null) {
-                R<User> userR = userApi.get(Long.valueOf(courierId));
-                User user = userR.getData();
-                builder.name(user.getName());
-                builder.mobile(user.getMobile());
-                builder.avatar(user.getAvatar());
+                // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
+                User user = Rx.data(userApi.get(Long.valueOf(courierId)));
+                if (user != null) {
+                    builder.name(user.getName());
+                    builder.mobile(user.getMobile());
+                    builder.avatar(user.getAvatar());
+                }
             }
         }
         // 运单号
@@ -1023,11 +1039,13 @@ public class MailingController {
                 builder.status(OrderStatus.DISPATCHING.getCode());
                 String userId = taskPickupDispatchPushDTO.getCourierId();
                 if (StringUtils.isNotEmpty(userId)) {
-                    R<User> userR = userApi.get(Long.valueOf(userId));
-                    User user = userR.getData();
-                    String mobile = user.getMobile();
-                    String name = user.getName();
-                    builder.msg("快件交给" + name + "，正在派送中（联系电话：" + mobile + "）");
+                    // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
+                    User user = Rx.data(userApi.get(Long.valueOf(userId)));
+                    if (user != null) {
+                        String mobile = user.getMobile();
+                        String name = user.getName();
+                        builder.msg("快件交给" + name + "，正在派送中（联系电话：" + mobile + "）");
+                    }
                 }
                 result.add(builder.build());
             }

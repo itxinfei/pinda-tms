@@ -13,6 +13,7 @@ import com.itheima.pinda.base.R;
 import com.itheima.pinda.common.context.RequestContext;
 import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.feign.user.CourierScopeFeign;
+import com.itheima.pinda.util.Rx;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.SneakyThrows;
@@ -63,23 +64,26 @@ public class UserController {
         //  快递员id  并放入参数
         String courierId = RequestContext.getUserId();
         // 基本信息
-        R<User> userR = userApi.get(Long.valueOf(courierId));
-        User user = userR.getData();
+        // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
+        User user = Rx.data(userApi.get(Long.valueOf(courierId)));
+        if (user == null) {
+            return Result.error("用户信息不存在");
+        }
         // 所属机构
-        R<Org> orgR = orgApi.get(user.getOrgId());
-        Org org = orgR.getData();
-
+        // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
+        Org org = Rx.data(orgApi.get(user.getOrgId()));
         //
-        List<CourierScopeDto> courierScopeDtos = courierScopeFeign.findAllCourierScope(null, user.getId().toString());
+        // 修改点：Feign 直接返回 List 可能为 null，统一通过 Rx 安全取值
+        List<CourierScopeDto> courierScopeDtos = Rx.list(courierScopeFeign.findAllCourierScope(null, user.getId().toString()));
         List<Long> areaIds = courierScopeDtos.stream().map(item -> Long.valueOf(item.getAreaId())).collect(Collectors.toList());
-        R<List<Area>> areaDtosR = areaApi.findAll(null, areaIds);
-        List<Area> areas = areaDtosR.getData();
+        // 修改点：远程调用结果 data 可能为 null，统一通过 Rx 安全取值
+        List<Area> areas = Rx.dataList(areaApi.findAll(null, areaIds));
         return Result.ok().put("data", UserProfileDTO.builder()
                 .id(user.getId().toString())
                 .avatar(user.getAvatar())
                 .name(user.getName())
                 .phone(user.getMobile())
-                .manager(org.getName())
+                .manager(org != null ? org.getName() : "")
                 .areas(areas)
                 .build());
     }

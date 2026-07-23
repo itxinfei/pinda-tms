@@ -9,6 +9,7 @@ import com.itheima.pinda.base.R;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.future.PdCompletableFuture;
+import com.itheima.pinda.util.Rx;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
@@ -68,9 +69,15 @@ public class AgencyController {
     @GetMapping("page")
     public Result page(Integer page, Integer pagesize, Long cityId, String keyword, String latitude, String longitude) {
 
-        R<Page> result = orgApi.pageLike(pagesize, page, keyword, cityId, latitude, longitude);
-        Page pageResult = result.getData();
+        // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
+        Page pageResult = Rx.data(orgApi.pageLike(pagesize, page, keyword, cityId, latitude, longitude));
+        if (pageResult == null) {
+            pageResult = new Page();
+        }
         List<Map> records = pageResult.getRecords();
+        if (records == null) {
+            records = new ArrayList<>();
+        }
 
         Set<Long> areaSet = new HashSet<>();
         areaSet.addAll(records.stream().filter(item -> !ObjectUtils.isEmpty(item.get("provinceId"))).map(item -> Long.valueOf(item.get("provinceId").toString())).collect(Collectors.toSet()));
