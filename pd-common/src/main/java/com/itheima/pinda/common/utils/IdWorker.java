@@ -5,6 +5,7 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * <p>名称：IdWorker.java</p>
@@ -12,6 +13,8 @@ import lombok.extern.slf4j.Slf4j;
  * <pre>
  *     Twitter的 Snowflake　JAVA实现方案
  * </pre>
+ * 注意：多实例部署时必须为每个实例指定不同的datacenterId，
+ * 可通过JVM参数 -Dsnowflake.datacenter.id=1 配置，否则将根据MAC地址自动生成，可能产生ID碰撞。
  * 核心代码为其IdWorker这个类实现，其原理结构如下，我分别用一个0表示一位，用—分割开部分的作用：
  * 1||0---0000000000 0000000000 0000000000 0000000000 0 --- 00000 ---00000 ---000000000000
  * 在上面的字符串中，第一位为未使用（实际上也可作为long的符号位），接下来的41位为毫秒级时间，
@@ -144,6 +147,15 @@ public class IdWorker {
      * </p>
      */
     protected static long getDatacenterId(long maxDatacenterId) {
+        // 优先从系统属性读取配置的datacenterId
+        String configuredId = System.getProperty("snowflake.datacenter.id");
+        if (StringUtils.isNotBlank(configuredId)) {
+            long id = Long.parseLong(configuredId);
+            if (id > maxDatacenterId) {
+                throw new IllegalArgumentException("datacenterId超出范围: " + id + ", 最大值: " + maxDatacenterId);
+            }
+            return id;
+        }
         long id = 0L;
         try {
             InetAddress ip = InetAddress.getLocalHost();
@@ -157,7 +169,7 @@ public class IdWorker {
                 id = id % (maxDatacenterId + 1);
             }
         } catch (Exception e) {
-            log.warn("getDatacenterId: {}", e.getMessage());
+            log.error("[IdWorker] 无法获取MAC地址，datacenterId降级为0，请通过-Dsnowflake.datacenter.id指定", e);
         }
         return id;
     }

@@ -19,6 +19,7 @@ import com.itheima.pinda.feign.truck.TruckFeign;
 import com.itheima.pinda.feign.truck.TruckTypeFeign;
 import com.itheima.pinda.feign.user.DriverFeign;
 import com.itheima.pinda.util.BeanUtil;
+import com.itheima.pinda.util.Rx;
 import com.itheima.pinda.vo.base.AreaSimpleVo;
 import com.itheima.pinda.vo.base.businessHall.GoodsTypeVo;
 import com.itheima.pinda.vo.base.transforCenter.business.FleetVo;
@@ -71,7 +72,9 @@ public class CommonController {
     })
     @GetMapping(value = "area/simple")
     public List<AreaSimpleVo> areaSimple(@RequestParam(value = "parentId") String parentId) {
-        return areaApi.findAll(StringUtils.isEmpty(parentId) ? null : Long.valueOf(parentId), null).getData().stream().map(BeanUtil::parseArea2Vo).collect(Collectors.toList());
+        // 修改点：远程调用结果可能返回 null，统一通过 Rx 安全取值，避免 NPE
+        return Rx.dataList(areaApi.findAll(StringUtils.isEmpty(parentId) ? null : Long.valueOf(parentId), null))
+                .stream().map(BeanUtil::parseArea2Vo).collect(Collectors.toList());
     }
 
     @ApiOperation(value = "获取负责人信息列表")
@@ -103,7 +106,8 @@ public class CommonController {
     @GetMapping(value = "fleet/simple")
     public List<FleetVo> fleetSimple(@RequestParam(name = "more", required = false, defaultValue = "false") Boolean more) {
         // TODO: 2020/2/18 此处需考虑是否从token上下文中获取当前用户所属机构id作为查询条件
-        List<FleetDto> fleetDtoList = fleetFeign.findAll(null, null);
+        // 修改点：Feign 直接返回 List 可能为 null，统一通过 Rx 安全取值
+        List<FleetDto> fleetDtoList = Rx.list(fleetFeign.findAll(null, null));
         return fleetDtoList.stream().map(fleetDto -> {
             FleetVo simpleVo = new FleetVo();
             BeanUtils.copyProperties(fleetDto, simpleVo);
@@ -135,7 +139,8 @@ public class CommonController {
     @GetMapping(value = "truckType/simple")
     public List<TruckTypeVo> truckTypeSimple() {
         // TODO: 2020/2/18 此处需考虑是否从token上下文中获取当前用户所属机构id作为查询条件
-        List<TruckTypeDto> truckTypeDtoList = truckTypeFeign.findAll(null);
+        // 修改点：Feign 直接返回 List 可能为 null，统一通过 Rx 安全取值
+        List<TruckTypeDto> truckTypeDtoList = Rx.list(truckTypeFeign.findAll(null));
         return truckTypeDtoList.stream().map(truckTypeDto -> {
             TruckTypeVo simpleVo = new TruckTypeVo();
             BeanUtils.copyProperties(truckTypeDto, simpleVo);
@@ -147,7 +152,8 @@ public class CommonController {
     @GetMapping(value = "transportLineType/simple")
     public List<TransportLineTypeVo> transportLineTypeSimple() {
         // TODO: 2020/2/18 此处需考虑是否从token上下文中获取当前用户所属机构id作为查询条件
-        List<TransportLineTypeDto> transportLineTypeDtoList = transportLineTypeFeign.findAll(null);
+        // 修改点：Feign 直接返回 List 可能为 null，统一通过 Rx 安全取值
+        List<TransportLineTypeDto> transportLineTypeDtoList = Rx.list(transportLineTypeFeign.findAll(null));
         return transportLineTypeDtoList.stream().map(transportLineTypeDto -> {
             TransportLineTypeVo simpleVo = new TransportLineTypeVo();
             BeanUtils.copyProperties(transportLineTypeDto, simpleVo);
@@ -158,7 +164,8 @@ public class CommonController {
     @ApiOperation(value = "获取货物类型信息列表")
     @GetMapping(value = "goodsType/simple")
     public List<GoodsTypeVo> goodsTypeSimple() {
-        List<GoodsTypeDto> goodsTypeDtoList = goodsTypeFeign.findAll(null);
+        // 修改点：Feign 直接返回 List 可能为 null，统一通过 Rx 安全取值
+        List<GoodsTypeDto> goodsTypeDtoList = Rx.list(goodsTypeFeign.findAll(null));
         return goodsTypeDtoList.stream().map(goodsTypeDto -> {
             GoodsTypeVo simpleVo = new GoodsTypeVo();
             BeanUtils.copyProperties(goodsTypeDto, simpleVo);

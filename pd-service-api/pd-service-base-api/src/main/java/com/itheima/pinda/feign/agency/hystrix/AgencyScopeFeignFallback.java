@@ -18,19 +18,19 @@ public class AgencyScopeFeignFallback implements AgencyScopeFeign {
 
     @Override
     public Result batchSaveAgencyScope(List<AgencyScopeDto> dtoList) {
-        log.error("远程调用 pd-base 失败: batchSaveAgencyScope({}), 返回失败结果", dtoList);
+        log.warn("远程调用 pd-base 失败: batchSaveAgencyScope({}), 返回失败结果", dtoList);
         return Result.error("服务降级，batchSaveAgencyScope执行失败");
     }
 
     @Override
     public Result deleteAgencyScope(AgencyScopeDto dto) {
-        log.error("远程调用 pd-base 失败: deleteAgencyScope({}), 返回失败结果", dto);
+        log.warn("远程调用 pd-base 失败: deleteAgencyScope({}), 返回失败结果", dto);
         return Result.error("服务降级，deleteAgencyScope执行失败");
     }
 
     @Override
     public List<AgencyScopeDto> findAllAgencyScope(String areaId, String agencyId, List<String> agencyIds, List<String> areaIds) {
-        log.error("远程调用 pd-base 失败: findAllAgencyScope(areaId={}, agencyId={}, agencyIds={}, areaIds={}), 返回空列表", areaId, agencyId, agencyIds, areaIds);
+        log.warn("远程调用 pd-base 失败: findAllAgencyScope(areaId={}, agencyId={}, agencyIds={}, areaIds={}), 返回空列表", areaId, agencyId, agencyIds, areaIds);
         return Collections.emptyList();
     }
 }

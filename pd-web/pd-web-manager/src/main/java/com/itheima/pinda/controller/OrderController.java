@@ -13,6 +13,7 @@ import com.itheima.pinda.feign.PickupDispatchTaskFeign;
 import com.itheima.pinda.feign.TransportOrderFeign;
 import com.itheima.pinda.util.BeanUtil;
 import com.itheima.pinda.vo.oms.OrderVo;
+import com.itheima.pinda.util.Rx;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
@@ -54,7 +55,8 @@ public class OrderController {
     public PageResponse<OrderVo> findByPage(@RequestBody OrderVo vo) {
         PageResponse<OrderDTO> orderPage = orderFeign.findByPage(BeanUtil.parseOrderVo2DTO(vo));
         //加工数据
-        List<OrderDTO> orderDTOList = orderPage.getItems();
+        // 修改点：分页 items 可能为 null，统一通过 Rx 安全取值
+        List<OrderDTO> orderDTOList = Rx.items(orderPage);
         List<OrderVo> orderVoList = orderDTOList.stream().map(orderDTO -> BeanUtil.parseOrderDTO2Vo(orderDTO, areaApi)).collect(Collectors.toList());
         return PageResponse.<OrderVo>builder().items(orderVoList).pagesize(vo.getPageSize()).page(vo.getPage()).counts(orderPage.getCounts()).pages(orderPage.getPages()).build();
     }
@@ -65,7 +67,11 @@ public class OrderController {
     })
     @GetMapping("/{id}")
     public OrderVo findOrderById(@PathVariable(name = "id") String id) {
+        // 修改点：远程查询可能返回 null，避免后续 NPE
         OrderDTO orderDTO = orderFeign.findById(id);
+        if (orderDTO == null) {
+            return new OrderVo();
+        }
         OrderVo vo = BeanUtil.parseOrderDTO2Vo(orderDTO, areaApi);
         if (StringUtils.isNotEmpty(vo.getId())) {
             //查询取派件任务信息
@@ -74,11 +80,12 @@ public class OrderController {
             List<TaskPickupDispatchDTO> taskPickupDispatchDTOList = pickupDispatchTaskFeign.findAll(taskPickupDispatchQueryDTO);
             if (taskPickupDispatchDTOList != null && taskPickupDispatchDTOList.size() > 0) {
                 taskPickupDispatchDTOList.forEach(taskPickupDispatchDTO -> {
-                    if (taskPickupDispatchDTO.getOrderId().equals(vo.getId()) && taskPickupDispatchDTO.getTaskType() == PickupDispatchTaskType.PICKUP.getCode()) {
+                    // 修改点：getOrderId() 可能为 null，改写为常量在前避免 NPE
+                    if (vo.getId().equals(taskPickupDispatchDTO.getOrderId()) && taskPickupDispatchDTO.getTaskType() == PickupDispatchTaskType.PICKUP.getCode()) {
                         //取件信息
                         vo.setTaskPickup(BeanUtil.parseTaskPickupDispatchDTO2Vo(taskPickupDispatchDTO, orderFeign, areaApi, orgApi, userApi));
                     }
-                    if (taskPickupDispatchDTO.getOrderId().equals(vo.getId()) && taskPickupDispatchDTO.getTaskType() == PickupDispatchTaskType.DISPATCH.getCode()) {
+                    if (vo.getId().equals(taskPickupDispatchDTO.getOrderId()) && taskPickupDispatchDTO.getTaskType() == PickupDispatchTaskType.DISPATCH.getCode()) {
                         //派件信息
                         vo.setTaskDispatch(BeanUtil.parseTaskPickupDispatchDTO2Vo(taskPickupDispatchDTO, orderFeign, areaApi, orgApi, userApi));
                     }

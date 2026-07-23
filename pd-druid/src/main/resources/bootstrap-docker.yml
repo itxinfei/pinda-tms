@@ -1,0 +1,12 @@
+# Docker 环境专用配置
+# 指向容器内的 Nacos 服务
+spring:
+  cloud:
+    nacos:
+      discovery:
+        server-addr: nacos:8848
+        namespace: 09d0e14f-107f-4fea-8f80-e59e0cc63694
+      config:
+        server-addr: nacos:8848
+        file-extension: yml
+        namespace: 09d0e14f-107f-4fea-8f80-e59e0cc63694

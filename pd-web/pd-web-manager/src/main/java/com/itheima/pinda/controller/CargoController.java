@@ -8,6 +8,7 @@ import com.itheima.pinda.feign.common.GoodsTypeFeign;
 import com.itheima.pinda.vo.oms.OrderCargoVo;
 import com.itheima.pinda.vo.oms.OrderVo;
 import com.itheima.pinda.vo.base.businessHall.GoodsTypeVo;
+import com.itheima.pinda.util.Rx;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
@@ -34,8 +35,11 @@ public class CargoController {
     @ApiOperation(value = "添加货物")
     @PostMapping("")
     public OrderCargoVo saveOrderCargo(@RequestBody OrderCargoVo vo) {
+        // 修改点：远程保存可能返回 null，避免 copyProperties NPE
         OrderCargoDto resultDto = cargoFeign.save(parseOderCargoVo2Dto(vo));
-        BeanUtils.copyProperties(resultDto, vo);
+        if (resultDto != null) {
+            BeanUtils.copyProperties(resultDto, vo);
+        }
         return vo;
     }
 
@@ -45,7 +49,8 @@ public class CargoController {
     })
     @GetMapping(value = "")
     public List<OrderCargoVo> findAll(@RequestParam(value = "orderId") String orderId) {
-        List<OrderCargoDto> cargoDtoList = cargoFeign.findAll(null, orderId);
+        // 修改点：Feign 直接返回 List 可能为 null，统一通过 Rx 安全取值
+        List<OrderCargoDto> cargoDtoList = Rx.list(cargoFeign.findAll(null, orderId));
         return cargoDtoList.stream().map(orderCargoDto -> {
             OrderCargoVo vo = new OrderCargoVo();
             BeanUtils.copyProperties(orderCargoDto, vo);
@@ -73,8 +78,11 @@ public class CargoController {
     @PutMapping("/{id}")
     public OrderCargoVo updateOrderCargo(@PathVariable(name = "id") String id, @RequestBody OrderCargoVo vo) {
         vo.setId(id);
+        // 修改点：远程更新可能返回 null，避免 copyProperties NPE
         OrderCargoDto resultDto = cargoFeign.update(id, parseOderCargoVo2Dto(vo));
-        BeanUtils.copyProperties(resultDto, vo);
+        if (resultDto != null) {
+            BeanUtils.copyProperties(resultDto, vo);
+        }
         return vo;
     }
 

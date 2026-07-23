@@ -75,7 +75,7 @@ public interface OrderFeign {
     List<Order> list(@RequestBody OrderSearchDTO orderSearchDTO);
 
     @PostMapping("orderMsg")
-    Map getOrderMsg(OrderDTO orderAddDto);
+    Map getOrderMsg(@RequestBody OrderDTO orderAddDto);
 
     @PostMapping("location/saveOrUpdate")
     OrderLocationDto saveOrUpdateLoccation(@RequestBody OrderLocationDto orderLocationDto);

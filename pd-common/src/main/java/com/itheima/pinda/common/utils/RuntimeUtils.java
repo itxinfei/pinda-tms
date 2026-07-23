@@ -16,6 +16,8 @@ public class RuntimeUtils {
     private static String runtimeName = "";
     private static Long pid = 0L;
 
+    private static final Object RUNTIME_LOCK = new Object();
+
     /**
      * 获取Runtime运行时名称
      *
@@ -23,7 +25,7 @@ public class RuntimeUtils {
      */
     public static String getRuntimeName() {
         if (!StringUtils.hasText(runtimeName)) {
-            synchronized (runtimeName) {
+            synchronized (RUNTIME_LOCK) {
                 if (!StringUtils.hasText(runtimeName)) {
                     RuntimeMXBean runtime = ManagementFactory.getRuntimeMXBean();
                     runtimeName = runtime.getName();
@@ -40,7 +42,7 @@ public class RuntimeUtils {
      */
     public static Long getPid() {
         if (pid == null || pid.longValue() < 1L) {
-            synchronized (runtimeName) {
+            synchronized (RUNTIME_LOCK) {
                 if (pid == null || pid.longValue() < 1L) {
                     pid = Long.parseLong(getRuntimeName().split("@")[0]);
                 }

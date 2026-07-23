@@ -1,0 +1,454 @@
+version: '3.8'
+
+# ==================== 基础设施 ====================
+
+services:
+  # ---------- Nacos 注册中心 + 配置中心 ----------
+  nacos:
+    image: nacos/nacos-server:2.0.3
+    container_name: pinda-nacos
+    environment:
+      - MODE=standalone
+      - SPRING_DATASOURCE_PLATFORM=mysql
+      - MYSQL_SERVICE_HOST=mysql
+      - MYSQL_SERVICE_PORT=3306
+      - MYSQL_SERVICE_DB_NAME=nacos_config
+      - MYSQL_SERVICE_USER=root
+      - MYSQL_SERVICE_PASSWORD=root123
+      - JVM_XMS=256m
+      - JVM_XMX=256m
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+      - "9849:9849"
+    volumes:
+      - ./nacos/logs:/home/nacos/logs
+    depends_on:
+      - mysql
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8848/nacos/v1/console/health/readiness"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+
+  # ---------- MySQL ----------
+  mysql:
+    image: mysql:8.0.20
+    container_name: pinda-mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=root123
+      - MYSQL_CHARACTER_SET_SERVER=utf8mb4
+      - MYSQL_COLLATION_SERVER=utf8mb4_unicode_ci
+      - TZ=Asia/Shanghai
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+      - ./mysql/conf:/etc/mysql/conf.d
+      - ./mysql/init:/docker-entrypoint-initdb.d
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot123"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+
+  # ---------- Redis ----------
+  redis:
+    image: redis:5.0.12-alpine
+    container_name: pinda-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis/data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # ---------- ZooKeeper (Kafka依赖) ----------
+  zookeeper:
+    image: zookeeper:3.4.14
+    container_name: pinda-zookeeper
+    environment:
+      - ZOO_MY_ID=1
+      - ZOO_SERVERS=server.1=0.0.0.0:2888:3888
+    ports:
+      - "2181:2181"
+      - "2888:2888"
+      - "3888:3888"
+    volumes:
+      - ./zookeeper/data:/tmp/zookeeper
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  # ---------- Kafka ----------
+  kafka:
+    image: wurstmeister/kafka:2.13-2.6.0
+    container_name: pinda-kafka
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092
+      - KAFKA_LOG_DIRS=/kafka/kafka-logs
+      - KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
+      - KAFKA_DEFAULT_REPLICATION_FACTOR=1
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+      - KAFKA_HEAP_OPTS=-Xmx512m -Xms256m
+      - TZ=Asia/Shanghai
+    ports:
+      - "9092:9092"
+    volumes:
+      - ./kafka/data:/kafka/kafka-logs
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "9092"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  # ==================== 微服务 ====================
+
+  # ---------- 网关服务 (pd-gateway) ----------
+  pd-gateway:
+    build:
+      context: ./pd-authority/pd-apps/pd-gateway
+      dockerfile: Dockerfile
+    container_name: pinda-gateway
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - NACOS_IP=nacos
+      - NACOS_PORT=8848
+      - NACOS_ID=09d0e14f-107f-4fea-8f80-e59e0cc63694
+    ports:
+      - "8760:8760"
+    volumes:
+      - ./pd-authority/pd-apps/pd-gateway/target/pd-gateway-1.0-SNAPSHOT.jar:/app.jar
+    depends_on:
+      nacos:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ---------- 权限认证服务 (pd-auth-server) ----------
+  pd-auth-server:
+    build:
+      context: ./pd-authority/pd-apps/pd-auth/pd-auth-server
+      dockerfile: Dockerfile
+    container_name: pinda-auth
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - NACOS_IP=nacos
+      - NACOS_PORT=8848
+      - NACOS_ID=09d0e14f-107f-4fea-8f80-e59e0cc63694
+    ports:
+      - "9000:9000"
+    volumes:
+      - ./pd-authority/pd-apps/pd-auth/pd-auth-server/target/pd-auth-server-1.0-SNAPSHOT.jar:/app.jar
+    depends_on:
+      nacos:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ---------- 基础数据服务 (pd-base) ----------
+  pd-base:
+    build:
+      context: ./pd-base
+      dockerfile: src/main/docker/Dockerfile
+    container_name: pinda-base
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - NACOS_IP=nacos
+      - NACOS_PORT=8848
+      - NACOS_ID=09d0e14f-107f-4fea-8f80-e59e0cc63694
+    ports:
+      - "8185:8185"
+    volumes:
+      - ./pd-base/target/pd-base-1.0.0-SNAPSHOT.jar:/app.jar
+    depends_on:
+      nacos:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ---------- 订单服务 (pd-oms) ----------
+  pd-oms:
+    build:
+      context: ./pd-oms
+      dockerfile: src/main/docker/Dockerfile
+    container_name: pinda-oms
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - NACOS_IP=nacos
+      - NACOS_PORT=8848
+      - NACOS_ID=09d0e14f-107f-4fea-8f80-e59e0cc63694
+    ports:
+      - "8186:8186"
+    volumes:
+      - ./pd-oms/target/pd-oms-1.0.0-SNAPSHOT.jar:/app.jar
+    depends_on:
+      nacos:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ---------- 配送作业服务 (pd-work) ----------
+  pd-work:
+    build:
+      context: ./pd-work
+      dockerfile: src/main/docker/Dockerfile
+    container_name: pinda-work
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - NACOS_IP=nacos
+      - NACOS_PORT=8848
+      - NACOS_ID=09d0e14f-107f-4fea-8f80-e59e0cc63694
+    ports:
+      - "8187:8187"
+    volumes:
+      - ./pd-work/target/pd-work-1.0.0-SNAPSHOT.jar:/app.jar
+    depends_on:
+      nacos:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ---------- 用户服务 (pd-user) ----------
+  pd-user:
+    build:
+      context: ./pd-user
+      dockerfile: src/main/docker/Dockerfile
+    container_name: pinda-user
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - NACOS_IP=nacos
+      - NACOS_PORT=8848
+      - NACOS_ID=09d0e14f-107f-4fea-8f80-e59e0cc63694
+    ports:
+      - "8189:8189"
+    volumes:
+      - ./pd-user/target/pd-user-1.0.0-SNAPSHOT.jar:/app.jar
+    depends_on:
+      nacos:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ---------- 智能调度服务 (pd-dispatch) ----------
+  pd-dispatch:
+    build:
+      context: ./pd-dispatch
+      dockerfile: src/main/docker/Dockerfile
+    container_name: pinda-dispatch
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - NACOS_IP=nacos
+      - NACOS_PORT=8848
+      - NACOS_ID=09d0e14f-107f-4fea-8f80-e59e0cc63694
+    ports:
+      - "8190:8190"
+    volumes:
+      - ./pd-dispatch/target/pd-dispatch-1.0.0-SNAPSHOT.jar:/app.jar
+    depends_on:
+      nacos:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ---------- 数据聚合服务 (pd-aggregation) ----------
+  pd-aggregation:
+    build:
+      context: ./pd-aggregation
+      dockerfile: src/main/docker/Dockerfile
+    container_name: pinda-aggregation
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - NACOS_IP=nacos
+      - NACOS_PORT=8848
+      - NACOS_ID=09d0e14f-107f-4fea-8f80-e59e0cc63694
+    ports:
+      - "8191:8191"
+    volumes:
+      - ./pd-aggregation/target/pd-aggregation-1.0.0-SNAPSHOT.jar:/usr/src/pd-aggregation-1.0.0.jar
+    depends_on:
+      nacos:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ---------- GPS轨迹服务 (pd-netty) ----------
+  pd-netty:
+    build:
+      context: ./pd-netty
+      dockerfile: src/main/docker/Dockerfile
+    container_name: pinda-netty
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - NACOS_IP=nacos
+      - NACOS_PORT=8848
+      - NACOS_ID=09d0e14f-107f-4fea-8f80-e59e0cc63694
+      - spring.kafka.bootstrap-servers=kafka:9092
+    ports:
+      - "8192:8192"
+    volumes:
+      - ./pd-netty/target/pd-netty-1.0.0-SNAPSHOT.jar:/app.jar
+    depends_on:
+      nacos:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ---------- Druid监控服务 (pd-druid) ----------
+  pd-druid:
+    build:
+      context: ./pd-druid
+      dockerfile: src/main/docker/Dockerfile
+    container_name: pinda-druid
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - NACOS_IP=nacos
+      - NACOS_PORT=8848
+      - NACOS_ID=09d0e14f-107f-4fea-8f80-e59e0cc63694
+    ports:
+      - "8193:8193"
+    volumes:
+      - ./pd-druid/target/pd-druid-1.0.0-SNAPSHOT.jar:/app.jar
+    depends_on:
+      nacos:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ---------- 管理端前端 (pd-web-manager) ----------
+  pd-web-manager:
+    build:
+      context: ./pd-web/pd-web-manager
+      dockerfile: src/main/docker/Dockerfile
+    container_name: pinda-web-manager
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - NACOS_IP=nacos
+      - NACOS_PORT=8848
+      - NACOS_ID=09d0e14f-107f-4fea-8f80-e59e0cc63694
+    ports:
+      - "8161:8161"
+    volumes:
+      - ./pd-web/pd-web-manager/target/pd-web-manager-1.0.0-SNAPSHOT.jar:/app.jar
+    depends_on:
+      nacos:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ---------- 司机端前端 (pd-web-driver) ----------
+  pd-web-driver:
+    build:
+      context: ./pd-web/pd-web-driver
+      dockerfile: src/main/docker/Dockerfile
+    container_name: pinda-web-driver
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - NACOS_IP=nacos
+      - NACOS_PORT=8848
+      - NACOS_ID=09d0e14f-107f-4fea-8f80-e59e0cc63694
+    ports:
+      - "8162:8162"
+    volumes:
+      - ./pd-web/pd-web-driver/target/pd-web-driver-1.0.0-SNAPSHOT.jar:/app.jar
+    depends_on:
+      nacos:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ---------- 快递员端前端 (pd-web-courier) ----------
+  pd-web-courier:
+    build:
+      context: ./pd-web/pd-web-courier
+      dockerfile: src/main/docker/Dockerfile
+    container_name: pinda-web-courier
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - NACOS_IP=nacos
+      - NACOS_PORT=8848
+      - NACOS_ID=09d0e14f-107f-4fea-8f80-e59e0cc63694
+    ports:
+      - "8163:8163"
+    volumes:
+      - ./pd-web/pd-web-courier/target/pd-web-courier-1.0.0-SNAPSHOT.jar:/app.jar
+    depends_on:
+      nacos:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ---------- 客户端前端 (pd-web-customer) ----------
+  pd-web-customer:
+    build:
+      context: ./pd-web/pd-web-customer
+      dockerfile: src/main/docker/Dockerfile
+    container_name: pinda-web-customer
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - NACOS_IP=nacos
+      - NACOS_PORT=8848
+      - NACOS_ID=09d0e14f-107f-4fea-8f80-e59e0cc63694
+    ports:
+      - "8164:8164"
+    volumes:
+      - ./pd-web/pd-web-customer/target/pd-web-customer-1.0.0-SNAPSHOT.jar:/app.jar
+    depends_on:
+      nacos:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ---------- 前端管理界面 (Vue + Nginx) ----------
+  pd-admin-ui:
+    build:
+      context: ./pd-admin-ui
+      dockerfile: Dockerfile
+    container_name: pinda-admin-ui
+    ports:
+      - "8080:80"
+    depends_on:
+      - pd-gateway
+    restart: unless-stopped

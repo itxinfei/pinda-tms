@@ -14,6 +14,7 @@ import com.itheima.pinda.authority.entity.auth.Role;
 import com.itheima.pinda.authority.entity.auth.RoleOrg;
 import com.itheima.pinda.base.id.CodeGenerate;
 import com.itheima.pinda.common.constant.CacheKey;
+import com.itheima.pinda.common.constant.BizConstant;
 import com.itheima.pinda.database.mybatis.conditions.Wraps;
 import com.itheima.pinda.dozer.DozerUtils;
 import com.itheima.pinda.utils.StrHelper;
@@ -54,7 +55,12 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
 
     @Override
     public boolean isSuperAdmin(Long userId) {
-        return userId != null && userId.equals(1L);
+        if (userId == null) {
+            return false;
+        }
+        // 通过角色编码判断是否为超级管理员，而非硬编码 userId==1
+        List<Long> roleIds = findRoleByUserId(userId);
+        return roleIds != null && roleIds.contains(INIT_ROLE_ID);
     }
 
     @Override
