@@ -19,13 +19,13 @@
                 AND truck_type.status=1
             </if>
             <if test="name != null">
-                AND goods_type.name LIKE "%"#{name}"%"
+                AND goods_type.name LIKE CONCAT('%', #{name}, '%')
             </if>
             <if test="truckTypeId != null">
                 AND truck_type_goods_type.truck_type_id = #{truckTypeId}
             </if>
             <if test="truckTypeName != null">
-                AND truck_type.name LIKE "%"#{truckTypeName}"%"
+                AND goods_type.name LIKE CONCAT('%', #{truckTypeName}, '%')
             </if>
         </where>
     </select>

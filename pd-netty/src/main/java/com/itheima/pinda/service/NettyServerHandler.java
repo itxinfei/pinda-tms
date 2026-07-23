@@ -3,14 +3,13 @@ package com.itheima.pinda.service;
 import com.alibaba.fastjson.JSON;
 import com.itheima.pinda.entity.LocationEntity;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.util.ReferenceCountUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
+
 import java.io.UnsupportedEncodingException;
 
 /**
@@ -19,6 +18,16 @@ import java.io.UnsupportedEncodingException;
 @Slf4j
 @ChannelHandler.Sharable
 public class NettyServerHandler extends ChannelInboundHandlerAdapter {
+    private final KafkaSender kafkaSender;
+
+    public NettyServerHandler() {
+        this(null);
+    }
+
+    public NettyServerHandler(KafkaSender kafkaSender) {
+        this.kafkaSender = kafkaSender;
+    }
+
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
         log.info("ServerHandler.channelRead()");
@@ -36,17 +45,17 @@ public class NettyServerHandler extends ChannelInboundHandlerAdapter {
             }
 
             //发送至kafka队列
-            KafkaSender.send(KafkaSender.MSG_TOPIC, message);
+            if (kafkaSender != null) {
+                boolean sent = kafkaSender.send(KafkaSender.MSG_TOPIC, message);
+                if (!sent) {
+                    log.warn("[Kafka] 发送失败，消息已丢弃: topic={}, msg={}", KafkaSender.MSG_TOPIC, message);
+                }
+            }
 
         } catch (Exception e) {
-            log.error(e.getMessage());
+            log.error("处理报文失败", e);
         } finally {
-            //使用完ByteBuf之后，需要主动去释放资源，否则，资源一直在内存中加载，容易造成内存泄漏
             ReferenceCountUtil.release(msg);
-        }
-        if (null != in) {
-            //把当前的写指针 writerIndex 恢复到之前保存的 markedWriterIndex值
-            in.resetWriterIndex();
         }
     }
 
@@ -96,7 +105,7 @@ public class NettyServerHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        // 关闭发生异常的连接
+        log.error("Netty连接异常，关闭channel", cause);
         ctx.close();
     }
 }

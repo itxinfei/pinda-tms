@@ -74,7 +74,7 @@ public class PdTruckServiceImpl extends ServiceImpl<PdTruckMapper, PdTruck> impl
     public Integer count(String fleetId) {
         LambdaQueryWrapper<PdTruck> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         if (StringUtils.isNotEmpty(fleetId)) {
-            lambdaQueryWrapper.eq(PdTruck::getId, fleetId);
+            lambdaQueryWrapper.eq(PdTruck::getFleetId, fleetId);
         }
         lambdaQueryWrapper.eq(PdTruck::getStatus, Constant.DATA_DEFAULT_STATUS);
         return baseMapper.selectCount(lambdaQueryWrapper);

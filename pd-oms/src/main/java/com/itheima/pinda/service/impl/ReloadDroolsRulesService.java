@@ -23,8 +23,9 @@ public class ReloadDroolsRulesService {
     @Autowired
     private RuleMapper ruleMapper;
 
-    //全局唯一容器对象，用于创建Session操作Drools
-    public static KieContainer kieContainer;
+    // 使用volatile保证可见性，使用AtomicReference保证原子性
+    private volatile KieContainer kieContainer;
+    private final Object reloadLock = new Object();
 
     /**
      * 查询数据库中所有的规则
@@ -40,8 +41,18 @@ public class ReloadDroolsRulesService {
      * 重新创建KieContainer对象
      */
     public void reload(){
-        KieContainer kieContainer = this.loadContainerFromString(loadRules());
-        this.kieContainer = kieContainer;
+        KieContainer newContainer;
+        synchronized (reloadLock) {
+            newContainer = this.loadContainerFromString(loadRules());
+        }
+        this.kieContainer = newContainer;
+    }
+
+    /**
+     * 获取KieContainer实例，如果尚未加载则返回null
+     */
+    public KieContainer getKieContainer() {
+        return kieContainer;
     }
 
     /**

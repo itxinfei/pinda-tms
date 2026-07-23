@@ -22,6 +22,8 @@ import org.kie.api.runtime.KieSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
@@ -32,10 +34,13 @@ import java.util.Map;
 /**
  * 订单服务实现类
  */
+@Slf4j
 @Service
 public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements IOrderService {
     @Autowired
     private CustomIdGenerator idGenerator;
+    @Autowired
+    private ReloadDroolsRulesService reloadDroolsRulesService;
 
     @Override
     public Order saveOrder(Order order) {
@@ -148,11 +153,25 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
             return map;
         }
 
-        KieSession session = ReloadDroolsRulesService.kieContainer.newKieSession();
+        if (orderDTO.getOrderCargoDto() == null || orderDTO.getDistance() == null) {
+            log.warn("[订单价格计算] 参数不完整: orderCargoDto={}, distance={}", orderDTO.getOrderCargoDto(), orderDTO.getDistance());
+            return null;
+        }
+
+        KieContainer container = reloadDroolsRulesService.getKieContainer();
+        if (container == null) {
+            log.error("[订单价格计算] Drools规则引擎未初始化，无法计算订单价格");
+            return null;
+        }
+        KieSession session = container.newKieSession();
         //设置Fact对象
         AddressRule addressRule = new AddressRule();
-        addressRule.setTotalWeight(orderDTO.getOrderCargoDto().getTotalWeight().doubleValue());
-        addressRule.setDistance(orderDTO.getDistance().doubleValue());
+        if (orderDTO.getOrderCargoDto() != null && orderDTO.getOrderCargoDto().getTotalWeight() != null) {
+            addressRule.setTotalWeight(orderDTO.getOrderCargoDto().getTotalWeight().doubleValue());
+        }
+        if (orderDTO.getDistance() != null) {
+            addressRule.setDistance(orderDTO.getDistance().doubleValue());
+        }
 
         //将对象加入到工作内存
         session.insert(addressRule);
@@ -161,11 +180,11 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         session.insert(addressCheckResult);
 
         int i = session.fireAllRules();
-        System.out.println("触发了" + i + "条规则");
+        log.info("触发了{}条规则", i);
         session.destroy();
 
         if(addressCheckResult.isPostCodeResult()){
-            System.out.println("规则匹配成功,订单价格为：" + addressCheckResult.getResult());
+            log.info("规则匹配成功,订单价格为：{}", addressCheckResult.getResult());
             orderDTO.setAmount(new BigDecimal(addressCheckResult.getResult()));
 
             Map map = new HashMap();
