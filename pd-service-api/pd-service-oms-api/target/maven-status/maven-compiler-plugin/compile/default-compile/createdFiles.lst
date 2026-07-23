@@ -1,0 +1,4 @@
+com\itheima\pinda\feign\hystrix\OrderFeignFallback.class
+com\itheima\pinda\feign\OrderFeign.class
+com\itheima\pinda\feign\hystrix\CargoFeignFallback.class
+com\itheima\pinda\feign\CargoFeign.class

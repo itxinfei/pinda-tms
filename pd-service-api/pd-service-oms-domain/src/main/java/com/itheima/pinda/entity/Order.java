@@ -41,7 +41,7 @@ public class Order implements Serializable {
 
 
     /**
-     * 取件类型，1为同城订单，2为城际订单
+     * 取件类型，1为网点自寄，2为上门取件
      */
     private Integer pickupType;
 

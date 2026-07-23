@@ -13,7 +13,6 @@ import com.itheima.pinda.authority.dto.auth.UserDTO;
 import com.itheima.pinda.authority.entity.auth.Resource;
 import com.itheima.pinda.authority.entity.auth.User;
 import com.itheima.pinda.base.R;
-import com.itheima.pinda.database.properties.DatabaseProperties;
 import com.itheima.pinda.dozer.DozerUtils;
 import com.itheima.pinda.exception.BizException;
 import com.itheima.pinda.exception.code.ExceptionCode;
@@ -29,7 +28,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- *
+ * 账号管理服务
  */
 @Service
 @Slf4j
@@ -42,37 +41,6 @@ public class AuthManager {
     private ResourceService resourceService;
     @Autowired
     private DozerUtils dozer;
-    @Autowired
-    private DatabaseProperties databaseProperties;
-
-
-    /**
-     * 登陆
-     *
-     * @param account
-     * @param password
-     * @return
-     */
-    private R<LoginDTO> simpleLogin(String account, String password) {
-        // 2. 验证登录
-        R<User> result = this.getUser(account, password);
-        if (result.getIsError()) {
-            return R.fail(result.getCode(), result.getMsg());
-        }
-        User user = result.getData();
-
-        // 3, token
-        Token token = this.getToken(user);
-
-        List<Resource> resourceList = this.resourceService.findVisibleResource(ResourceQueryDTO.builder().userId(user.getId()).build());
-        log.info("resourceList {} {}", resourceList.size(), resourceList);
-
-        List<String> permissionsList = resourceList.stream().filter(item -> item != null).map(Resource::getCode).collect(Collectors.toList());
-        log.info("account={}", account);
-        log.info("permissionsList={}", permissionsList);
-        return R.success(LoginDTO.builder().user(this.dozer.map(user, UserDTO.class)).permissionsList(permissionsList).token(token).build());
-    }
-
 
     /**
      * 账号登录
@@ -98,7 +66,7 @@ public class AuthManager {
         }
         //封装数据
         LoginDTO loginDTO = LoginDTO.builder().user(this.dozer.map(user, UserDTO.class)).token(token).permissionsList(permissionsList).build();
-        log.info("loginDTO={}", loginDTO);
+        log.info("用户登录成功: account={}, userId={}", user.getAccount(), user.getId());
         return R.success(loginDTO);
     }
 
@@ -128,14 +96,6 @@ public class AuthManager {
         }
 
         return R.success(user);
-    }
-
-    private Token getToken(User user) {
-        JwtUserInfo userInfo = new JwtUserInfo(user.getId(), user.getAccount(), user.getName(), user.getOrgId(), user.getStationId());
-
-        Token token = this.jwtTokenServerUtils.generateUserToken(userInfo, null);
-        log.info("token生成成功，前缀: {}***", token.getToken() != null && token.getToken().length() > 8 ? token.getToken().substring(0, 8) : "***");
-        return token;
     }
 
     private R<User> getUser(String account, String password) {
@@ -169,7 +129,7 @@ public class AuthManager {
             LocalDateTime passwordErrorLockTime = TimeUtils.getPasswordErrorLockTime("0");
             log.info("passwordErrorLockTime={}", passwordErrorLockTime);
             if (passwordErrorLockTime.isAfter(user.getPasswordErrorLastTime())) {
-                return R.fail("密码连续输错次数已达到%s次,用户已被锁定~", maxPasswordErrorNum);
+                return R.fail("密码连续输错次数已达到" + maxPasswordErrorNum + "次,用户已被锁定");
             }
         }
 

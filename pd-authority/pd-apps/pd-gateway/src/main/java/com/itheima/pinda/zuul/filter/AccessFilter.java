@@ -87,10 +87,15 @@ public class AccessFilter extends BaseFilter {
         }
 
         String userId = requestContext.getZuulRequestHeaders().get(BaseContextConstants.JWT_KEY_USER_ID);
+        if (StrUtil.isEmpty(userId)) {
+            errorResponse(ExceptionCode.UNAUTHORIZED.getMsg(), ExceptionCode.UNAUTHORIZED.getCode(), 200);
+            return null;
+        }
+
         CacheObject cacheObject = cacheChannel.get(CacheKey.USER_RESOURCE, userId);
         List<String> userResource = (List<String>) cacheObject.getValue();
         // 如果从缓存获取不到当前用户的资源权限，需要查询数据库获取，然后再放入缓存
-        if (userResource == null) {
+        if (userResource == null || userResource.isEmpty()) {
             ResourceQueryDTO resourceQueryDTO = new ResourceQueryDTO();
             resourceQueryDTO.setUserId(new Long(userId));
             //通过Feign调用服务，查询当前用户拥有的权限
@@ -102,6 +107,12 @@ public class AccessFilter extends BaseFilter {
                 }).collect(Collectors.toList());
                 cacheChannel.set(CacheKey.USER_RESOURCE, userId, userResource);
             }
+        }
+
+        if (userResource == null || userResource.isEmpty()) {
+            log.warn("用户{}没有权限信息，拒绝访问{}", userId, permission);
+            errorResponse(ExceptionCode.UNAUTHORIZED.getMsg(), ExceptionCode.UNAUTHORIZED.getCode(), 200);
+            return null;
         }
 
         long count = userResource.stream().filter((String r) -> {

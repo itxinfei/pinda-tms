@@ -9,6 +9,7 @@ import java.awt.geom.Path2D;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -67,10 +68,8 @@ public class EntCoordSyncJob {
 
 
     public static Integer getTime(String origin, String destination) {
-        String[] originArray = origin.split(",");
-        String[] destinationArray = destination.split(",");
-        origin = originArray[1] + "," + originArray[0];
-        destination = destinationArray[1] + "," + destinationArray[0];
+        origin = parseCoordinate(origin);
+        destination = parseCoordinate(destination);
         String url = "http://api.map.baidu.com/directionlite/v1/driving?origin=" + origin + "&destination=" + destination + "&ak=" + AK;
         String json = loadJSON(url);
         log.debug("json-->{}", json);
@@ -90,10 +89,8 @@ public class EntCoordSyncJob {
     }
 
     public static Double getDistance(String origin, String destination) {
-        String[] originArray = origin.split(",");
-        String[] destinationArray = destination.split(",");
-        origin = originArray[1] + "," + originArray[0];
-        destination = destinationArray[1] + "," + destinationArray[0];
+        origin = parseCoordinate(origin);
+        destination = parseCoordinate(destination);
         String url = "http://api.map.baidu.com/directionlite/v1/driving?origin=" + origin + "&destination=" + destination + "&ak=" + AK;
         String json = loadJSON(url);
         log.debug("json-->{}", json);
@@ -114,17 +111,23 @@ public class EntCoordSyncJob {
 
     public static String loadJSON(String url) {
         StringBuilder json = new StringBuilder();
-        try {
-            URL oracle = new URL(url);
-            URLConnection yc = oracle.openConnection();
-            BufferedReader in = new BufferedReader(new InputStreamReader(yc.getInputStream(), "UTF-8"));
-            String inputLine = null;
+        HttpURLConnection conn = null;
+        try (BufferedReader in = new BufferedReader(
+                new InputStreamReader((conn = (HttpURLConnection) new URL(url).openConnection()).getInputStream(), "UTF-8"))) {
+            String inputLine;
             while ((inputLine = in.readLine()) != null) {
-                json.append(inputLine);
+                json.append(inputLine.trim());
             }
-            in.close();
         } catch (MalformedURLException e) {
+            log.error("[坐标同步] 无效的URL: {}", url, e);
+            return null;
         } catch (IOException e) {
+            log.error("[坐标同步] 请求失败: {}", url, e);
+            return null;
+        } finally {
+            if (conn != null) {
+                conn.disconnect();
+            }
         }
         return json.toString();
     }
@@ -151,8 +154,7 @@ public class EntCoordSyncJob {
      *             "distance":"离坐标点距离"
      */
     public static Map getLocationByPosition(String location) {
-        String[] originArray = location.split(",");
-        location = originArray[1] + "," + originArray[0];
+        location = parseCoordinate(location);
         String url = "http://api.map.baidu.com/reverse_geocoding/v3/?ak=" + AK + "&output=json&coordtype=wgs84ll&location=" + location;
 //        String url = "http://api.map.baidu.com/directionlite/v1/driving?origin=" + origin + "&destination=" + destination + "&ak=" + AK;
         String json = loadJSON(url);
@@ -168,6 +170,22 @@ public class EntCoordSyncJob {
         }
 
         return null;
+    }
+
+    /**
+     * 解析坐标字符串，验证格式并交换经度纬度顺序（返回 lat,lng 格式）
+     * @param coord 坐标字符串，格式为 "lng,lat"
+     * @return 交换后的坐标字符串 "lat,lng"
+     */
+    private static String parseCoordinate(String coord) {
+        if (StringUtils.isBlank(coord)) {
+            throw new IllegalArgumentException("坐标不能为空");
+        }
+        String[] parts = coord.split(",");
+        if (parts.length < 2) {
+            throw new IllegalArgumentException("坐标格式必须为 'lng,lat': " + coord);
+        }
+        return parts[1] + "," + parts[0];
     }
 
     /**

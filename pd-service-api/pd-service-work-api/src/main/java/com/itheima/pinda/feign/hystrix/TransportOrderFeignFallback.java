@@ -20,19 +20,19 @@ public class TransportOrderFeignFallback implements TransportOrderFeign {
 
     @Override
     public TransportOrderDTO save(TransportOrderDTO dto) {
-        log.error("远程调用 pd-work 失败: save({}), 返回null", dto);
+        log.warn("远程调用 pd-work 失败: save({}), 返回null", dto);
         return null;
     }
 
     @Override
     public TransportOrderDTO updateById(String id, TransportOrderDTO dto) {
-        log.error("远程调用 pd-work 失败: updateById({}), 返回null", id);
+        log.warn("远程调用 pd-work 失败: updateById({}), 返回null", id);
         return null;
     }
 
     @Override
     public PageResponse<TransportOrderDTO> findByPage(Integer page, Integer pageSize, String orderId, Integer status, Integer schedulingStatus) {
-        log.error("远程调用 pd-work 失败: findByPage(page={}, pageSize={}, orderId={}, status={}, schedulingStatus={}), 返回空分页", page, pageSize, orderId, status, schedulingStatus);
+        log.warn("远程调用 pd-work 失败: findByPage(page={}, pageSize={}, orderId={}, status={}, schedulingStatus={}), 返回空分页", page, pageSize, orderId, status, schedulingStatus);
         PageResponse<TransportOrderDTO> result = new PageResponse<>();
         result.setCounts(0L);
         result.setPagesize(pageSize);
@@ -44,25 +44,25 @@ public class TransportOrderFeignFallback implements TransportOrderFeign {
 
     @Override
     public TransportOrderDTO findById(String id) {
-        log.error("远程调用 pd-work 失败: findById({}), 返回null", id);
+        log.warn("远程调用 pd-work 失败: findById({}), 返回null", id);
         return null;
     }
 
     @Override
     public TransportOrderDTO findByOrderId(String orderId) {
-        log.error("远程调用 pd-work 失败: findByOrderId({}), 返回null", orderId);
+        log.warn("远程调用 pd-work 失败: findByOrderId({}), 返回null", orderId);
         return null;
     }
 
     @Override
     public List<TransportOrderDTO> findByOrderIds(List<String> ids) {
-        log.error("远程调用 pd-work 失败: findByOrderIds({}), 返回空列表", ids);
+        log.warn("远程调用 pd-work 失败: findByOrderIds({}), 返回空列表", ids);
         return Collections.emptyList();
     }
 
     @Override
     public List<TransportOrderDTO> list(TransportOrderSearchDTO transportOrderSearchDTO) {
-        log.error("远程调用 pd-work 失败: list({}), 返回空列表", transportOrderSearchDTO);
+        log.warn("远程调用 pd-work 失败: list({}), 返回空列表", transportOrderSearchDTO);
         return Collections.emptyList();
     }
 }

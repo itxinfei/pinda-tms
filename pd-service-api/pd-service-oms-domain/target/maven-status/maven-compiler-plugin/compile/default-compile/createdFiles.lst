@@ -1,0 +1,10 @@
+com\itheima\pinda\DTO\OrderLocationDto.class
+com\itheima\pinda\enums\OrderPaymentStatus.class
+com\itheima\pinda\DTO\OrderDTO.class
+com\itheima\pinda\enums\OrderPickupType.class
+com\itheima\pinda\enums\OrderType.class
+com\itheima\pinda\enums\OrderStatus.class
+com\itheima\pinda\enums\OrderPaymentMethod.class
+com\itheima\pinda\DTO\OrderCargoDto.class
+com\itheima\pinda\entity\Order.class
+com\itheima\pinda\DTO\OrderSearchDTO.class

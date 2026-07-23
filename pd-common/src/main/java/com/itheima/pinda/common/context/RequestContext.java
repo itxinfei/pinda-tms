@@ -12,12 +12,14 @@ public class RequestContext {
     private static final String USER_NAME = "name";
     private static final String STATION_ID = "stationid";
 
+    private static HttpServletRequest getCurrentRequest() {
+        ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attrs == null) return null;
+        return attrs.getRequest();
+    }
+
     public static String getUserId() {
-        ServletRequestAttributes servletRequestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        if (servletRequestAttributes == null) {
-            return null;
-        }
-        HttpServletRequest request = servletRequestAttributes.getRequest();
+        HttpServletRequest request = getCurrentRequest();
         if (request == null) {
             return null;
         }
@@ -35,16 +37,12 @@ public class RequestContext {
      * @return 操作人名称；非 Web 上下文（如异步/定时任务）或缺少该头时返回 null
      */
     public static String getUserName() {
-        ServletRequestAttributes servletRequestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        if (servletRequestAttributes == null) {
-            return null;
-        }
-        HttpServletRequest request = servletRequestAttributes.getRequest();
+        HttpServletRequest request = getCurrentRequest();
         if (request == null) {
             return null;
         }
         String username = request.getHeader(USER_NAME);
-        log.info("获取上下文用户名：{}", username);
+        log.debug("获取上下文用户名：{}", username);
         return username;
     }
 
@@ -57,11 +55,7 @@ public class RequestContext {
      * @return 岗位ID；非 Web 上下文、缺少该头或格式非法时返回 null
      */
     public static Long getStationId() {
-        ServletRequestAttributes servletRequestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        if (servletRequestAttributes == null) {
-            return null;
-        }
-        HttpServletRequest request = servletRequestAttributes.getRequest();
+        HttpServletRequest request = getCurrentRequest();
         if (request == null) {
             return null;
         }

@@ -1,0 +1,4 @@
+D:\MyCode\pinda-tms\pd-service-api\pd-service-oms-api\src\main\java\com\itheima\pinda\feign\CargoFeign.java
+D:\MyCode\pinda-tms\pd-service-api\pd-service-oms-api\src\main\java\com\itheima\pinda\feign\hystrix\CargoFeignFallback.java
+D:\MyCode\pinda-tms\pd-service-api\pd-service-oms-api\src\main\java\com\itheima\pinda\feign\hystrix\OrderFeignFallback.java
+D:\MyCode\pinda-tms\pd-service-api\pd-service-oms-api\src\main\java\com\itheima\pinda\feign\OrderFeign.java

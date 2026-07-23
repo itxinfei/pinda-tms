@@ -1,0 +1,4 @@
+com\itheima\pinda\DTO\AddressBookDTO.class
+com\itheima\pinda\entity\Member.class
+com\itheima\pinda\enums\MemberIdCardVerifyStatus.class
+com\itheima\pinda\entity\AddressBook.class

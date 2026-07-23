@@ -1,0 +1,6 @@
+com\itheima\pinda\DTO\webManager\TaskTransportQueryDTO.class
+com\itheima\pinda\DTO\AppCourierQueryDTO.class
+com\itheima\pinda\DTO\webManager\DriverJobQueryDTO.class
+com\itheima\pinda\DTO\AppDriverQueryDTO.class
+com\itheima\pinda\DTO\webManager\TaskPickupDispatchQueryDTO.class
+com\itheima\pinda\DTO\webManager\TransportOrderQueryDTO.class

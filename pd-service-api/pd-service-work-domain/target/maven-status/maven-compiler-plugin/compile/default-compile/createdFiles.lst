@@ -1,0 +1,15 @@
+com\itheima\pinda\enums\driverjob\DriverJobStatus.class
+com\itheima\pinda\enums\pickuptask\PickupDispatchTaskSignStatus.class
+com\itheima\pinda\enums\transporttask\TransportTaskAssignedStatus.class
+com\itheima\pinda\enums\pickuptask\PickupDispatchTaskStatus.class
+com\itheima\pinda\enums\transporttask\TransportTaskLoadingStatus.class
+com\itheima\pinda\DTO\TaskPickupDispatchDTO.class
+com\itheima\pinda\DTO\TransportOrderSearchDTO.class
+com\itheima\pinda\DTO\TaskTransportDTO.class
+com\itheima\pinda\enums\pickuptask\PickupDispatchTaskType.class
+com\itheima\pinda\enums\transportorder\TransportOrderSchedulingStatus.class
+com\itheima\pinda\DTO\DriverJobDTO.class
+com\itheima\pinda\DTO\TransportOrderDTO.class
+com\itheima\pinda\enums\transporttask\TransportTaskStatus.class
+com\itheima\pinda\enums\pickuptask\PickupDispatchTaskAssignedStatus.class
+com\itheima\pinda\enums\transportorder\TransportOrderStatus.class
