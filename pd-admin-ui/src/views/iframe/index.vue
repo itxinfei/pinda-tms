@@ -30,7 +30,7 @@ export default {
   },
   methods: {
     resize() {
-      window.onresize = () => {
+      this.$bindResize(() => {
         this.iframeInit()
       }
     },

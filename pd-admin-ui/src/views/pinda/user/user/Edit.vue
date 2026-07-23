@@ -227,7 +227,7 @@ export default {
     'user.orgId': 'orgSelect'
   },
   mounted() {
-    window.onresize = () => {
+    this.$bindResize(() => {
       return (() => {
         this.width = this.initWidth()
       })()

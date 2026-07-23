@@ -176,7 +176,7 @@ export default {
     }
   },
   mounted() {
-    window.onresize = () => {
+    this.$bindResize(() => {
       return (() => {
         this.width = this.initWidth()
       })()
