@@ -3,7 +3,9 @@ package com.itheima.pinda.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Component;
+import org.springframework.util.concurrent.ListenableFuture;
 
 import javax.annotation.PostConstruct;
 
@@ -19,15 +21,16 @@ public class KafkaSender {
     private KafkaTemplate<String,String> kafkaTemplate;
 
     /**
-     * 向kafka队列发送消息
+     * 向kafka队列发送消息，返回异步Future以便调用方感知发送结果
+     *
+     * @return ListenableFuture 发送结果Future，异常时返回null
      */
-    public boolean send(String topic, String message){
+    public ListenableFuture<SendResult<String, String>> send(String topic, String message){
         try {
-            kafkaTemplate.send(topic, message);
+            return kafkaTemplate.send(topic, message);
         } catch (Exception e) {
             log.error("发送Kafka消息失败: topic={}", topic, e);
-            return false;
+            return null;
         }
-        return true;
     }
 }

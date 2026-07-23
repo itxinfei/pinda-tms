@@ -61,7 +61,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         Page<Order> iPage = new Page(page, pageSize);
         LambdaQueryWrapper<Order> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         if (StringUtils.isNotEmpty(order.getId())) {
-            lambdaQueryWrapper.like(Order::getId, order.getId());
+            lambdaQueryWrapper.eq(Order::getId, order.getId());
         }
         if (order.getStatus() != null) {
             lambdaQueryWrapper.eq(Order::getStatus, order.getStatus());
@@ -163,25 +163,32 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
             log.error("[订单价格计算] Drools规则引擎未初始化，无法计算订单价格");
             return null;
         }
-        KieSession session = container.newKieSession();
-        //设置Fact对象
-        AddressRule addressRule = new AddressRule();
-        if (orderDTO.getOrderCargoDto() != null && orderDTO.getOrderCargoDto().getTotalWeight() != null) {
-            addressRule.setTotalWeight(orderDTO.getOrderCargoDto().getTotalWeight().doubleValue());
+        KieSession session = null;
+        try {
+            session = container.newKieSession();
+            //设置Fact对象
+            AddressRule addressRule = new AddressRule();
+            if (orderDTO.getOrderCargoDto() != null && orderDTO.getOrderCargoDto().getTotalWeight() != null) {
+                addressRule.setTotalWeight(orderDTO.getOrderCargoDto().getTotalWeight().doubleValue());
+            }
+            if (orderDTO.getDistance() != null) {
+                addressRule.setDistance(orderDTO.getDistance().doubleValue());
+            }
+
+            //将对象加入到工作内存
+            session.insert(addressRule);
+
+            AddressCheckResult addressCheckResult = new AddressCheckResult();
+            session.insert(addressCheckResult);
+
+            int i = session.fireAllRules();
+            log.info("触发了{}条规则", i);
+            return i;
+        } finally {
+            if (session != null) {
+                session.destroy();
+            }
         }
-        if (orderDTO.getDistance() != null) {
-            addressRule.setDistance(orderDTO.getDistance().doubleValue());
-        }
-
-        //将对象加入到工作内存
-        session.insert(addressRule);
-
-        AddressCheckResult addressCheckResult = new AddressCheckResult();
-        session.insert(addressCheckResult);
-
-        int i = session.fireAllRules();
-        log.info("触发了{}条规则", i);
-        session.destroy();
 
         if(addressCheckResult.isPostCodeResult()){
             log.info("规则匹配成功,订单价格为：{}", addressCheckResult.getResult());

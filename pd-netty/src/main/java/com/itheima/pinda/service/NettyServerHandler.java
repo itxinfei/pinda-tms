@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Objects;
 
 /**
  * netty 业务处理
@@ -20,12 +21,8 @@ import java.io.UnsupportedEncodingException;
 public class NettyServerHandler extends ChannelInboundHandlerAdapter {
     private final KafkaSender kafkaSender;
 
-    public NettyServerHandler() {
-        this(null);
-    }
-
     public NettyServerHandler(KafkaSender kafkaSender) {
-        this.kafkaSender = kafkaSender;
+        this.kafkaSender = Objects.requireNonNull(kafkaSender, "kafkaSender must not be null");
     }
 
     @Override

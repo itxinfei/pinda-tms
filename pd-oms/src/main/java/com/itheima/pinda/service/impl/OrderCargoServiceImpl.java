@@ -21,10 +21,10 @@ public class OrderCargoServiceImpl extends ServiceImpl<OrderCargoMapper, OrderCa
 
     @Override
     public OrderCargo saveSelective(OrderCargo record) {
-        if (record.getId() != null) {
-            this.baseMapper.updateByPrimaryKey(record);
+        if (StringUtils.isNotBlank(record.getId())) {
+            this.baseMapper.updateByPrimaryKeySelective(record);
         } else {
-            record.setId(idGenerator.nextId(record) + "");
+            record.setId(idGenerator.nextId(record).toString());
             this.baseMapper.insertSelective(record);
         }
         return record;
