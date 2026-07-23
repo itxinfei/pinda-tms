@@ -14,6 +14,7 @@ import com.itheima.pinda.authority.entity.core.Org;
 import com.itheima.pinda.base.R;
 import com.itheima.pinda.common.context.RequestContext;
 import com.itheima.pinda.common.utils.Result;
+import com.itheima.pinda.util.Rx;
 import com.itheima.pinda.enums.driverjob.DriverJobStatus;
 import com.itheima.pinda.feign.DriverJobFeign;
 import com.itheima.pinda.feign.TransportTaskFeign;
@@ -80,8 +81,8 @@ public class UserController {
         String driverId = RequestContext.getUserId();
         log.info("司机端-登录用户：{}", driverId);
         // 基本信息
-        R<User> userR = userApi.get(Long.valueOf(driverId));
-        User user = userR.getData();
+        // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
+        User user = Rx.data(userApi.get(Long.valueOf(driverId)));
         if (user == null) {
             return Result.error(404, "用户不存在");
         }
@@ -117,8 +118,8 @@ public class UserController {
             }
         }
         // 所属机构
-        R<Org> orgR = orgApi.get(user.getOrgId());
-        Org org = orgR.getData();
+        // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
+        Org org = Rx.data(orgApi.get(user.getOrgId()));
         if (org == null) {
             return Result.error(404, "机构不存在");
         }
@@ -130,8 +131,8 @@ public class UserController {
             log.info("司机端-车队信息：{}", fleetDto);
             // 运转中心
             if (fleetDto != null && StringUtils.isNotEmpty(fleetDto.getAgencyId())) {
-                R<Org> fleetOrgR = orgApi.get(Long.valueOf(fleetDto.getAgencyId()));
-                fleetOrg = fleetOrgR.getData();
+                // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
+                fleetOrg = Rx.data(orgApi.get(Long.valueOf(fleetDto.getAgencyId())));
             }
         }
 

@@ -6,6 +6,7 @@ import com.itheima.pinda.authority.api.AreaApi;
 import com.itheima.pinda.authority.entity.common.Area;
 import com.itheima.pinda.common.context.RequestContext;
 import com.itheima.pinda.common.utils.PageResponse;
+import com.itheima.pinda.util.Rx;
 import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.entity.AddressBook;
 import com.itheima.pinda.feign.AddressBookFeign;
@@ -67,15 +68,17 @@ public class AddressBookController {
     public Result page(Integer page, Integer pageSize, String keyword) {
         //获取userid
         String userId = RequestContext.getUserId();
+        // 修改点：远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
         PageResponse<AddressBook> result = addressBookFeign.page(page, pageSize, userId, keyword);
+        List<AddressBook> items = Rx.items(result);
         Set<Long> areaSet = new HashSet<>();
-        areaSet.addAll(result.getItems().stream().map(item -> item.getProvinceId()).collect(Collectors.toSet()));
-        areaSet.addAll(result.getItems().stream().map(item -> item.getCityId()).collect(Collectors.toSet()));
-        areaSet.addAll(result.getItems().stream().map(item -> item.getCountyId()).collect(Collectors.toSet()));
+        areaSet.addAll(items.stream().map(item -> item.getProvinceId()).collect(Collectors.toSet()));
+        areaSet.addAll(items.stream().map(item -> item.getCityId()).collect(Collectors.toSet()));
+        areaSet.addAll(items.stream().map(item -> item.getCountyId()).collect(Collectors.toSet()));
         CompletableFuture<Map<Long, Area>> areaMapFuture = PdCompletableFuture.areaMapFuture(areaApi, null, areaSet);
         Map<Long, Area> areaMap = areaMapFuture.get();
 
-        List<AddressBookDTO> newItems = result.getItems().stream().map(item -> {
+        List<AddressBookDTO> newItems = items.stream().map(item -> {
             AddressBookDTO addressBookDTO = new AddressBookDTO();
             BeanUtils.copyProperties(item, addressBookDTO);
             addressBookDTO.setProvince(areaMap.containsKey(addressBookDTO.getProvinceId()) ? areaMap.get(addressBookDTO.getProvinceId()).getName() : "");
@@ -86,10 +89,10 @@ public class AddressBookController {
         }).collect(Collectors.toList());
 
         return Result.ok().put("data", PageResponse.<AddressBookDTO>builder()
-                .counts(result.getCounts())
-                .pages(result.getPages())
-                .page(result.getPage())
-                .pagesize(result.getPagesize())
+                .counts(result != null ? result.getCounts() : 0L)
+                .pages(result != null ? result.getPages() : 0L)
+                .page(result != null ? result.getPage() : page)
+                .pagesize(result != null ? result.getPagesize() : pageSize)
                 .items(newItems)
                 .build());
     }

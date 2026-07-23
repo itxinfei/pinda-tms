@@ -208,9 +208,9 @@ public class AgencyController {
     })
     @GetMapping("/{id}/scope")
     public AgencyScopeVo findAllAgencyScope(@PathVariable(name = "id") String id) {
-        R<Org> result = orgApi.get(Long.valueOf(id));
-        if (result.getIsSuccess()) {
-            Org org = result.getData();
+        // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
+        Org org = Rx.data(orgApi.get(Long.valueOf(id)));
+        if (org != null) {
             List<AgencyScopeDto> agencyScopeDtoList = null;
             if (org != null && org.getOrgType() != null) {
                 if (org.getOrgType() == OrgType.BUSINESS_HALL.getType()) {

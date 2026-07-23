@@ -34,7 +34,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
-import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,7 +50,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("business-hall")
 @Api(tags = "网点管理")
-@Log
+@Slf4j
 public class BusinessHallController {
     @Autowired
     private GoodsTypeFeign goodsTypeFeign;
@@ -113,9 +113,10 @@ public class BusinessHallController {
                                                          @RequestParam(name = "name", required = false) String name,
                                                          @RequestParam(name = "truckTypeId", required = false) String truckTypeId,
                                                          @RequestParam(name = "truckTypeName", required = false) String truckTypeName) {
+        // 修改点：远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
         PageResponse<GoodsTypeDto> goodsTypePage = goodsTypeFeign.findByPage(page, pageSize, name, truckTypeId, truckTypeName);
         //加工数据
-        List<GoodsTypeDto> goodsTypeDtoList = goodsTypePage.getItems();
+        List<GoodsTypeDto> goodsTypeDtoList = Rx.items(goodsTypePage);
         Set<String> truckTypeSet = new HashSet<>();
         goodsTypeDtoList.forEach(goodsTypeDto -> {
             if (goodsTypeDto.getTruckTypeIds() != null) {
@@ -137,11 +138,13 @@ public class BusinessHallController {
                 }
             } catch (Exception e) {
                 // TODO: 2020/1/2 此处异常处理依赖于业务是否为弱关系，如强关系，则返回错误
-                e.printStackTrace();
+                log.error("操作异常", e);
             }
             return vo;
         }).collect(Collectors.toList());
-        return PageResponse.<GoodsTypeVo>builder().items(goodsTypeVoList).pagesize(pageSize).page(page).counts(goodsTypePage.getCounts()).pages(goodsTypePage.getPages()).build();
+        return PageResponse.<GoodsTypeVo>builder().items(goodsTypeVoList).pagesize(pageSize).page(page)
+                .counts(goodsTypePage != null ? goodsTypePage.getCounts() : 0L)
+                .pages(goodsTypePage != null ? goodsTypePage.getPages() : 0L).build();
     }
 
     @ApiOperation(value = "获取货物类型详情")
@@ -164,7 +167,7 @@ public class BusinessHallController {
                 }).collect(Collectors.toList()));
             } catch (Exception e) {
                 // TODO: 2020/1/2 此处异常处理依赖于业务是否为弱关系，如强关系，则返回错误
-                e.printStackTrace();
+                log.error("操作异常", e);
             }
         }
         return vo;
@@ -304,18 +307,19 @@ public class BusinessHallController {
     })
     @GetMapping("/courier/scope/{id}")
     public CourierScopeVo findAllCourierScope(@PathVariable(name = "id") String id) {
-        List<CourierScopeDto> courierScopeDtoList = courierScopeFeign.findAllCourierScope(null, id);
+        // 修改点：Feign 直接返回 List 可能为 null，统一通过 Rx 安全取值
+        List<CourierScopeDto> courierScopeDtoList = Rx.list(courierScopeFeign.findAllCourierScope(null, id));
         List<Long> areaIds = courierScopeDtoList.stream().map(dto -> Long.valueOf(dto.getAreaId())).collect(Collectors.toList());
         CourierScopeVo vo = new CourierScopeVo();
-        R<User> result = userApi.get(Long.valueOf(id));
-        User user = null;
-        if (result.getIsSuccess() && result.getData() != null) {
-            user = result.getData();
+        // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
+        User user = Rx.data(userApi.get(Long.valueOf(id)));
+        if (user != null) {
             vo.setCourier(BeanUtil.parseUser2Vo(user, null, null));
         }
         //处理已选列表
         if (areaIds != null && areaIds.size() > 0) {
-            List<Area> areaDtoList = areaApi.findAll(null, areaIds).getData();
+            // 修改点：远程调用结果 data 可能为 null，统一通过 Rx 安全取值
+            List<Area> areaDtoList = Rx.dataList(areaApi.findAll(null, areaIds));
             List<AreaSimpleVo> areas = areaDtoList.stream().map(BeanUtil::parseArea2Vo).collect(Collectors.toList());
             vo.setAreas(addMutiPoints(areas,courierScopeDtoList));
         }

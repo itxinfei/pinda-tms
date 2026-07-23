@@ -5,6 +5,7 @@ import com.itheima.j2cache.annotation.CacheEvictor;
 import com.itheima.j2cache.model.AnnotationInfo;
 import com.itheima.j2cache.utils.CacheKeyBuilder;
 import com.itheima.j2cache.utils.SpringApplicationContextUtils;
+import lombok.extern.slf4j.Slf4j;
 import net.oschina.j2cache.CacheChannel;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
@@ -14,6 +15,7 @@ import org.springframework.util.StringUtils;
 /**
  * 抽象缓存注解处理器
  */
+@Slf4j
 public abstract class AbstractCacheAnnotationProcessor {
     protected CacheChannel cacheChannel;
 
@@ -38,7 +40,7 @@ public abstract class AbstractCacheAnnotationProcessor {
         try{
             annotationInfo.setKey(generateKey(proceedingJoinPoint,cache));
         }catch (Exception e){
-            e.printStackTrace();
+            log.warn("生成缓存key异常", e);
         }
         return annotationInfo;
     }

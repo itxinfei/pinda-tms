@@ -72,8 +72,12 @@ public class DriverJobController {
             dto.setId(vo.getId());
         }
         PageResponse<DriverJobDTO> dtoPageResponse = webManagerFeign.findDriverJobByPage(dto);
+        // 修改点：远程调用返回 PageResponse 可能为 null，先判空避免 NPE
+        if (dtoPageResponse == null) {
+            return PageResponse.<DriverJobVo>builder().items(new ArrayList<>()).pagesize(vo.getPageSize()).page(vo.getPage()).counts(0L).pages(0L).build();
+        }
         List<DriverJobDTO> dtoList = dtoPageResponse.getItems();
-        if (dtoPageResponse == null || CollectionUtils.isEmpty(dtoList)) {
+        if (CollectionUtils.isEmpty(dtoList)) {
             return PageResponse.<DriverJobVo>builder().items(new ArrayList<>()).pagesize(vo.getPageSize()).page(vo.getPage()).counts(0L).pages(0L).build();
         }
         List<DriverJobVo> voList = dtoList.stream().map(driverJobDTO -> BeanUtil.parseDriverJobDTO2Vo(driverJobDTO, transportTripsFeign, orgApi, userApi, truckFeign, transportOrderFeign, orderFeign, areaApi, transportTaskFeign)).collect(Collectors.toList());
