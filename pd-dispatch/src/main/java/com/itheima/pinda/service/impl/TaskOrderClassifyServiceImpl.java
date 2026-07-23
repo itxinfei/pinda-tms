@@ -30,6 +30,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -38,6 +39,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @Slf4j
+@SuppressWarnings({"rawtypes", "unchecked"})
 public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
     @Autowired
     private OrderFeign orderFeign;
@@ -68,15 +70,14 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
         //进行订单分类
         Map<String, List<OrderClassifyDTO>> orderClassifyDTOGroup = orderClassifyDTOS.stream().collect(Collectors.groupingBy(OrderClassifyDTO::groupBy));
 
-        OrderClassifyGroupDTO.OrderClassifyGroupDTOBuilder builder = OrderClassifyGroupDTO.builder();
-
         //进行对象转换，将当前Map对象转为 List<OrderClassifyGroupDTO>类型
         orderClassifyDTOGroup.forEach((key,value) -> {
-            builder.key(key);
+            OrderClassifyGroupDTO.OrderClassifyGroupDTOBuilder groupBuilder = OrderClassifyGroupDTO.builder();
+            groupBuilder.key(key);
             //获取原始订单ID列表
             List<String> orderIds = value.stream().map((item) -> item.getOrder().getId()).collect(Collectors.toList());
-            builder.orders(orderIds);
-            OrderClassifyGroupDTO orderClassifyGroupDTO = builder.build();
+            groupBuilder.orders(orderIds);
+            OrderClassifyGroupDTO orderClassifyGroupDTO = groupBuilder.build();
             orderClassifyGroupDTOS.add(orderClassifyGroupDTO);
         });
 
@@ -156,11 +157,13 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
         builder.currentAgencyId(agencyId);
 
         List<OrderClassifyDTO> orderClassifyDTOList = orderList.stream().map((item) -> {
-            builder.order(item);//原始订单
-            builder.startAgencyId(getStartAgencyId(item));//起始机构
-            builder.endAgencyId(getEndAgencyId(item));//目的地机构（目的地网点）
-            builder.orderType(item.getOrderType());
-            return builder.build();
+            OrderClassifyDTO.OrderClassifyDTOBuilder orderBuilder = OrderClassifyDTO.builder();
+            orderBuilder.order(item);//原始订单
+            orderBuilder.startAgencyId(getStartAgencyId(item));//起始机构
+            orderBuilder.endAgencyId(getEndAgencyId(item));//目的地机构（目的地网点）
+            orderBuilder.orderType(item.getOrderType());
+            orderBuilder.currentAgencyId(agencyId);
+            return orderBuilder.build();
         }).collect(Collectors.toList());
 
         return orderClassifyDTOList;
@@ -266,11 +269,13 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
         builder.currentAgencyId(agencyId);
 
         List<OrderClassifyDTO> orderClassifyDTOList = orderList.stream().map((item) -> {
-            builder.order(item);//原始订单
-            builder.startAgencyId(agencyId);//起始机构
-            builder.endAgencyId(getEndAgencyId(item));//目的地机构（目的地网点）
-            builder.orderType(item.getOrderType());
-            return builder.build();
+            OrderClassifyDTO.OrderClassifyDTOBuilder orderBuilder = OrderClassifyDTO.builder();
+            orderBuilder.order(item);//原始订单
+            orderBuilder.startAgencyId(agencyId);//起始机构
+            orderBuilder.endAgencyId(getEndAgencyId(item));//目的地机构（目的地网点）
+            orderBuilder.orderType(item.getOrderType());
+            orderBuilder.currentAgencyId(agencyId);
+            return orderBuilder.build();
         }).collect(Collectors.toList());
 
         return orderClassifyDTOList;
@@ -370,108 +375,6 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
         String lng = map.get("lng").toString();
         String lat = map.get("lat").toString();
         return lng + "," + lat;
-    }
-
-    public static void main(String[] args) {
-        /*String address = "北京市昌平区建材城西路金燕龙办公楼";
-        String location = EntCoordSyncJob.getCoordinate(address);
-
-        //调用百度地图，根据经纬度获取区域信息
-        Map map = EntCoordSyncJob.getLocationByPosition(location);
-
-        System.out.println(location);
-        System.out.println("----");
-        System.out.println(map);
-
-        String adcode = (String) map.get("adcode");
-        System.out.println(adcode);*/
-
-        /*List<AgencyScopeDto> agencyScopeList = new ArrayList<>();
-        AgencyScopeDto dto1 = new AgencyScopeDto();
-        dto1.setAgencyId("1");
-        List<List<Map>> points1 = new ArrayList<>();
-        List<Map> points1_1 = new ArrayList<>();
-        Map point1 = new HashMap();
-        point1.put("lng",116.337566);
-        point1.put("lat",40.067944);
-        Map point2 = new HashMap();
-        point2.put("lng",116.362215);
-        point2.put("lat",40.0741);
-        points1_1.add(point1);
-        points1_1.add(point2);
-        points1.add(points1_1);
-        dto1.setMutiPoints(points1);
-
-        AgencyScopeDto dto2 = new AgencyScopeDto();
-        dto2.setAgencyId("2");
-        List<List<Map>> points2 = new ArrayList<>();
-        List<Map> points2_1 = new ArrayList<>();
-        Map point3 = new HashMap();
-        point3.put("lng",116.3344);
-        point3.put("lat",40.067);
-        Map point4 = new HashMap();
-        point4.put("lng",116.311215);
-        point4.put("lat",40.10741);
-        points2_1.add(point3);
-        points2_1.add(point4);
-        points2.add(points2_1);
-        dto2.setMutiPoints(points2);
-
-
-        agencyScopeList.add(dto1);
-        agencyScopeList.add(dto2);
-        String location = "116.349936,40.066258";
-        new TaskOrderClassifyServiceImpl().caculate(agencyScopeList,location);*/
-
-
-        List<OrderClassifyDTO> orderClassifyDTOS = new ArrayList<>();
-        List<OrderClassifyGroupDTO> orderClassifyGroupDTOS = new ArrayList<>();
-
-        OrderClassifyDTO.OrderClassifyDTOBuilder builder1 = OrderClassifyDTO.builder();
-        builder1.startAgencyId("1");
-        builder1.endAgencyId("10");
-        builder1.currentAgencyId("1");
-        Order order = new Order();
-        order.setId("10001");
-        builder1.order(order);
-        OrderClassifyDTO dto1 = builder1.build();
-        orderClassifyDTOS.add(dto1);
-
-        OrderClassifyDTO.OrderClassifyDTOBuilder builder2 = OrderClassifyDTO.builder();
-        builder2.startAgencyId("1");
-        builder2.endAgencyId("10");
-        builder2.currentAgencyId("1");
-        Order order2 = new Order();
-        order2.setId("10002");
-        builder2.order(order2);
-        OrderClassifyDTO dto2 = builder2.build();
-        orderClassifyDTOS.add(dto2);
-
-        OrderClassifyDTO.OrderClassifyDTOBuilder builder3 = OrderClassifyDTO.builder();
-        builder3.startAgencyId("2");
-        builder3.endAgencyId("12");
-        builder3.currentAgencyId("11");
-        Order order3 = new Order();
-        order3.setId("10003");
-        builder3.order(order3);
-        OrderClassifyDTO dto3 = builder3.build();
-        orderClassifyDTOS.add(dto3);
-
-        Map<String, List<OrderClassifyDTO>> orderClassifyDTOGroup = orderClassifyDTOS.stream().collect(Collectors.groupingBy(OrderClassifyDTO::groupBy));
-
-        OrderClassifyGroupDTO.OrderClassifyGroupDTOBuilder builder = OrderClassifyGroupDTO.builder();
-
-        //进行对象转换，将当前Map对象转为 List<OrderClassifyGroupDTO>类型
-        orderClassifyDTOGroup.forEach((key,value) -> {
-            builder.key(key);
-            //获取原始订单ID列表
-            List<String> orderIds = value.stream().map((item) -> item.getOrder().getId()).collect(Collectors.toList());
-            builder.orders(orderIds);
-            OrderClassifyGroupDTO orderClassifyGroupDTO = builder.build();
-            orderClassifyGroupDTOS.add(orderClassifyGroupDTO);
-        });
-
-        System.out.println(orderClassifyGroupDTOS);
     }
 
     @Autowired

@@ -13,6 +13,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -46,6 +49,25 @@ public class GpsTraceConsumer {
      * 轨迹点计数器
      */
     private static final AtomicLong TRACE_COUNT = new AtomicLong(0);
+
+    /**
+     * 缓存过期时间（分钟），超过此时间无新点的业务对象自动清理
+     */
+    private static final long CACHE_EXPIRE_MINUTES = 60;
+
+    /**
+     * 定时清理任务（每小时执行一次）
+     */
+    private static final ScheduledExecutorService CLEANUP_EXECUTOR = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread t = new Thread(r, "gps-trace-cache-cleanup");
+        t.setDaemon(true);
+        return t;
+    });
+
+    static {
+        // 每小时清理一次过期缓存
+        CLEANUP_EXECUTOR.scheduleAtFixedRate(GpsTraceConsumer::cleanupExpiredCache, 1, 1, TimeUnit.HOURS);
+    }
 
     /**
      * 超速阈值（km/h）- 高速公路限速120km/h
@@ -265,6 +287,38 @@ public class GpsTraceConsumer {
                 * Math.sin(dLng / 2) * Math.sin(dLng / 2);
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return earthRadius * c;
+    }
+
+    /**
+     * 清理过期缓存（60分钟无新点自动移除）
+     */
+    private static void cleanupExpiredCache() {
+        long now = System.currentTimeMillis();
+        int removed = 0;
+        for (Map.Entry<String, List<LocationEntity>> entry : TRACE_CACHE.entrySet()) {
+            List<LocationEntity> points = entry.getValue();
+            if (points.isEmpty()) {
+                TRACE_CACHE.remove(entry.getKey());
+                removed++;
+                continue;
+            }
+            // 检查最后一条点的时间
+            LocationEntity last = points.get(points.size() - 1);
+            try {
+                LocalDateTime lastTime = LocalDateTime.parse(last.getCurrentTime(), TIME_FORMATTER);
+                if (ChronoUnit.MINUTES.between(lastTime, LocalDateTime.now()) > CACHE_EXPIRE_MINUTES) {
+                    TRACE_CACHE.remove(entry.getKey());
+                    removed++;
+                }
+            } catch (Exception e) {
+                // 时间格式异常，移除该缓存
+                TRACE_CACHE.remove(entry.getKey());
+                removed++;
+            }
+        }
+        if (removed > 0) {
+            log.info("[GPS缓存清理] 清理过期缓存条目: {}, 当前缓存业务对象数: {}", removed, TRACE_CACHE.size());
+        }
     }
 
     /**
