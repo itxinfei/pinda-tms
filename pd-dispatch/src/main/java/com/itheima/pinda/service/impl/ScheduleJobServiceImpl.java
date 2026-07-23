@@ -148,7 +148,8 @@ public class ScheduleJobServiceImpl extends ServiceImpl<ScheduleJobMapper, Sched
         for (String id : ids) {
             ScheduleJobEntity scheduleJob = baseMapper.selectById(id);
             if (scheduleJob == null) {
-                log.warn("定时任务不存在: {}", id);
+                //修改点：org.apache.ibatis.logging.Log 的 warn 仅支持 warn(String) / warn(String, Throwable)，无占位符
+                log.warn("定时任务不存在: " + id);
                 continue;
             }
             ScheduleUtils.run(scheduler, scheduleJob);
