@@ -12,6 +12,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayDeque;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -40,8 +41,19 @@ public class GpsTraceConsumer {
     /**
      * 轨迹点内存缓存（按车辆/快递员ID分组）
      * key: businessId#type, value: 线程安全的同步轨迹点列表（LinkedList保证O(1)删除首元素）
+     *
+     * 内存上限控制（防止长跑服务 OOM）：
+     * 每个 key 内轨迹点数量受 MAX_CACHE_SIZE 约束；
+     * key 的总数量受 MAX_CACHE_KEYS 约束（LRU策略淘汰最久未更新的缓存）。
      */
-    private static final Map<String, List<LocationEntity>> TRACE_CACHE = new ConcurrentHashMap<>();
+    private static final int MAX_CACHE_KEYS = 5000;
+    private static final Map<String, List<LocationEntity>> TRACE_CACHE =
+            Collections.synchronizedMap(new LinkedHashMap<String, List<LocationEntity>>(MAX_CACHE_KEYS, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, List<LocationEntity>> eldest) {
+                    return size() > MAX_CACHE_KEYS;
+                }
+            });
 
     /**
      * 缓存最大容量（每个业务对象最多缓存1000个点）
@@ -308,25 +320,28 @@ public class GpsTraceConsumer {
     private static void cleanupExpiredCache() {
         long now = System.currentTimeMillis();
         int removed = 0;
-        for (Map.Entry<String, List<LocationEntity>> entry : TRACE_CACHE.entrySet()) {
-            List<LocationEntity> points = entry.getValue();
-            if (points.isEmpty()) {
-                TRACE_CACHE.remove(entry.getKey());
-                removed++;
-                continue;
-            }
-            // 检查最后一条点的时间
-            LocationEntity last = points.get(points.size() - 1);
-            try {
-                LocalDateTime lastTime = LocalDateTime.parse(last.getCurrentTime(), TIME_FORMATTER);
-                if (ChronoUnit.MINUTES.between(lastTime, LocalDateTime.now()) > CACHE_EXPIRE_MINUTES) {
+        // synchronizedMap 的迭代器非线程安全，必须在 map 锁内遍历
+        synchronized (TRACE_CACHE) {
+            for (Map.Entry<String, List<LocationEntity>> entry : TRACE_CACHE.entrySet()) {
+                List<LocationEntity> points = entry.getValue();
+                if (points.isEmpty()) {
+                    TRACE_CACHE.remove(entry.getKey());
+                    removed++;
+                    continue;
+                }
+                // 检查最后一条点的时间
+                LocationEntity last = points.get(points.size() - 1);
+                try {
+                    LocalDateTime lastTime = LocalDateTime.parse(last.getCurrentTime(), TIME_FORMATTER);
+                    if (ChronoUnit.MINUTES.between(lastTime, LocalDateTime.now()) > CACHE_EXPIRE_MINUTES) {
+                        TRACE_CACHE.remove(entry.getKey());
+                        removed++;
+                    }
+                } catch (Exception e) {
+                    // 时间格式异常，移除该缓存
                     TRACE_CACHE.remove(entry.getKey());
                     removed++;
                 }
-            } catch (Exception e) {
-                // 时间格式异常，移除该缓存
-                TRACE_CACHE.remove(entry.getKey());
-                removed++;
             }
         }
         if (removed > 0) {
