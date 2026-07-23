@@ -3,14 +3,14 @@ package com.itheima.pinda.feign.common;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.DTO.base.GoodsTypeDto;
+import com.itheima.pinda.feign.common.hystrix.GoodsTypeFeignFallback;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 import springfox.documentation.annotations.ApiIgnore;
 
 import java.util.List;
 
-@FeignClient(name = "pd-base")
-@RequestMapping("base/goodsType")
+@FeignClient(value = "pd-base", fallback = GoodsTypeFeignFallback.class, path = "/base/goodsType")
 @ApiIgnore
 public interface GoodsTypeFeign {
     /**

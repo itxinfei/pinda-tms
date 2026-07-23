@@ -5,6 +5,7 @@ import com.itheima.pinda.DTO.OrderLocationDto;
 import com.itheima.pinda.DTO.OrderSearchDTO;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.entity.Order;
+import com.itheima.pinda.feign.hystrix.OrderFeignFallback;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 import springfox.documentation.annotations.ApiIgnore;
@@ -12,8 +13,7 @@ import springfox.documentation.annotations.ApiIgnore;
 import java.util.List;
 import java.util.Map;
 
-@FeignClient("pd-oms")
-@RequestMapping("order")
+@FeignClient(value = "pd-oms", fallback = OrderFeignFallback.class, path = "/order")
 @ApiIgnore
 public interface OrderFeign {
     /**

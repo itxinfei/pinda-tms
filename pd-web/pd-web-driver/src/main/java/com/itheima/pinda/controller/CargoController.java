@@ -595,7 +595,7 @@ public class CargoController {
             String userId = list.get(0).getKey();
             return Result.ok().put("userId",userId);
         }catch (Exception e){
-            e.printStackTrace();
+            log.error("操作失败", e);
             return Result.error(5000,"获取最短距离快递员失败");
         }
     }

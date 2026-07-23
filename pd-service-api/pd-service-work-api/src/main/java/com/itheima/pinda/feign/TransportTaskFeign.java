@@ -2,12 +2,13 @@ package com.itheima.pinda.feign;
 
 import com.itheima.pinda.DTO.TaskTransportDTO;
 import com.itheima.pinda.common.utils.PageResponse;
+import com.itheima.pinda.feign.hystrix.TransportTaskFeignFallback;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@FeignClient("pd-work")
+@FeignClient(value = "pd-work", fallback = TransportTaskFeignFallback.class)
 @RequestMapping("transport-task")
 public interface TransportTaskFeign {
     /**

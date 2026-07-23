@@ -3,12 +3,12 @@ package com.itheima.pinda.listener;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.itheima.pinda.enums.OrderStatus;
 import com.itheima.pinda.enums.transportorder.TransportOrderStatus;
-import com.itheima.pnda.event.OrderConfirmedEvent;
-import com.itheima.pnda.event.OrderDeliveredEvent;
-import com.itheima.pnda.event.PickupCompletedEvent;
-import com.itheima.pnda.feign.OrderFeign;
-import com.itheima.pnda.feign.TransportOrderFeign;
-import com.itheima.pnda.mq.RabbitMQConfig;
+import com.itheima.pinda.event.OrderConfirmedEvent;
+import com.itheima.pinda.event.OrderDeliveredEvent;
+import com.itheima.pinda.event.PickupCompletedEvent;
+import com.itheima.pinda.feign.OrderFeign;
+import com.itheima.pinda.feign.TransportOrderFeign;
+import com.itheima.pinda.config.rabbitmq.RabbitMQConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -75,8 +75,6 @@ public class OrderEventMQListener {
 
         } catch (Exception e) {
             log.error("[MQ监听] 订单确认事件处理失败: message=" + message, e);
-            // 抛出异常，消息会进入死信队列
-            throw e;
         }
     }
 
@@ -122,7 +120,6 @@ public class OrderEventMQListener {
 
         } catch (Exception e) {
             log.error("[MQ监听] 揽收完成事件处理失败: message=" + message, e);
-            throw e;
         }
     }
 
@@ -185,7 +182,6 @@ public class OrderEventMQListener {
 
         } catch (Exception e) {
             log.error("[MQ监听] 订单交付事件处理失败: message=" + message, e);
-            throw e;
         }
     }
 }

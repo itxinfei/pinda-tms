@@ -1,13 +1,11 @@
 package com.itheima.pinda.enums;
 
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Map;
+import com.itheima.pinda.common.base.BaseStatusEnum;
 
 /**
  * 订单状态枚举
  */
-public enum OrderStatus {
+public enum OrderStatus implements BaseStatusEnum<Integer, String> {
 
     /**
      * 待取件
@@ -70,7 +68,7 @@ public enum OrderStatus {
     /**
      * 已取消
      */
-    CANCELLED(230011, "CANCELLED");
+    CANCELLED(23011, "CANCELLED");
 
     OrderStatus(Integer code, String value) {
 
@@ -89,27 +87,14 @@ public enum OrderStatus {
     private final String value;
 
 
+    @Override
     public Integer getCode() {
         return code;
     }
 
+    @Override
     public String getValue() {
         return value;
-    }
-
-
-    /**
-     * 循环变量
-     */
-    private static final Map<Integer, OrderStatus> LOOKUP = new HashMap<>();
-
-    //静态初始化
-    static {
-
-        for (OrderStatus orderEnum : EnumSet.allOf(OrderStatus.class)) {
-
-            LOOKUP.put(orderEnum.code, orderEnum);
-        }
     }
 
     /**
@@ -119,6 +104,10 @@ public enum OrderStatus {
      * @return 值
      */
     public static OrderStatus lookup(Integer code) {
-        return LOOKUP.get(code);
+        if (code == null) return null;
+        for (OrderStatus s : values()) {
+            if (s.code.equals(code)) return s;
+        }
+        return null;
     }
 }

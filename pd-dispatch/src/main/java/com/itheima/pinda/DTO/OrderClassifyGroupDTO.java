@@ -1,5 +1,4 @@
 package com.itheima.pinda.DTO;
-import com.itheima.pinda.entity.Order;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -52,11 +51,11 @@ public class OrderClassifyGroupDTO {
     }
 
     /**
-     * 原订单集合
+     * 原订单ID集合
      */
-    private List<Order> orders;
+    private List<String> orders;
 
-    public OrderClassifyGroupDTO(String id,String key, String startAgencyId, String endAgencyId, Integer orderType, String goodsType, String currentAgencyId, List<Order> orders) {
+    public OrderClassifyGroupDTO(String id,String key, String startAgencyId, String endAgencyId, Integer orderType, String goodsType, String currentAgencyId, List<String> orders) {
         this.id = id;
         this.key = key;
         this.startAgencyId = startAgencyId;

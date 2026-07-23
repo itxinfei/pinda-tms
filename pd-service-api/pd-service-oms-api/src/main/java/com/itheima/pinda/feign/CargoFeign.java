@@ -2,14 +2,14 @@ package com.itheima.pinda.feign;
 
 import com.itheima.pinda.DTO.OrderCargoDto;
 import com.itheima.pinda.common.utils.Result;
+import com.itheima.pinda.feign.hystrix.CargoFeignFallback;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 import springfox.documentation.annotations.ApiIgnore;
 
 import java.util.List;
 
-@FeignClient(name = "pd-oms")
-@RequestMapping("cargo")
+@FeignClient(value = "pd-oms", fallback = CargoFeignFallback.class, path = "/cargo")
 @ApiIgnore
 public interface CargoFeign {
     /**

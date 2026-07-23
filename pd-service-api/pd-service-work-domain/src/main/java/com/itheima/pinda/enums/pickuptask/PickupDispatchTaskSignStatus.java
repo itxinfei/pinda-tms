@@ -1,8 +1,6 @@
 package com.itheima.pinda.enums.pickuptask;
 
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Map;
+import com.itheima.pinda.common.base.BaseStatusEnum;
 
 /**
  * 取派件任务签收状态
@@ -10,7 +8,7 @@ import java.util.Map;
  * @author itcast
  */
 
-public enum PickupDispatchTaskSignStatus {
+public enum PickupDispatchTaskSignStatus implements BaseStatusEnum<Integer, String> {
     /**
      * 已签收
      */
@@ -38,27 +36,14 @@ public enum PickupDispatchTaskSignStatus {
     private final String value;
 
 
+    @Override
     public Integer getCode() {
         return code;
     }
 
+    @Override
     public String getValue() {
         return value;
-    }
-
-
-    /**
-     * 循环变量
-     */
-    private static final Map<Integer, PickupDispatchTaskSignStatus> LOOKUP = new HashMap<>();
-
-    //静态初始化
-    static {
-
-        for (PickupDispatchTaskSignStatus statusEnum : EnumSet.allOf(PickupDispatchTaskSignStatus.class)) {
-
-            LOOKUP.put(statusEnum.code, statusEnum);
-        }
     }
 
     /**
@@ -68,7 +53,11 @@ public enum PickupDispatchTaskSignStatus {
      * @return 值
      */
     public static PickupDispatchTaskSignStatus lookup(Integer code) {
-        return LOOKUP.get(code);
+        if (code == null) return null;
+        for (PickupDispatchTaskSignStatus s : values()) {
+            if (s.code.equals(code)) return s;
+        }
+        return null;
     }
 
 }

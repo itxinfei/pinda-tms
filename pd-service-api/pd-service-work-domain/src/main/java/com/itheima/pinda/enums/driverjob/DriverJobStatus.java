@@ -1,8 +1,6 @@
 package com.itheima.pinda.enums.driverjob;
 
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Map;
+import com.itheima.pinda.common.base.BaseStatusEnum;
 
 /**
  * 运输任务状态
@@ -10,7 +8,7 @@ import java.util.Map;
  * @author itcast
  */
 
-public enum DriverJobStatus {
+public enum DriverJobStatus implements BaseStatusEnum<Integer, String> {
     /**
      * 待执行,对应 待提货
      */
@@ -50,27 +48,14 @@ public enum DriverJobStatus {
     private final String value;
 
 
+    @Override
     public Integer getCode() {
         return code;
     }
 
+    @Override
     public String getValue() {
         return value;
-    }
-
-
-    /**
-     * 循环变量
-     */
-    private static final Map<Integer, DriverJobStatus> LOOKUP = new HashMap<>();
-
-    //静态初始化
-    static {
-
-        for (DriverJobStatus statusEnum : EnumSet.allOf(DriverJobStatus.class)) {
-
-            LOOKUP.put(statusEnum.code, statusEnum);
-        }
     }
 
     /**
@@ -80,7 +65,11 @@ public enum DriverJobStatus {
      * @return 值
      */
     public static DriverJobStatus lookup(Integer code) {
-        return LOOKUP.get(code);
+        if (code == null) return null;
+        for (DriverJobStatus s : values()) {
+            if (s.code.equals(code)) return s;
+        }
+        return null;
     }
 
 }

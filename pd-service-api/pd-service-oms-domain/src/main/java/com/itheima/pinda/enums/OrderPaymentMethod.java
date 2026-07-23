@@ -1,13 +1,11 @@
 package com.itheima.pinda.enums;
 
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Map;
+import com.itheima.pinda.common.base.BaseStatusEnum;
 
 /**
  * 订单类型枚举
  */
-public enum OrderPaymentMethod {
+public enum OrderPaymentMethod implements BaseStatusEnum<Integer, String> {
 
     /**
      * 预结
@@ -35,37 +33,27 @@ public enum OrderPaymentMethod {
     private final String value;
 
 
+    @Override
     public Integer getCode() {
         return code;
     }
 
+    @Override
     public String getValue() {
         return value;
     }
 
-
-    /**
-     * 循环变量
-     */
-    private static final Map<Integer, OrderPaymentMethod> LOOKUP = new HashMap<>();
-
-    //静态初始化
-    static {
-
-        for (OrderPaymentMethod orderPaymentMethod : EnumSet.allOf(OrderPaymentMethod.class)) {
-
-            LOOKUP.put(orderPaymentMethod.code, orderPaymentMethod);
-        }
-    }
-
     /**
      * 根据code获取枚举项
-     * ¬
      *
      * @param code 值
      * @return 值
      */
     public static OrderPaymentMethod lookup(Integer code) {
-        return LOOKUP.get(code);
+        if (code == null) return null;
+        for (OrderPaymentMethod s : values()) {
+            if (s.code.equals(code)) return s;
+        }
+        return null;
     }
 }

@@ -21,7 +21,9 @@ import com.itheima.pinda.enums.pickuptask.PickupDispatchTaskType;
 import com.itheima.pinda.enums.transportorder.TransportOrderSchedulingStatus;
 import com.itheima.pinda.enums.transportorder.TransportOrderStatus;
 import com.itheima.pinda.event.OrderConfirmedEvent;
+import com.itheima.pinda.event.OrderDeliveredEvent;
 import com.itheima.pinda.event.PickupCompletedEvent;
+import com.itheima.pinda.mq.EventPublisher;
 import com.itheima.pinda.feign.*;
 import com.itheima.pinda.feign.common.GoodsTypeFeign;
 import com.itheima.pinda.feign.courier.AppCourierFeign;
@@ -313,7 +315,7 @@ public class CourierController {
             TransportOrderDTO transportOrderUpdate = new TransportOrderDTO();
             transportOrderUpdate.setId(transportOrderDTO.getId());
             transportOrderUpdate.setStatus(TransportOrderStatus.LOADED.getCode()); // 2-已装车
-            transportOrderFeign.updateById(transportOrderUpdate);
+            transportOrderFeign.updateById(transportOrderDTO.getId(), transportOrderUpdate);
             log.info("订单[{}]已揽收，运单[{}]状态更新为[已装车(2)]",
                 pickupDispatchDetailDTO.getOrderNumber(), transportOrderDTO.getId());
         }
@@ -322,12 +324,11 @@ public class CourierController {
         // 触发后续业务逻辑：智能调度、消息通知等
         try {
             PickupCompletedEvent event = new PickupCompletedEvent(
-                this,
                 pickupDispatchDetailDTO.getOrderNumber(),
                 transportOrderDTO != null ? transportOrderDTO.getId() : null,
-                transportOrderDTO,
                 RequestContext.getUserId(),
-                id
+                id,
+                null
             );
             eventPublisher.publishPickupCompleted(event);
             log.info("[事件发布] 揽收完成事件发布成功: orderId={}", pickupDispatchDetailDTO.getOrderNumber());
@@ -436,11 +437,10 @@ public class CourierController {
         // 触发后续业务逻辑：结算流程、消息通知等
         try {
             OrderDeliveredEvent event = new OrderDeliveredEvent(
-                this,
                 orderId,
                 transportOrderDto.getId(),
                 state,
-                null, // signRemark可以从参数中获取
+                null,
                 pickupDispatchTaskDto.getId(),
                 RequestContext.getUserId()
             );

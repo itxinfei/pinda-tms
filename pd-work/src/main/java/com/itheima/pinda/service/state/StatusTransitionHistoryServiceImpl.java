@@ -26,7 +26,7 @@ public class StatusTransitionHistoryServiceImpl extends ServiceImpl<StatusTransi
                                     String operatorId, String operatorName, Integer operatorType, String remark) {
         try {
             StatusTransitionHistory history = new StatusTransitionHistory();
-            history.setId(com.itheima.pinda.utils.IdUtils.get());
+            history.setId(String.valueOf(System.nanoTime()));
             history.setBusinessType(businessType);
             history.setBusinessId(businessId);
             history.setBusinessNo(businessNo);
