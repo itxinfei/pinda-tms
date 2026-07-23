@@ -1,5 +1,6 @@
 package com.itheima.pinda.listener;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.itheima.pinda.enums.OrderStatus;
 import com.itheima.pinda.enums.transportorder.TransportOrderStatus;
@@ -54,27 +55,14 @@ public class OrderEventMQListener {
     @RabbitListener(queues = RabbitMQConfig.QUEUE_ORDER_CONFIRMED)
     public void handleOrderConfirmed(String message) {
         log.info("[MQ监听] 收到订单确认事件: {}", message);
-
         try {
-            // 1. 解析消息
             OrderConfirmedEvent event = objectMapper.readValue(message, OrderConfirmedEvent.class);
-
-            // 2. 记录日志
             log.info("[事件处理] 订单[{}]已确认，客户ID: {}，金额: {}",
                 event.getOrderId(), event.getMemberId(), event.getAmount());
-
-            // 3. TODO: 触发智能调度（如果需要）
-            // if (event.isNeedPreSchedule()) {
-            //     dispatchService.preSchedule(event.getOrderId());
-            // }
-
-            // 4. TODO: 发送短信通知
-            // smsService.sendOrderConfirmation(event.getOrderId());
-
             log.info("[事件处理] 订单确认事件处理完成: orderId={}", event.getOrderId());
-
         } catch (Exception e) {
             log.error("[MQ监听] 订单确认事件处理失败: message=" + message, e);
+            throw new RuntimeException(e); // 抛出异常，消息进入死信队列，避免数据丢失
         }
     }
 
@@ -120,6 +108,7 @@ public class OrderEventMQListener {
 
         } catch (Exception e) {
             log.error("[MQ监听] 揽收完成事件处理失败: message=" + message, e);
+            throw new RuntimeException(e); // 抛出异常，消息进入死信队列，避免数据丢失
         }
     }
 
@@ -182,6 +171,7 @@ public class OrderEventMQListener {
 
         } catch (Exception e) {
             log.error("[MQ监听] 订单交付事件处理失败: message=" + message, e);
+            throw new RuntimeException(e); // 抛出异常，消息进入死信队列，避免数据丢失
         }
     }
 }
