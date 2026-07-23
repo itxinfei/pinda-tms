@@ -64,29 +64,27 @@ public class BusinessOperationServiceImpl implements IBusinessOperationService {
             List<String> transportOrderIds = new ArrayList<>();
             orderClassifys.forEach(orderClassify -> {
                 if (orderClassify.isNew()) {
-                    // 新订单  更新运单信息
-                    orderClassify.getOrders().forEach(item -> {
+                    // 新订单 更新运单信息
+                    for (String orderId : orderClassify.getOrders()) {
                         // 【P0优化】查询运单（下单时已预生成，理论上应该存在）
-                        TransportOrderDTO transportOrderDto = transportOrderFeign.findByOrderId(item.getId());
+                        TransportOrderDTO transportOrderDto = transportOrderFeign.findByOrderId(orderId);
                         if (transportOrderDto == null) {
                             // 理论上不应该发生，如果发生说明订单确认逻辑有问题
-                            log.error("订单[{}]未找到关联运单，请检查订单确认逻辑！", item.getId());
+                            log.error("订单[{}]未找到关联运单，请检查订单确认逻辑！", orderId);
                             // 抛出异常，而不是兜底创建，便于快速定位问题
-                            throw new RuntimeException("订单[" + item.getId() + "]未找到关联运单，请先确认订单");
+                            throw new RuntimeException("订单[" + orderId + "]未找到关联运单，请先确认订单");
                         }
                         transportOrderIds.add(transportOrderDto.getId());
 
                         // 更新订单状态为待装车
                         OrderDTO orderDto = new OrderDTO();
                         orderDto.setStatus(OrderStatus.FOR_LOADING.getCode());
-                        orderFeign.updateById(item.getId(), orderDto);
-                        log.info("更新订单状态为待装车: {}", item.getId());
-                    });
+                        orderFeign.updateById(orderId, orderDto);
+                        log.info("更新订单状态为待装车: {}", orderId);
+                    }
                 }
                 //  查询运单信息构建运单集合
-                List<String> orderIds = orderClassify.getOrders().stream()
-                        .map(OrderDTO::getId)
-                        .collect(Collectors.toList());
+                List<String> orderIds = new ArrayList<>(orderClassify.getOrders());
                 List<TransportOrderDTO> transportOrders = transportOrderFeign.findByOrderIds(orderIds);
                 transportOrderIds.addAll(transportOrders.stream()
                         .map(TransportOrderDTO::getId)

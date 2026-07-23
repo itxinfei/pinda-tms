@@ -2,12 +2,13 @@ package com.itheima.pinda.feign;
 
 import com.itheima.pinda.DTO.DriverJobDTO;
 import com.itheima.pinda.common.utils.PageResponse;
+import com.itheima.pinda.feign.hystrix.DriverJobFeignFallback;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@FeignClient("pd-work")
+@FeignClient(value = "pd-work", fallback = DriverJobFeignFallback.class)
 @RequestMapping("driver-job")
 public interface DriverJobFeign {
     /**

@@ -67,8 +67,8 @@ public class OrderEventListener {
             // 1. 记录订单确认日志
             log.info("[事件处理] 订单[{}]已确认，客户ID: {}，金额: {}",
                 event.getOrderId(),
-                event.getOrderDTO().getMemberId(),
-                event.getOrderDTO().getAmount());
+                event.getMemberId(),
+                event.getAmount());
 
             // 2. TODO: 发送短信通知客户
             // smsService.sendOrderConfirmation(event.getOrderId());

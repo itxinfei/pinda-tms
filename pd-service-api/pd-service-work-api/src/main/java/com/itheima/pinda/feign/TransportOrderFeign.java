@@ -3,6 +3,7 @@ package com.itheima.pinda.feign;
 import com.itheima.pinda.DTO.TransportOrderDTO;
 import com.itheima.pinda.DTO.TransportOrderSearchDTO;
 import com.itheima.pinda.common.utils.PageResponse;
+import com.itheima.pinda.feign.hystrix.TransportOrderFeignFallback;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,7 +14,7 @@ import java.util.List;
  *
  * @author jpfss
  */
-@FeignClient("pd-work")
+@FeignClient(value = "pd-work", fallback = TransportOrderFeignFallback.class)
 @RequestMapping("transport-order")
 public interface TransportOrderFeign {
     /**

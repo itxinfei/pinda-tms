@@ -1,8 +1,6 @@
 package com.itheima.pinda.enums.transporttask;
 
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Map;
+import com.itheima.pinda.common.base.BaseStatusEnum;
 
 /**
  * 运输任务满载状态
@@ -10,7 +8,7 @@ import java.util.Map;
  * @author itcast
  */
 
-public enum TransportTaskLoadingStatus {
+public enum TransportTaskLoadingStatus implements BaseStatusEnum<Integer, String> {
     /**
      * 空载
      */
@@ -42,27 +40,14 @@ public enum TransportTaskLoadingStatus {
     private final String value;
 
 
+    @Override
     public Integer getCode() {
         return code;
     }
 
+    @Override
     public String getValue() {
         return value;
-    }
-
-
-    /**
-     * 循环变量
-     */
-    private static final Map<Integer, TransportTaskLoadingStatus> LOOKUP = new HashMap<>();
-
-    //静态初始化
-    static {
-
-        for (TransportTaskLoadingStatus statusEnum : EnumSet.allOf(TransportTaskLoadingStatus.class)) {
-
-            LOOKUP.put(statusEnum.code, statusEnum);
-        }
     }
 
     /**
@@ -72,7 +57,11 @@ public enum TransportTaskLoadingStatus {
      * @return 值
      */
     public static TransportTaskLoadingStatus lookup(Integer code) {
-        return LOOKUP.get(code);
+        if (code == null) return null;
+        for (TransportTaskLoadingStatus s : values()) {
+            if (s.code.equals(code)) return s;
+        }
+        return null;
     }
 
 }

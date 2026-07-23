@@ -237,9 +237,8 @@ public class MailingController {
         // 触发后续业务逻辑：智能调度、消息通知等
         try {
             OrderConfirmedEvent event = new OrderConfirmedEvent(
-                this,
                 orderDTO.getId(),
-                orderDTO.getOrderNo(),
+                orderDTO.getId(),
                 orderDTO.getMemberId(),
                 orderDTO.getAmount(),
                 orderDTO.getSenderAddress(),
@@ -275,7 +274,6 @@ public class MailingController {
         }
 
         pickupDispatchTaskFeign.save(pickupDispatchTaskDTO);
-        System.out.println(1/0);
         return Result.ok().put("amount", orderDTO.getAmount());
     }
 
@@ -297,7 +295,7 @@ public class MailingController {
         String adcode = map.getOrDefault("adcode", "").toString();
         R<Area> r = areaApi.getByCode(adcode + "000000");
         if (!r.getIsSuccess()) {
-            Result.error(r.getMsg());
+            return Result.error(r.getMsg());
         }
         Area area = r.getData();
         if (area == null) {
@@ -419,7 +417,7 @@ public class MailingController {
         String adcode = map.getOrDefault("adcode", "").toString();
         R<Area> r = areaApi.getByCode(adcode + "000000");
         if (!r.getIsSuccess()) {
-            Result.error(r.getMsg());
+            return Result.error(r.getMsg());
         }
         Area area = r.getData();
         if (area == null) {

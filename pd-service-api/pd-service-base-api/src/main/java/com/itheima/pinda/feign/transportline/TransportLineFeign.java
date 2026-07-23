@@ -3,14 +3,14 @@ package com.itheima.pinda.feign.transportline;
 import com.itheima.pinda.DTO.transportline.TransportLineDto;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
+import com.itheima.pinda.feign.transportline.hystrix.TransportLineFeignFallback;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 import springfox.documentation.annotations.ApiIgnore;
 
 import java.util.List;
 
-@FeignClient(name = "pd-base")
-@RequestMapping("base/transportLine")
+@FeignClient(value = "pd-base", fallback = TransportLineFeignFallback.class, path = "/base/transportLine")
 @ApiIgnore
 public interface TransportLineFeign {
     /**

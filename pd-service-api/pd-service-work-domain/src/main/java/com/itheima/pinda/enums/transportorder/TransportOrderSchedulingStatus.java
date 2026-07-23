@@ -1,14 +1,12 @@
 package com.itheima.pinda.enums.transportorder;
 
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Map;
+import com.itheima.pinda.common.base.BaseStatusEnum;
 
 /**
  * 运单-调度状态
  */
 
-public enum TransportOrderSchedulingStatus {
+public enum TransportOrderSchedulingStatus implements BaseStatusEnum<Integer, String> {
     /**
      * 待调度
      */
@@ -42,27 +40,14 @@ public enum TransportOrderSchedulingStatus {
     private final String value;
 
 
+    @Override
     public Integer getCode() {
         return code;
     }
 
+    @Override
     public String getValue() {
         return value;
-    }
-
-
-    /**
-     * 循环变量
-     */
-    private static final Map<Integer, TransportOrderSchedulingStatus> LOOKUP = new HashMap<>();
-
-    //静态初始化
-    static {
-
-        for (TransportOrderSchedulingStatus taskType : EnumSet.allOf(TransportOrderSchedulingStatus.class)) {
-
-            LOOKUP.put(taskType.code, taskType);
-        }
     }
 
     /**
@@ -72,7 +57,11 @@ public enum TransportOrderSchedulingStatus {
      * @return 值
      */
     public static TransportOrderSchedulingStatus lookup(Integer code) {
-        return LOOKUP.get(code);
+        if (code == null) return null;
+        for (TransportOrderSchedulingStatus s : values()) {
+            if (s.code.equals(code)) return s;
+        }
+        return null;
     }
 
 }

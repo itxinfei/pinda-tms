@@ -1,6 +1,7 @@
 package com.itheima.pinda.state;
 
 import com.itheima.pinda.enums.OrderStatus;
+import com.itheima.pinda.enums.transportorder.TransportOrderSchedulingStatus;
 import com.itheima.pinda.enums.transportorder.TransportOrderStatus;
 import com.itheima.pinda.enums.transporttask.TransportTaskStatus;
 import lombok.extern.slf4j.Slf4j;
@@ -65,7 +66,7 @@ public class StateTransitionValidator {
      * 网点出库(23006) → 待派送(23007)
      * 待派送(23007) → 派送中(23008)
      * 派送中(23008) → 已签收(23009) / 拒收(23010)
-     * 任何状态 → 已取消(230011)（取消操作）
+     * 任何状态 → 已取消(23011)（取消操作）
      */
     private static void initOrderStatusTransitions() {
         // 待取件 → 已取件 / 已取消
@@ -136,16 +137,16 @@ public class StateTransitionValidator {
     private static void initTransportOrderTransitions() {
         // 新建(1) → 待调度(1)
         TRANSPORT_ORDER_TRANSITIONS.put(TransportOrderStatus.CREATED.getCode(), new HashSet<>(Arrays.asList(
-            TransportOrderStatus.TO_BE_SCHEDULED.getCode()
+            TransportOrderSchedulingStatus.TO_BE_SCHEDULED.getCode()
         )));
 
         // 待调度(1) → 已调度(3)
-        TRANSPORT_ORDER_TRANSITIONS.put(TransportOrderStatus.TO_BE_SCHEDULED.getCode(), new HashSet<>(Arrays.asList(
-            TransportOrderStatus.SCHEDULED.getCode()
+        TRANSPORT_ORDER_TRANSITIONS.put(TransportOrderSchedulingStatus.TO_BE_SCHEDULED.getCode(), new HashSet<>(Arrays.asList(
+            TransportOrderSchedulingStatus.SCHEDULED.getCode()
         )));
 
         // 已调度(3) → 已装车(2)
-        TRANSPORT_ORDER_TRANSITIONS.put(TransportOrderStatus.SCHEDULED.getCode(), new HashSet<>(Arrays.asList(
+        TRANSPORT_ORDER_TRANSITIONS.put(TransportOrderSchedulingStatus.SCHEDULED.getCode(), new HashSet<>(Arrays.asList(
             TransportOrderStatus.LOADED.getCode()
         )));
 
@@ -180,16 +181,16 @@ public class StateTransitionValidator {
     private static void initTransportTaskTransitions() {
         // 待执行 → 进行中
         TRANSPORT_TASK_TRANSITIONS.put(TransportTaskStatus.PENDING.getCode(), new HashSet<>(Collections.singletonList(
-            TransportTaskStatus.IN_PROGRESS.getCode()
+            TransportTaskStatus.PROCESSING.getCode()
         )));
 
         // 进行中 → 待确认
-        TRANSPORT_TASK_TRANSITIONS.put(TransportTaskStatus.IN_PROGRESS.getCode(), new HashSet<>(Collections.singletonList(
-            TransportTaskStatus.WAITING_CONFIRM.getCode()
+        TRANSPORT_TASK_TRANSITIONS.put(TransportTaskStatus.PROCESSING.getCode(), new HashSet<>(Collections.singletonList(
+            TransportTaskStatus.CONFIRM.getCode()
         )));
 
         // 待确认 → 已完成 / 已取消
-        TRANSPORT_TASK_TRANSITIONS.put(TransportTaskStatus.WAITING_CONFIRM.getCode(), new HashSet<>(Arrays.asList(
+        TRANSPORT_TASK_TRANSITIONS.put(TransportTaskStatus.CONFIRM.getCode(), new HashSet<>(Arrays.asList(
             TransportTaskStatus.COMPLETED.getCode(),
             TransportTaskStatus.CANCELLED.getCode()
         )));
