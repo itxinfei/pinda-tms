@@ -176,10 +176,11 @@ export function param2Obj(url) {
  * @param {string} val
  * @returns {string}
  */
+// 修改点：原实现用 innerHTML 注入活动文档，存在 XSS 风险；改用 DOMParser 解析，不污染真实 DOM
 export function html2Text(val) {
-  const div = document.createElement('div')
-  div.innerHTML = val
-  return div.textContent || div.innerText
+  if (!val) return ''
+  const doc = new DOMParser().parseFromString(val, 'text/html')
+  return doc.body.textContent || ''
 }
 
 /**

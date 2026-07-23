@@ -16,12 +16,16 @@ import java.text.DecimalFormat;
 import java.util.List;
 import java.util.Map;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * @ClassName: EntCoordSyncJob
  * @Description: 根据地理位置获取坐标
  */
+@Slf4j
 public class EntCoordSyncJob {
-    static String AK = "MVnGC6qGSlY1i0iTv3Gbo9zsG6O94bex"; // 百度地图密钥
+    // 百度地图AK通过系统属性配置，禁止硬编码密钥
+    static String AK = System.getProperty("baidu.map.ak", "");
 
     public static void main(String[] args) {
 //        String dom = "北京金燕龙";
@@ -69,7 +73,7 @@ public class EntCoordSyncJob {
         destination = destinationArray[1] + "," + destinationArray[0];
         String url = "http://api.map.baidu.com/directionlite/v1/driving?origin=" + origin + "&destination=" + destination + "&ak=" + AK;
         String json = loadJSON(url);
-        System.out.println("json-->" + json);
+        log.debug("json-->{}", json);
         if (json != null && !"".equals(json)) {
             Map map = JSON.parseObject(json, Map.class);
             if ("0".equals(map.getOrDefault("status", "500").toString())) {
@@ -92,7 +96,7 @@ public class EntCoordSyncJob {
         destination = destinationArray[1] + "," + destinationArray[0];
         String url = "http://api.map.baidu.com/directionlite/v1/driving?origin=" + origin + "&destination=" + destination + "&ak=" + AK;
         String json = loadJSON(url);
-        System.out.println("json-->" + json);
+        log.debug("json-->{}", json);
         if (json != null && !"".equals(json)) {
             Map map = JSON.parseObject(json, Map.class);
             if ("0".equals(map.getOrDefault("status", "500").toString())) {
@@ -152,7 +156,7 @@ public class EntCoordSyncJob {
         String url = "http://api.map.baidu.com/reverse_geocoding/v3/?ak=" + AK + "&output=json&coordtype=wgs84ll&location=" + location;
 //        String url = "http://api.map.baidu.com/directionlite/v1/driving?origin=" + origin + "&destination=" + destination + "&ak=" + AK;
         String json = loadJSON(url);
-        System.out.println("json-->" + json);
+        log.debug("json-->{}", json);
         if (json != null && !"".equals(json)) {
             Map map = JSON.parseObject(json, Map.class);
             if ("0".equals(map.getOrDefault("status", "500").toString())) {

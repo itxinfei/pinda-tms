@@ -79,7 +79,8 @@
           </el-col>
           <el-col :sm="12" :xs="24" style="margin-top: 10px;">
             <el-form-item label="预览：">
-              <div class="article" v-html="smsTask.content" />
+              <!-- 修改点：原 v-html 直接渲染用户内容存在 XSS 风险，改为文本插值并保留换行 -->
+              <div class="article" style="white-space: pre-wrap;">{{ smsTask.content }}</div>
             </el-form-item>
           </el-col>
         </el-row>

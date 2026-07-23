@@ -9,10 +9,11 @@ import com.itheima.pinda.entity.AddressBook;
 import com.itheima.pinda.service.IAddressBookService;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import net.oschina.j2cache.CacheChannel;
-import net.oschina.j2cache.CacheObject;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * 地址簿
@@ -36,15 +37,19 @@ public class AddressBookController {
      * @return
      */
     @PostMapping("")
+    @Transactional(rollbackFor = Exception.class)
     public Result save(@RequestBody AddressBook entity) {
+        if (entity == null || StringUtils.isBlank(entity.getUserId())) {
+            return Result.error("用户ID不能为空");
+        }
         if (1 == entity.getIsDefault()) {
             addressBookService.lambdaUpdate().set(AddressBook::getIsDefault, 0).eq(AddressBook::getUserId, entity.getUserId()).update();
         }
 
         boolean result = addressBookService.save(entity);
-        if (result) {
+        if (result && entity.getId() != null) {
             //载入缓存
-            cacheChannel.set(region,entity.getId(),entity);
+            cacheChannel.set(region, entity.getId(), entity);
             return Result.ok();
         }
         return Result.error();
@@ -58,9 +63,12 @@ public class AddressBookController {
      */
     @GetMapping("detail/{id}")
     @Cache(region = "addressBook",key = "ab",params = "id")
-    public AddressBook detail(@PathVariable(name = "id") String id) {
-       AddressBook addressBook = addressBookService.getById(id);
-        return addressBook;
+    public Result detail(@PathVariable(name = "id") String id) {
+        AddressBook addressBook = addressBookService.getById(id);
+        if (addressBook != null) {
+            return Result.ok().put("data", addressBook);
+        }
+        return Result.error("地址不存在");
     }
 
     /**
@@ -100,7 +108,11 @@ public class AddressBookController {
      */
     @PutMapping("/{id}")
     @CacheEvictor(value = {@Cache(region = "addressBook",key = "ab",params = "1.id")})
+    @Transactional(rollbackFor = Exception.class)
     public Result update(@PathVariable(name = "id") String id, @RequestBody AddressBook entity) {
+        if (entity == null) {
+            return Result.error("请求数据不能为空");
+        }
         entity.setId(id);
         if (1 == entity.getIsDefault()) {
             addressBookService.lambdaUpdate().set(AddressBook::getIsDefault, 0).eq(AddressBook::getUserId, entity.getUserId()).update();

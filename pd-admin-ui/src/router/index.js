@@ -159,8 +159,18 @@ function save(name, data) {
   localStorage.setItem(name, JSON.stringify(data))
 }
 
+// 修改点：读取本地持久化路由时增加 try-catch，避免脏数据导致解析异常
 function get(name) {
-  return JSON.parse(localStorage.getItem(name))
+  const item = localStorage.getItem(name)
+  if (item === null || item === undefined) {
+    return null
+  }
+  try {
+    return JSON.parse(item)
+  } catch (e) {
+    console.error('router local cache parse error for key:', name, e)
+    return null
+  }
 }
 
 function filterAsyncRouter(routes) {

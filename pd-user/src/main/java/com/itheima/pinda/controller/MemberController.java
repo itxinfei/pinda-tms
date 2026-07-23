@@ -11,6 +11,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * 用户前端控制器
  */
@@ -43,9 +45,15 @@ public class MemberController {
      * @return
      */
     @GetMapping("detail/{id}")
-    public Member detail(@PathVariable(name = "id") String id) {
-        Member Member = memberService.getById(id);
-        return Member;
+    public Result detail(@PathVariable(name = "id") String id) {
+        if (StringUtils.isBlank(id)) {
+            return Result.error("ID不能为空");
+        }
+        Member member = memberService.getById(id);
+        if (member != null) {
+            return Result.ok().put("data", member);
+        }
+        return Result.error("会员不存在");
     }
 
     /**
