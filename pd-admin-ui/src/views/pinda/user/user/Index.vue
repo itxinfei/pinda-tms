@@ -227,7 +227,9 @@ import UserView from './View'
 import userApi from '@/api/User.js'
 import orgApi from '@/api/Org.js'
 
+import crud from '@/mixins/crud'
 export default {
+  mixins: [crud],
   name: 'UserManage',
   components: { Pagination, UserEdit, UserView, Treeselect },
   filters: {
@@ -252,25 +254,9 @@ export default {
   },
   data() {
     return {
+      apiModule: userApi,
       orgList: [],
-      dialog: {
-        isVisible: false,
-        type: 'add'
-      },
-      userViewVisible: false,
-      tableKey: 0,
-      queryParams: {},
-      sort: {},
-      selection: [],
-      // 以下已修改
-      loading: false,
-      tableData: {
-        total: 0
-      },
-      pagination: {
-        size: 10,
-        current: 1
-      }
+      userViewVisible: false
     }
   },
   computed: {
@@ -320,24 +306,8 @@ export default {
     editSuccess() {
       this.search()
     },
-    onSelectChange(selection) {
-      this.selection = selection
-    },
     loadListOptions({ callback }) {
       callback()
-    },
-    search() {
-      this.fetch({
-        ...this.queryParams,
-        ...this.sort
-      })
-    },
-    reset() {
-      this.queryParams = {}
-      this.sort = {}
-      this.$refs.table.clearSort()
-      this.$refs.table.clearFilter()
-      this.search()
     },
     exportExcel() {
       this.$message({
@@ -382,62 +352,6 @@ export default {
           this.clearSelections()
         })
     },
-    singleDelete(row) {
-      this.$refs.table.toggleRowSelection(row, true)
-      this.batchDelete()
-    },
-    batchDelete() {
-      if (!this.selection.length) {
-        this.$message({
-          message: this.$t('tips.noDataSelected'),
-          type: 'warning'
-        })
-        return
-      }
-      let contain = false
-      this.$confirm(this.$t('tips.confirmDelete'), this.$t('common.tips'), {
-        confirmButtonText: this.$t('common.confirm'),
-        cancelButtonText: this.$t('common.cancel'),
-        type: 'warning'
-      })
-        .then(() => {
-          const ids = []
-          this.selection.forEach(u => {
-            if (u.id === this.currentUser.id) {
-              contain = true
-              return
-            }
-            ids.push(u.id)
-          })
-          if (contain) {
-            this.$message({
-              message: this.$t('tips.containCurrentUser'),
-              type: 'warning'
-            })
-            this.clearSelections()
-          } else {
-            this.delete(ids)
-          }
-        })
-        .catch(() => {
-          this.clearSelections()
-        })
-    },
-    clearSelections() {
-      this.$refs.table.clearSelection()
-    },
-    delete(ids) {
-      userApi.delete({ ids: ids }).then(response => {
-        const res = response.data
-        if (res.isSuccess) {
-          this.$message({
-            message: this.$t('tips.deleteSuccess'),
-            type: 'success'
-          })
-        }
-        this.search()
-      })
-    },
     add() {
       this.dialog.type = 'add'
       this.dialog.isVisible = true
@@ -452,26 +366,14 @@ export default {
       this.dialog.type = 'edit'
       this.dialog.isVisible = true
     },
-    fetch(params = {}) {
-      this.loading = true
-      params.size = this.pagination.size
-      params.current = this.pagination.current
-      if (this.queryParams.timeRange) {
-        params.startCreateTime = this.queryParams.timeRange[0]
-        params.endCreateTime = this.queryParams.timeRange[1]
+    beforeDelete(selection) {
+      const contain = selection.some(u => u.id === this.currentUser.id)
+      if (contain) {
+        this.$message({ message: this.$t('tips.containCurrentUser'), type: 'warning' })
+        this.clearSelections()
+        return true
       }
-      userApi.page(params).then(response => {
-        const res = response.data
-        this.loading = false
-        if (res.isSuccess) {
-          this.tableData = res.data
-        }
-      })
-    },
-    sortChange(val) {
-      this.sort.field = val.prop
-      this.sort.order = val.order
-      this.search()
+      return false
     }
   }
 }
