@@ -10,6 +10,7 @@ import com.itheima.pinda.authority.api.OrgApi;
 import com.itheima.pinda.authority.api.UserApi;
 import com.itheima.pinda.authority.entity.auth.User;
 import com.itheima.pinda.authority.entity.core.Org;
+import com.itheima.pinda.common.exception.PdException;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.entity.*;
 import com.itheima.pinda.feign.transportline.TransportLineFeign;
@@ -87,12 +88,13 @@ public class ScheduleJobLogController {
         if (!params.containsKey("jobId")) {
             Object orgIdObj = params.get("orgId");
             if (orgIdObj == null) {
-                return PageResponse.error(400, "缺少 orgId 参数");
+                //修改点：PageResponse 为纯数据载体，无 error 方法，统一以 PdException 表达参数错误
+                throw new PdException("缺少 orgId 参数");
             }
             String orgId = orgIdObj.toString();
             ScheduleJobDTO scheduleJobDto = scheduleJobService.getByOrgId(orgId);
             if (scheduleJobDto == null) {
-                return PageResponse.error(404, "该机构无调度任务");
+                throw new PdException("该机构无调度任务");
             }
             params.put("jobId", scheduleJobDto.getId());
         }
