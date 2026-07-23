@@ -25,5 +25,6 @@ selenium-debug.log
 package-lock.json
 yarn.lock
 
-# 构建产物（由 npm run build 生成，含旧凭据/IP，禁止提交）
-pinda/
+# 构建产物（由 npm run build 生成于项目根，含旧凭据/IP，禁止提交）
+# 注意：必须前导斜杠锚定到本目录，避免误忽略 src/views/pinda/ 等源码目录
+/pinda/
