@@ -48,17 +48,7 @@ public class TruckTypeController {
     public TruckTypeDto saveTruckType(@RequestBody TruckTypeDto dto) {
         PdTruckType pdTruckType = new PdTruckType();
         BeanUtils.copyProperties(dto, pdTruckType);
-        pdTruckType = truckTypeService.saveTruckType(pdTruckType);
-        String truckTypeId = pdTruckType.getId();
-        //处理与货物类型的关联
-        if (dto.getGoodsTypeIds() != null) {
-            truckTypeGoodsTypeService.batchSave(dto.getGoodsTypeIds().stream().map(id -> {
-                PdTruckTypeGoodsType truckTypeGoodsType = new PdTruckTypeGoodsType();
-                truckTypeGoodsType.setGoodsTypeId(id);
-                truckTypeGoodsType.setTruckTypeId(truckTypeId);
-                return truckTypeGoodsType;
-            }).collect(Collectors.toList()));
-        }
+        pdTruckType = truckTypeService.saveTruckTypeWithGoodsTypes(pdTruckType, dto.getGoodsTypeIds());
         BeanUtils.copyProperties(pdTruckType, dto);
         return dto;
     }
@@ -135,18 +125,7 @@ public class TruckTypeController {
         dto.setId(id);
         PdTruckType truckType = new PdTruckType();
         BeanUtils.copyProperties(dto, truckType);
-        truckTypeService.updateById(truckType);
-        //处理与货物类型的关联
-        if (dto.getGoodsTypeIds() != null) {
-            truckTypeGoodsTypeService.delete(id, null);
-            //绑定新的关系
-            truckTypeGoodsTypeService.batchSave(dto.getGoodsTypeIds().stream().map(goodsTypeId -> {
-                PdTruckTypeGoodsType truckTypeGoodsType = new PdTruckTypeGoodsType();
-                truckTypeGoodsType.setGoodsTypeId(goodsTypeId);
-                truckTypeGoodsType.setTruckTypeId(id);
-                return truckTypeGoodsType;
-            }).collect(Collectors.toList()));
-        }
+        truckTypeService.updateTruckTypeWithGoodsTypes(truckType, dto.getGoodsTypeIds());
         return dto;
     }
 

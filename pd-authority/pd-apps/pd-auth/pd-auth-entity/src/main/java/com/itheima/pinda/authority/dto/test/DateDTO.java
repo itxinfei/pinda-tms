@@ -15,11 +15,14 @@ import com.itheima.pinda.authority.entity.core.Org;
 import lombok.Data;
 import lombok.ToString;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * 日期测试类 DTO
  *
  */
 
+@Slf4j
 @Data
 @ToString
 public class DateDTO implements Serializable {
@@ -36,7 +39,7 @@ public class DateDTO implements Serializable {
 
         String[] ids = list.stream().map((org) -> String.valueOf(org.getId())).toArray(String[]::new);
         for (String id : ids) {
-            System.out.println(id);
+            log.debug("id={}", id);
         }
 
 //        Long[] ids = list.stream().mapToLong(Org::getId).boxed().toArray(Long[]::new);

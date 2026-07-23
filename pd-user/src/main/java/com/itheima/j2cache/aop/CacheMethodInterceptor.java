@@ -17,6 +17,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.stereotype.Component;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.lang.reflect.Method;
 
 /**
@@ -26,6 +28,7 @@ import java.lang.reflect.Method;
 @Aspect
 @Component
 @EnableAspectJAutoProxy(proxyTargetClass = true)//指定使用cglib方式为Controller创建代理对象，代理对象其实是目标对象的子类
+@Slf4j
 @Import(SpringApplicationContextUtils.class)
 public class CacheMethodInterceptor implements Interceptor{
 
@@ -44,7 +47,7 @@ public class CacheMethodInterceptor implements Interceptor{
         //获得方法上的Cache注解信息
         Cache cache = AnnotationUtils.findAnnotation(method, Cache.class);
         if(cache != null){
-            System.out.println("需要进行设置缓存数据处理...");
+            log.info("需要进行设置缓存数据处理...");
             //创建处理器，具体处理缓存逻辑
             CachesAnnotationProcessor processor = AbstractCacheAnnotationProcessor.getProcessor(proceedingJoinPoint, cache);
             return processor.process(proceedingJoinPoint);
@@ -65,7 +68,7 @@ public class CacheMethodInterceptor implements Interceptor{
         Method method = signature.getMethod();
         CacheEvictor cacheEvictor = AnnotationUtils.findAnnotation(method, CacheEvictor.class);
         if(cacheEvictor != null){
-            System.out.println("清理缓存处理...");
+            log.info("清理缓存处理...");
             //创建清理缓存的处理器
             CacheEvictorAnnotationProcessor processor = AbstractCacheAnnotationProcessor.getProcessor(proceedingJoinPoint, cacheEvictor);
             return processor.process(proceedingJoinPoint);

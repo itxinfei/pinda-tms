@@ -72,8 +72,16 @@ public class OrderLocusController {
             cacheLineDetailEntities.forEach(cacheLineDetailEntity -> {
 
                 Org startAgency = agency.get(Long.parseLong(cacheLineDetailEntity.getStartAgencyId()));
+                if (startAgency == null) {
+                    log.warn("未找到起始机构: {}", cacheLineDetailEntity.getStartAgencyId());
+                    return;
+                }
 
                 Org endAgency = agency.get(Long.parseLong(cacheLineDetailEntity.getEndAgencyId()));
+                if (endAgency == null) {
+                    log.warn("未找到结束机构: {}", cacheLineDetailEntity.getEndAgencyId());
+                    return;
+                }
 
                 OrderPointDTO orderPoint1 = new OrderPointDTO();
                 orderPoint1.setName(startAgency.getName());

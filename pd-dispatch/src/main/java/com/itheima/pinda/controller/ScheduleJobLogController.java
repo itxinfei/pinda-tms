@@ -85,8 +85,15 @@ public class ScheduleJobLogController {
             params.put("pageSize", 10);
         }
         if (!params.containsKey("jobId")) {
-            String orgId = params.get("orgId").toString();
+            Object orgIdObj = params.get("orgId");
+            if (orgIdObj == null) {
+                return PageResponse.error(400, "缺少 orgId 参数");
+            }
+            String orgId = orgIdObj.toString();
             ScheduleJobDTO scheduleJobDto = scheduleJobService.getByOrgId(orgId);
+            if (scheduleJobDto == null) {
+                return PageResponse.error(404, "该机构无调度任务");
+            }
             params.put("jobId", scheduleJobDto.getId());
         }
 
@@ -112,6 +119,9 @@ public class ScheduleJobLogController {
     @ApiOperation("信息")
     public ScheduleJobLogDTO info(@PathVariable("id") Long id) {
         ScheduleJobLogDTO logDto = scheduleJobLogService.get(id);
+        if (logDto == null) {
+            return null;
+        }
         // 组合 订单分组等信息
         List<OrderClassifyEntity> orderClassifyEntities = orderClassifyService.findByJobLogId(logDto.getId());
         Set<String> agencySet = new HashSet<>();
@@ -125,10 +135,16 @@ public class ScheduleJobLogController {
             OrderClassifyLogDTO orderClassifyLogDTO = new OrderClassifyLogDTO();
             BeanUtils.copyProperties(item, orderClassifyLogDTO);
             if (StringUtils.isNotEmpty(orderClassifyLogDTO.getStartAgencyId())) {
-                orderClassifyLogDTO.setStartAgency(agencyMap.get(Long.parseLong(orderClassifyLogDTO.getStartAgencyId())).getName());
+                Org startAgency = agencyMap.get(Long.parseLong(orderClassifyLogDTO.getStartAgencyId()));
+                if (startAgency != null) {
+                    orderClassifyLogDTO.setStartAgency(startAgency.getName());
+                }
             }
             if (StringUtils.isNotBlank(orderClassifyLogDTO.getEndAgencyId())) {
-                orderClassifyLogDTO.setEndAgency(agencyMap.get(Long.parseLong(orderClassifyLogDTO.getEndAgencyId())).getName());
+                Org endAgency = agencyMap.get(Long.parseLong(orderClassifyLogDTO.getEndAgencyId()));
+                if (endAgency != null) {
+                    orderClassifyLogDTO.setEndAgency(endAgency.getName());
+                }
             }
 
             buildTransportLine(item, orderClassifyLogDTO);

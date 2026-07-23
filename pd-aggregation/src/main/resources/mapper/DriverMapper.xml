@@ -3,6 +3,24 @@
 <mapper namespace="com.itheima.pinda.mapper.DriverMapper">
     <select id="findByPage" resultType="com.itheima.pinda.DTO.DriverJobDTO"
             parameterType="com.itheima.pinda.DTO.AppDriverQueryDTO">
-
+        SELECT
+            dj.id, dj.driver_id, dj.task_transport_id, dj.status,
+            dj.create_time, dj.update_time, dj.finish_time,
+            au.name as driver_name, au.phone as driver_phone,
+            tt.start_agency_id, tt.end_agency_id
+        FROM pd_driver_job dj
+        LEFT JOIN pd_auth_user au ON dj.driver_id = au.id
+        LEFT JOIN pd_task_transport tt ON dj.task_transport_id = tt.id
+        WHERE 1=1
+        <if test="params.driverId != null and params.driverId != ''">
+            AND dj.driver_id = #{params.driverId}
+        </if>
+        <if test="params.status != null">
+            AND dj.status = #{params.status}
+        </if>
+        <if test="params.taskTransportId != null and params.taskTransportId != ''">
+            AND dj.task_transport_id = #{params.taskTransportId}
+        </if>
+        ORDER BY dj.create_time DESC
     </select>
 </mapper>

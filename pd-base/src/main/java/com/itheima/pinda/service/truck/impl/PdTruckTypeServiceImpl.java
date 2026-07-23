@@ -11,11 +11,17 @@ import com.itheima.pinda.common.CustomIdGenerator;
 import com.itheima.pinda.common.utils.Constant;
 import com.itheima.pinda.mapper.truck.PdTruckTypeMapper;
 import com.itheima.pinda.entity.truck.PdTruckType;
+import com.itheima.pinda.entity.truck.PdTruckTypeGoodsType;
 import com.itheima.pinda.service.truck.IPdTruckTypeService;
+import com.itheima.pinda.service.truck.IPdTruckTypeGoodsTypeService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.apache.commons.lang.StringUtils;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -29,6 +35,8 @@ import org.apache.commons.lang.StringUtils;
 public class PdTruckTypeServiceImpl extends ServiceImpl<PdTruckTypeMapper, PdTruckType> implements IPdTruckTypeService {
     @Autowired
     private CustomIdGenerator idGenerator;
+    @Autowired
+    private IPdTruckTypeGoodsTypeService truckTypeGoodsTypeService;
 
     @Override
     public PdTruckType saveTruckType(PdTruckType pdTruckType) {
@@ -63,5 +71,43 @@ public class PdTruckTypeServiceImpl extends ServiceImpl<PdTruckTypeMapper, PdTru
         }
         lambdaQueryWrapper.eq(PdTruckType::getStatus, Constant.DATA_DEFAULT_STATUS);
         return baseMapper.selectList(lambdaQueryWrapper);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public PdTruckType saveTruckTypeWithGoodsTypes(PdTruckType pdTruckType, List<String> goodsTypeIds) {
+        if (pdTruckType.getId() == null) {
+            pdTruckType.setId(idGenerator.nextId(pdTruckType) + "");
+        }
+        if (pdTruckType.getStatus() == null) {
+            pdTruckType.setStatus(Constant.DATA_DEFAULT_STATUS);
+        }
+        baseMapper.insert(pdTruckType);
+        if (goodsTypeIds != null && !goodsTypeIds.isEmpty()) {
+            List<PdTruckTypeGoodsType> list = goodsTypeIds.stream().map(goodsTypeId -> {
+                PdTruckTypeGoodsType item = new PdTruckTypeGoodsType();
+                item.setGoodsTypeId(goodsTypeId);
+                item.setTruckTypeId(pdTruckType.getId());
+                return item;
+            }).collect(Collectors.toList());
+            truckTypeGoodsTypeService.batchSave(list);
+        }
+        return pdTruckType;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateTruckTypeWithGoodsTypes(PdTruckType truckType, List<String> goodsTypeIds) {
+        baseMapper.updateById(truckType);
+        if (goodsTypeIds != null) {
+            truckTypeGoodsTypeService.delete(truckType.getId(), null);
+            List<PdTruckTypeGoodsType> list = goodsTypeIds.stream().map(goodsTypeId -> {
+                PdTruckTypeGoodsType item = new PdTruckTypeGoodsType();
+                item.setGoodsTypeId(goodsTypeId);
+                item.setTruckTypeId(truckType.getId());
+                return item;
+            }).collect(Collectors.toList());
+            truckTypeGoodsTypeService.batchSave(list);
+        }
     }
 }

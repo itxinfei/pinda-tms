@@ -105,6 +105,9 @@ public class TransportTaskController {
     public LinkedHashSet<PointDTO> findPointById(@PathVariable(name = "id") String id) {
         LinkedHashSet<PointDTO> pointDTOS = new LinkedHashSet<>();
         TaskTransportDTO dto = transportTaskFeign.findById(id);
+        if (dto == null) {
+            return pointDTOS;
+        }
         R<Org> startOrgR = orgApi.get(Long.parseLong(dto.getStartAgencyId()));
         Org startOrg = startOrgR.getData();
         R<Org> endOrgR = orgApi.get(Long.parseLong(dto.getEndAgencyId()));

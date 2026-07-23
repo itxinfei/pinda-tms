@@ -15,6 +15,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -74,8 +75,8 @@ public class TransportOrderController {
      * @return 运单分页数据
      */
     @GetMapping("/page")
-    public PageResponse<TransportOrderDTO> findByPage(@RequestParam(name = "page") Integer page,
-                                                      @RequestParam(name = "pageSize") Integer pageSize,
+    public PageResponse<TransportOrderDTO> findByPage(@RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
+                                                      @RequestParam(name = "pageSize", required = false, defaultValue = "10") Integer pageSize,
                                                       @RequestParam(name = "orderId", required = false) String orderId,
                                                       @RequestParam(name = "status", required = false) Integer status,
                                                       @RequestParam(name = "schedulingStatus", required = false) Integer schedulingStatus) {
@@ -134,6 +135,9 @@ public class TransportOrderController {
      */
     @GetMapping("orderIds")
     public List<TransportOrderDTO> findByOrderIds(@RequestParam(name = "ids") List<String> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return Collections.emptyList();
+        }
         LambdaQueryWrapper<TransportOrder> wrapper = new LambdaQueryWrapper();
         wrapper.in(TransportOrder::getOrderId, ids);
         List<TransportOrder> transportOrders = transportOrderService.list(wrapper);

@@ -114,9 +114,9 @@ public class DriverJobController {
         List<DriverJob> driverJobs = driverJobService.findAll(null, dto.getId(), dto.getDriverId(), dto.getStatus(), dto.getTaskTransportId());
         if (driverJobs != null) {
             for (DriverJob driverJob : driverJobs) {
-                dto = new DriverJobDTO();
-                BeanUtils.copyProperties(driverJob, dto);
-                dtos.add(dto);
+                DriverJobDTO resultDto = new DriverJobDTO();
+                BeanUtils.copyProperties(driverJob, resultDto);
+                dtos.add(resultDto);
             }
         }
         return dtos;

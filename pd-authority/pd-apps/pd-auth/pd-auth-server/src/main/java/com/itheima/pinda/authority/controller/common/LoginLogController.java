@@ -92,6 +92,8 @@ public class LoginLogController extends BaseController {
     @ApiOperation(value = "新增登录日志", notes = "新增登录日志不为空的字段")
     @GetMapping("/anno/login/{account}")
     public R<LoginLog> save(@NotBlank(message = "用户名不能为为空") @PathVariable String account, @RequestParam(required = false, defaultValue = "登陆成功") String description) {
+        // TODO: 此端点未做认证，任何请求方均可伪造任意用户的登录记录，存在严重安全风险
+        // TODO: 应添加IP白名单限制（仅内部服务可调用）或移除该接口
         String ua = StrUtil.sub(this.request.getHeader("user-agent"), 0, 500);
         String ip = ServletUtil.getClientIP(this.request);
         String location = AddressUtil.getRegion(ip);

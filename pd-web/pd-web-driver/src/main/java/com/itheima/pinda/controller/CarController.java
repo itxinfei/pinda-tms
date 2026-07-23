@@ -55,6 +55,9 @@ public class CarController {
         log.info("获取车辆信息：{}", id);
         TruckDto truckDto = truckFeign.fineById(id);
         log.info("获取车辆信息：{}", truckDto);
+        if (truckDto == null) {
+            return Result.error(404, "车辆不存在");
+        }
         TruckTypeDto truckTypeDto = truckTypeFeign.fineById(truckDto.getTruckTypeId());
         log.info("获取车辆信息 车辆类型：{}", truckTypeDto);
 

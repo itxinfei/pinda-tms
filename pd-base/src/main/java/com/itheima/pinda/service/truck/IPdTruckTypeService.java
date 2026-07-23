@@ -6,6 +6,7 @@ import java.util.List;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.itheima.pinda.entity.truck.PdTruckType;
+import com.itheima.pinda.entity.truck.PdTruckTypeGoodsType;
 
 /**
  * <p>
@@ -23,6 +24,23 @@ public interface IPdTruckTypeService extends IService<PdTruckType> {
      * @return 车辆类型信息
      */
     PdTruckType saveTruckType(PdTruckType pdTruckType);
+
+    /**
+     * 保存车辆类型及关联的货物类型（事务保证）
+     *
+     * @param pdTruckType  车辆类型信息
+     * @param goodsTypeIds 货物类型ID列表
+     * @return 车辆类型信息
+     */
+    PdTruckType saveTruckTypeWithGoodsTypes(PdTruckType pdTruckType, List<String> goodsTypeIds);
+
+    /**
+     * 更新车辆类型及关联的货物类型（事务保证）
+     *
+     * @param truckType   车辆类型信息
+     * @param goodsTypeIds 货物类型ID列表
+     */
+    void updateTruckTypeWithGoodsTypes(PdTruckType truckType, List<String> goodsTypeIds);
 
     /**
      * 获取车辆类型分页数据

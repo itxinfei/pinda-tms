@@ -5,6 +5,9 @@ import com.itheima.pinda.service.DroolsRulesService;
 
 import java.math.BigDecimal;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class DroolsRulesServiceImpl implements DroolsRulesService {
     /**
      * 根据条件计算订单价格
@@ -35,6 +38,6 @@ public class DroolsRulesServiceImpl implements DroolsRulesService {
         addressRule.setFirstFee(20);
         addressRule.setContinuedFee(6);
         String s = new DroolsRulesServiceImpl().calcFee(addressRule);
-        System.out.println(s);
+        log.debug(s);
     }
 }
