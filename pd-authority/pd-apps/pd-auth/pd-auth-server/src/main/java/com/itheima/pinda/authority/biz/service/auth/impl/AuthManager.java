@@ -112,7 +112,7 @@ public class AuthManager {
         JwtUserInfo userInfo = new JwtUserInfo(user.getId(), user.getAccount(), user.getName(), user.getOrgId(), user.getStationId());
 
         Token token = this.jwtTokenServerUtils.generateUserToken(userInfo, null);
-        log.info("token={}", token.getToken());
+        log.info("token生成成功，前缀: {}***", token.getToken() != null && token.getToken().length() > 8 ? token.getToken().substring(0, 8) : "***");
         return token;
     }
 
@@ -134,7 +134,7 @@ public class AuthManager {
         JwtUserInfo userInfo = new JwtUserInfo(user.getId(), user.getAccount(), user.getName(), user.getOrgId(), user.getStationId());
 
         Token token = this.jwtTokenServerUtils.generateUserToken(userInfo, null);
-        log.info("token={}", token.getToken());
+        log.info("token生成成功，前缀: {}***", token.getToken() != null && token.getToken().length() > 8 ? token.getToken().substring(0, 8) : "***");
         return token;
     }
 

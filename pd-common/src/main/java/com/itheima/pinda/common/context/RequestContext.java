@@ -14,9 +14,15 @@ public class RequestContext {
 
     public static String getUserId() {
         ServletRequestAttributes servletRequestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (servletRequestAttributes == null) {
+            return null;
+        }
         HttpServletRequest request = servletRequestAttributes.getRequest();
+        if (request == null) {
+            return null;
+        }
         String userid = request.getHeader(USER_ID);
-        log.info("获取上下文用户id：{}", userid);
+        log.debug("获取上下文用户id：{}", userid);
         return userid;
     }
 

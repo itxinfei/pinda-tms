@@ -61,10 +61,12 @@ const mutations = {
     state.cachedViews = []
   },
 
+  // 修改点：原实现仅修改 for...of 的局部循环变量，state 从未更新；
+  // 改为通过 splice 替换数组元素，保证 Vue2 响应式生效
   UPDATE_VISITED_VIEW: (state, view) => {
-    for (let v of state.visitedViews) {
-      if (v.path === view.path) {
-        v = Object.assign(v, view)
+    for (let i = 0; i < state.visitedViews.length; i++) {
+      if (state.visitedViews[i].path === view.path) {
+        state.visitedViews.splice(i, 1, Object.assign({}, state.visitedViews[i], view))
         break
       }
     }
