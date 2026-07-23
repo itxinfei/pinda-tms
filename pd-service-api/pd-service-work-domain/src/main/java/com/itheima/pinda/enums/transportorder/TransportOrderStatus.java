@@ -1,14 +1,12 @@
 package com.itheima.pinda.enums.transportorder;
 
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Map;
+import com.itheima.pinda.common.base.BaseStatusEnum;
 
 /**
  * 运单-状态
  */
+public enum TransportOrderStatus implements BaseStatusEnum<Integer, String> {
 
-public enum TransportOrderStatus {
     /**
      * 新建
      */
@@ -37,54 +35,41 @@ public enum TransportOrderStatus {
     REJECTED(6, "拒收");
 
 
-    TransportOrderStatus(Integer code, String value) {
+    private final Integer code;
 
+    private final String value;
+
+    TransportOrderStatus(Integer code, String value) {
         this.code = code;
         this.value = value;
     }
 
-    /**
-     * 类型编码
-     */
-    private final Integer code;
-
-    /**
-     * 类型值
-     */
-    private final String value;
-
-
+    @Override
     public Integer getCode() {
         return code;
     }
 
+    @Override
     public String getValue() {
         return value;
     }
 
-
     /**
-     * 循环变量
-     */
-    private static final Map<Integer, TransportOrderStatus> LOOKUP = new HashMap<>();
-
-    //静态初始化
-    static {
-
-        for (TransportOrderStatus taskType : EnumSet.allOf(TransportOrderStatus.class)) {
-
-            LOOKUP.put(taskType.code, taskType);
-        }
-    }
-
-    /**
-     * 根据code获取枚举项
+     * 根据 code 查找枚举项
      *
-     * @param code 值
-     * @return 值
+     * @param code 编码值
+     * @return 匹配的枚举项，未找到返回 null
      */
     public static TransportOrderStatus lookup(Integer code) {
-        return LOOKUP.get(code);
+        if (code == null) {
+            return null;
+        }
+        for (TransportOrderStatus status : values()) {
+            if (status.code.equals(code)) {
+                return status;
+            }
+        }
+        return null;
     }
 
 }

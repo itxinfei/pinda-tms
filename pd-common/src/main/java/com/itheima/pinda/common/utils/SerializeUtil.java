@@ -5,6 +5,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class SerializeUtil {
     /**
      * 序列化
@@ -42,7 +45,7 @@ public class SerializeUtil {
             ObjectInputStream ois = new ObjectInputStream(bais);
             return ois.readObject();
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("序列化失败", e);
         }
         return null;
     }

@@ -7,6 +7,9 @@ import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class LocationUtil {
     private static final String AK = "aeshaTGoO6t7jzO7UeMKfpikF1Q0TLK4";
     public static final String KEY_LAT = "lat";
@@ -48,7 +51,7 @@ public class LocationUtil {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("地址解析失败", e);
         }
         return null;
     }

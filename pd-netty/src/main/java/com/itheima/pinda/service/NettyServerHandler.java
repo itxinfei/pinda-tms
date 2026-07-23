@@ -90,8 +90,8 @@ public class NettyServerHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) {
-        // 写一个空的buf，并刷新写出区域。完成后关闭sock channel连接。
-        ctx.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
+        // flush 写出区域，保持连接不关闭（GPS设备需持久连接）
+        ctx.flush();
     }
 
     @Override

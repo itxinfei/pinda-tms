@@ -37,7 +37,7 @@ public abstract class BaseMapper {
 
             return resultList;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("BaseMapper反射获取泛型失败", e);
         } finally {
             try {
                 connection.close();
@@ -66,7 +66,7 @@ public abstract class BaseMapper {
                 return map;
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("BaseMapper反射创建实例失败", e);
         } finally {
             try {
                 connection.close();

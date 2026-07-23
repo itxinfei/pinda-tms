@@ -7,6 +7,9 @@ import java.util.Hashtable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class IdCardUtils {
     /**
      * 身份证验证
@@ -66,7 +69,7 @@ public class IdCardUtils {
                 return "身份证无效，不是合法的身份证号码";
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("身份证号解析失败", e);
         }
         return null;
     }

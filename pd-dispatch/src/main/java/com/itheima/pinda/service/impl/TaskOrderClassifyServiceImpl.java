@@ -73,9 +73,9 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
         //进行对象转换，将当前Map对象转为 List<OrderClassifyGroupDTO>类型
         orderClassifyDTOGroup.forEach((key,value) -> {
             builder.key(key);
-            //获取原始订单对象
-            List<Order> orders = value.stream().map((item) -> item.getOrder()).collect(Collectors.toList());
-            builder.orders(orders);
+            //获取原始订单ID列表
+            List<String> orderIds = value.stream().map((item) -> item.getOrder().getId()).collect(Collectors.toList());
+            builder.orders(orderIds);
             OrderClassifyGroupDTO orderClassifyGroupDTO = builder.build();
             orderClassifyGroupDTOS.add(orderClassifyGroupDTO);
         });
@@ -107,9 +107,9 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
                 entity.setTotal(item.getOrders().size());
                 entity.setId(IdUtils.get());
 
-                List<OrderClassifyOrderEntity> orderClassifyOrders = item.getOrders().stream().map((order) -> {
+                List<OrderClassifyOrderEntity> orderClassifyOrders = item.getOrders().stream().map((orderId) -> {
                     OrderClassifyOrderEntity orderClassifyOrderEntity = new OrderClassifyOrderEntity();
-                    orderClassifyOrderEntity.setOrderId(order.getId());
+                    orderClassifyOrderEntity.setOrderId(orderId);
                     orderClassifyOrderEntity.setOrderClassifyId(entity.getId());
                     orderClassifyOrderEntity.setId(IdUtils.get());
                     return orderClassifyOrderEntity;
@@ -120,7 +120,7 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
                 orderClassifyOrderService.saveBatch(orderClassifyOrders);
             } else {
                 log.info("中转订单，查询分组信息");
-                List<String> orderIds = item.getOrders().stream().map(order -> order.getId()).collect(Collectors.toList());
+                List<String> orderIds = item.getOrders().stream().map(orderId -> orderId).collect(Collectors.toList());
                 log.info("当前分组的订单id：{}", orderIds);
                 LambdaQueryWrapper<OrderClassifyOrderEntity> wrapper = new LambdaQueryWrapper<>();
                 wrapper.in(OrderClassifyOrderEntity::getOrderId, orderIds);
@@ -277,15 +277,11 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
     }
 
     /**
-     * 抛出异常
-     * @param msg
+     * 抛出业务异常，中断当前流程
+     * @param msg 错误信息
      */
     private void exceptionHappend(String msg){
-        try {
-            throw new Exception(msg);
-        }catch (Exception e){
-            e.printStackTrace();
-        }
+        throw new RuntimeException(msg);
     }
 
     /**
@@ -360,7 +356,7 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
             }
             return Result.error(5000, "获取网点失败");
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("获取网点失败", e);
             return Result.error(5000, "获取网点失败");
         }
     }
@@ -468,9 +464,9 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
         //进行对象转换，将当前Map对象转为 List<OrderClassifyGroupDTO>类型
         orderClassifyDTOGroup.forEach((key,value) -> {
             builder.key(key);
-            //获取原始订单对象
-            List<Order> orders = value.stream().map((item) -> item.getOrder()).collect(Collectors.toList());
-            builder.orders(orders);
+            //获取原始订单ID列表
+            List<String> orderIds = value.stream().map((item) -> item.getOrder().getId()).collect(Collectors.toList());
+            builder.orders(orderIds);
             OrderClassifyGroupDTO orderClassifyGroupDTO = builder.build();
             orderClassifyGroupDTOS.add(orderClassifyGroupDTO);
         });

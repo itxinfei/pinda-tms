@@ -79,7 +79,7 @@ public class HttpRequestUtil {
                     response.close();
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.error("HTTP请求失败", e);
             }
         }
         return result;
@@ -170,7 +170,7 @@ public class HttpRequestUtil {
                     response.close();
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.error("HTTP请求失败", e);
             }
         }
         return result;
@@ -253,7 +253,7 @@ public class HttpRequestUtil {
                     response.close();
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.error("HTTP请求失败", e);
             }
         }
         return result;
@@ -328,7 +328,7 @@ public class HttpRequestUtil {
                     response.close();
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.error("HTTP请求失败", e);
             }
         }
         return result;
@@ -358,7 +358,7 @@ public class HttpRequestUtil {
                     response.close();
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.error("HTTP请求失败", e);
             }
         }
         return result;

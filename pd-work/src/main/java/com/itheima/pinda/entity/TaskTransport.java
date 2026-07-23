@@ -147,4 +147,9 @@ public class TaskTransport implements Serializable {
      * 任务创建时间
      */
     private LocalDateTime createTime;
+
+    /**
+     * 任务更新时间
+     */
+    private LocalDateTime updateTime;
 }

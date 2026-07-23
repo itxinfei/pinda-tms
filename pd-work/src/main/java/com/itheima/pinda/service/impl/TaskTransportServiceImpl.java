@@ -5,9 +5,11 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.itheima.pinda.DTO.OrderDTO;
 import com.itheima.pinda.DTO.TaskTransportDTO;
 import com.itheima.pinda.DTO.TransportOrderDTO;
 import com.itheima.pinda.common.CustomIdGenerator;
+import com.itheima.pinda.common.context.RequestContext;
 import com.itheima.pinda.entity.TaskTransport;
 import com.itheima.pinda.entity.TransportOrderTask;
 import com.itheima.pinda.enums.OrderStatus;
@@ -21,6 +23,7 @@ import com.itheima.pinda.feign.TransportOrderFeign;
 import com.itheima.pinda.mapper.TaskTransportMapper;
 import com.itheima.pinda.service.ITaskTransportService;
 import com.itheima.pinda.service.ITransportOrderTaskService;
+import com.itheima.pinda.service.state.IStatusTransitionHistoryService;
 import com.itheima.pinda.state.StateTransitionValidator;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
@@ -58,6 +61,9 @@ public class TaskTransportServiceImpl extends
 
     @Autowired
     private StateTransitionValidator stateTransitionValidator;
+
+    @Autowired
+    private IStatusTransitionHistoryService statusTransitionHistoryService;
 
     @Override
     public TaskTransport saveTaskTransport(TaskTransport taskTransport) {
@@ -118,7 +124,7 @@ public class TaskTransportServiceImpl extends
         }
 
         // 状态流转校验
-        Integer targetStatus = TransportTaskStatus.IN_PROGRESS.getCode();
+        Integer targetStatus = TransportTaskStatus.PROCESSING.getCode();
         if (!stateTransitionValidator.validateTransportTaskTransition(taskTransport.getStatus(), targetStatus)) {
             log.error("运输任务[{}]状态流转非法：当前状态[{}]不能流转到[{}]",
                 id, taskTransport.getStatus(), targetStatus);
@@ -133,6 +139,13 @@ public class TaskTransportServiceImpl extends
                 .set(TaskTransport::getActualDepartureTime, LocalDateTime.now())
                 .set(TaskTransport::getUpdateTime, LocalDateTime.now());
         boolean result = update(wrapper);
+        if (result) {
+            statusTransitionHistoryService.recordTransition(
+                3, id, id,
+                taskTransport.getStatus(), targetStatus,
+                RequestContext.getUserId(), "司机", 3, "发车确认"
+            );
+        }
         log.info("运输任务[{}]发车确认结果: {}", id, result ? "成功" : "失败");
         return result;
     }
@@ -154,7 +167,7 @@ public class TaskTransportServiceImpl extends
         }
 
         // 状态流转校验
-        Integer targetStatus = TransportTaskStatus.WAITING_CONFIRM.getCode();
+        Integer targetStatus = TransportTaskStatus.CONFIRM.getCode();
         if (!stateTransitionValidator.validateTransportTaskTransition(taskTransport.getStatus(), targetStatus)) {
             log.error("运输任务[{}]状态流转非法：当前状态[{}]不能流转到[{}]",
                 id, taskTransport.getStatus(), targetStatus);
@@ -164,11 +177,18 @@ public class TaskTransportServiceImpl extends
         // 到达确认：状态从进行中(2)→待确认(3)
         LambdaUpdateWrapper<TaskTransport> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(TaskTransport::getId, id)
-                .eq(TaskTransport::getStatus, TransportTaskStatus.IN_PROGRESS.getCode())
+                .eq(TaskTransport::getStatus, TransportTaskStatus.PROCESSING.getCode())
                 .set(TaskTransport::getStatus, targetStatus)
                 .set(TaskTransport::getActualArrivalTime, LocalDateTime.now())
                 .set(TaskTransport::getUpdateTime, LocalDateTime.now());
         boolean result = update(wrapper);
+        if (result) {
+            statusTransitionHistoryService.recordTransition(
+                3, id, id,
+                taskTransport.getStatus(), targetStatus,
+                RequestContext.getUserId(), "司机", 3, "到达确认"
+            );
+        }
         log.info("运输任务[{}]到达确认结果: {}", id, result ? "成功" : "失败");
         return result;
     }
@@ -200,11 +220,18 @@ public class TaskTransportServiceImpl extends
         // 交付确认：状态从待确认(3)→已完成(4)
         LambdaUpdateWrapper<TaskTransport> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(TaskTransport::getId, id)
-                .eq(TaskTransport::getStatus, TransportTaskStatus.WAITING_CONFIRM.getCode())
+                .eq(TaskTransport::getStatus, TransportTaskStatus.CONFIRM.getCode())
                 .set(TaskTransport::getStatus, targetStatus)
                 .set(TaskTransport::getActualDeliveryTime, LocalDateTime.now())
                 .set(TaskTransport::getUpdateTime, LocalDateTime.now());
         boolean result = update(wrapper);
+        if (result) {
+            statusTransitionHistoryService.recordTransition(
+                3, id, id,
+                taskTransport.getStatus(), targetStatus,
+                RequestContext.getUserId(), "司机", 3, "交付确认"
+            );
+        }
         log.info("运输任务[{}]交付确认结果: {}", id, result ? "成功" : "失败");
 
         // 如果交付成功，触发状态同步
@@ -269,23 +296,31 @@ public class TaskTransportServiceImpl extends
                 log.info("更新运单[{}]状态为: 到达终端网点({})", transportOrderId, TransportOrderStatus.ARRIVED_END.getCode());
             });
 
-            // 6. 更新订单状态为已签收
-            // 注意：需要通过运单查询关联的订单ID，然后更新订单状态
-            // 这里需要确认：一个运输任务下的运单是否都属于同一个订单？
-            // 还是需要遍历每个运单，找到对应的订单并更新
-            // TODO: 确认业务逻辑后完善订单状态更新
-            // 目前方案：先查询第一个运单对应的订单，然后更新
-            if (!transportOrderIds.isEmpty()) {
-                TransportOrderDTO firstTransportOrder = transportOrderFeign.getById(transportOrderIds.get(0));
-                if (firstTransportOrder != null && StringUtils.isNotBlank(firstTransportOrder.getOrderId())) {
-                    OrderDTO orderDTO = new OrderDTO();
-                    orderDTO.setStatus(OrderStatus.RECEIVED.getCode());
-                    orderFeign.updateById(firstTransportOrder.getOrderId(), orderDTO);
-                    log.info("更新订单[{}]状态为已签收({})", firstTransportOrder.getOrderId(), OrderStatus.RECEIVED.getCode());
+            // 6. 批量更新所有关联订单状态为已签收
+            // 一个运输任务可能关联多个运单，每个运单对应不同订单，需全部更新
+            int successCount = 0;
+            int failCount = 0;
+            for (String transportOrderId : transportOrderIds) {
+                TransportOrderDTO transportOrder = transportOrderFeign.findById(transportOrderId);
+                if (transportOrder != null && StringUtils.isNotBlank(transportOrder.getOrderId())) {
+                    try {
+                        OrderDTO orderDTO = new OrderDTO();
+                        orderDTO.setId(transportOrder.getOrderId());
+                        orderDTO.setStatus(OrderStatus.RECEIVED.getCode());
+                        orderFeign.updateById(transportOrder.getOrderId(), orderDTO);
+                        log.info("更新订单[{}]状态为已签收({}), 关联运单[{}]",
+                            transportOrder.getOrderId(), OrderStatus.RECEIVED.getCode(), transportOrderId);
+                        successCount++;
+                    } catch (Exception e) {
+                        log.error("更新订单[{}]状态失败", transportOrder.getOrderId(), e);
+                        failCount++;
+                    }
+                } else {
+                    log.warn("运单[{}]未关联有效订单，跳过状态更新", transportOrderId);
+                    failCount++;
                 }
             }
-
-            log.info("运输任务[{}]状态同步完成，成功更新{}个运单", id, transportOrderIds.size());
+            log.info("运输任务[{}]订单状态同步完成，成功:{}, 失败:{}", id, successCount, failCount);
             return true;
 
         } catch (Exception e) {
