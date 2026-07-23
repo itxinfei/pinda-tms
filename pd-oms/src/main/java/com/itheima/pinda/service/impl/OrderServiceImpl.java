@@ -163,6 +163,8 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
             log.error("[订单价格计算] Drools规则引擎未初始化，无法计算订单价格");
             return null;
         }
+        //修改点：修复提前 return i 导致结果组装逻辑不可达、且返回值类型错误（应为 Map）的问题
+        AddressCheckResult addressCheckResult = new AddressCheckResult();
         KieSession session = null;
         try {
             session = container.newKieSession();
@@ -178,12 +180,10 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
             //将对象加入到工作内存
             session.insert(addressRule);
 
-            AddressCheckResult addressCheckResult = new AddressCheckResult();
             session.insert(addressCheckResult);
 
             int i = session.fireAllRules();
             log.info("触发了{}条规则", i);
-            return i;
         } finally {
             if (session != null) {
                 session.destroy();
