@@ -63,31 +63,24 @@ public class OrderEventListener {
         log.info("[事件监听] 订单确认事件触发: orderId={}, needPreSchedule={}",
             event.getOrderId(), event.isNeedPreSchedule());
 
-        try {
-            // 1. 记录订单确认日志
-            log.info("[事件处理] 订单[{}]已确认，客户ID: {}，金额: {}",
-                event.getOrderId(),
-                event.getMemberId(),
-                event.getAmount());
+        // 1. 记录订单确认日志
+        log.info("[事件处理] 订单[{}]已确认，客户ID: {}，金额: {}",
+            event.getOrderId(),
+            event.getMemberId(),
+            event.getAmount());
 
-            // 2. TODO: 发送短信通知客户
-            // smsService.sendOrderConfirmation(event.getOrderId());
+        // 2. TODO: 发送短信通知客户
+        // smsService.sendOrderConfirmation(event.getOrderId());
 
-            // 3. TODO: 推送消息到消息队列，供其他服务消费
-            // eventPublisher.publishEvent(new OrderMessageEvent(this, event.getOrderId()));
+        // 3. TODO: 推送消息到消息队列，供其他服务消费
+        // eventPublisher.publishEvent(new OrderMessageEvent(this, event.getOrderId()));
 
-            // 4. TODO: 触发预调度计算（如果需要）
-            // if (event.isNeedPreSchedule()) {
-            //     dispatchService.preSchedule(event.getOrderId());
-            // }
+        // 4. TODO: 触发预调度计算（如果需要）
+        // if (event.isNeedPreSchedule()) {
+        //     dispatchService.preSchedule(event.getOrderId());
+        // }
 
-            log.info("[事件处理] 订单确认事件处理完成: orderId={}", event.getOrderId());
-
-        } catch (Exception e) {
-            log.error("[事件处理] 订单确认事件处理失败: orderId=" + event.getOrderId(), e);
-            // 注意: 这里不抛出异常，避免影响主流程
-            // 失败的事件可以通过日志排查，或者后续添加重试机制
-        }
+        log.info("[事件处理] 订单确认事件处理完成: orderId={}", event.getOrderId());
     }
 
     /**
@@ -107,30 +100,24 @@ public class OrderEventListener {
         log.info("[事件监听] 揽收完成事件触发: orderId={}, transportOrderId={}, courierId={}",
             event.getOrderId(), event.getTransportOrderId(), event.getCourierId());
 
-        try {
-            // 1. 记录揽收完成日志
-            log.info("[事件处理] 订单[{}]已揽收，运单[{}]，快递员[{}]",
-                event.getOrderId(), event.getTransportOrderId(), event.getCourierId());
+        // 1. 记录揽收完成日志
+        log.info("[事件处理] 订单[{}]已揽收，运单[{}]，快递员[{}]",
+            event.getOrderId(), event.getTransportOrderId(), event.getCourierId());
 
-            // 2. TODO: 触发智能调度(执行调度)
-            // 注意: P0优化中，揽收时已更新运单状态为"已装车"
-            // 如果需要立即触发调度，可以在这里调用:
-            // if (event.isNeedSchedule()) {
-            //     dispatchService.executeSchedule(event.getOrderId());
-            // }
+        // 2. TODO: 触发智能调度(执行调度)
+        // 注意: P0优化中，揽收时已更新运单状态为"已装车"
+        // 如果需要立即触发调度，可以在这里调用:
+        // if (event.isNeedSchedule()) {
+        //     dispatchService.executeSchedule(event.getOrderId());
+        // }
 
-            // 3. TODO: 发送短信通知客户
-            // smsService.sendPickupNotification(event.getOrderId());
+        // 3. TODO: 发送短信通知客户
+        // smsService.sendPickupNotification(event.getOrderId());
 
-            // 4. TODO: 推送消息到消息队列
-            // eventPublisher.publishEvent(new PickupMessageEvent(this, event.getOrderId()));
+        // 4. TODO: 推送消息到消息队列
+        // eventPublisher.publishEvent(new PickupMessageEvent(this, event.getOrderId()));
 
-            log.info("[事件处理] 揽收完成事件处理完成: orderId={}", event.getOrderId());
-
-        } catch (Exception e) {
-            log.error("[事件处理] 揽收完成事件处理失败: orderId=" + event.getOrderId(), e);
-            // 不抛出异常，避免影响主流程
-        }
+        log.info("[事件处理] 揽收完成事件处理完成: orderId={}", event.getOrderId());
     }
 
     /**
@@ -151,46 +138,40 @@ public class OrderEventListener {
         log.info("[事件监听] 订单交付事件触发: orderId={}, signed={}, courierId={}",
             event.getOrderId(), event.isSigned(), event.getCourierId());
 
-        try {
-            // 1. 更新订单状态
-            // 注意: P0优化中，CourierController.delivered()已同步更新订单状态
-            // 这里主要处理额外的业务逻辑
-            log.info("[事件处理] 订单[{}]已交付，签收状态: {}, 备注: {}",
-                event.getOrderId(),
-                event.isSigned() ? "已签收" : "拒收",
-                event.getSignRemark());
+        // 1. 更新订单状态
+        // 注意: P0优化中，CourierController.delivered()已同步更新订单状态
+        // 这里主要处理额外的业务逻辑
+        log.info("[事件处理] 订单[{}]已交付，签收状态: {}, 备注: {}",
+            event.getOrderId(),
+            event.isSigned() ? "已签收" : "拒收",
+            event.getSignRemark());
 
-            // 2. TODO: 更新运单状态
-            // if (StringUtils.isNotBlank(event.getTransportOrderId())) {
-            //     TransportOrderDTO update = new TransportOrderDTO();
-            //     update.setId(event.getTransportOrderId());
-            //     update.setStatus(event.isSigned() ?
-            //         TransportOrderStatus.RECEIVED.getCode() :
-            //         TransportOrderStatus.REJECTED.getCode());
-            //     transportOrderFeign.updateById(update);
-            // }
+        // 2. TODO: 更新运单状态
+        // if (StringUtils.isNotBlank(event.getTransportOrderId())) {
+        //     TransportOrderDTO update = new TransportOrderDTO();
+        //     update.setId(event.getTransportOrderId());
+        //     update.setStatus(event.isSigned() ?
+        //         TransportOrderStatus.RECEIVED.getCode() :
+        //         TransportOrderStatus.REJECTED.getCode());
+        //     transportOrderFeign.updateById(update);
+        // }
 
-            // 3. TODO: 触发结算流程
-            // if (event.isNeedSettlement()) {
-            //     settlementService.settle(event.getOrderId());
-            // }
+        // 3. TODO: 触发结算流程
+        // if (event.isNeedSettlement()) {
+        //     settlementService.settle(event.getOrderId());
+        // }
 
-            // 4. TODO: 发送通知
-            // if (event.isSigned()) {
-            //     smsService.sendDeliveryNotification(event.getOrderId());
-            // } else {
-            //     smsService.sendRejectionNotification(event.getOrderId(), event.getSignRemark());
-            // }
+        // 4. TODO: 发送通知
+        // if (event.isSigned()) {
+        //     smsService.sendDeliveryNotification(event.getOrderId());
+        // } else {
+        //     smsService.sendRejectionNotification(event.getOrderId(), event.getSignRemark());
+        // }
 
-            // 5. TODO: 推送消息到消息队列
-            // eventPublisher.publishEvent(new DeliveryMessageEvent(this, event.getOrderId()));
+        // 5. TODO: 推送消息到消息队列
+        // eventPublisher.publishEvent(new DeliveryMessageEvent(this, event.getOrderId()));
 
-            log.info("[事件处理] 订单交付事件处理完成: orderId={}", event.getOrderId());
-
-        } catch (Exception e) {
-            log.error("[事件处理] 订单交付事件处理失败: orderId=" + event.getOrderId(), e);
-            // 不抛出异常，避免影响主流程
-        }
+        log.info("[事件处理] 订单交付事件处理完成: orderId={}", event.getOrderId());
     }
 
     /**

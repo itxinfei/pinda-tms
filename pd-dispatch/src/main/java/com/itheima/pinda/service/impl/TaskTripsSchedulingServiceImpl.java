@@ -92,11 +92,12 @@ public class TaskTripsSchedulingServiceImpl implements ITaskTripsSchedulingServi
             }
             log.info("最优车次:{}", tripsTruckDriverDTO);
 
-            //记录 订单分类id 关联车次 车辆 司机
-            relation(tripsTruckDriverDTOS.get(0), orderLineSimpleDTO.getOrderClassifyGroupDTOS());
-            log.info("记录车次信息");
+            //记录 订单分类id 关联车次 车辆 司机（使用最优车次）
+            relation(tripsTruckDriverDTO, orderLineSimpleDTO.getOrderClassifyGroupDTOS());
+            log.info("记录车次信息: tripsId={}, truckId={}, driverId={}",
+                tripsTruckDriverDTO.getTripsId(), tripsTruckDriverDTO.getTruckId(), tripsTruckDriverDTO.getDriverId());
 
-            orderLineTripsTruckDriverDTOS.add(new OrderLineTripsTruckDriverDTO(tripsTruckDriverDTOS.get(0), cacheLineDetailEntity.getTransportLineId(), orderLineSimpleDTO.getOrderClassifyGroupDTOS()));
+            orderLineTripsTruckDriverDTOS.add(new OrderLineTripsTruckDriverDTO(tripsTruckDriverDTO, cacheLineDetailEntity.getTransportLineId(), orderLineSimpleDTO.getOrderClassifyGroupDTOS()));
 
 
         });

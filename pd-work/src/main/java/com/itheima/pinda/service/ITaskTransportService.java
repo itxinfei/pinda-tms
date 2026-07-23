@@ -22,6 +22,25 @@ public interface ITaskTransportService extends IService<TaskTransport> {
     TaskTransport saveTaskTransport(TaskTransport taskTransport);
 
     /**
+     * 保存运输任务并关联运单（事务保护，保证任务和关联关系原子写入）
+     *
+     * @param taskTransport 运输任务信息
+     * @param transportOrderIds 关联的运单ID列表
+     * @return 运输任务信息
+     */
+    TaskTransport saveWithRelations(TaskTransport taskTransport, List<String> transportOrderIds);
+
+    /**
+     * 更新运输任务并重新关联运单（事务保护，保证更新和关联关系原子写入）
+     *
+     * @param id 运输任务ID
+     * @param dto 运输任务DTO
+     * @param transportOrderIds 关联的运单ID列表
+     * @return 是否成功
+     */
+    boolean updateWithRelations(String id, TaskTransportDTO dto, List<String> transportOrderIds);
+
+    /**
      * 获取运输任务分页数据
      *
      * @param page     页码

@@ -419,12 +419,21 @@ public class CourierController {
         transportOrderFeign.updateById(transportOrderDto.getId(), transportOrderDtoUpdate);
         log.info("妥投 获取运单信息：{} ,{}", transportOrderDto.getId(), transportOrderDtoUpdate);
         String orderId = transportOrderDto.getOrderId();
+        if (StringUtils.isBlank(orderId)) {
+            return Result.error(400, "运单未关联订单");
+        }
         OrderDTO orderDto = orderFeign.findById(orderId);
+        if (ObjectUtils.isEmpty(orderDto)) {
+            return Result.error(400, "订单不存在");
+        }
         OrderDTO orderDTOUpdate = new OrderDTO();
         orderDTOUpdate.setStatus(state ? OrderStatus.RECEIVED.getCode() : OrderStatus.REJECTION.getCode());
         orderFeign.updateById(orderDto.getId(), orderDTOUpdate);
         log.info("妥投 修改订单状态：{} ,{}", orderDto.getId(), orderDTOUpdate);
         TaskPickupDispatchDTO pickupDispatchTaskDto = pickupDispatchTaskFeign.findByOrderId(orderId, PickupDispatchTaskType.DISPATCH.getCode());
+        if (ObjectUtils.isEmpty(pickupDispatchTaskDto)) {
+            return Result.error(400, "派送任务不存在");
+        }
         TaskPickupDispatchDTO pickupDispatchTaskDtoUpdate = new TaskPickupDispatchDTO();
         pickupDispatchTaskDtoUpdate.setStatus(PickupDispatchTaskStatus.COMPLETED.getCode());
         pickupDispatchTaskDtoUpdate.setSignStatus(state ? PickupDispatchTaskSignStatus.RECEIVED.getCode() : PickupDispatchTaskSignStatus.REJECTION.getCode());
