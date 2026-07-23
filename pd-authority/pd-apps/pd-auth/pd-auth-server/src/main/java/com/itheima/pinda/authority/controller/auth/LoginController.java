@@ -8,6 +8,7 @@ import com.itheima.pinda.authority.biz.service.auth.ValidateCodeService;
 import com.itheima.pinda.authority.biz.service.auth.impl.AuthManager;
 import com.itheima.pinda.base.BaseController;
 import com.itheima.pinda.base.R;
+import com.itheima.pinda.exception.code.ExceptionCode;
 import com.itheima.pinda.exception.BizException;
 import com.wf.captcha.base.Captcha;
 import io.swagger.annotations.Api;
