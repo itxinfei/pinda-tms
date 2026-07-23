@@ -65,6 +65,14 @@ public class TaskTransportServiceImpl extends
     @Autowired
     private IStatusTransitionHistoryService statusTransitionHistoryService;
 
+    /**
+     * 获取当前操作人ID，HTTP上下文为空时返回 "system"
+     */
+    private String getCurrentOperatorId() {
+        String userId = RequestContext.getUserId();
+        return userId != null ? userId : "system";
+    }
+
     @Override
     public TaskTransport saveTaskTransport(TaskTransport taskTransport) {
         taskTransport.setId(idGenerator.nextId(taskTransport) + "");
@@ -140,10 +148,11 @@ public class TaskTransportServiceImpl extends
                 .set(TaskTransport::getUpdateTime, LocalDateTime.now());
         boolean result = update(wrapper);
         if (result) {
+            String operatorId = getCurrentOperatorId();
             statusTransitionHistoryService.recordTransition(
                 3, id, id,
                 taskTransport.getStatus(), targetStatus,
-                RequestContext.getUserId(), "司机", 3, "发车确认"
+                operatorId, operatorId, 3, "发车确认"
             );
         }
         log.info("运输任务[{}]发车确认结果: {}", id, result ? "成功" : "失败");
@@ -183,10 +192,11 @@ public class TaskTransportServiceImpl extends
                 .set(TaskTransport::getUpdateTime, LocalDateTime.now());
         boolean result = update(wrapper);
         if (result) {
+            String operatorId = getCurrentOperatorId();
             statusTransitionHistoryService.recordTransition(
                 3, id, id,
                 taskTransport.getStatus(), targetStatus,
-                RequestContext.getUserId(), "司机", 3, "到达确认"
+                operatorId, operatorId, 3, "到达确认"
             );
         }
         log.info("运输任务[{}]到达确认结果: {}", id, result ? "成功" : "失败");
@@ -226,10 +236,11 @@ public class TaskTransportServiceImpl extends
                 .set(TaskTransport::getUpdateTime, LocalDateTime.now());
         boolean result = update(wrapper);
         if (result) {
+            String operatorId = getCurrentOperatorId();
             statusTransitionHistoryService.recordTransition(
                 3, id, id,
                 taskTransport.getStatus(), targetStatus,
-                RequestContext.getUserId(), "司机", 3, "交付确认"
+                operatorId, operatorId, 3, "交付确认"
             );
         }
         log.info("运输任务[{}]交付确认结果: {}", id, result ? "成功" : "失败");
