@@ -183,32 +183,18 @@ import attachmentApi from '@/api/Attachment.js'
 import { renderSize } from '@/utils/utils'
 import { onlinePreview } from '@/settings'
 
+import crud from '@/mixins/crud'
 export default {
+  mixins: [crud],
   name: 'AttachmentManage',
   components: { Pagination, AttachmentEdit },
   filters: {},
   data() {
     return {
+      apiModule: attachmentApi,
       dialogVisible: false,
       dialogImageUrl: '',
-      dialog: {
-        isVisible: false,
-        type: 'add'
-      },
-      tableKey: 0,
-      queryParams: {},
-      sort: {},
-      selection: [],
       // 以下已修改
-      loading: false,
-      tableData: {
-        records: [],
-        total: 0
-      },
-      pagination: {
-        size: 10,
-        current: 1
-      }
     }
   },
   computed: {},
@@ -233,29 +219,9 @@ export default {
     editSuccess() {
       this.search()
     },
-    onSelectChange(selection) {
-      this.selection = selection
-    },
-    search() {
-      this.fetch({
-        ...this.queryParams,
-        ...this.sort
-      })
-    },
-    reset() {
-      this.queryParams = {}
-      this.sort = {}
-      this.$refs.table.clearSort()
-      this.$refs.table.clearFilter()
-      this.search()
-    },
     singleDownload(row) {
       this.$refs.table.toggleRowSelection(row, true)
       this.batchDownload()
-    },
-    singleDelete(row) {
-      this.$refs.table.toggleRowSelection(row, true)
-      this.batchDelete()
     },
     batchDownload() {
       if (!this.selection.length) {
@@ -280,33 +246,6 @@ export default {
         .catch(() => {
           this.clearSelections()
         })
-    },
-    batchDelete() {
-      if (!this.selection.length) {
-        this.$message({
-          message: this.$t('tips.noDataSelected'),
-          type: 'warning'
-        })
-        return
-      }
-      this.$confirm(this.$t('tips.confirmDelete'), this.$t('common.tips'), {
-        confirmButtonText: this.$t('common.confirm'),
-        cancelButtonText: this.$t('common.cancel'),
-        type: 'warning'
-      })
-        .then(() => {
-          const ids = []
-          this.selection.forEach(u => {
-            ids.push(u.id)
-          })
-          this.delete(ids)
-        })
-        .catch(() => {
-          this.clearSelections()
-        })
-    },
-    clearSelections() {
-      this.$refs.table.clearSelection()
     },
     download(ids) {
       attachmentApi.download({ ids: ids }).then(response => {
@@ -353,18 +292,6 @@ export default {
         this.clearSelections()
       })
     },
-    delete(ids) {
-      attachmentApi.delete({ ids: ids }).then(response => {
-        const res = response.data
-        if (res.isSuccess) {
-          this.$message({
-            message: this.$t('tips.deleteSuccess'),
-            type: 'success'
-          })
-        }
-        this.search()
-      })
-    },
     onView(row) {
       if (row.url) {
         window.open(onlinePreview + encodeURIComponent(row.url))
@@ -380,32 +307,6 @@ export default {
       this.dialog.type = 'edit'
       this.dialog.isVisible = true
     },
-    fetch(params = {}) {
-      this.loading = true
-      params.size = this.pagination.size
-      params.current = this.pagination.current
-      if (this.queryParams.timeRange) {
-        params.startCreateTime = this.queryParams.timeRange[0]
-        params.endCreateTime = this.queryParams.timeRange[1]
-      }
-      attachmentApi
-        .page(params)
-        .then(response => {
-          const res = response.data
-          this.loading = false
-          if (res.isSuccess) {
-            this.tableData = res.data
-          }
-        })
-        .catch(() => {
-          this.loading = false
-        })
-    },
-    sortChange(val) {
-      this.sort.field = val.prop
-      this.sort.order = val.order
-      this.search()
-    }
   }
 }
 </script>

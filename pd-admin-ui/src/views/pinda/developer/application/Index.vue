@@ -185,26 +185,15 @@ import Pagination from '@/components/Pagination'
 import ApplicationEdit from './Edit'
 import applicationApi from '@/api/Application.js'
 
+import crud from '@/mixins/crud'
 export default {
+  mixins: [crud],
   name: 'Application',
   components: { Pagination, ApplicationEdit },
   filters: {},
   data() {
     return {
-      dialog: {
-        isVisible: false,
-        type: 'add'
-      },
-      tableKey: 0,
-      loading: false,
-      queryParams: {},
-      sort: {},
-      selection: [],
-      tableData: {},
-      pagination: {
-        size: 10,
-        current: 1
-      }
+      apiModule: applicationApi,
     }
   },
   computed: {},
@@ -212,95 +201,9 @@ export default {
     this.fetch()
   },
   methods: {
-    onSelectChange(selection) {
-      this.selection = selection
-    },
     exportExcel() {},
 
-    fetch(params = {}) {
-      params.current = this.pagination.current
-      params.size = this.pagination.size
-      if (this.queryParams.timeRange) {
-        params.startCreateTime = this.queryParams.timeRange[0]
-        params.endCreateTime = this.queryParams.timeRange[1]
-      }
-      this.loading = true
 
-      applicationApi.page(params).then(response => {
-        const res = response.data
-        this.loading = false
-        this.tableData = res.data
-      })
-    },
-    singleDelete(row) {
-      this.$refs.table.toggleRowSelection(row, true)
-      this.batchDelete()
-    },
-    batchDelete() {
-      if (!this.selection.length) {
-        this.$message({
-          message: this.$t('tips.noDataSelected'),
-          type: 'warning'
-        })
-        return
-      }
-
-      const isPersist = this.selection.findIndex(item => item.isPersist)
-      if (isPersist > -1) {
-        this.$message({
-          message: '不能删除内置数据',
-          type: 'warning'
-        })
-        return
-      }
-
-      this.$confirm(this.$t('tips.confirmDelete'), this.$t('common.tips'), {
-        confirmButtonText: this.$t('common.confirm'),
-        cancelButtonText: this.$t('common.cancel'),
-        type: 'warning'
-      })
-        .then(() => {
-          const logIds = this.selection.map(item => item.id)
-          this.delete(logIds)
-        })
-        .catch(() => {
-          this.clearSelections()
-        })
-    },
-    clearSelections() {
-      this.$refs.table.clearSelection()
-    },
-    delete(logIds) {
-      applicationApi.delete({ ids: logIds }).then(response => {
-        const res = response.data
-        if (res.isSuccess) {
-          this.$message({
-            message: this.$t('tips.deleteSuccess'),
-            type: 'success'
-          })
-        }
-        this.search()
-      })
-    },
-    search() {
-      this.fetch({
-        ...this.queryParams,
-        ...this.sort
-      })
-    },
-    reset() {
-      this.queryParams = {}
-      this.sort = {}
-      this.$refs.table.clearSort()
-      this.$refs.table.clearFilter()
-      this.search()
-    },
-
-    sortChange(val) {
-      this.sort.field = val.prop
-      this.sort.order = val.order
-      this.search()
-    },
     filterChange(filters) {
       for (const key in filters) {
         this.queryParams[key] = filters[key][0]
@@ -338,6 +241,15 @@ export default {
       this.$refs.edit.setApplication(row)
       this.dialog.type = 'edit'
       this.dialog.isVisible = true
+    },
+    beforeDelete(selection) {
+      const isPersist = selection.findIndex(item => item.isPersist)
+      if (isPersist > -1) {
+        this.$message({ message: '不能删除内置数据', type: 'warning' })
+        this.clearSelections()
+        return true
+      }
+      return false
     }
   }
 }
