@@ -5,6 +5,13 @@ import { getToken, getRefreshToken, getExpireTime } from '@/utils/auth'
 import NProgress from 'nprogress'
 import 'nprogress/nprogress.css'
 
+// 修改点：OAuth2 客户端凭据（client_id:client_secret）改为从环境变量读取，禁止硬编码明文
+function getBasicAuth () {
+  const clientId = process.env.VUE_APP_CLIENT_ID || ''
+  const clientSecret = process.env.VUE_APP_CLIENT_SECRET || ''
+  return 'Basic ' + btoa(clientId + ':' + clientSecret)
+}
+
 const service = axios.create({
   baseURL: process.env.VUE_APP_BASE_API,
   timeout: 10000,
@@ -100,7 +107,7 @@ const request = {
         return tansParams(params)
       }],
       headers: {
-        'Authorization': 'Basic ZmViczoxMjM0NTY='
+        'Authorization': getBasicAuth()
       }
     })
   },
@@ -111,7 +118,7 @@ const request = {
         return tansParams(params)
       }],
       headers: {
-        'Authorization': 'Basic ZmViczoxMjM0NTY='
+        'Authorization': getBasicAuth()
       }
     })
   },

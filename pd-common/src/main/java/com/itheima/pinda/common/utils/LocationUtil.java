@@ -11,7 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class LocationUtil {
-    private static final String AK = "aeshaTGoO6t7jzO7UeMKfpikF1Q0TLK4";
+    // 百度地图AK通过系统属性配置，禁止硬编码密钥
+    private static final String AK = System.getProperty("baidu.map.ak", "");
     public static final String KEY_LAT = "lat";
     public static final String KEY_LNG = "lng";
     /**
