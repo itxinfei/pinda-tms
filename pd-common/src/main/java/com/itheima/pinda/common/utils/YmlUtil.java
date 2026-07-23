@@ -6,6 +6,9 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class YmlUtil {
     /**
      * key:文件名索引
@@ -59,7 +62,7 @@ public class YmlUtil {
     }
 
     public static void main(String[] args) throws Exception {
-        System.out.println((getValue("netty.port")));
+        log.debug("netty.port: {}", getValue("netty.port"));
     }
 
 }

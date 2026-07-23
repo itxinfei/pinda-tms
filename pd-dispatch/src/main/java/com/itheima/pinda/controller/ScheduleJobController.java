@@ -36,7 +36,7 @@ import java.util.Map;
 @RequestMapping("/schedule")
 @Api(tags = "定时任务")
 public class ScheduleJobController {
-    private static final List<Integer> ORG_TYPE = ImmutableList.of(OrgType.BUSINESS_HALL.getType(), OrgType.TOP_TRANSFER_CENTER.getType(), OrgType.TOP_TRANSFER_CENTER.getType()).asList();
+    private static final List<Integer> ORG_TYPE = ImmutableList.of(OrgType.BUSINESS_HALL.getType(), OrgType.TOP_TRANSFER_CENTER.getType()).asList();
 
     @Autowired
     private IScheduleJobService scheduleJobService;
@@ -96,9 +96,13 @@ public class ScheduleJobController {
     public Result dispatch(@RequestBody ScheduleJobDTO dto) {
 
         String businessId = dto.getBusinessId();
-
+        if (StringUtils.isBlank(businessId)) {
+            return Result.error(400, "机构ID不能为空");
+        }
         R<Org> orgR = orgApi.get(Long.valueOf(businessId));
-
+        if (orgR == null || !orgR.getIsSuccess() || orgR.getData() == null) {
+            return Result.error(404, "机构不存在");
+        }
         Integer orgType = orgR.getData().getOrgType();
         if (!ORG_TYPE.contains(orgType)) {
             return Result.error(400, "无法给转运中心以上的机构增加调度任务");

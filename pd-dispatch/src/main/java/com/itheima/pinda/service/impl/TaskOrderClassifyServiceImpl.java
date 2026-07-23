@@ -133,7 +133,7 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
                 log.info("查询订单分组id:{}", orderClassifyIds);
                 if (CollectionUtils.isEmpty(orderClassifyIds)) {
                     log.error("中转订单异常:{}", orderIds);
-                    return;
+                    continue;
                 }
                 item.setId(orderClassifyIds.iterator().next());
             }

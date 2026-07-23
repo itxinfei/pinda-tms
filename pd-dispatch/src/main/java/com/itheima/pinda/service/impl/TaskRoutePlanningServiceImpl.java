@@ -117,8 +117,12 @@ public class TaskRoutePlanningServiceImpl implements ITaskRoutePlanningService {
 
         List<OrderLineSimpleDTO> orderLineSimpleDTOS = new ArrayList<>();
         cacheLineDetailEntityMap.forEach((transportLineId, cacheLineDetail) -> {
-            cacheLineDetail.setId(null);
-            orderLineSimpleDTOS.add(new OrderLineSimpleDTO(cacheLineDetail, orderClassifyGroupDTOMap.get(transportLineId)));
+            CacheLineDetailEntity copy = new CacheLineDetailEntity();
+            copy.setStartAgencyId(cacheLineDetail.getStartAgencyId());
+            copy.setEndAgencyId(cacheLineDetail.getEndAgencyId());
+            copy.setTransportLineId(cacheLineDetail.getTransportLineId());
+            copy.setSort(cacheLineDetail.getSort());
+            orderLineSimpleDTOS.add(new OrderLineSimpleDTO(copy, orderClassifyGroupDTOMap.get(transportLineId)));
         });
         return orderLineSimpleDTOS;
     }
@@ -174,14 +178,15 @@ public class TaskRoutePlanningServiceImpl implements ITaskRoutePlanningService {
         if (cacheLineDtos.size() == 1) {
             return map.get(cacheLineDtos.get(0)).get(0);
         }
-        if (ScheduleParams.DISTANCE.getValue().equals(params))
+        if (ScheduleParams.DISTANCE.getValue().equals(params)) {
             cacheLineDtos.sort(Comparator.comparing(CacheLineEntity::getDistance));
-        if (ScheduleParams.COST.getValue().equals(params))
+        } else if (ScheduleParams.COST.getValue().equals(params)) {
             cacheLineDtos.sort(Comparator.comparing(CacheLineEntity::getCost));
-        if (ScheduleParams.ESTIMATEDTIME.getValue().equals(params))
+        } else if (ScheduleParams.ESTIMATEDTIME.getValue().equals(params)) {
             cacheLineDtos.sort(Comparator.comparing(CacheLineEntity::getEstimatedTime));
-        if (ScheduleParams.TRANSFER.getValue().equals(params))
+        } else if (ScheduleParams.TRANSFER.getValue().equals(params)) {
             cacheLineDtos.sort(Comparator.comparing(CacheLineEntity::getTransferCount));
+        }
 
         return map.get(cacheLineDtos.get(0)).get(0);
     }

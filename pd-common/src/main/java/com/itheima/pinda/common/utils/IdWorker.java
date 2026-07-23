@@ -4,6 +4,8 @@ import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * <p>名称：IdWorker.java</p>
  * <p>描述：分布式自增长ID</p>
@@ -22,6 +24,7 @@ import java.net.NetworkInterface;
  *
  * @author Polim
  */
+@Slf4j
 public class IdWorker {
     // 时间起始标记点，作为基准，一般取系统的最近时间（一旦确定不能变动）
     private final static long twepoch = System.currentTimeMillis();
@@ -154,7 +157,7 @@ public class IdWorker {
                 id = id % (maxDatacenterId + 1);
             }
         } catch (Exception e) {
-            System.out.println(" getDatacenterId: " + e.getMessage());
+            log.warn("getDatacenterId: {}", e.getMessage());
         }
         return id;
     }

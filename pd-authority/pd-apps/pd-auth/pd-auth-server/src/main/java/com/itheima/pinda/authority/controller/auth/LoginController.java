@@ -79,6 +79,10 @@ public class LoginController extends BaseController {
     @GetMapping(value = "/token")
     @Deprecated
     public R<LoginDTO> tokenTx(@RequestParam(value = "account") String account, @RequestParam(value = "password") String password) throws BizException {
+        // 生产环境禁止使用GET方式登录，防止凭证通过URL日志泄露
+        if ("prod".equalsIgnoreCase(System.getProperty("spring.profiles.active", ""))) {
+            return R.fail("生产环境不支持该登录方式，请使用POST /login");
+        }
         return this.authManager.login(account, password);
     }
 

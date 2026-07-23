@@ -255,6 +255,10 @@ public class CargoController {
 
         Map<String, TaskTransportDTO> transportTaskDTOMap = new HashMap<>();
         TaskTransportDTO transportTaskDTO = transportTaskFeign.findById(driverJob.getTaskTransportId());
+        if (transportTaskDTO == null) {
+            log.warn("运输任务不存在: taskTransportId={}", driverJob.getTaskTransportId());
+            return Result.error(500, "运输任务不存在");
+        }
         transportTaskDTOMap.put(transportTaskDTO.getId(), transportTaskDTO);
 
         //查询地址
@@ -289,7 +293,7 @@ public class CargoController {
             return agencyVo;
         }).collect(Collectors.toMap(AgencyVo::getId, vo -> vo));
 
-        CargoTranTaskDTO cargoTranTaskDTO = new CargoTranTaskDTO(driverJob, transportTaskDTOMap, agencyMap);
+        CargoTranTaskDTO cargoTranTaskDTO = new CargoTranTaskDTO(driverJobDTO, transportTaskDTOMap, agencyMap);
         return Result.ok().put("data", cargoTranTaskDTO);
     }
 
@@ -299,16 +303,22 @@ public class CargoController {
     @ResponseBody
     @GetMapping("detail")
     public Result detail(String id) {
-        DriverJobDTO driverJob = driverJobFeign.findById(id);
+        DriverJobDTO driverJobDTO = driverJobFeign.findById(id);
+        if (driverJobDTO == null) {
+            return Result.error(404, "司机作业单不存在");
+        }
 
         Map<String, TaskTransportDTO> transportTaskDTOMap = new HashMap<>();
-        TaskTransportDTO transportTaskDTO = transportTaskFeign.findById(driverJob.getTaskTransportId());
+        TaskTransportDTO transportTaskDTO = transportTaskFeign.findById(driverJobDTO.getTaskTransportId());
+        if (transportTaskDTO == null) {
+            return Result.error(404, "运输任务不存在");
+        }
         transportTaskDTOMap.put(transportTaskDTO.getId(), transportTaskDTO);
 
         //查询地址
         Set<String> agencySet = new HashSet<>();
-        agencySet.add(driverJob.getStartAgencyId());
-        agencySet.add(driverJob.getEndAgencyId());
+        agencySet.add(driverJobDTO.getStartAgencyId());
+        agencySet.add(driverJobDTO.getEndAgencyId());
         CompletableFuture<List<Org>> agencyListFuture = PdCompletableFuture.agencyListFuture(orgApi, null, agencySet, null);
         List<Org> agencyList = agencyListFuture.get();
 
@@ -337,11 +347,10 @@ public class CargoController {
             return agencyVo;
         }).collect(Collectors.toMap(AgencyVo::getId, vo -> vo));
 
-        CargoTranTaskDTO cargoTranTaskDTO = new CargoTranTaskDTO(driverJob, transportTaskDTOMap, agencyMap);
+        CargoTranTaskDTO cargoTranTaskDTO = new CargoTranTaskDTO(driverJobDTO, transportTaskDTOMap, agencyMap);
         return Result.ok().put("data", cargoTranTaskDTO);
     }
 
-    @SneakyThrows
     @ApiOperation(value = "获取货物明细(不分页)")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "id", value = "主键", required = true),
@@ -394,7 +403,7 @@ public class CargoController {
         // 校验是否有在途任务
         PageResponse<DriverJobDTO> result = driverJobFeign.findByPage(driverJobDTO);
         if (result != null && !CollectionUtils.isEmpty(result.getItems())) {
-            Result.error(ErrorCode.ONTHEWAY, "在途任务尚未结束，无法提货");
+            return Result.error(ErrorCode.ONTHEWAY, "在途任务尚未结束，无法提货");
         }
 
         DriverJobDTO driverJob = driverJobFeign.findById(taskTransportDTO.getId());

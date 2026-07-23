@@ -223,7 +223,7 @@ public class UserController extends BaseController {
     }
 
     @ApiOperation(value = "重置密码", notes = "重置密码")
-    @GetMapping("/reset")
+    @PostMapping("/reset")
     @SysLog("重置密码")
     public R<Boolean> resetTx(@RequestParam("ids[]") List<Long> ids) {
         userService.reset(ids);

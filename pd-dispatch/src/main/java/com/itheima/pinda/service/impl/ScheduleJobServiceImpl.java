@@ -146,7 +146,12 @@ public class ScheduleJobServiceImpl extends ServiceImpl<ScheduleJobMapper, Sched
     @Transactional(rollbackFor = Exception.class)
     public void run(String[] ids) {
         for (String id : ids) {
-            ScheduleUtils.run(scheduler, baseMapper.selectById(id));
+            ScheduleJobEntity scheduleJob = baseMapper.selectById(id);
+            if (scheduleJob == null) {
+                log.warn("定时任务不存在: {}", id);
+                continue;
+            }
+            ScheduleUtils.run(scheduler, scheduleJob);
         }
     }
 

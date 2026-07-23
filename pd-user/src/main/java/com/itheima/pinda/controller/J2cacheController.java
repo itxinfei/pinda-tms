@@ -7,7 +7,7 @@ import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.entity.AddressBook;
 import com.itheima.pinda.service.IAddressBookService;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.oschina.j2cache.CacheChannel;
 import net.oschina.j2cache.CacheObject;
 import org.apache.commons.lang3.StringUtils;
@@ -21,7 +21,7 @@ import java.util.Map;
 /**
  * 地址簿
  */
-@Log4j2
+@Slf4j
 @RestController
 @RequestMapping("cache")
 public class J2cacheController {
@@ -38,7 +38,7 @@ public class J2cacheController {
         AddressBook addressBook = new AddressBook();
         addressBook.setId(id);
         addressBook.setAddress("beijing");
-        System.out.println("查询数据库...");
+        log.debug("查询数据库...");
 
         return addressBook;
     }
@@ -56,7 +56,7 @@ public class J2cacheController {
         data.add("beijing");
         data.add("nanjing");
         data.add("shanghai");
-        System.out.println("查询数据库");
+        log.debug("查询数据库");
 
         return data;
     }
@@ -72,7 +72,7 @@ public class J2cacheController {
         //没有获取到缓存数据，需要从数据库中查询数据
         List<Map> data = new ArrayList<>();
         data.add(body);
-        System.out.println("查询数据库");
+        log.debug("查询数据库");
         return data;
     }
 
@@ -87,7 +87,7 @@ public class J2cacheController {
         //没有获取到缓存数据，需要从数据库中查询数据
         List<Map> data = new ArrayList<>();
         data.add(params);
-        System.out.println("查询数据库");
+        log.debug("查询数据库");
         return data;
     }
 
@@ -99,7 +99,7 @@ public class J2cacheController {
         data.add("beijing");
         data.add("nanjing");
         data.add("shanghai");
-        System.out.println("查询数据库");
+        log.debug("查询数据库");
         return data;
     }
 
@@ -111,7 +111,7 @@ public class J2cacheController {
     @CacheEvictor(value = {@Cache(region = "rx",key = "user", params = "id")})
     @GetMapping("/evict/{id}")
     public String evict(@PathVariable(name = "id") String id) {//key = user:123
-        System.out.println("删除数据库");
+        log.debug("删除数据库");
         return "evict success";
     }
 
@@ -123,7 +123,7 @@ public class J2cacheController {
     @CacheEvictor({@Cache(region = "rx",key = "users")})//key = users
     @GetMapping("/evict")
     public String evictAll() {
-        System.out.println("删除数据库");
+        log.debug("删除数据库");
         return "evict success";
     }
 }

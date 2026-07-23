@@ -40,10 +40,10 @@ public class TransportOrderTaskServiceImpl extends
         Page<TransportOrderTask> iPage = new Page(page, pageSize);
         LambdaQueryWrapper<TransportOrderTask> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         if (StringUtils.isNotEmpty(transportOrderId)) {
-            lambdaQueryWrapper.like(TransportOrderTask::getTransportOrderId, transportOrderId);
+            lambdaQueryWrapper.eq(TransportOrderTask::getTransportOrderId, transportOrderId);
         }
         if (StringUtils.isNotEmpty(transportTaskId)) {
-            lambdaQueryWrapper.like(TransportOrderTask::getTransportTaskId, transportTaskId);
+            lambdaQueryWrapper.eq(TransportOrderTask::getTransportTaskId, transportTaskId);
         }
         return page(iPage, lambdaQueryWrapper);
     }
@@ -52,10 +52,10 @@ public class TransportOrderTaskServiceImpl extends
     public List<TransportOrderTask> findAll(String transportOrderId, String transportTaskId) {
         LambdaQueryWrapper<TransportOrderTask> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         if (StringUtils.isNotEmpty(transportOrderId)) {
-            lambdaQueryWrapper.like(TransportOrderTask::getTransportOrderId, transportOrderId);
+            lambdaQueryWrapper.eq(TransportOrderTask::getTransportOrderId, transportOrderId);
         }
         if (StringUtils.isNotEmpty(transportTaskId)) {
-            lambdaQueryWrapper.like(TransportOrderTask::getTransportTaskId, transportTaskId);
+            lambdaQueryWrapper.eq(TransportOrderTask::getTransportTaskId, transportTaskId);
         }
         lambdaQueryWrapper.orderBy(true, true, TransportOrderTask::getId);
         return list(lambdaQueryWrapper);
@@ -65,16 +65,19 @@ public class TransportOrderTaskServiceImpl extends
     public Integer count(String transportOrderId, String transportTaskId) {
         LambdaQueryWrapper<TransportOrderTask> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         if (StringUtils.isNotEmpty(transportOrderId)) {
-            lambdaQueryWrapper.like(TransportOrderTask::getTransportOrderId, transportOrderId);
+            lambdaQueryWrapper.eq(TransportOrderTask::getTransportOrderId, transportOrderId);
         }
         if (StringUtils.isNotEmpty(transportTaskId)) {
-            lambdaQueryWrapper.like(TransportOrderTask::getTransportTaskId, transportTaskId);
+            lambdaQueryWrapper.eq(TransportOrderTask::getTransportTaskId, transportTaskId);
         }
         return count(lambdaQueryWrapper);
     }
 
     @Override
     public void del(String transportOrderId, String transportTaskId) {
+        if (StringUtils.isEmpty(transportOrderId) && StringUtils.isEmpty(transportTaskId)) {
+            throw new IllegalArgumentException("transportOrderId 和 transportTaskId 不能同时为空");
+        }
         boolean isDel = false;
         LambdaQueryWrapper<TransportOrderTask> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         if (StringUtils.isNotEmpty(transportOrderId)) {

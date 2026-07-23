@@ -6,6 +6,7 @@ import com.itheima.pinda.authority.api.UserApi;
 import com.itheima.pinda.authority.entity.auth.User;
 import com.itheima.pinda.base.R;
 import com.itheima.pinda.common.utils.PageResponse;
+import com.itheima.pinda.common.context.RequestContext;
 import com.itheima.pinda.util.BeanUtil;
 import com.itheima.pinda.vo.base.userCenter.MessageVo;
 import com.itheima.pinda.vo.base.userCenter.SysUserVo;
@@ -41,7 +42,10 @@ public class UserCenterController {
     @GetMapping("/info")
     public SysUserVo info() {
         // TODO: 2020/1/2 从token中获取用户id
-        Long userId = 1L;
+        Long userId = RequestContext.getUserId() == null ? null : Long.valueOf(RequestContext.getUserId());
+        if (userId == null) {
+            throw new com.itheima.pinda.exception.BizException("用户未登录");
+        }
         SysUserVo vo = new SysUserVo();
         R<User> result = userApi.get(userId);
         if (result.getIsSuccess() && result.getData() != null) {

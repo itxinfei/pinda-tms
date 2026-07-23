@@ -109,7 +109,7 @@ public class TransportTaskController {
      */
     @PostMapping("/list")
     public List<TaskTransportDTO> findAll(@RequestBody TaskTransportDTO dto) {
-        return taskTransportService.findAll(dto.getIds(), dto.getId(), dto.getStatus(),dto).stream().map(taskTransport -> {
+        return taskTransportService.findAll(dto.getIds(), dto.getId(), dto.getStatus(), dto).stream().map(taskTransport -> {
             TaskTransportDTO resultDto = new TaskTransportDTO();
             BeanUtils.copyProperties(taskTransport, resultDto);
             return resultDto;

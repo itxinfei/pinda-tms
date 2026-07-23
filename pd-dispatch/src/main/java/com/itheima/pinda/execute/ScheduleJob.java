@@ -27,7 +27,7 @@ public class ScheduleJob extends QuartzJobBean {
         ScheduleJobEntity scheduleJob =
                 (ScheduleJobEntity) context.getMergedJobDataMap().
                         get(ScheduleUtils.JOB_PARAM_KEY);
-        System.out.println(new Date() + "定时任务开始执行...,定时任务id：" + scheduleJob.getId());
+        logger.info("{}定时任务开始执行...,定时任务id：{}", new Date(), scheduleJob.getId());
 
         //记录定时任务相关的日志信息
         //封装日志对象
