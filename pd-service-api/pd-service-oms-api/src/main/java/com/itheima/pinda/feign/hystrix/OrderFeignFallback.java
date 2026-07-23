@@ -23,85 +23,85 @@ public class OrderFeignFallback implements OrderFeign {
 
     @Override
     public OrderDTO save(OrderDTO orderDTO) {
-        log.error("远程调用 pd-oms 失败: save({}), 返回null", orderDTO);
+        log.warn("远程调用 pd-oms 失败: save({}), 返回null", orderDTO);
         return null;
     }
 
     @Override
     public OrderDTO updateById(String id, OrderDTO orderDTO) {
-        log.error("远程调用 pd-oms 失败: updateById({}), 返回null", id);
+        log.warn("远程调用 pd-oms 失败: updateById({}), 返回null", id);
         return null;
     }
 
     @Override
     public PageResponse<OrderDTO> findByPage(OrderDTO orderDTO) {
-        log.error("远程调用 pd-oms 失败: findByPage({}), 返回空分页", orderDTO);
+        log.warn("远程调用 pd-oms 失败: findByPage({}), 返回空分页", orderDTO);
         PageResponse<OrderDTO> result = new PageResponse<>();
         result.setCounts(0L);
-        result.setPagesize(0);
+        result.setPagesize(orderDTO != null ? orderDTO.getPageSize() : 10);
         result.setPages(0L);
-        result.setPage(0);
+        result.setPage(orderDTO != null ? orderDTO.getPage() : 1);
         result.setItems(Collections.emptyList());
         return result;
     }
 
     @Override
     public OrderDTO findById(String id) {
-        log.error("远程调用 pd-oms 失败: findById({}), 返回null", id);
+        log.warn("远程调用 pd-oms 失败: findById({}), 返回null", id);
         return null;
     }
 
     @Override
     public PageResponse<OrderDTO> pageLikeForCustomer(OrderSearchDTO orderSearchDTO) {
-        log.error("远程调用 pd-oms 失败: pageLikeForCustomer({}), 返回空分页", orderSearchDTO);
+        log.warn("远程调用 pd-oms 失败: pageLikeForCustomer({}), 返回空分页", orderSearchDTO);
         PageResponse<OrderDTO> result = new PageResponse<>();
         result.setCounts(0L);
-        result.setPagesize(0);
+        result.setPagesize(orderSearchDTO != null ? orderSearchDTO.getPageSize() : 10);
         result.setPages(0L);
-        result.setPage(0);
+        result.setPage(orderSearchDTO != null ? orderSearchDTO.getPage() : 1);
         result.setItems(Collections.emptyList());
         return result;
     }
 
     @Override
     public List<OrderDTO> findByIds(List<String> ids) {
-        log.error("远程调用 pd-oms 失败: findByIds({}), 返回空列表", ids);
+        log.warn("远程调用 pd-oms 失败: findByIds({}), 返回空列表", ids);
         return Collections.emptyList();
     }
 
     @Override
     public List<Order> list(OrderSearchDTO orderSearchDTO) {
-        log.error("远程调用 pd-oms 失败: list({}), 返回空列表", orderSearchDTO);
+        log.warn("远程调用 pd-oms 失败: list({}), 返回空列表", orderSearchDTO);
         return Collections.emptyList();
     }
 
     @Override
     public Map getOrderMsg(OrderDTO orderAddDto) {
-        log.error("远程调用 pd-oms 失败: getOrderMsg({}), 返回null", orderAddDto);
+        log.warn("远程调用 pd-oms 失败: getOrderMsg({}), 返回null", orderAddDto);
         return null;
     }
 
     @Override
     public OrderLocationDto saveOrUpdateLoccation(OrderLocationDto orderLocationDto) {
-        log.error("远程调用 pd-oms 失败: saveOrUpdateLoccation({}), 返回null", orderLocationDto);
+        log.warn("远程调用 pd-oms 失败: saveOrUpdateLoccation({}), 返回null", orderLocationDto);
         return null;
     }
 
     @Override
     public OrderLocationDto selectByOrderId(String orderId) {
-        log.error("远程调用 pd-oms 失败: selectByOrderId({}), 返回null", orderId);
+        log.warn("远程调用 pd-oms 失败: selectByOrderId({}), 返回null", orderId);
         return null;
     }
 
     @Override
     public int deleteOrderLocation(OrderLocationDto orderLocationDto) {
-        log.error("远程调用 pd-oms 失败: deleteOrderLocation({}), 返回0", orderLocationDto);
+        log.warn("远程调用 pd-oms 失败: deleteOrderLocation({}), 返回0", orderLocationDto);
         return 0;
     }
 
     @Override
     public OrderDTO omsSeataTest(OrderDTO orderDTO) {
-        log.error("远程调用 pd-oms 失败: omsSeataTest({}), 返回null", orderDTO);
+        log.warn("远程调用 pd-oms 失败: omsSeataTest({}), 返回null", orderDTO);
         return null;
     }
 }

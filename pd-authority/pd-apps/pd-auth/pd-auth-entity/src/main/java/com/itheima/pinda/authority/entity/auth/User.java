@@ -148,7 +148,7 @@ public class User extends Entity<Long> {
     @ApiModelProperty(value = "密码")
     @NotEmpty(message = "密码不能为空")
     @Length(max = 64, message = "密码长度不能超过64")
-    @TableField(value = "password", condition = LIKE)
+    @TableField("password")
     private String password;
 
     /**

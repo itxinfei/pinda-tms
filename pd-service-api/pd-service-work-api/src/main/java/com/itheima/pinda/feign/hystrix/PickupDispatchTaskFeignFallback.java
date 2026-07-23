@@ -19,19 +19,19 @@ public class PickupDispatchTaskFeignFallback implements PickupDispatchTaskFeign 
 
     @Override
     public TaskPickupDispatchDTO save(TaskPickupDispatchDTO dto) {
-        log.error("远程调用 pd-work 失败: save({}), 返回null", dto);
+        log.warn("远程调用 pd-work 失败: save({}), 返回null", dto);
         return null;
     }
 
     @Override
     public TaskPickupDispatchDTO updateById(String id, TaskPickupDispatchDTO dto) {
-        log.error("远程调用 pd-work 失败: updateById({}), 返回null", id);
+        log.warn("远程调用 pd-work 失败: updateById({}), 返回null", id);
         return null;
     }
 
     @Override
     public PageResponse<TaskPickupDispatchDTO> findByPage(TaskPickupDispatchDTO dto) {
-        log.error("远程调用 pd-work 失败: findByPage({}), 返回空分页", dto);
+        log.warn("远程调用 pd-work 失败: findByPage({}), 返回空分页", dto);
         PageResponse<TaskPickupDispatchDTO> result = new PageResponse<>();
         result.setCounts(0L);
         result.setPagesize(0);
@@ -43,19 +43,19 @@ public class PickupDispatchTaskFeignFallback implements PickupDispatchTaskFeign 
 
     @Override
     public TaskPickupDispatchDTO findById(String id) {
-        log.error("远程调用 pd-work 失败: findById({}), 返回null", id);
+        log.warn("远程调用 pd-work 失败: findById({}), 返回null", id);
         return null;
     }
 
     @Override
     public List<TaskPickupDispatchDTO> findAll(TaskPickupDispatchDTO dto) {
-        log.error("远程调用 pd-work 失败: findAll({}), 返回空列表", dto);
+        log.warn("远程调用 pd-work 失败: findAll({}), 返回空列表", dto);
         return Collections.emptyList();
     }
 
     @Override
     public TaskPickupDispatchDTO findByOrderId(String orderId, Integer taskType) {
-        log.error("远程调用 pd-work 失败: findByOrderId(orderId={}, taskType={}), 返回null", orderId, taskType);
+        log.warn("远程调用 pd-work 失败: findByOrderId(orderId={}, taskType={}), 返回null", orderId, taskType);
         return null;
     }
 }

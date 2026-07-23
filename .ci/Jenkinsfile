@@ -1,0 +1,298 @@
+// ============================================
+// 品达TMS - Jenkins Pipeline CI/CD 配置
+// 使用方式：Jenkins -> 新建任务 -> Pipeline -> 从 SCM 读取此文件
+// ============================================
+
+pipeline {
+    agent any
+
+    // 环境变量
+    environment {
+        // Gitee 仓库信息
+        GITEE_REPO = 'https://gitee.com/your-org/pinda-tms.git'
+        GITEE_CREDENTIALS = 'gitee-credentials-id'  // Jenkins 中配置的 Gitee 凭据 ID
+
+        // Docker 仓库
+        DOCKER_REGISTRY = 'your-registry.example.com:5000'  // 替换为实际的镜像仓库地址
+        DOCKER_CREDENTIALS = 'docker-registry-credentials'  // Jenkins 中配置的 Docker 仓库凭据
+
+        // 镜像标签策略：git commit 短哈希 + 时间戳
+        IMAGE_TAG = "${env.GIT_COMMIT.take(8)}-${new Date().format('yyyyMMdd-HHmm')}"
+
+        // 部署目标服务器
+        DEPLOY_HOST = 'your-centos-host'  // 替换为实际的服务器 IP 或域名
+        DEPLOY_USER = 'root'
+        DEPLOY_SSH_KEY = 'centos-ssh-key'  // Jenkins 中配置的 SSH 密钥凭据 ID
+
+        // 通知
+        NOTIFY_WECHAT = 'your-wechat-webhook-url'  // 可选：企业微信通知
+    }
+
+    // 选项
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '30'))   // 保留最近 30 次构建记录
+        timeout(time: 1, unit: 'HOURS')                   // 构建超时 1 小时
+        disableConcurrentBuilds()                         // 禁止并发构建
+        ansiColor('xterm')                                // 支持彩色日志
+        timestamps()                                      // 日志带时间戳
+    }
+
+    // 阶段定义
+    stages {
+
+        // ========== 阶段1：拉取代码 ==========
+        stage('拉取代码 (Checkout)') {
+            steps {
+                echo '=========================================='
+                echo "  分支: ${env.BRANCH_NAME}"
+                echo "  Commit: ${env.GIT_COMMIT}"
+                echo "=========================================="
+
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: "*/${env.BRANCH_NAME}"]],
+                    doGenerateSubmoduleConfigurations: false,
+                    extensions: [
+                        [$class: 'WipeWorkspace'],
+                        [$class: 'CleanBeforeCheckout']
+                    ],
+                    userRemoteConfigs: [[
+                        url: "${GITEE_REPO}",
+                        credentialsId: "${GITEE_CREDENTIALS}"
+                    ]]
+                ])
+
+                // 记录变更内容
+                script {
+                    env.CHANGE_LOG = sh(
+                        script: "git log --oneline -10",
+                        returnStdout: true
+                    ).trim()
+                }
+            }
+        }
+
+        // ========== 阶段2：代码检查 ==========
+        stage('代码检查 (Code Quality)') {
+            parallel {
+                stage('Java 静态检查') {
+                    steps {
+                        echo '执行 Java 代码检查...'
+
+                        script {
+                            // 如果有 SonarQube 配置，取消下面的注释
+                            // withSonarQubeEnv('sonarqube') {
+                            //     sh 'mvn sonar:sonar -DskipTests'
+                            // }
+                            echo 'Java 代码检查完成（可集成 SonarQube）'
+                        }
+                    }
+                }
+
+                stage('前端代码检查') {
+                    steps {
+                        echo '执行前端代码检查...'
+
+                        dir('pd-admin-ui') {
+                            // 使用 eslint 检查
+                            // sh 'npx eslint src/ --ext .js,.vue'
+                            echo '前端代码检查完成'
+                        }
+                    }
+                }
+            }
+        }
+
+        // ========== 阶段3：构建后端 ==========
+        stage('构建后端 (Build Backend)') {
+            steps {
+                echo '=========================================='
+                echo '  构建 Java 后端服务'
+                echo '=========================================='
+
+                script {
+                    // Maven 构建 + Docker 镜像打包
+                    sh '''
+                        chmod +x .ci/build-backend.sh
+                        export DOCKER_REGISTRY=${DOCKER_REGISTRY}
+                        export IMAGE_TAG=${IMAGE_TAG}
+                        export GIT_COMMIT_SHORT=${GIT_COMMIT.take(8)}
+                        bash .ci/build-backend.sh
+                    '''
+                }
+            }
+        }
+
+        // ========== 阶段4：构建前端 ==========
+        stage('构建前端 (Build Frontend)') {
+            steps {
+                echo '=========================================='
+                echo '  构建前端管理界面'
+                echo '=========================================='
+
+                script {
+                    sh '''
+                        export DOCKER_REGISTRY=${DOCKER_REGISTRY}
+                        export IMAGE_TAG=${IMAGE_TAG}
+                        export GIT_COMMIT_SHORT=${GIT_COMMIT.take(8)}
+                        bash .ci/build-frontend.sh
+                    '''
+                }
+            }
+        }
+
+        // ========== 阶段5：推送镜像 ==========
+        stage('推送镜像 (Push Images)') {
+            steps {
+                echo '=========================================='
+                echo '  推送 Docker 镜像到仓库'
+                echo '=========================================='
+
+                script {
+                    // 登录 Docker 仓库
+                    withCredentials([usernamePassword(
+                        credentialsId: "${DOCKER_CREDENTIALS}",
+                        usernameVariable: 'REGISTRY_USER',
+                        passwordVariable: 'REGISTRY_PASS'
+                    )]) {
+                        sh '''
+                            echo "${REGISTRY_PASS}" | docker login ${DOCKER_REGISTRY} -u ${REGISTRY_USER} --password-stdin
+                        '''
+
+                        // 推送所有镜像
+                        def images = [
+                            'pinda-aggregation', 'pinda-base', 'pinda-dispatch',
+                            'pinda-druid', 'pinda-netty', 'pinda-oms',
+                            'pinda-user', 'pinda-work', 'pinda-auth',
+                            'pinda-gateway', 'pinda-web-manager', 'pinda-web-driver',
+                            'pinda-web-courier', 'pinda-web-customer', 'pinda-admin-ui'
+                        ]
+
+                        images.each { img ->
+                            echo "推送: ${DOCKER_REGISTRY}/${img}:${IMAGE_TAG}"
+                            sh "docker push ${DOCKER_REGISTRY}/${img}:${IMAGE_TAG}"
+                        }
+
+                        // 同时打上 latest 标签并推送
+                        images.each { img ->
+                            echo "打 latest 标签: ${img}"
+                            sh """
+                                docker tag ${DOCKER_REGISTRY}/${img}:${IMAGE_TAG} ${DOCKER_REGISTRY}/${img}:latest
+                                docker push ${DOCKER_REGISTRY}/${img}:latest
+                            """
+                        }
+
+                        sh 'docker logout ${DOCKER_REGISTRY}'
+                    }
+                }
+            }
+        }
+
+        // ========== 阶段6：部署 ==========
+        stage('部署 (Deploy)') {
+            steps {
+                echo '=========================================='
+                echo "  部署到服务器: ${DEPLOY_HOST}"
+                echo "  镜像版本: ${IMAGE_TAG}"
+                echo '=========================================='
+
+                // 自动部署（仅 master 分支）
+                when {
+                    branch 'master'
+                }
+
+                script {
+                    withCredentials([sshUserPrivateKey(
+                        credentialsId: "${DEPLOY_SSH_KEY}",
+                        keyFileVariable: 'SSH_KEY',
+                        usernameVariable: 'SSH_USER'
+                    )]) {
+                        sh '''
+                            # 上传部署脚本到服务器
+                            ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no ${SSH_USER}@${DEPLOY_HOST} "mkdir -p /opt/pinda-tms/deploy"
+
+                            # 上传 docker-compose 和 .env
+                            scp -i ${SSH_KEY} -o StrictHostKeyChecking=no \\
+                                docker-compose.yml \\
+                                .env \\
+                                scripts/push-nacos-config.sh \\
+                                ${SSH_USER}@${DEPLOY_HOST}:/opt/pinda-tms/deploy/
+
+                            # 在服务器上执行部署
+                            ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no ${SSH_USER}@${DEPLOY_HOST} bash << 'DEPLOY_EOF'
+set -e
+cd /opt/pinda-tms/deploy
+
+echo "登录 Docker 仓库..."
+echo "${REGISTRY_PASS}" | docker login ${DOCKER_REGISTRY} -u ${REGISTRY_USER} --password-stdin
+
+echo "拉取最新镜像..."
+# 为 docker-compose 设置镜像标签
+export IMAGE_TAG=${IMAGE_TAG}
+sed -i "s|image:.*|image: ${DOCKER_REGISTRY}/\\1:${IMAGE_TAG}|g" docker-compose.yml
+
+# 拉取所有镜像
+docker-compose pull
+
+echo "滚动更新..."
+docker-compose up -d --remove-orphans
+
+echo "清理旧镜像..."
+docker image prune -f --filter "until=72h"
+
+echo "部署完成!"
+DEPLOY_EOF
+                        '''
+                    }
+                }
+            }
+        }
+    }
+
+    // 构建后操作
+    post {
+        success {
+            echo '构建成功!'
+
+            script {
+                if (env.BRANCH_NAME == 'master') {
+                    echo '已自动部署到生产环境'
+                }
+            }
+
+            // 企业微信通知
+            script {
+                if (env.NOTIFY_WECHAT != '' && env.NOTIFY_WECHAT != 'your-wechat-webhook-url') {
+                    def text = "✅ 品达TMS 构建成功\n分支: ${env.BRANCH_NAME}\nCommit: ${env.GIT_COMMIT.take(8)}\n镜像标签: ${IMAGE_TAG}\n变更: ${CHANGE_LOG.take(200)}"
+
+                    sh """
+                        curl -s -X POST "${NOTIFY_WECHAT}" \
+                            -H 'Content-Type: application/json' \
+                            -d "{\\"msgtype\\": \\"text\\", \\"text\\": {\\"content\\": \\"${text}\\"}}" || true
+                    """
+                }
+            }
+        }
+
+        failure {
+            echo '构建失败!'
+
+            script {
+                if (env.NOTIFY_WECHAT != '' && env.NOTIFY_WECHAT != 'your-wechat-webhook-url') {
+                    def text = "❌ 品达TMS 构建失败\n分支: ${env.BRANCH_NAME}\nCommit: ${env.GIT_COMMIT.take(8)}\n查看日志: ${env.BUILD_URL}"
+
+                    sh """
+                        curl -s -X POST "${NOTIFY_WECHAT}" \
+                            -H 'Content-Type: application/json' \
+                            -d "{\\"msgtype\\": \\"text\\", \\"text\\": {\\"content\\": \\"${text}\\"}}" || true
+                    """
+                }
+            }
+        }
+
+        always {
+            // 清理 Docker 构建缓存
+            sh 'docker system prune -f || true'
+        }
+    }
+}

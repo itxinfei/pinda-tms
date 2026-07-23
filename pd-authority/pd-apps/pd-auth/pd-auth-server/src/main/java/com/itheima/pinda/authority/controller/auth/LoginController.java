@@ -46,10 +46,9 @@ public class LoginController extends BaseController {
         log.info("account={}", login.getAccount());
         if (this.validateCodeService.check(login.getKey(), login.getCode())) {
             return this.authManager.login(login.getAccount(), login.getPassword());
-
         }
-        log.info("登录成功！");
-        return this.success(null);
+        log.warn("登录失败: 验证码校验不通过, account={}", login.getAccount());
+        return this.fail(ExceptionCode.JWT_USER_INVALID);
     }
 
     /**
@@ -66,7 +65,8 @@ public class LoginController extends BaseController {
         if (this.validateCodeService.check(login.getKey(), login.getCode())) {
             return this.authManager.login(login.getAccount(), login.getPassword());
         }
-        return this.success(null);
+        log.warn("登录失败: 验证码校验不通过, account={}", login.getAccount());
+        return this.fail(ExceptionCode.JWT_USER_INVALID);
     }
 
     /**

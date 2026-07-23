@@ -23,6 +23,7 @@ import com.itheima.pinda.feign.truck.TruckTypeFeign;
 import com.itheima.pinda.feign.user.CourierScopeFeign;
 import com.itheima.pinda.future.PdCompletableFuture;
 import com.itheima.pinda.util.BeanUtil;
+import com.itheima.pinda.util.Rx;
 import com.itheima.pinda.vo.base.AreaSimpleVo;
 import com.itheima.pinda.vo.base.angency.AgencyScopeVo;
 import com.itheima.pinda.vo.base.businessHall.CourierScopeVo;
@@ -192,11 +193,12 @@ public class BusinessHallController {
                                                      @RequestParam(name = "pageSize") Integer pageSize,
                                                      @RequestParam(name = "name", required = false) String name,
                                                      @RequestParam(name = "mobile", required = false) String mobile) {
-        R<Page<User>> result = userApi.page(page.longValue(), pageSize.longValue(), null, StaticStation.COURIER_ID, name, null, mobile);
-        if (result.getIsSuccess() && result.getData() != null) {
-            IPage<User> userPage = result.getData();
+        // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
+        IPage<User> userPage = Rx.data(userApi.page(page.longValue(), pageSize.longValue(), null, StaticStation.COURIER_ID, name, null, mobile));
+        if (userPage != null) {
             //处理对象转换
-            List<SysUserVo> voList = userPage.getRecords().stream().map(user -> BeanUtil.parseUser2Vo(user, null, orgApi)).collect(Collectors.toList());
+            // 修改点：records 可能为 null，统一通过 Rx 安全取值
+            List<SysUserVo> voList = Rx.list(userPage.getRecords()).stream().map(user -> BeanUtil.parseUser2Vo(user, null, orgApi)).collect(Collectors.toList());
             return PageResponse.<SysUserVo>builder().items(voList).page(page).pagesize(pageSize).counts(userPage.getTotal()).pages(userPage.getPages()).build();
         }
         return PageResponse.<SysUserVo>builder().items(new ArrayList<>()).page(page).pagesize(pageSize).counts(0L).pages(0L).build();
@@ -208,10 +210,11 @@ public class BusinessHallController {
     })
     @GetMapping("/courier/{id}")
     public SysUserVo findCourierById(@PathVariable(name = "id") String id) {
-        R<User> result = userApi.get(Long.valueOf(id));
+        // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
+        User user = Rx.data(userApi.get(Long.valueOf(id)));
         SysUserVo vo = null;
-        if (result.getIsSuccess() && result.getData() != null) {
-            vo = BeanUtil.parseUser2Vo(result.getData(), null, orgApi);
+        if (user != null) {
+            vo = BeanUtil.parseUser2Vo(user, null, orgApi);
         }
         return vo;
     }
@@ -271,9 +274,10 @@ public class BusinessHallController {
                                 if (!StringUtils.equals(adcode, adcodeOld) && i>0) {
                                     return Result.error(5000, "一个机构作业范围必须在一个区域内");
                                 }
-                                R<Area> r = areaApi.getByCode(adcode + "000000");
-                                if (r.getIsSuccess() && r.getData() != null) {
-                                    area = r.getData();
+                                // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
+                                Area areaByCode = Rx.data(areaApi.getByCode(adcode + "000000"));
+                                if (areaByCode != null) {
+                                    area = areaByCode;
                                 }
                             }
                             adcodeOld = adcode;

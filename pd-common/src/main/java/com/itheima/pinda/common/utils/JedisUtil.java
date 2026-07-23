@@ -8,6 +8,8 @@ import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.SortingParams;
 import redis.clients.util.SafeEncoder;
 
+import org.apache.commons.lang.StringUtils;
+
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
@@ -54,7 +56,17 @@ public class JedisUtil implements Serializable {
 
 
         //redis未设置密码：
-        jedisPool = new JedisPool(config, "172.17.0.143",7379);
+        String redisHost = System.getProperty("redis.host",
+                System.getenv().getOrDefault("REDIS_HOST", "localhost"));
+        int redisPort = Integer.parseInt(System.getProperty("redis.port",
+                System.getenv().getOrDefault("REDIS_PORT", "6379")));
+        String redisPassword = System.getProperty("redis.password",
+                System.getenv().getOrDefault("REDIS_PASSWORD", ""));
+        if (StringUtils.isNotBlank(redisPassword)) {
+            jedisPool = new JedisPool(config, redisHost, redisPort, 30000, redisPassword);
+        } else {
+            jedisPool = new JedisPool(config, redisHost, redisPort);
+        }
     }
 
     public JedisPool getPool() {
