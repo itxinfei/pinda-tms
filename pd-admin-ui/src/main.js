@@ -14,6 +14,7 @@ import i18n from './lang' // internationalization
 import './icons' // icon
 import './utils/error-log' // error log
 import request from '@/utils/request'
+import { bindResize, unbindResize } from '@/utils/resize'
 
 import * as filters from './filters' // global filters
 import { hasPermission, hasNoPermission, hasAnyPermission } from './utils/permissionDirect'
@@ -40,6 +41,15 @@ Vue.prototype.$delete = request.delete
 Vue.prototype.$download = request.download
 Vue.prototype.$upload = request.upload
 Vue.prototype.$login = request.login
+Vue.prototype.$bindResize = bindResize
+
+// 修改点：全局 mixin，组件销毁时自动解绑其注册的所有 resize 监听，
+// 与 src/utils/resize.js 的 WeakMap 注册表配合，避免监听器泄漏。
+Vue.mixin({
+  beforeDestroy() {
+    unbindResize(this)
+  }
+})
 
 // register global utility filters
 Object.keys(filters).forEach(key => {

@@ -207,7 +207,7 @@ export default {
   methods: {
     chinaConfigure() {
       const myChart = echarts.init(document.getElementById('chart_example1'))
-      window.onresize = myChart.resize
+      this.$bindResize(() => myChart.resize())
       myChart.setOption({
         // 进行相关配置
         backgroundColor: '#fff',
@@ -288,7 +288,7 @@ export default {
     },
     aa() {
       const myChart1 = echarts.init(document.getElementById('chart_example2'))
-      window.onresize = myChart1.resize
+      this.$bindResize(() => myChart1.resize())
       myChart1.setOption({
         title: {
           left: 'center'

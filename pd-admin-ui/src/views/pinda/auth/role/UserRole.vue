@@ -89,7 +89,7 @@ export default {
   watch: {},
   mounted() {
     this.initUserList()
-    window.onresize = () => {
+    this.$bindResize(() => {
       return (() => {
         this.width = this.initWidth()
       })()
