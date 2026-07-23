@@ -147,7 +147,6 @@ export default {
       ) {
         avatar = this.user['avatar']
       }
-      debugger
 
       this.$nextTick(() => {
         this.$refs.imgFileRef.init({

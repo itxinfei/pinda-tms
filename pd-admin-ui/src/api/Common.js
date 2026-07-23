@@ -8,21 +8,6 @@ const apiList = {
 
 export default {
   uploadFile: `${process.env.VUE_APP_DEV_REQUEST_DOMAIN_PREFIX}${process.env.VUE_APP_BASE_API}/file/attachment/upload`,
-  // 修改点：原实现将 token/tenant 拼入 URL 查询参数（会进入浏览器历史/服务器日志/Referer），
-  // 改为通过请求头传递，并返回 Blob 对象 URL（兼容 <img :src> 使用）
-  loadImg (data) {
-    const token = db.get('TOKEN', '')
-    const tenant = db.get('TENANT', '')
-    const url = `${process.env.VUE_APP_DEV_REQUEST_DOMAIN_PREFIX}${process.env.VUE_APP_BASE_API}/file/attachment/download/${data.bizType}/${data.bizId}`
-    return fetch(url, {
-      headers: {
-        'token': token,
-        'tenant': tenant
-      }
-    })
-      .then(r => r.blob())
-      .then(blob => URL.createObjectURL(blob))
-  },
   dictionaryEnums () {
     return axiosApi({
       method: 'GET',

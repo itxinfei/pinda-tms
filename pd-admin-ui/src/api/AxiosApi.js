@@ -24,7 +24,6 @@ axios.interceptors.response.use(
 )
 
 function handleError (error, reject) {
-  debugger
   if (error.code === 'ECONNABORTED') {
     Message({
       message: '请求超时'
@@ -45,11 +44,9 @@ function handleSuccess (res, resolve) {
   if (res.data.isError) {
     // 未登录
     if (res.data.code === 40001) {
-      debugger
       MessageBox.alert(res.data.msg, '提醒', {
         confirmButtonText: '确定',
         callback: () => {
-          debugger
           window.location.hash = '/login'
         }
       })

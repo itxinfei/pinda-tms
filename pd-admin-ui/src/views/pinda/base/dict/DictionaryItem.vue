@@ -224,7 +224,6 @@ export default {
       this.dialog.isVisible = false
     },
     editSuccess() {
-      debugger
       this.search()
     },
     onSelectChange(selection) {

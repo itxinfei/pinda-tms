@@ -132,7 +132,6 @@ export default {
             validator: (rule, value, callback) => {
               if (this.type === 'add' && value.trim() !== '') {
                 smsTemplateApi.check(value).then(response => {
-                  debugger
                   const res = response.data
                   if (res.data) {
                     callback('自定义编码重复')
