@@ -3,7 +3,6 @@ package com.itheima.pinda.controller;
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.google.common.collect.Maps;
 import com.itheima.pinda.DTO.OrderDTO;
@@ -72,7 +71,11 @@ public class OrderController {
                 orderDTO.getSenderAddress(), orderDTO.getReceiverAddress());
             return orderDTO;
         }
-        order.setAmount(new BigDecimal(map.getOrDefault("amount", "23").toString()));
+        if (!map.containsKey("amount")) {
+            log.error("[订单] 价格计算异常，未返回金额: orderId={}", orderDTO.getId());
+            throw new BusinessException("运费计算结果异常，请稍后重试");
+        }
+        order.setAmount(new BigDecimal(map.get("amount").toString()));
         orderService.saveOrder(order);
         log.info("订单信息入库:{}", order);
         OrderDTO result = new OrderDTO();
@@ -204,25 +207,24 @@ public class OrderController {
     @ResponseBody
     @PostMapping("location/saveOrUpdate")
     public OrderLocationDto saveOrUpdateLoccation(@RequestBody OrderLocationDto orderLocationDto) {
-        String id = orderLocationDto.getId();
         String orderId = orderLocationDto.getOrderId();
-        if (StringUtils.isNotBlank(id)) {
-            OrderLocation location = orderLocationService.getBaseMapper().selectOne(new QueryWrapper<OrderLocation>().eq("order_id", orderId).last(" limit 1"));
-            if (location != null) {
-                OrderLocation orderLocationUpdate = new OrderLocation();
-                BeanUtils.copyProperties(orderLocationDto, orderLocationUpdate);
-                orderLocationUpdate.setId(location.getId());
-                orderLocationService.getBaseMapper().updateById(orderLocationUpdate);
-                BeanUtils.copyProperties(orderLocationUpdate, orderLocationDto);
-            }
+        if (StringUtils.isBlank(orderId)) {
+            log.warn("[订单] 位置保存失败：orderId为空");
+            return orderLocationDto;
+        }
+        OrderLocation exist = orderLocationService.getBaseMapper()
+            .selectOne(new LambdaQueryWrapper<OrderLocation>().eq(OrderLocation::getOrderId, orderId));
+        if (exist != null) {
+            OrderLocation orderLocationUpdate = new OrderLocation();
+            BeanUtils.copyProperties(orderLocationDto, orderLocationUpdate);
+            orderLocationUpdate.setId(exist.getId());
+            orderLocationService.getBaseMapper().updateById(orderLocationUpdate);
         } else {
             OrderLocation orderLocation = new OrderLocation();
             BeanUtils.copyProperties(orderLocationDto, orderLocation);
             orderLocation.setId(idGenerator.nextId(orderLocation).toString());
             orderLocationService.save(orderLocation);
-            BeanUtils.copyProperties(orderLocation, orderLocationDto);
         }
-
         return orderLocationDto;
     }
 
@@ -241,7 +243,7 @@ public class OrderController {
         String orderId = orderLocationDto.getOrderId();
         int result = 0;
         if (StringUtils.isNotBlank(orderId)) {
-            result = orderLocationService.getBaseMapper().delete(new UpdateWrapper<OrderLocation>().eq("order_id", orderId));
+            result = orderLocationService.getBaseMapper().delete(new QueryWrapper<OrderLocation>().eq("order_id", orderId));
         }
         return result;
     }

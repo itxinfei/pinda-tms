@@ -22,6 +22,12 @@
         <pd-service-oms-api.version>1.0.0-SNAPSHOT</pd-service-oms-api.version>
         <pd-service-user-api.version>1.0.0-SNAPSHOT</pd-service-user-api.version>
         <quartz.version>2.3.0</quartz.version>
+        <!--
+        TODO [安全漏洞 P0]: fastjson 1.2.47 存在已知 RCE 漏洞（CVE-2023-4911）。
+        需要团队决策迁移方案：fastjson2 vs fastjson 1.2.83。
+        参考：https://github.com/alibaba/fastjson2/issues/2319
+        当前暂不升级，避免未预期的兼容性问题。
+        -->
         <fastjson.version>1.2.47</fastjson.version>
     </properties>
 
