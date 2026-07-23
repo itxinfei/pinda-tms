@@ -137,7 +137,7 @@ export default {
   mounted() {
     this.initDept()
     this.initRoles()
-    window.onresize = () => {
+    this.$bindResize(() => {
       return (() => {
         this.width = this.initWidth()
       })()

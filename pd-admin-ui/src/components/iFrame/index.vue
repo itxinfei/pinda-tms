@@ -30,7 +30,7 @@ export default {
     setTimeout(() => {
       this.loading = false
     }, 500)
-    window.onresize = () => {
+    this.$bindResize(() => {
       this.height = document.documentElement.clientHeight - 87.7 + 'px'
     }
   },
