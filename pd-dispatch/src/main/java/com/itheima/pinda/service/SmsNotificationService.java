@@ -1,71 +1,73 @@
 package com.itheima.pinda.service;
 
-import com.alibaba.fastjson.JSON;
+import com.itheima.pinda.service.sms.SmsChannel;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
 
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 /**
  * 短信/通知服务
  *
  * <p>订单确认、揽收完成、交付(签收/拒收)等业务事件统一通过本组件向客户发送通知。
- * 通知通道（可扩展）：
+ * 支持多渠道（可扩展）：
  * <ol>
- *   <li><b>日志</b>：始终记录通知内容（含手机号脱敏处理）；</li>
- *   <li><b>短信网关 Webhook</b>：配置 {@code sms.webhook-url} 后，将通知推送到外部短信网关
- *       （可对接阿里云/腾讯云短信等，再由网关发送真实短信）。</li>
+ *   <li><b>通用 HTTP 网关</b>：{@code sms.channel.http.url}，适配自建/第三方聚合网关；</li>
+ *   <li><b>阿里云短信</b>：{@code sms.channel.aliyun.*}；</li>
+ *   <li><b>腾讯云短信</b>：{@code sms.channel.tencent.*}；</li>
+ *   <li><b>华为云短信</b>：{@code sms.channel.huawei.*}；</li>
+ *   <li><b>通用设备接口</b>：{@code sms.channel.device.url}，适配短信猫/短信池等设备；</li>
+ *   <li><b>日志兜底</b>：未配置任何渠道时仅记录日志，不影响业务主流程。</li>
  * </ol>
- * 未配置 Webhook 时仅记录日志，不影响业务主流程。</p>
+ * 通过 {@code sms.channel} 指定启用渠道（http/aliyun/tencent/huawei/device），
+ * 缺省按优先级尝试通用 HTTP → 日志兜底。</p>
  */
 @Slf4j
 @Component
 public class SmsNotificationService {
 
     /**
-     * 短信网关 Webhook 地址（可选，配置后启用推送）
+     * 启用的短信渠道编码（http/aliyun/tencent/huawei/device）
      */
-    @Value("${sms.webhook-url:}")
-    private String smsWebhookUrl;
+    @Value("${sms.channel:http}")
+    private String activeChannel;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    /**
+     * 所有短信渠道实现（Spring 注入）
+     */
+    @Autowired(required = false)
+    private List<SmsChannel> smsChannels;
 
     /**
      * 发送短信通知
      *
-     * @param mobile 手机号
+     * @param mobile  手机号
      * @param content 短信内容
      */
     public void sendSms(String mobile, String content) {
         // 1. 日志记录（手机号脱敏）
         log.info("[短信通知] 收件人: {}, 内容: {}", maskMobile(mobile), content);
 
-        if (smsWebhookUrl == null || smsWebhookUrl.trim().isEmpty()) {
-            log.info("[短信通知] 未配置短信网关(sms.webhook-url)，仅记录日志");
+        if (smsChannels == null || smsChannels.isEmpty()) {
+            log.info("[短信通知] 未配置短信渠道，仅记录日志");
             return;
         }
 
-        // 2. 推送到短信网关
-        try {
-            Map<String, Object> payload = new HashMap<>();
-            payload.put("mobile", mobile);
-            payload.put("content", content);
-            payload.put("time", LocalDateTime.now().toString());
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<String> entity = new HttpEntity<>(JSON.toJSONString(payload), headers);
-            restTemplate.postForEntity(smsWebhookUrl, entity, String.class);
-            log.info("[短信通知] 短信网关推送成功: mobile={}", maskMobile(mobile));
-        } catch (Exception e) {
-            log.warn("[短信通知] 短信网关推送失败: mobile={}", maskMobile(mobile), e);
+        // 2. 按配置选择渠道发送
+        boolean sent = false;
+        for (SmsChannel channel : smsChannels) {
+            if (activeChannel == null || activeChannel.trim().isEmpty()
+                    || activeChannel.equalsIgnoreCase(channel.channelCode())) {
+                if (channel.sendSms(mobile, content)) {
+                    sent = true;
+                    break;
+                }
+            }
+        }
+        if (!sent) {
+            log.warn("[短信通知] 渠道[{}]发送未成功，消息仅记录日志: mobile={}", activeChannel, maskMobile(mobile));
         }
     }
 

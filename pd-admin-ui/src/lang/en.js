@@ -2,7 +2,8 @@ export default {
   route: {
     dashboard: 'Dashboard',
     profile: 'Profile',
-    trace: 'Vehicle Trace Monitor'
+    trace: 'Vehicle Trace Monitor',
+    ofpay: 'Payment Center'
   },
   navbar: {
     setting: 'Settings',
