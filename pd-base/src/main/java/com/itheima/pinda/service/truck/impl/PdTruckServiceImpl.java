@@ -59,6 +59,10 @@ public class PdTruckServiceImpl extends ServiceImpl<PdTruckMapper, PdTruck> impl
     @Override
     public IPage<PdTruck> findByPageByFleetIds(Integer page, Integer pageSize, String truckTypeId, String licensePlate, List<String> fleetIds) {
         Page<PdTruck> iPage = new Page(page, pageSize);
+        // 车队ID列表为空（如名称未匹配到任何车队）时直接返回空页，避免误返回全部车辆
+        if (fleetIds == null || fleetIds.isEmpty()) {
+            return iPage;
+        }
         LambdaQueryWrapper<PdTruck> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         if (StringUtils.isNotEmpty(licensePlate)) {
             lambdaQueryWrapper.like(PdTruck::getLicensePlate, licensePlate);
@@ -66,9 +70,7 @@ public class PdTruckServiceImpl extends ServiceImpl<PdTruckMapper, PdTruck> impl
         if (StringUtils.isNotEmpty(truckTypeId)) {
             lambdaQueryWrapper.eq(PdTruck::getTruckTypeId, truckTypeId);
         }
-        if (fleetIds != null && fleetIds.size() > 0) {
-            lambdaQueryWrapper.in(PdTruck::getFleetId, fleetIds);
-        }
+        lambdaQueryWrapper.in(PdTruck::getFleetId, fleetIds);
         lambdaQueryWrapper.eq(PdTruck::getStatus, Constant.DATA_DEFAULT_STATUS);
         lambdaQueryWrapper.orderBy(true, false, PdTruck::getId);
         return baseMapper.selectPage(iPage, lambdaQueryWrapper);

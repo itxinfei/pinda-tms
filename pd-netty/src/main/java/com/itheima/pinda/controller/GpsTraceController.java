@@ -9,7 +9,7 @@ import com.itheima.pinda.service.ILocationRecordService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -96,8 +96,20 @@ public class GpsTraceController {
     @ApiOperation(value = "轨迹分页查询")
     @PostMapping("/page")
     public Result page(@RequestBody Map<String, Object> params) {
-        int pageNum = params.get("page") == null ? 1 : Integer.parseInt(params.get("page").toString());
-        int pageSize = params.get("pageSize") == null ? 10 : Integer.parseInt(params.get("pageSize").toString());
+        // 分页参数防御性解析：非法或越界时返回 400，避免 500
+        int pageNum;
+        int pageSize;
+        try {
+            pageNum = params.get("page") == null ? 1 : Integer.parseInt(params.get("page").toString());
+            pageSize = params.get("pageSize") == null ? 10 : Integer.parseInt(params.get("pageSize").toString());
+        } catch (NumberFormatException e) {
+            log.warn("[轨迹查询] 分页参数非法: {}", params);
+            return Result.error(400, "分页参数必须为数字");
+        }
+        if (pageNum < 1 || pageSize < 1 || pageSize > 200) {
+            log.warn("[轨迹查询] 分页参数越界: page={}, pageSize={}", pageNum, pageSize);
+            return Result.error(400, "分页参数越界：page>=1，1<=pageSize<=200");
+        }
 
         LambdaQueryWrapper<LocationRecord> wrapper = new LambdaQueryWrapper<>();
         if (params.get("businessId") != null && StringUtils.isNotBlank(params.get("businessId").toString())) {

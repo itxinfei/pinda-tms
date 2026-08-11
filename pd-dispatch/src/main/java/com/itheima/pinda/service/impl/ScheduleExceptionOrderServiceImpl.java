@@ -50,8 +50,14 @@ public class ScheduleExceptionOrderServiceImpl extends ServiceImpl<ScheduleExcep
         record.setReason(StringUtils.defaultIfBlank(reason, "起始/目的机构信息缺失，无法完成线路规划"));
         record.setStatus(ScheduleExceptionOrder.STATUS_PENDING);
         record.setCreateTime(LocalDateTime.now());
-        save(record);
-        log.info("[异常调度] 订单[{}]登记为无法调度，原因: {}", orderId, record.getReason());
-        return true;
+        try {
+            save(record);
+            log.info("[异常调度] 订单[{}]登记为无法调度，原因: {}", orderId, record.getReason());
+            return true;
+        } catch (org.springframework.dao.DuplicateKeyException e) {
+            // 唯一索引(uk_order_status)兜底：并发登记时视为幂等成功
+            log.info("[异常调度] 订单[{}]并发登记被唯一索引拦截，视为已登记", orderId);
+            return false;
+        }
     }
 }

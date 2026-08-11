@@ -19,5 +19,6 @@ CREATE TABLE `pd_schedule_exception_order` (
     PRIMARY KEY (`id`),
     KEY `idx_order_id` (`order_id`),
     KEY `idx_status` (`status`),
-    KEY `idx_agency_id` (`agency_id`)
+    KEY `idx_agency_id` (`agency_id`),
+    UNIQUE KEY `uk_order_status` (`order_id`, `status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='异常调度订单登记表';
