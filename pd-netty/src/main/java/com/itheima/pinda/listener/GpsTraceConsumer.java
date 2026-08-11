@@ -360,8 +360,8 @@ public class GpsTraceConsumer {
         // 2. 长时间停留检测
         checkStayTooLong(location, cacheKey, tracePoints);
 
-        // 3. 电子围栏检测（简化版：检查是否在运输任务关联的网点附近）
-        checkGeoFence(location);
+        // 3. 电子围栏检测（基于历史轨迹判定是否偏离路线）
+        checkGeoFence(location, tracePoints);
     }
 
     /**
@@ -444,17 +444,97 @@ public class GpsTraceConsumer {
     }
 
     /**
-     * 电子围栏检测（简化版）
-     *
-     * @param location 当前位置
+     * 偏离路线检测阈值（千米）：当前点距历史轨迹连线的垂直距离超过该值判定偏离
      */
-    private void checkGeoFence(LocationEntity location) {
-        // TODO: 后续实现基于地理围栏的偏离路线检测
-        // 需要结合运输任务的线路规划数据
-        if (location.getTransportTaskId() != null) {
-            log.debug("[GPS消费] 运输任务轨迹记录: taskId={}, 位置: ({}, {})",
-                location.getTransportTaskId(), location.getLng(), location.getLat());
+    private static final double GEO_FENCE_DEVIATE_KM = 2.0;
+
+    /**
+     * 电子围栏检测（偏离路线检测）
+     *
+     * <p>基于该业务对象的历史轨迹点构成行驶路线，计算当前点到最近路段（由最近两个点构成）
+     * 的垂直距离，超过阈值即判定偏离路线并触发告警。</p>
+     *
+     * @param location    当前位置
+     * @param tracePoints 历史轨迹点（含当前点）
+     */
+    private void checkGeoFence(LocationEntity location, List<LocationEntity> tracePoints) {
+        if (tracePoints == null || tracePoints.size() < 3) {
+            return; // 至少需要 3 个点才能构成一段可检测的路线
         }
+        // 当前点
+        double curLng = parseDouble(location.getLng());
+        double curLat = parseDouble(location.getLat());
+        if (Double.isNaN(curLng) || Double.isNaN(curLat)) {
+            return;
+        }
+        // 最近两个历史点构成线段（作为当前路段的近似）
+        LocationEntity p1 = tracePoints.get(tracePoints.size() - 3);
+        LocationEntity p2 = tracePoints.get(tracePoints.size() - 2);
+        double p1Lng = parseDouble(p1.getLng());
+        double p1Lat = parseDouble(p1.getLat());
+        double p2Lng = parseDouble(p2.getLng());
+        double p2Lat = parseDouble(p2.getLat());
+        if (Double.isNaN(p1Lng) || Double.isNaN(p1Lat) || Double.isNaN(p2Lng) || Double.isNaN(p2Lat)) {
+            return;
+        }
+
+        // 平面近似：计算点到线段(p1,p2)的垂直距离（千米）
+        double deviateKm = distancePointToSegmentKm(curLng, curLat, p1Lng, p1Lat, p2Lng, p2Lat);
+        if (deviateKm > GEO_FENCE_DEVIATE_KM) {
+            gpsAlertService.alert("DEVIATE_ROUTE", location.getBusinessId(),
+                String.format("偏离路线提醒: 距历史轨迹%.1fkm, 阈值%.1fkm, 位置=(%s, %s), 运输任务=%s",
+                    deviateKm, GEO_FENCE_DEVIATE_KM, location.getLng(), location.getLat(),
+                    location.getTransportTaskId()));
+        }
+    }
+
+    /**
+     * 安全解析 double，失败返回 NaN
+     */
+    private double parseDouble(String value) {
+        try {
+            return Double.parseDouble(value);
+        } catch (Exception e) {
+            return Double.NaN;
+        }
+    }
+
+    /**
+     * 计算点到线段的垂直距离（平面近似，单位：千米）
+     *
+     * @param px 点经度
+     * @param py 点纬度
+     * @param ax 线段端点A经度
+     * @param ay 线段端点A纬度
+     * @param bx 线段端点B经度
+     * @param by 线段端点B纬度
+     * @return 垂直距离（千米）
+     */
+    private double distancePointToSegmentKm(double px, double py, double ax, double ay, double bx, double by) {
+        // 1度纬度约111km；1度经度按纬度缩放（此处用平均纬度近似）
+        double latScale = 111.0;
+        double lngScale = 111.0 * Math.cos(Math.toRadians((py + ay + by) / 3.0));
+
+        // 将经纬度按 km 比例换算为平面坐标
+        double pX = px * lngScale, pY = py * latScale;
+        double aX = ax * lngScale, aY = ay * latScale;
+        double bX = bx * lngScale, bY = by * latScale;
+
+        // 向量投影求垂足参数 t（钳制在 [0,1] 表示垂足在线段上）
+        double abX = bX - aX, abY = bY - aY;
+        double apX = pX - aX, apY = pY - aY;
+        double abLenSq = abX * abX + abY * abY;
+        if (abLenSq <= 0) {
+            // 线段退化为点，返回点到端点距离
+            return Math.sqrt(apX * apX + apY * apY);
+        }
+        double t = (apX * abX + apY * abY) / abLenSq;
+        t = Math.max(0, Math.min(1, t));
+
+        double footX = aX + t * abX;
+        double footY = aY + t * abY;
+        double dx = pX - footX, dy = pY - footY;
+        return Math.sqrt(dx * dx + dy * dy);
     }
 
     /**

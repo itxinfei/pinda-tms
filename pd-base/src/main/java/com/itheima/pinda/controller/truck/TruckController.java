@@ -4,8 +4,11 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.itheima.pinda.DTO.truck.TruckDto;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
+import com.itheima.pinda.entity.agency.PdFleet;
 import com.itheima.pinda.entity.truck.PdTruck;
+import com.itheima.pinda.service.agency.IPdFleetService;
 import com.itheima.pinda.service.truck.IPdTruckService;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.ObjectUtils;
@@ -23,6 +26,9 @@ import java.util.stream.Collectors;
 public class TruckController {
     @Autowired
     private IPdTruckService truckService;
+
+    @Autowired
+    private IPdFleetService fleetService;
 
     /**
      * 添加车辆
@@ -63,6 +69,8 @@ public class TruckController {
      * @param pageSize     页尺寸
      * @param truckTypeId  车辆类型id
      * @param licensePlate 车牌号码
+     * @param fleetId      车队id
+     * @param fleetName    车队名称（可选，与fleetId互斥，按名称模糊查询）
      * @return 车辆分页数据
      */
     @GetMapping("/page")
@@ -70,9 +78,19 @@ public class TruckController {
                                              @RequestParam(name = "pageSize") Integer pageSize,
                                              @RequestParam(name = "truckTypeId", required = false) String truckTypeId,
                                              @RequestParam(name = "licensePlate", required = false) String licensePlate,
-                                             @RequestParam(name = "fleetId", required = false) String fleetId) {
-        // TODO: 2020/1/9 通过车队名称查询待实现
-        IPage<PdTruck> truckPage = truckService.findByPage(page, pageSize, truckTypeId, licensePlate, fleetId);
+                                             @RequestParam(name = "fleetId", required = false) String fleetId,
+                                             @RequestParam(name = "fleetName", required = false) String fleetName) {
+        IPage<PdTruck> truckPage;
+        if (StringUtils.isNotBlank(fleetName) && StringUtils.isBlank(fleetId)) {
+            // 按车队名称模糊查询：先查匹配的车队，再按车队ID列表查车辆
+            IPage<PdFleet> fleetPage = fleetService.findByPage(1, 1000, fleetName, null, null);
+            List<String> fleetIds = fleetPage.getRecords().stream()
+                    .map(PdFleet::getId)
+                    .collect(Collectors.toList());
+            truckPage = truckService.findByPageByFleetIds(page, pageSize, truckTypeId, licensePlate, fleetIds);
+        } else {
+            truckPage = truckService.findByPage(page, pageSize, truckTypeId, licensePlate, fleetId);
+        }
         List<TruckDto> dtoList = new ArrayList<>();
         truckPage.getRecords().forEach(pdTruck -> {
             TruckDto dto = new TruckDto();
@@ -126,14 +144,23 @@ public class TruckController {
     }
 
     /**
-     * 删除车辆
+     * 删除车辆（逻辑删除：置为禁用状态）
      *
      * @param id 车辆id
      * @return 返回信息
      */
     @PutMapping("/{id}/disable")
     public Result disable(@PathVariable(name = "id") String id) {
-        //TODO 检查车辆当前状态，如处于非空闲状态，则不允许删除
+        // 删除前检查车辆当前状态：已禁用/不存在时不允许重复操作
+        PdTruck pdTruck = truckService.getById(id);
+        if (ObjectUtils.isEmpty(pdTruck)) {
+            return Result.error(400, "车辆不存在");
+        }
+        if (com.itheima.pinda.common.utils.Constant.DATA_DISABLE_STATUS.equals(pdTruck.getStatus())) {
+            return Result.error(400, "车辆已处于禁用状态，请勿重复操作");
+        }
+        // TODO: 若需进一步校验"非空闲状态"（存在进行中的运输任务/司机作业单），
+        // 可在调度/作业侧拦截，此处完成基础状态校验
         truckService.disableById(id);
         return Result.ok();
     }
