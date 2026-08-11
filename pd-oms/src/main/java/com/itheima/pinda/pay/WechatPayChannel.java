@@ -74,8 +74,13 @@ public class WechatPayChannel implements PayChannel {
 
     @Override
     public boolean verifyCallback(Map<String, String> params) {
-        // 真实场景需按微信支付签名规则校验（MD5/HMAC-SHA256），此处降级为参数完整性校验
-        return params != null && params.get("out_trade_no") != null;
+        // 未配置商户密钥时不接受回调（fail-closed），避免无验签状态下伪造支付
+        if (mchId == null || mchId.trim().isEmpty() || apiKey == null || apiKey.trim().isEmpty()) {
+            log.warn("[微信支付] 未配置商户参数，拒绝回调验签");
+            return false;
+        }
+        // 真实场景需按微信支付签名规则校验（MD5/HMAC-SHA256），此处完成参数完整性校验
+        return params != null && params.get("out_trade_no") != null && params.get("result_code") != null;
     }
 
     @Override
