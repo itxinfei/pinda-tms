@@ -11,6 +11,7 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 异常调度订单 Service 实现
@@ -59,5 +60,35 @@ public class ScheduleExceptionOrderServiceImpl extends ServiceImpl<ScheduleExcep
             log.info("[异常调度] 订单[{}]并发登记被唯一索引拦截，视为已登记", orderId);
             return false;
         }
+    }
+
+    /**
+     * 查询所有待处理的异常订单（用于自动重试调度）
+     *
+     * @return 待处理异常订单列表
+     */
+    @Override
+    public List<ScheduleExceptionOrder> listPending() {
+        LambdaQueryWrapper<ScheduleExceptionOrder> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ScheduleExceptionOrder::getStatus, ScheduleExceptionOrder.STATUS_PENDING);
+        wrapper.orderByAsc(ScheduleExceptionOrder::getCreateTime);
+        return list(wrapper);
+    }
+
+    /**
+     * 标记异常订单为已处理（重试成功后调用）
+     *
+     * @param id     记录ID
+     * @param remark 处理备注
+     * @return 是否成功
+     */
+    @Override
+    public boolean markHandled(String id, String remark) {
+        ScheduleExceptionOrder update = new ScheduleExceptionOrder();
+        update.setId(id);
+        update.setStatus(ScheduleExceptionOrder.STATUS_HANDLED);
+        update.setRemark(remark);
+        update.setHandleTime(LocalDateTime.now());
+        return updateById(update);
     }
 }
