@@ -28,6 +28,7 @@ import com.itheima.pinda.feign.*;
 import com.itheima.pinda.feign.common.GoodsTypeFeign;
 import com.itheima.pinda.feign.courier.AppCourierFeign;
 import com.itheima.pinda.future.PdCompletableFuture;
+import io.seata.spring.annotation.GlobalTransactional;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
@@ -267,6 +268,7 @@ public class CourierController {
     }
 
     @SneakyThrows
+    @GlobalTransactional(name = "pickupDispatchDetail", rollbackFor = Exception.class)
     @ApiOperation(value = "揽收")
     @ApiImplicitParam(name = "id", value = "主键", required = true, example = "")
     @ResponseBody
