@@ -9,9 +9,11 @@ import com.itheima.pinda.DTO.OrderDTO;
 import com.itheima.pinda.DTO.OrderLocationDto;
 import com.itheima.pinda.DTO.OrderSearchDTO;
 import com.itheima.pinda.common.exception.PdException;
+import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.DTO.OrderCargoDto;
 import com.itheima.pinda.entity.OrderCargo;
 import com.itheima.pinda.service.IOrderCargoService;
+import com.itheima.pinda.enums.OrderPaymentStatus;
 import com.itheima.pinda.common.utils.CustomIdGenerator;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.entity.Order;
@@ -135,11 +137,13 @@ public class OrderController {
     @PutMapping("/{id}")
     public OrderDTO updateById(@PathVariable(name = "id") String id, @RequestBody OrderDTO orderDTO) {
         orderDTO.setId(id);
-        // 【安全加固】仅屏蔽确实不可由外部篡改的系统维护字段：
-        // - estimatedArrivalTime/createTime 由系统计算与创建流程维护，不允许外部写入；
-        // - amount 需保留：客户编辑订单(MailingController.update)会重新计算价格并通过本接口持久化；
-        // - paymentStatus 需保留：客户支付(MailingController.pay)通过本接口将订单置为已支付；
+        // 【安全加固】通用更新端点屏蔽敏感字段，避免任意调用方篡改：
+        // - amount 金额由服务端 calculateAmount 计算（改价请走专用 /{id}/reprice 端点）；
+        // - paymentStatus 支付状态由支付流程控制（支付请走专用 /{id}/pay 端点）；
+        // - estimatedArrivalTime/createTime 由系统计算与创建流程维护；
         // - 状态字段由 OrderServiceImpl 状态机校验保护（合法流转时才允许变更）。
+        orderDTO.setAmount(null);
+        orderDTO.setPaymentStatus(null);
         orderDTO.setEstimatedArrivalTime(null);
         orderDTO.setCreateTime(null);
         Order order = new Order();
@@ -150,6 +154,69 @@ public class OrderController {
             return null;
         }
         return orderDTO;
+    }
+
+    /**
+     * 订单支付确认（专用端点，供客户支付流程调用）
+     *
+     * <p>服务端校验订单存在后置支付状态为已支付，不接受请求体传参，避免伪造支付状态。</p>
+     *
+     * @param id 订单id
+     * @return 支付结果
+     */
+    @PutMapping("/{id}/pay")
+    public Result pay(@PathVariable(name = "id") String id) {
+        if (StringUtils.isBlank(id)) {
+            return Result.error(400, "订单ID不能为空");
+        }
+        Order order = orderService.getById(id);
+        if (order == null) {
+            return Result.error(400, "订单不存在");
+        }
+        OrderDTO update = new OrderDTO();
+        update.setId(id);
+        update.setPaymentStatus(OrderPaymentStatus.PAID.getStatus());
+        Order orderUpdate = new Order();
+        BeanUtils.copyProperties(update, orderUpdate);
+        if (!orderService.updateById(orderUpdate)) {
+            log.error("[订单] 支付状态更新失败: id={}", id);
+            return Result.error(500, "支付状态更新失败");
+        }
+        log.info("[订单] 支付确认成功: id={}", id);
+        return Result.ok();
+    }
+
+    /**
+     * 订单改价（专用端点，供客户编辑订单流程调用）
+     *
+     * <p>金额由服务端 calculateAmount 重算，不接受客户端传入的 amount，避免价格篡改。</p>
+     *
+     * @param id       订单id
+     * @param orderDTO 订单信息（用于重算运费）
+     * @return 更新后的订单金额
+     */
+    @PutMapping("/{id}/reprice")
+    public Result reprice(@PathVariable(name = "id") String id, @RequestBody OrderDTO orderDTO) {
+        if (orderDTO == null) {
+            return Result.error(400, "订单信息不能为空");
+        }
+        orderDTO.setId(id);
+        // 服务端重算运费
+        Map map = orderService.calculateAmount(orderDTO);
+        if (map == null || !map.containsKey("amount")) {
+            log.error("[订单] 运费重算失败: id={}", id);
+            return Result.error(500, "运费重算失败");
+        }
+        BigDecimal amount = new BigDecimal(map.get("amount").toString());
+        Order orderUpdate = new Order();
+        orderUpdate.setId(id);
+        orderUpdate.setAmount(amount);
+        if (!orderService.updateById(orderUpdate)) {
+            log.error("[订单] 改价更新失败: id={}", id);
+            return Result.error(500, "改价更新失败");
+        }
+        log.info("[订单] 改价成功: id={}, amount={}", id, amount);
+        return Result.ok().put("amount", amount);
     }
 
     /**

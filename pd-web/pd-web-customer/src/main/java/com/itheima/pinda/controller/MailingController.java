@@ -540,8 +540,24 @@ public class MailingController {
         OrderDTO orderDTO = buildOrderAndPrice(entity);
         orderDTO.setMemberId(userId);
         orderDTO.setCreateTime(LocalDateTime.now());
+        // 补货物信息，供改价专用端点服务端重算运费
+        orderDTO.setOrderCargoDto(buildOrderCargo(entity));
+        // 保存完整 DTO（含货物信息）供改价使用；updateById 返回值为 OMS 回显，amount 已被服务端屏蔽
+        OrderDTO orderDTOForReprice = orderDTO;
         orderDTO = orderFeign.updateById(order.getId(), orderDTO);
         log.info("新订单 id:{} params：{}", id, orderDTO);
+
+        // 改价走专用端点：通用 updateById 已屏蔽 amount，金额由服务端 calculateAmount 重算，防篡改
+        try {
+            Result repriceResult = orderFeign.reprice(order.getId(), orderDTOForReprice);
+            if (repriceResult != null && "0".equals(String.valueOf(repriceResult.get("code")))) {
+                log.info("订单改价成功: id={}, amount={}", order.getId(), repriceResult.get("amount"));
+            } else {
+                log.warn("订单改价未生效: id={}, result={}", order.getId(), repriceResult);
+            }
+        } catch (Exception e) {
+            log.error("订单改价异常: id={}", order.getId(), e);
+        }
 
         if (orderDTO.getId() != null) {
             List<OrderCargoDto> cargoDtos = cargoFeign.findAll(null, orderDTO.getId());
@@ -681,11 +697,10 @@ public class MailingController {
     @PutMapping("/pay/{id}")
     public Result pay(@PathVariable("id") String id) {
         try {
-            OrderDTO orderDTO = new OrderDTO();
-            orderDTO.setPaymentStatus(OrderPaymentStatus.PAID.getStatus());
-            orderFeign.updateById(id, orderDTO);
-            return Result.ok();
+            // 支付走专用端点：服务端校验后置为已支付，避免伪造支付状态
+            return orderFeign.pay(id);
         } catch (Exception e) {
+            log.error("订单支付失败: id={}", id, e);
             return Result.error();
         }
     }
