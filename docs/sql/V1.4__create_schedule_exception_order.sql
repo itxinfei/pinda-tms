@@ -20,5 +20,8 @@ CREATE TABLE `pd_schedule_exception_order` (
     KEY `idx_order_id` (`order_id`),
     KEY `idx_status` (`status`),
     KEY `idx_agency_id` (`agency_id`),
-    UNIQUE KEY `uk_order_status` (`order_id`, `status`)
+    -- 仅对待处理(status=0)记录约束 order_id 唯一（MySQL 8.0.13+ 函数索引）：
+    -- 已处理(status=1)的历史记录不阻塞后续调度周期重新登记与再次处理，
+    -- 同时并发登记待处理记录时由该索引兜底幂等
+    UNIQUE KEY `uk_order_pending` ((CASE WHEN `status` = 0 THEN `order_id` END))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='异常调度订单登记表';
