@@ -805,7 +805,12 @@ public class TransforCenterBusinessController {
     @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "线路id", required = true, example = "1", paramType = "{path}")})
     @DeleteMapping("/transportLine/{id}")
     public Result deleteTransportLine(@PathVariable(name = "id") String id) {
-        // TODO: 2020/1/10 注意检查线路，及其关联数据，确定是否可以删除
+        // 关联校验：线路下存在车次时禁止删除，防止基础数据不一致
+        List<TransportTripsDto> tripsList = transportTripsFeign.findAll(id, null);
+        if (tripsList != null && !tripsList.isEmpty()) {
+            log.warn("[线路] 线路[{}]下存在 {} 个车次，禁止删除", id, tripsList.size());
+            return Result.error(400, "该线路下存在关联车次，无法删除");
+        }
         transportLineFeign.disable(id);
         return Result.ok();
     }
@@ -979,7 +984,12 @@ public class TransforCenterBusinessController {
     @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "车次id", required = true, example = "1", paramType = "{path}")})
     @DeleteMapping("/transportLine/trips/{id}")
     public Result deleteTransportLineTrips(@PathVariable(name = "id") String id) {
-        // TODO: 2020/1/10 需检查车次与其他关联数据的联系，决定是否可以删除
+        // 关联校验：车次已安排车辆/司机时禁止删除
+        List<TransportTripsTruckDriverDto> refs = transportTripsFeign.findAllTruckDriverTransportTrips(id, null, null);
+        if (refs != null && !refs.isEmpty()) {
+            log.warn("[车次] 车次[{}]已安排 {} 组车辆/司机，禁止删除", id, refs.size());
+            return Result.error(400, "该车次已安排车辆/司机，无法删除");
+        }
         transportTripsFeign.disable(id);
         return Result.ok();
     }
