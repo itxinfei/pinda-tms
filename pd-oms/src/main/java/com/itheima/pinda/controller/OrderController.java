@@ -135,12 +135,12 @@ public class OrderController {
     @PutMapping("/{id}")
     public OrderDTO updateById(@PathVariable(name = "id") String id, @RequestBody OrderDTO orderDTO) {
         orderDTO.setId(id);
-        // 【安全加固】核心业务字段禁止通过普通更新接口篡改，只能由系统内部流程修改：
-        // 金额/预计到达时间由运费计算与下单流程决定；支付状态由支付回调/对账流程决定；
-        // 状态字段由 OrderServiceImpl 状态机校验保护（合法流转时才允许变更）。
-        orderDTO.setAmount(null);
+        // 【安全加固】仅屏蔽确实不可由外部篡改的系统维护字段：
+        // - estimatedArrivalTime/createTime 由系统计算与创建流程维护，不允许外部写入；
+        // - amount 需保留：客户编辑订单(MailingController.update)会重新计算价格并通过本接口持久化；
+        // - paymentStatus 需保留：客户支付(MailingController.pay)通过本接口将订单置为已支付；
+        // - 状态字段由 OrderServiceImpl 状态机校验保护（合法流转时才允许变更）。
         orderDTO.setEstimatedArrivalTime(null);
-        orderDTO.setPaymentStatus(null);
         orderDTO.setCreateTime(null);
         Order order = new Order();
         BeanUtils.copyProperties(orderDTO, order);
