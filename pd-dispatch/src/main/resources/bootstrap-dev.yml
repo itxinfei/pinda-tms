@@ -92,4 +92,13 @@ schedule:
 sms:
   webhook-url: ${SMS_WEBHOOK_URL:}
 
+# 异常调度订单定时重试
+schedule:
+  exception:
+    retry:
+      # 重试开关
+      enabled: ${SCHEDULE_EXCEPTION_RETRY_ENABLED:true}
+      # 重试 cron 表达式（默认每10分钟）
+      cron: ${SCHEDULE_EXCEPTION_RETRY_CRON:0 */10 * * * ?}
+
 
