@@ -12,6 +12,7 @@ import com.itheima.pinda.service.base.IPdGoodsTypeService;
 import com.itheima.pinda.service.truck.IPdTruckTypeGoodsTypeService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
@@ -24,6 +25,7 @@ import java.util.stream.Collectors;
 /**
  * 货物类型管理
  */
+@Slf4j
 @RestController
 @RequestMapping("base/goodsType")
 @Api(tags = "货物类型管理")
@@ -214,6 +216,12 @@ public class GoodsTypeController {
     @PutMapping("/{id}/disable")
     @ApiOperation(value = "删除货物类型")
     public Result disable(@PathVariable(name = "id") String id) {
+        // 关联校验：存在车辆类型引用该货物类型时禁止删除
+        List<PdTruckTypeGoodsType> refs = truckTypeGoodsTypeService.findAll(null, id);
+        if (refs != null && !refs.isEmpty()) {
+            log.warn("[货物类型] 存在车辆类型关联，禁止删除: goodsTypeId={}, 关联数={}", id, refs.size());
+            return Result.error(400, "该货物类型已被车辆类型关联，无法删除");
+        }
         PdGoodsType pdGoodsType = new PdGoodsType();
         pdGoodsType.setId(id);
         pdGoodsType.setStatus(Constant.DATA_DISABLE_STATUS);
