@@ -80,4 +80,12 @@ mybatis-plus:
     jdbc-type-for-null: ${mybatis-plus.configuration.jdbc-type-for-null}
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
+# 定时任务失败重试参数（可通过 Nacos 配置中心覆盖）
+schedule:
+  retry:
+    # 最大尝试次数（含首次），3 表示首次 + 2 次重试
+    max-attempts: ${SCHEDULE_RETRY_MAX_ATTEMPTS:3}
+    # 重试间隔（毫秒）
+    interval-ms: ${SCHEDULE_RETRY_INTERVAL_MS:2000}
+
 

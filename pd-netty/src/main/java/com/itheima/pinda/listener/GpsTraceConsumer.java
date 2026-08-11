@@ -8,6 +8,7 @@ import com.itheima.pinda.service.GpsAlertService;
 import com.itheima.pinda.service.ILocationRecordService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -124,9 +125,62 @@ public class GpsTraceConsumer {
         return t;
     });
 
+    /**
+     * 轨迹数据保留天数（超过该天数的落库数据将被清理；<=0 表示不清理）
+     */
+    @Value("${gps.trace.retention-days:30}")
+    private int retentionDays;
+
     static {
         // 每小时清理一次过期缓存
         CLEANUP_EXECUTOR.scheduleAtFixedRate(GpsTraceConsumer::cleanupExpiredCache, 1, 1, TimeUnit.HOURS);
+    }
+
+    /**
+     * 定时清理：内存过期缓存 + 数据库过期轨迹数据
+     */
+    private static void cleanupExpiredCache() {
+        try {
+            GpsTraceConsumer consumer = SpringContextUtils.getBean(GpsTraceConsumer.class);
+            consumer.doCleanup();
+        } catch (Exception e) {
+            log.error("[GPS清理] 定时清理任务执行失败", e);
+        }
+    }
+
+    /**
+     * 执行清理：先清理内存过期缓存，再清理数据库过期轨迹数据
+     */
+    private void doCleanup() {
+        // 1. 清理内存缓存中超过过期时间的业务对象
+        long expireThreshold = System.currentTimeMillis() - CACHE_EXPIRE_MINUTES * 60 * 1000;
+        TRACE_CACHE.keySet().removeIf(key -> {
+            List<LocationEntity> points = TRACE_CACHE.get(key);
+            if (points == null || points.isEmpty()) {
+                return true;
+            }
+            LocationEntity last = points.get(points.size() - 1);
+            try {
+                long lastTime = LocalDateTime.parse(last.getCurrentTime(), TIME_FORMATTER)
+                    .atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli();
+                return lastTime < expireThreshold;
+            } catch (Exception e) {
+                return false; // 解析失败保留，避免误删
+            }
+        });
+        log.info("[GPS清理] 内存缓存清理完成，剩余业务对象数: {}", TRACE_CACHE.size());
+
+        // 2. 清理数据库过期轨迹数据（每天最多执行一次）
+        if (retentionDays > 0) {
+            try {
+                int deleted = locationRecordService.cleanExpiredTraces(retentionDays);
+                if (deleted > 0) {
+                    log.info("[GPS清理] 数据库过期轨迹清理完成，删除 {} 条", deleted);
+                }
+            } catch (Exception e) {
+                log.error("[GPS清理] 数据库过期轨迹清理失败", e);
+            }
+        }
     }
 
     /**
@@ -439,41 +493,6 @@ public class GpsTraceConsumer {
                 * Math.sin(dLng / 2) * Math.sin(dLng / 2);
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return earthRadius * c;
-    }
-
-    /**
-     * 清理过期缓存（60分钟无新点自动移除）
-     */
-    private static void cleanupExpiredCache() {
-        long now = System.currentTimeMillis();
-        int removed = 0;
-        // synchronizedMap 的迭代器非线程安全，必须在 map 锁内遍历
-        synchronized (TRACE_CACHE) {
-            for (Map.Entry<String, List<LocationEntity>> entry : TRACE_CACHE.entrySet()) {
-                List<LocationEntity> points = entry.getValue();
-                if (points.isEmpty()) {
-                    TRACE_CACHE.remove(entry.getKey());
-                    removed++;
-                    continue;
-                }
-                // 检查最后一条点的时间
-                LocationEntity last = points.get(points.size() - 1);
-                try {
-                    LocalDateTime lastTime = LocalDateTime.parse(last.getCurrentTime(), TIME_FORMATTER);
-                    if (ChronoUnit.MINUTES.between(lastTime, LocalDateTime.now()) > CACHE_EXPIRE_MINUTES) {
-                        TRACE_CACHE.remove(entry.getKey());
-                        removed++;
-                    }
-                } catch (Exception e) {
-                    // 时间格式异常，移除该缓存
-                    TRACE_CACHE.remove(entry.getKey());
-                    removed++;
-                }
-            }
-        }
-        if (removed > 0) {
-            log.info("[GPS缓存清理] 清理过期缓存条目: {}, 当前缓存业务对象数: {}", removed, TRACE_CACHE.size());
-        }
     }
 
     /**
