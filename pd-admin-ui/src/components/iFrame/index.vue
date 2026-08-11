@@ -32,7 +32,7 @@ export default {
     }, 500)
     this.$bindResize(() => {
       this.height = document.documentElement.clientHeight - 87.7 + 'px'
-    }
+    })
   },
   methods: {
     refresh() {

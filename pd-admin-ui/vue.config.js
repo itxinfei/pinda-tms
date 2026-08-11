@@ -93,6 +93,15 @@ module.exports = {
     config.plugins.delete('preload') // TODO: need test
     config.plugins.delete('prefetch') // TODO: need test
 
+    // 使用 dart-sass 替代 node-sass，兼容新版 Node 运行时
+    const sassRule = config.module.rule('scss')
+    sassRule.oneOfs.values().forEach(oneOf => {
+      oneOf.use('sass-loader').tap(options => {
+        options.implementation = require('sass')
+        return options
+      })
+    })
+
     // set svg-sprite-loader
     config.module
       .rule('svg')

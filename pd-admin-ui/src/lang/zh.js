@@ -1,7 +1,8 @@
 export default {
   route: {
     dashboard: '系统主页',
-    profile: '个人中心'
+    profile: '个人中心',
+    trace: '车辆轨迹监控'
   },
   navbar: {
     setting: '系统设置',

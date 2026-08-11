@@ -1,8 +1,13 @@
 package com.itheima.pinda.listener;
 
 import com.alibaba.fastjson.JSON;
+import com.itheima.pinda.common.utils.SpringContextUtils;
 import com.itheima.pinda.entity.LocationEntity;
+import com.itheima.pinda.entity.LocationRecord;
+import com.itheima.pinda.service.GpsAlertService;
+import com.itheima.pinda.service.ILocationRecordService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -13,11 +18,13 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -39,6 +46,42 @@ import java.util.concurrent.atomic.AtomicLong;
 @Slf4j
 @Component
 public class GpsTraceConsumer {
+
+    /**
+     * 轨迹落库 Service（持久化 GPS 轨迹明细到 MySQL）
+     */
+    @Autowired
+    private ILocationRecordService locationRecordService;
+
+    /**
+     * 异常告警服务（超速/长时间停留等异常通知）
+     */
+    @Autowired
+    private GpsAlertService gpsAlertService;
+
+    /**
+     * 批量落库阈值：缓冲达到该条数时执行批量写入
+     */
+    private static final int BATCH_INSERT_THRESHOLD = 200;
+
+    /**
+     * 待落库轨迹缓冲（线程安全，达到阈值或定时触发批量写入）
+     */
+    private final List<LocationRecord> PERSIST_BUFFER = Collections.synchronizedList(new LinkedList<>());
+
+    /**
+     * 定时落库任务（每 10 秒将缓冲中的轨迹刷入数据库，防止缓冲积压）
+     */
+    private static final ScheduledExecutorService PERSIST_EXECUTOR = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread t = new Thread(r, "gps-trace-persist");
+        t.setDaemon(true);
+        return t;
+    });
+
+    static {
+        // 每 10 秒触发一次批量落库
+        PERSIST_EXECUTOR.scheduleAtFixedRate(GpsTraceConsumer::flushPendingRecords, 10, 10, TimeUnit.SECONDS);
+    }
 
     /**
      * 轨迹点内存缓存（按车辆/快递员ID分组）
@@ -169,6 +212,77 @@ public class GpsTraceConsumer {
         synchronized (tracePoints) {
             checkAnomalies(location, cacheKey, tracePoints);
         }
+
+        // 3. 持久化到数据库（批量缓冲，达到阈值或定时刷入）
+        enqueueForPersist(location);
+    }
+
+    /**
+     * 将轨迹点加入落库缓冲，达到批量阈值时立即刷库
+     *
+     * @param location 位置信息
+     */
+    private void enqueueForPersist(LocationEntity location) {
+        try {
+            LocationRecord record = new LocationRecord();
+            record.setId(UUID.randomUUID().toString().replace("-", ""));
+            record.setBusinessId(location.getBusinessId());
+            record.setName(location.getName());
+            record.setPhone(location.getPhone());
+            record.setLicensePlate(location.getLicensePlate());
+            record.setType(location.getType());
+            record.setLng(location.getLng());
+            record.setLat(location.getLat());
+            record.setCurrentTime(location.getCurrentTime());
+            record.setTeam(location.getTeam());
+            record.setTransportTaskId(location.getTransportTaskId());
+            record.setCreateTime(LocalDateTime.now());
+
+            PERSIST_BUFFER.add(record);
+            if (PERSIST_BUFFER.size() >= BATCH_INSERT_THRESHOLD) {
+                flushPendingRecords();
+            }
+        } catch (Exception e) {
+            log.error("[GPS落库] 轨迹数据加入缓冲失败: businessId={}", location.getBusinessId(), e);
+        }
+    }
+
+    /**
+     * 将缓冲中的轨迹批量写入数据库（供定时任务与阈值触发调用，线程安全）
+     */
+    private static void flushPendingRecords() {
+        GpsTraceConsumer consumer;
+        // 静态定时任务无法直接访问实例字段，通过 Spring 容器获取实例
+        try {
+            consumer = SpringContextUtils.getBean(GpsTraceConsumer.class);
+        } catch (Exception e) {
+            log.warn("[GPS落库] 无法获取 GpsTraceConsumer 实例，跳过本次落库");
+            return;
+        }
+        consumer.doFlushPendingRecords();
+    }
+
+    /**
+     * 实例方法：批量写入缓冲中的轨迹数据
+     */
+    private void doFlushPendingRecords() {
+        if (PERSIST_BUFFER.isEmpty()) {
+            return;
+        }
+        List<LocationRecord> batch = new ArrayList<>();
+        synchronized (PERSIST_BUFFER) {
+            batch.addAll(PERSIST_BUFFER);
+            PERSIST_BUFFER.clear();
+        }
+        if (batch.isEmpty()) {
+            return;
+        }
+        try {
+            locationRecordService.saveBatch(batch);
+            log.info("[GPS落库] 批量写入轨迹数据: {} 条", batch.size());
+        } catch (Exception e) {
+            log.error("[GPS落库] 批量写入轨迹数据失败，共 {} 条（数据丢失）", batch.size(), e);
+        }
     }
 
     /**
@@ -222,9 +336,10 @@ public class GpsTraceConsumer {
             if (timeDiffSeconds > 0 && timeDiffSeconds < 300) { // 5分钟内的点才计算速度
                 double speedKmh = (distanceKm / timeDiffSeconds) * 3600;
                 if (speedKmh > SPEED_LIMIT) {
-                    log.warn("[GPS告警] 超速提醒: businessId={}, 速度={}km/h, 阈值={}km/h, 位置: ({}, {})",
-                        current.getBusinessId(), String.format("%.1f", speedKmh), SPEED_LIMIT,
-                        current.getLng(), current.getLat());
+                    // 接入告警服务：日志 + 可选 Webhook 通知
+                    gpsAlertService.alert("SPEED_OVER", current.getBusinessId(),
+                        String.format("超速提醒: 速度=%.1fkm/h, 阈值=%dkm/h, 位置=(%s, %s)",
+                            speedKmh, SPEED_LIMIT, current.getLng(), current.getLat()));
                 }
             }
         } catch (NumberFormatException e) {
@@ -264,8 +379,10 @@ public class GpsTraceConsumer {
             if (stayMinutes > STAY_THRESHOLD_MINUTES
                     && lngDiff < STAY_POSITION_THRESHOLD
                     && latDiff < STAY_POSITION_THRESHOLD) {
-                log.warn("[GPS告警] 长时间停留: businessId={}, 停留时长={}分钟, 位置: ({}, {})",
-                    current.getBusinessId(), stayMinutes, current.getLng(), current.getLat());
+                // 接入告警服务：日志 + 可选 Webhook 通知
+                gpsAlertService.alert("STAY_TOO_LONG", current.getBusinessId(),
+                    String.format("长时间停留提醒: 停留时长=%d分钟, 位置=(%s, %s)",
+                        stayMinutes, current.getLng(), current.getLat()));
             }
         } catch (Exception e) {
             log.debug("[GPS消费] 时间格式解析失败，跳过停留检测");

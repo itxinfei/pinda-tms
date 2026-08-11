@@ -27,9 +27,13 @@ import lombok.extern.slf4j.Slf4j;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 订单服务实现类
@@ -37,6 +41,87 @@ import java.util.Map;
 @Slf4j
 @Service
 public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements IOrderService {
+
+    /**
+     * 订单状态流转图（Key: 当前状态, Value: 允许的下一个状态集合）
+     * 与 pd-work 的 StateTransitionValidator 保持一致，并依据实际业务路径补充：
+     *  - 网点自寄(23002) → 网点入库(23003)：自寄订单交件直接入库
+     *  - 网点出库(23006) → 派送中(23008)：快递员接件直接进入派送（跳过待派送 23007）
+     */
+    private static final Map<Integer, Set<Integer>> ORDER_STATUS_TRANSITIONS = new HashMap<>();
+
+    static {
+        // 待取件 → 已取件 / 已取消
+        ORDER_STATUS_TRANSITIONS.put(OrderStatus.PENDING.getCode(), new HashSet<>(Arrays.asList(
+            OrderStatus.PICKED_UP.getCode(), OrderStatus.CANCELLED.getCode())));
+        // 已取件 → 网点入库 / 已取消
+        ORDER_STATUS_TRANSITIONS.put(OrderStatus.PICKED_UP.getCode(), new HashSet<>(Arrays.asList(
+            OrderStatus.OUTLETS_WAREHOUSE.getCode(), OrderStatus.CANCELLED.getCode())));
+        // 网点自寄 → 网点入库 / 已取消
+        ORDER_STATUS_TRANSITIONS.put(OrderStatus.OUTLETS_SINCE_SENT.getCode(), new HashSet<>(Arrays.asList(
+            OrderStatus.OUTLETS_WAREHOUSE.getCode(), OrderStatus.CANCELLED.getCode())));
+        // 网点入库 → 待装车 / 已取消
+        ORDER_STATUS_TRANSITIONS.put(OrderStatus.OUTLETS_WAREHOUSE.getCode(), new HashSet<>(Arrays.asList(
+            OrderStatus.FOR_LOADING.getCode(), OrderStatus.CANCELLED.getCode())));
+        // 待装车 → 运输中 / 已取消
+        ORDER_STATUS_TRANSITIONS.put(OrderStatus.FOR_LOADING.getCode(), new HashSet<>(Arrays.asList(
+            OrderStatus.IN_TRANSIT.getCode(), OrderStatus.CANCELLED.getCode())));
+        // 运输中 → 网点出库 / 已取消
+        ORDER_STATUS_TRANSITIONS.put(OrderStatus.IN_TRANSIT.getCode(), new HashSet<>(Arrays.asList(
+            OrderStatus.OUTLETS_EX_WAREHOUSE.getCode(), OrderStatus.CANCELLED.getCode())));
+        // 网点出库 → 待派送 / 派送中 / 已取消
+        ORDER_STATUS_TRANSITIONS.put(OrderStatus.OUTLETS_EX_WAREHOUSE.getCode(), new HashSet<>(Arrays.asList(
+            OrderStatus.TO_BE_DISPATCHED.getCode(), OrderStatus.DISPATCHING.getCode(), OrderStatus.CANCELLED.getCode())));
+        // 待派送 → 派送中 / 已取消
+        ORDER_STATUS_TRANSITIONS.put(OrderStatus.TO_BE_DISPATCHED.getCode(), new HashSet<>(Arrays.asList(
+            OrderStatus.DISPATCHING.getCode(), OrderStatus.CANCELLED.getCode())));
+        // 派送中 → 已签收 / 拒收 / 已取消
+        ORDER_STATUS_TRANSITIONS.put(OrderStatus.DISPATCHING.getCode(), new HashSet<>(Arrays.asList(
+            OrderStatus.RECEIVED.getCode(), OrderStatus.REJECTION.getCode(), OrderStatus.CANCELLED.getCode())));
+        // 已签收、拒收、已取消 → 终态
+        ORDER_STATUS_TRANSITIONS.put(OrderStatus.RECEIVED.getCode(), Collections.emptySet());
+        ORDER_STATUS_TRANSITIONS.put(OrderStatus.REJECTION.getCode(), Collections.emptySet());
+        ORDER_STATUS_TRANSITIONS.put(OrderStatus.CANCELLED.getCode(), Collections.emptySet());
+    }
+
+    /**
+     * 修改订单（重写以接入状态流转校验）
+     *
+     * <p>所有订单状态变更（Feign 调用、管理端、司机/快递员端）最终都经过 {@code updateById}，
+     * 因此在此统一校验状态流转合法性，仅当状态真正发生变化时才校验，
+     * 避免普通字段更新被误拦截。</p>
+     *
+     * @param order 待更新的订单（需包含 id）
+     * @return 是否更新成功；状态流转非法时返回 false 并记录错误日志
+     */
+    @Override
+    public boolean updateById(Order order) {
+        if (order == null || StringUtils.isBlank(order.getId())) {
+            log.warn("订单更新失败：订单ID为空");
+            return false;
+        }
+
+        // 读取当前持久化状态，用于校验流转合法性
+        Order existing = getById(order.getId());
+        if (existing == null) {
+            log.warn("订单[{}]不存在，无法更新", order.getId());
+            return false;
+        }
+
+        // 状态维度校验（仅在 status 发生变化时校验）
+        Integer newStatus = order.getStatus();
+        if (newStatus != null && !newStatus.equals(existing.getStatus())) {
+            Set<Integer> allowedTransitions = ORDER_STATUS_TRANSITIONS.get(existing.getStatus());
+            if (allowedTransitions == null || !allowedTransitions.contains(newStatus)) {
+                log.error("订单[{}]状态流转非法：当前状态[{}]不能流转到[{}]",
+                    order.getId(), existing.getStatus(), newStatus);
+                return false;
+            }
+        }
+
+        return super.updateById(order);
+    }
+
     @Autowired
     private CustomIdGenerator idGenerator;
     @Autowired

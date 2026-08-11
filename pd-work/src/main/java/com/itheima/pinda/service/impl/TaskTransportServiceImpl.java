@@ -89,6 +89,11 @@ public class TaskTransportServiceImpl extends
     private static final Long STATION_COURIER = 3L;
 
     /**
+     * 业务类型-运输任务（对应状态流转历史表 businessType 字段：1-订单，2-运单，3-运输任务）
+     */
+    private static final Integer BUSINESS_TYPE_TRANSPORT_TASK = 3;
+
+    /**
      * 获取当前操作人类型（operatorType）
      *
      * <p>取值含义：1-客户 2-快递员 3-司机 4-系统 5-管理员。
@@ -252,7 +257,7 @@ public class TaskTransportServiceImpl extends
         if (result) {
             String operatorId = getCurrentOperatorId();
             statusTransitionHistoryService.recordTransition(
-                3, id, id,
+                BUSINESS_TYPE_TRANSPORT_TASK, id, id,
                 taskTransport.getStatus(), targetStatus,
                 operatorId, getCurrentOperatorName(), getCurrentOperatorType(), "发车确认"
             );
@@ -296,7 +301,7 @@ public class TaskTransportServiceImpl extends
         if (result) {
             String operatorId = getCurrentOperatorId();
             statusTransitionHistoryService.recordTransition(
-                3, id, id,
+                BUSINESS_TYPE_TRANSPORT_TASK, id, id,
                 taskTransport.getStatus(), targetStatus,
                 operatorId, getCurrentOperatorName(), getCurrentOperatorType(), "到达确认"
             );
@@ -340,7 +345,7 @@ public class TaskTransportServiceImpl extends
         if (result) {
             String operatorId = getCurrentOperatorId();
             statusTransitionHistoryService.recordTransition(
-                3, id, id,
+                BUSINESS_TYPE_TRANSPORT_TASK, id, id,
                 taskTransport.getStatus(), targetStatus,
                 operatorId, getCurrentOperatorName(), getCurrentOperatorType(), "交付确认"
             );
@@ -414,8 +419,10 @@ public class TaskTransportServiceImpl extends
                 }
             });
 
-            // 6. 批量更新所有关联订单状态为已签收
-            // 一个运输任务可能关联多个运单，每个运单对应不同订单，需全部更新
+            // 6. 批量更新所有关联订单状态为"网点出库"
+            // 干线运输任务交付仅代表货物到达终端网点，还需经过末端派送（接件→妥投）才能签收，
+            // 因此此处不能直接置为"已签收"，否则会跳过网点出库→待派送→派送中的末端流程。
+            // 订单最终签收/拒收由快递员妥投（CourierController.delivered）确认。
             int successCount = 0;
             int failCount = 0;
             for (String transportOrderId : transportOrderIds) {
@@ -424,11 +431,17 @@ public class TaskTransportServiceImpl extends
                     try {
                         OrderDTO orderDTO = new OrderDTO();
                         orderDTO.setId(transportOrder.getOrderId());
-                        orderDTO.setStatus(OrderStatus.RECEIVED.getCode());
-                        orderFeign.updateById(transportOrder.getOrderId(), orderDTO);
-                        log.info("更新订单[{}]状态为已签收({}), 关联运单[{}]",
-                            transportOrder.getOrderId(), OrderStatus.RECEIVED.getCode(), transportOrderId);
-                        successCount++;
+                        orderDTO.setStatus(OrderStatus.OUTLETS_EX_WAREHOUSE.getCode());
+                        OrderDTO updated = orderFeign.updateById(transportOrder.getOrderId(), orderDTO);
+                        if (updated != null) {
+                            log.info("更新订单[{}]状态为网点出库({}), 关联运单[{}]",
+                                transportOrder.getOrderId(), OrderStatus.OUTLETS_EX_WAREHOUSE.getCode(), transportOrderId);
+                            successCount++;
+                        } else {
+                            log.warn("更新订单[{}]状态为网点出库失败（可能状态流转不合法），关联运单[{}]",
+                                transportOrder.getOrderId(), transportOrderId);
+                            failCount++;
+                        }
                     } catch (Exception e) {
                         log.error("更新订单[{}]状态失败", transportOrder.getOrderId(), e);
                         failCount++;

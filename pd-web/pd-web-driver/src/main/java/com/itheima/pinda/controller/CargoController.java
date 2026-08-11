@@ -472,7 +472,8 @@ public class CargoController {
             String orderId = transportOrder.getOrderId();
             // 修改订单状态
             OrderDTO orderDTO = new OrderDTO();
-            orderDTO.setCurrentAgencyId(OrderStatus.IN_TRANSIT.getValue());
+            // 修复：原实现误将枚举值字符串 "IN_TRANSIT" 写入 currentAgencyId，应写入起始机构ID
+            orderDTO.setCurrentAgencyId(startAgencyId);
             orderDTO.setStatus(OrderStatus.IN_TRANSIT.getCode());
             orderFeign.updateById(orderId, orderDTO);
             log.info("修改订单状态和当前机构: {} {}", orderId, orderDTO);
