@@ -52,8 +52,15 @@ public class PayServiceImplTest {
         when(mockChannel.verifyCallback(any())).thenReturn(true);
         when(mockChannel.parseTradeNo(any())).thenReturn("PAY-001");
 
+        // 注册第二个渠道(wechat)，使跨渠道一致性校验分支可被真正触达
+        PayChannel wechatChannel = mock(PayChannel.class);
+        when(wechatChannel.channelCode()).thenReturn("wechat");
+        when(wechatChannel.verifyCallback(any())).thenReturn(true);
+        when(wechatChannel.parseTradeNo(any())).thenReturn("PAY-001");
+
         List<PayChannel> channels = new ArrayList<>();
         channels.add(mockChannel);
+        channels.add(wechatChannel);
 
         ReflectionTestUtils.setField(payService, "paymentOrderService", paymentOrderService);
         ReflectionTestUtils.setField(payService, "orderService", orderService);
