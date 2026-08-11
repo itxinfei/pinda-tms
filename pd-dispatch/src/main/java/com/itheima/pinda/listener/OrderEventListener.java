@@ -209,18 +209,4 @@ public class OrderEventListener {
             log.error("[短信通知] 订单[{}]短信发送异常", orderId, e);
         }
     }
-
-    /**
-     * 监听运输任务完成事件（预留）
-     *
-     * 用于处理运输任务完成后的额外业务逻辑
-     *
-     * @param event 运输任务完成事件
-     */
-    // @Async
-    // @EventListener
-    // public void handleTransportTaskCompleted(TransportTaskCompletedEvent event) {
-    //     log.info("[事件监听] 运输任务完成事件触发: taskId={}", event.getTaskId());
-    //     // TODO: 处理运输任务完成后的业务逻辑
-    // }
 }

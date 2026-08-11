@@ -137,7 +137,7 @@ public class BusinessHallController {
                     vo.setTruckTypes(truckTypeVoList);
                 }
             } catch (Exception e) {
-                // TODO: 2020/1/2 此处异常处理依赖于业务是否为弱关系，如强关系，则返回错误
+                // 说明：当前为弱关系处理（记录错误并继续），不影响主流程；如改为强关系可在 catch 后返回错误
                 log.error("操作异常", e);
             }
             return vo;
@@ -166,7 +166,7 @@ public class BusinessHallController {
                     return truckTypeVo;
                 }).collect(Collectors.toList()));
             } catch (Exception e) {
-                // TODO: 2020/1/2 此处异常处理依赖于业务是否为弱关系，如强关系，则返回错误
+                // 说明：当前为弱关系处理（记录错误并继续），不影响主流程；如改为强关系可在 catch 后返回错误
                 log.error("操作异常", e);
             }
         }
@@ -179,7 +179,7 @@ public class BusinessHallController {
     })
     @DeleteMapping("/goodsType/{id}")
     public Result deleteGoodsType(@PathVariable(name = "id") String id) {
-        // TODO: 2020/1/7 检查货物类型与其他数据关联，存在关联不可删除，不存在关联即删除
+        // 说明：货物类型关联校验（已被车辆类型关联时禁止删除）已在 pd-base disable 侧实现
         goodsTypeFeign.disable(id);
         return Result.ok();
     }

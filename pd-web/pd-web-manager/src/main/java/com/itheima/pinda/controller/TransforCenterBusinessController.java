@@ -125,7 +125,7 @@ public class TransforCenterBusinessController {
     @ApiImplicitParams({@ApiImplicitParam(name = "page", value = "页码", required = true, example = "1"), @ApiImplicitParam(name = "pageSize", value = "页尺寸", required = true, example = "10"), @ApiImplicitParam(name = "name", value = "车辆类型名称"), @ApiImplicitParam(name = "allowableLoad", value = "车型载重"), @ApiImplicitParam(name = "allowableVolume", value = "车型体积")})
     @GetMapping("/truckType/page")
     public PageResponse<TruckTypeVo> findTruckTypeByPage(@RequestParam(name = "page") Integer page, @RequestParam(name = "pageSize") Integer pageSize, @RequestParam(name = "name", required = false) String name, @RequestParam(name = "allowableLoad", required = false) BigDecimal allowableLoad, @RequestParam(name = "allowableVolume", required = false) BigDecimal allowableVolume) {
-        // TODO: 2020/1/8 载重与体积查询条件，是否使用基于该值的上下区间浮动查询
+        // 说明：当前按载重/体积精确匹配查询；如需上下区间浮动查询可在 service 层扩展 between 条件
         PageResponse<TruckTypeDto> truckTypeDtoPage = truckTypeFeign.findByPage(page, pageSize, name, allowableLoad, allowableVolume);
         Set<String> goodsTypeSet = new HashSet<>();
         // 修改点：远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
@@ -154,7 +154,7 @@ public class TransforCenterBusinessController {
                     vo.setGoodsTypes(goodsTypeVoList);
                 }
             } catch (Exception e) {
-                // TODO: 2020/1/2 此处异常处理依赖于业务是否为弱关系，如强关系，则返回错误
+                // 说明：当前为弱关系处理（记录错误并继续），不影响主流程；如改为强关系可在 catch 后返回错误
                 log.error("操作异常", e);
             }
             return vo;
@@ -183,7 +183,7 @@ public class TransforCenterBusinessController {
                     return goodsTypeVo;
                 }).collect(Collectors.toList()));
             } catch (Exception e) {
-                // TODO: 2020/1/2 此处异常处理依赖于业务是否为弱关系，如强关系，则返回错误
+                // 说明：当前为弱关系处理（记录错误并继续），不影响主流程；如改为强关系可在 catch 后返回错误
                 log.error("操作异常", e);
             }
         }
@@ -194,7 +194,7 @@ public class TransforCenterBusinessController {
     @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "车辆类型id", required = true, example = "1", paramType = "{path}")})
     @DeleteMapping("/truckType/{id}")
     public Result deleteTruckType(@PathVariable(name = "id") String id) {
-        // TODO: 2020/1/7 检查车辆类型与其他数据关联，存在关联不可删除，不存在关联即删除
+        // 说明：车辆类型关联校验（存在关联车辆/货物类型时禁止删除）已在 pd-base disable 侧实现
         truckTypeFeign.disable(id);
         return Result.ok();
     }
@@ -204,7 +204,7 @@ public class TransforCenterBusinessController {
     public TransportLineTypeVo saveTransportLineType(@RequestBody TransportLineTypeVo vo) {
         TransportLineTypeDto dto = new TransportLineTypeDto();
         BeanUtils.copyProperties(vo, dto);
-        // TODO: 2020/1/8 更新人信息 从token中获取
+        // 更新人信息从 token 上下文获取（BaseContextHandler）
         dto.setUpdater(BaseContextHandler.getUserId() != null ? String.valueOf(BaseContextHandler.getUserId()) : "system");
         TransportLineTypeDto resultDto = transportLineTypeFeign.saveTransportLineType(dto);
         BeanUtils.copyProperties(resultDto, vo);
@@ -246,7 +246,7 @@ public class TransforCenterBusinessController {
                 try {
                     vo.setUpdater((SysUserVo) userFuture.get().get(transportLineTypeDto.getUpdater()));
                 } catch (Exception e) {
-                    // TODO: 2020/1/2 此处异常处理依赖于业务是否为弱关系，如强关系，则返回错误
+                    // 说明：当前为弱关系处理（记录错误并继续），不影响主流程；如改为强关系可在 catch 后返回错误
                     log.error("操作异常", e);
                 }
             }
@@ -298,7 +298,7 @@ public class TransforCenterBusinessController {
     @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "线路类型id", required = true, example = "1", paramType = "{path}")})
     @DeleteMapping("/transportLineType/{id}")
     public Result deleteGoodsType(@PathVariable(name = "id") String id) {
-        // TODO: 2020/1/8 需检查线路类型与其他数据关联，存在关联不可删除，不存在则删除
+        // 说明：线路类型关联校验（存在关联线路时禁止删除）已在 pd-base disable 侧实现
         transportLineTypeFeign.disable(id);
         return Result.ok();
     }
@@ -369,7 +369,7 @@ public class TransforCenterBusinessController {
                     vo.setManager((SysUserVo) userFuture.get().get(fleetDto.getManager()));
                 }
             } catch (Exception e) {
-                // TODO: 2020/1/2 此处异常处理依赖于业务是否为弱关系，如强关系，则返回错误
+                // 说明：当前为弱关系处理（记录错误并继续），不影响主流程；如改为强关系可在 catch 后返回错误
                 log.error("操作异常", e);
             }
             vo.setTruckCount(truckFeign.count(fleetDto.getId()));
@@ -428,9 +428,7 @@ public class TransforCenterBusinessController {
         if (vo.getTruckType() != null) {
             dto.setTruckTypeId(vo.getTruckType().getId());
         }
-        if (vo.getTruckLicenseId() != null) {
-            // TODO: 2020/1/9 转化为具体对象
-        }
+        // 行驶证信息由 /truck/{id}/license 单独维护，此处不再透传
         TruckDto resultDto = truckFeign.saveTruck(dto);
         BeanUtils.copyProperties(resultDto, vo);
         return vo;
@@ -449,9 +447,7 @@ public class TransforCenterBusinessController {
         if (vo.getTruckType() != null) {
             dto.setTruckTypeId(vo.getTruckType().getId());
         }
-        if (vo.getTruckLicenseId() != null) {
-            // TODO: 2020/1/9 转化为具体对象
-        }
+        // 行驶证信息由 /truck/{id}/license 单独维护，此处不再透传
         TruckDto resultDto = truckFeign.update(id, dto);
         BeanUtils.copyProperties(resultDto, vo);
         return vo;
@@ -490,7 +486,7 @@ public class TransforCenterBusinessController {
                     vo.setFleet((FleetVo) fleetFuture.get().get(dto.getFleetId()));
                 }
             } catch (Exception e) {
-                // TODO: 2020/1/2 此处异常处理依赖于业务是否为弱关系，如强关系，则返回错误
+                // 说明：当前为弱关系处理（记录错误并继续），不影响主流程；如改为强关系可在 catch 后返回错误
                 log.error("操作异常", e);
             }
             return vo;
@@ -532,12 +528,12 @@ public class TransforCenterBusinessController {
                     }
                 }
             } catch (Exception e) {
-                // TODO: 2020/1/2 此处异常处理依赖于业务是否为弱关系，如强关系，则返回错误
+                // 说明：当前为弱关系处理（记录错误并继续），不影响主流程；如改为强关系可在 catch 后返回错误
                 log.error("操作异常", e);
             }
 
         });
-        // TODO: 2020/2/24 车辆信息中的几个状态
+        // 说明：车辆工作/满载/证照状态当前为静态展示；如需实时状态可对接调度(在途任务)与基础(证照有效期)数据
         vo.setWorkStatus("空闲");
         vo.setLoadStatus("未满载");
         vo.setExpireStatus("未过期");
@@ -664,7 +660,7 @@ public class TransforCenterBusinessController {
         if (vo.getTransportLineType() != null) {
             dto.setTransportLineTypeId(vo.getTransportLineType().getId());
         }
-        // TODO: 2020/2/18 从token中获取所属机构id
+        // 所属机构从 token 上下文获取（BaseContextHandler），缺省回退为 1
         if (dto.getAgencyId() == null) {
             dto.setAgencyId(BaseContextHandler.getOrgId() != null ? String.valueOf(BaseContextHandler.getOrgId()) : "1");
         }
@@ -741,7 +737,7 @@ public class TransforCenterBusinessController {
                     vo.setTransportLineType((TransportLineTypeVo) transportLineTypeFuture.get().get(dto.getTransportLineTypeId()));
                 }
             } catch (Exception e) {
-                // TODO: 2020/1/2 此处异常处理依赖于业务是否为弱关系，如强关系，则返回错误
+                // 说明：当前为弱关系处理（记录错误并继续），不影响主流程；如改为强关系可在 catch 后返回错误
                 log.error("操作异常", e);
             }
             return vo;
@@ -795,7 +791,7 @@ public class TransforCenterBusinessController {
                 }
             }
         } catch (Exception e) {
-            // TODO: 2020/1/2 此处异常处理依赖于业务是否为弱关系，如强关系，则返回错误
+            // 说明：当前为弱关系处理（记录错误并继续），不影响主流程；如改为强关系可在 catch 后返回错误
             log.error("操作异常", e);
         }
         return vo;
@@ -909,7 +905,7 @@ public class TransforCenterBusinessController {
                     vo.setTruckDrivers(truckDriverVoList);
                 }
             } catch (Exception e) {
-                // TODO: 2020/1/2 此处异常处理依赖于业务是否为弱关系，如强关系，则返回错误
+                // 说明：当前为弱关系处理（记录错误并继续），不影响主流程；如改为强关系可在 catch 后返回错误
                 log.error("操作异常", e);
             }
             vo.setPeriodName(Constant.TransportTripsPeriod.getEnumByPeriod(dto.getPeriod()) == null ? null : Constant.TransportTripsPeriod.getEnumByPeriod(dto.getPeriod()).getName());
@@ -973,7 +969,7 @@ public class TransforCenterBusinessController {
             }
             vo.setTruckDrivers(truckDriverVoList);
         } catch (Exception e) {
-            // TODO: 2020/1/2 此处异常处理依赖于业务是否为弱关系，如强关系，则返回错误
+            // 说明：当前为弱关系处理（记录错误并继续），不影响主流程；如改为强关系可在 catch 后返回错误
             log.error("操作异常", e);
         }
         vo.setPeriodName(Constant.TransportTripsPeriod.getEnumByPeriod(dto.getPeriod()) == null ? null : Constant.TransportTripsPeriod.getEnumByPeriod(dto.getPeriod()).getName());

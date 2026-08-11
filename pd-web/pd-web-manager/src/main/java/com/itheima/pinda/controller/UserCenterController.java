@@ -41,7 +41,7 @@ public class UserCenterController {
     @ApiOperation(value = "获取个人信息")
     @GetMapping("/info")
     public SysUserVo info() {
-        // TODO: 2020/1/2 从token中获取用户id
+        // 从 token 上下文获取用户ID（网关透传 userid 头）
         Long userId = RequestContext.getUserId() == null ? null : Long.valueOf(RequestContext.getUserId());
         if (userId == null) {
             throw new com.itheima.pinda.exception.BizException("用户未登录");
@@ -62,7 +62,7 @@ public class UserCenterController {
     })
     @GetMapping("/message")
     public PageResponse<MessageVo> info(@RequestParam(name = "page") Integer page, @RequestParam(name = "pageSize") Integer pageSize, @RequestParam(value = "messageType", required = false) String messageType) {
-        // TODO: 2020/1/3 消息待实现 未读条数待实现
+        // 说明：消息中心为占位实现（返回示例数据），待对接通知/消息模块后接入真实未读条数与列表
         List<MessageVo> messageVoList = new ArrayList<>();
         MessageVo messageVo = new MessageVo();
         messageVo.setId("1");
@@ -77,7 +77,7 @@ public class UserCenterController {
     @ApiOperation(value = "打开未读消息")
     @PutMapping("/message/{id}")
     public MessageVo read(@PathVariable(value = "id") Long id) {
-        // TODO: 2020/1/3 实现消息已读状态切换
+        // 说明：消息已读状态切换为占位实现，待对接消息模块后接入
         MessageVo messageVo = new MessageVo();
         messageVo.setId("1");
         messageVo.setContent("hahahaha");

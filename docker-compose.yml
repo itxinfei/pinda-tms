@@ -14,7 +14,7 @@ services:
       - MYSQL_SERVICE_PORT=3306
       - MYSQL_SERVICE_DB_NAME=nacos_config
       - MYSQL_SERVICE_USER=root
-      - MYSQL_SERVICE_PASSWORD=root123
+      - MYSQL_SERVICE_PASSWORD=${MYSQL_ROOT_PASSWORD:-root123}
       - JVM_XMS=256m
       - JVM_XMX=256m
     ports:
@@ -37,7 +37,7 @@ services:
     image: mysql:8.0.20
     container_name: pinda-mysql
     environment:
-      - MYSQL_ROOT_PASSWORD=root123
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root123}
       - MYSQL_CHARACTER_SET_SERVER=utf8mb4
       - MYSQL_COLLATION_SERVER=utf8mb4_unicode_ci
       - TZ=Asia/Shanghai
@@ -49,7 +49,7 @@ services:
       - ./mysql/init:/docker-entrypoint-initdb.d
     command: --default-authentication-plugin=mysql_native_password
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot123"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-root123}"]
       interval: 10s
       timeout: 5s
       retries: 30
