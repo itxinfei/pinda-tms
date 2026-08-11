@@ -480,8 +480,8 @@ public class BeanUtil {
         if (user == null || user.getId() == null) {
             return "";
         }
+        // 全ID左补零到至少8位，保留完整ID，保证不同用户ID不会映射为相同员工编号
         String idStr = String.valueOf(user.getId());
-        String suffix = idStr.length() > 8 ? idStr.substring(idStr.length() - 8) : idStr;
-        return "EMP" + String.format("%8s", suffix).replace(' ', '0');
+        return "EMP" + String.format("%8s", idStr).replace(' ', '0');
     }
 }
