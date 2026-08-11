@@ -55,7 +55,7 @@ public class ScheduleExceptionOrderServiceImpl extends ServiceImpl<ScheduleExcep
             log.info("[异常调度] 订单[{}]登记为无法调度，原因: {}", orderId, record.getReason());
             return true;
         } catch (org.springframework.dao.DuplicateKeyException e) {
-            // 唯一索引(uk_order_status)兜底：并发登记时视为幂等成功
+            // 函数唯一索引(uk_order_pending, 仅约束待处理状态)兜底：并发登记时视为幂等成功
             log.info("[异常调度] 订单[{}]并发登记被唯一索引拦截，视为已登记", orderId);
             return false;
         }
