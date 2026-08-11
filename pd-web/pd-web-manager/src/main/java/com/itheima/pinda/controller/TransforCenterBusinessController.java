@@ -23,6 +23,8 @@ import com.itheima.pinda.DTO.truck.TruckLicenseDto;
 import com.itheima.pinda.DTO.truck.TruckTypeDto;
 import com.itheima.pinda.DTO.user.TruckDriverDto;
 import com.itheima.pinda.DTO.user.TruckDriverLicenseDto;
+import com.itheima.pinda.DTO.TaskTransportDTO;
+import com.itheima.pinda.enums.transporttask.TransportTaskStatus;
 import com.itheima.pinda.feign.agency.FleetFeign;
 import com.itheima.pinda.feign.common.GoodsTypeFeign;
 import com.itheima.pinda.feign.transportline.TransportLineFeign;
@@ -31,6 +33,7 @@ import com.itheima.pinda.feign.transportline.TransportTripsFeign;
 import com.itheima.pinda.feign.truck.TruckFeign;
 import com.itheima.pinda.feign.truck.TruckLicenseFeign;
 import com.itheima.pinda.feign.truck.TruckTypeFeign;
+import com.itheima.pinda.feign.TransportTaskFeign;
 import com.itheima.pinda.feign.user.DriverFeign;
 import com.itheima.pinda.future.PdCompletableFuture;
 import com.itheima.pinda.util.BeanUtil;
@@ -77,6 +80,8 @@ public class TransforCenterBusinessController {
     private OrgApi orgApi;
     @Autowired
     private TruckFeign truckFeign;
+    @Autowired
+    private TransportTaskFeign transportTaskFeign;
     @Autowired
     private TruckLicenseFeign truckLicenseFeign;
     @Autowired
@@ -543,6 +548,22 @@ public class TransforCenterBusinessController {
     @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "车辆id", required = true, example = "1", paramType = "{path}")})
     @DeleteMapping("/truck/{id}")
     public Result deleteTruck(@PathVariable(name = "id") String id) {
+        // 在途任务校验：车辆存在进行中/待确认的运输任务时禁止删除，防止运力数据不一致
+        TaskTransportDTO query = new TaskTransportDTO();
+        query.setTruckId(id);
+        List<TaskTransportDTO> taskList = transportTaskFeign.findAll(query);
+        if (taskList != null) {
+            for (TaskTransportDTO task : taskList) {
+                if (task.getStatus() != null
+                        && (TransportTaskStatus.PROCESSING.getCode().equals(task.getStatus())
+                            || TransportTaskStatus.CONFIRM.getCode().equals(task.getStatus())
+                            || TransportTaskStatus.PENDING.getCode().equals(task.getStatus()))) {
+                    log.warn("[车辆] 车辆[{}]存在未完成的运输任务[{}]（状态[{}]），禁止删除",
+                        id, task.getId(), task.getStatus());
+                    return Result.error(400, "该车辆存在未完成的运输任务，无法删除");
+                }
+            }
+        }
         truckFeign.disable(id);
         return Result.ok();
     }
