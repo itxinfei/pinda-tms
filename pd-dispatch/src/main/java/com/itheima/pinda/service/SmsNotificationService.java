@@ -31,7 +31,7 @@ public class SmsNotificationService {
     /**
      * 启用的短信渠道编码（http/aliyun/tencent/huawei/device）
      */
-    @Value("${sms.channel:http}")
+    @Value("${sms.active-channel:http}")
     private String activeChannel;
 
     /**

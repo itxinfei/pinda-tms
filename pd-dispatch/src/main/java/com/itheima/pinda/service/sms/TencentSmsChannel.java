@@ -57,7 +57,7 @@ public class TencentSmsChannel implements SmsChannel {
     public boolean sendSms(String mobile, String content) {
         if (secretId == null || secretId.trim().isEmpty()
                 || secretKey == null || secretKey.trim().isEmpty()) {
-            log.info("[短信渠道-腾讯云] 未配置密钥，仅记录待发送内容: mobile={}, content={}", mobile, content);
+            log.info("[短信渠道-腾讯云] 未配置密钥，仅记录待发送手机号: mobile={}", maskMobile(mobile));
             return false;
         }
         try {
@@ -69,11 +69,21 @@ public class TencentSmsChannel implements SmsChannel {
             params.put("PhoneNumberSet", new String[]{mobile});
             params.put("TemplateParamSet", new String[]{content});
             // 生产环境调用腾讯云 SMS 发送接口（需按腾讯云 TC3-HMAC-SHA256 签名）
-            log.info("[短信渠道-腾讯云] 发送短信: mobile={}, sign={}, template={}", mobile, signName, templateId);
+            log.info("[短信渠道-腾讯云] 发送短信: mobile={}, sign={}, template={}", maskMobile(mobile), signName, templateId);
             return true;
         } catch (Exception e) {
-            log.warn("[短信渠道-腾讯云] 发送失败: mobile={}", mobile, e);
+            log.warn("[短信渠道-腾讯云] 发送失败: mobile={}", maskMobile(mobile), e);
             return false;
         }
+    }
+
+    /**
+     * 手机号脱敏：保留前3后4
+     */
+    private String maskMobile(String mobile) {
+        if (mobile == null || mobile.length() < 7) {
+            return "****";
+        }
+        return mobile.substring(0, 3) + "****" + mobile.substring(mobile.length() - 4);
     }
 }

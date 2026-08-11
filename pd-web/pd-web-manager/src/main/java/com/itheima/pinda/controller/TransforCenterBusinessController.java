@@ -624,7 +624,11 @@ public class TransforCenterBusinessController {
     @GetMapping("/truck/{id}/transportTrips")
     public List<TruckDriverVo> findTruckTransportTrips(@PathVariable(name = "id") String id) {
         List<TruckDriverVo> voList = new ArrayList<>();
-        transportTripsFeign.findAllTruckDriverTransportTrips(null, id, null).forEach(transportTripsTruckDriverDto -> {
+        List<TransportTripsTruckDriverDto> tripsTruckDriverList = transportTripsFeign.findAllTruckDriverTransportTrips(null, id, null);
+        if (tripsTruckDriverList == null) {
+            return voList; // 远程调用失败(null)，返回空列表
+        }
+        tripsTruckDriverList.forEach(transportTripsTruckDriverDto -> {
             TransportTripsDto transportTripsDto = transportTripsFeign.fineById(transportTripsTruckDriverDto.getTransportTripsId());
             if (transportTripsDto != null) {
                 TransportLineDto transportLineDto = transportLineFeign.fineById(transportTripsDto.getTransportLineId());
@@ -801,9 +805,13 @@ public class TransforCenterBusinessController {
     @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "线路id", required = true, example = "1", paramType = "{path}")})
     @DeleteMapping("/transportLine/{id}")
     public Result deleteTransportLine(@PathVariable(name = "id") String id) {
-        // 关联校验：线路下存在车次时禁止删除，防止基础数据不一致
+        // 关联校验：线路下存在车次时禁止删除；远程校验失败(null)时 fail-closed 拒绝删除
         List<TransportTripsDto> tripsList = transportTripsFeign.findAll(id, null);
-        if (tripsList != null && !tripsList.isEmpty()) {
+        if (tripsList == null) {
+            log.error("[线路] 关联校验远程调用失败，拒绝删除(安全兜底): id={}", id);
+            return Result.error(500, "关联数据校验失败，请稍后重试");
+        }
+        if (!tripsList.isEmpty()) {
             log.warn("[线路] 线路[{}]下存在 {} 个车次，禁止删除", id, tripsList.size());
             return Result.error(400, "该线路下存在关联车次，无法删除");
         }
@@ -846,6 +854,9 @@ public class TransforCenterBusinessController {
     @GetMapping("/transportLine/trips")
     public List<TransportTripsVo> findAllTransportLineTrips(@RequestParam(name = "transportLineId", required = false) String transportLineId) {
         List<TransportTripsDto> transportTripsDtoList = transportTripsFeign.findAll(transportLineId, null);
+        if (transportTripsDtoList == null) {
+            return new ArrayList<>(); // 远程调用失败(null)，返回空列表
+        }
         //加工数据
         Set<String> userSet = new HashSet<>();
         Set<String> truckSet = new HashSet<>();
@@ -980,9 +991,13 @@ public class TransforCenterBusinessController {
     @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "车次id", required = true, example = "1", paramType = "{path}")})
     @DeleteMapping("/transportLine/trips/{id}")
     public Result deleteTransportLineTrips(@PathVariable(name = "id") String id) {
-        // 关联校验：车次已安排车辆/司机时禁止删除
+        // 关联校验：车次已安排车辆/司机时禁止删除；远程校验失败(null)时 fail-closed 拒绝删除
         List<TransportTripsTruckDriverDto> refs = transportTripsFeign.findAllTruckDriverTransportTrips(id, null, null);
-        if (refs != null && !refs.isEmpty()) {
+        if (refs == null) {
+            log.error("[车次] 关联校验远程调用失败，拒绝删除(安全兜底): id={}", id);
+            return Result.error(500, "关联数据校验失败，请稍后重试");
+        }
+        if (!refs.isEmpty()) {
             log.warn("[车次] 车次[{}]已安排 {} 组车辆/司机，禁止删除", id, refs.size());
             return Result.error(400, "该车次已安排车辆/司机，无法删除");
         }
@@ -1069,6 +1084,9 @@ public class TransforCenterBusinessController {
         driverVoList.forEach(driverVo -> {
             List<TruckDriverVo> voList = new ArrayList<>();
             List<TransportTripsTruckDriverDto> transportTripsTruckDriverDtoList = transportTripsFeign.findAllTruckDriverTransportTrips(null, null, driverVo.getUserId());
+            if (transportTripsTruckDriverDtoList == null) {
+                return; // 远程调用失败(null)，跳过该司机
+            }
             transportTripsTruckDriverDtoList.forEach(transportTripsTruckDriverDto -> {
                 TransportTripsDto transportTripsDto = transportTripsFeign.fineById(transportTripsTruckDriverDto.getTransportTripsId());
                 if (transportTripsDto != null && StringUtils.isNotEmpty(transportTripsDto.getTransportLineId())) {
@@ -1154,7 +1172,11 @@ public class TransforCenterBusinessController {
     @GetMapping("/driver/{id}/truck")
     public List<TruckDriverVo> findDriverTruckById(@PathVariable(name = "id") String id) {
         List<TruckDriverVo> voList = new ArrayList<>();
-        transportTripsFeign.findAllTruckDriverTransportTrips(null, null, id).forEach(transportTripsTruckDriverDto -> {
+        List<TransportTripsTruckDriverDto> tripsTruckDriverList = transportTripsFeign.findAllTruckDriverTransportTrips(null, null, id);
+        if (tripsTruckDriverList == null) {
+            return voList; // 远程调用失败(null)，返回空列表
+        }
+        tripsTruckDriverList.forEach(transportTripsTruckDriverDto -> {
             TransportTripsDto transportTripsDto = transportTripsFeign.fineById(transportTripsTruckDriverDto.getTransportTripsId());
             if (transportTripsDto != null) {
                 TransportLineDto transportLineDto = transportLineFeign.fineById(transportTripsDto.getTransportLineId());

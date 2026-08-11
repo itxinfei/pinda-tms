@@ -38,8 +38,10 @@ public class MockPayChannel implements PayChannel {
 
     @Override
     public boolean verifyCallback(Map<String, String> params) {
-        // 模拟渠道回调恒视为合法
-        return true;
+        // 模拟渠道校验：回调必须携带支付流水号与交易号，防止空参数伪造
+        return params != null
+            && params.get("payNo") != null
+            && params.get("tradeNo") != null;
     }
 
     @Override

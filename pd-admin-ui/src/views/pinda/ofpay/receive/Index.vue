@@ -62,8 +62,14 @@ export default {
       }
       this.refunding = true
       PayApi.refund(this.orderId).then(res => {
-        this.$message.success('退款成功')
-        this.query()
+        // 业务错误以 code 为准（Result 为 HashMap, HTTP 恒为 200）
+        const result = res.data || {}
+        if (result.code === 0) {
+          this.$message.success('退款成功')
+          this.query()
+        } else {
+          this.$message.error(result.msg || '退款失败')
+        }
       }).catch(() => {
         this.$message.error('退款失败')
       }).finally(() => {

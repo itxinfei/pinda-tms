@@ -4,7 +4,7 @@ package com.itheima.pinda.enums;
  * 订单支付状态枚举
  */
 public enum OrderPaymentStatus {
-    UNPAID(1, "未支付"), PAID(2, "已支付");
+    UNPAID(1, "未支付"), PAID(2, "已支付"), REFUNDED(3, "已退款");
     private Integer status;
     private String name;
 

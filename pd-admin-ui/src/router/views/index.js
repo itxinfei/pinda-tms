@@ -121,6 +121,14 @@ export default [{
   component: Layout,
   redirect: '/ofpay/customer',
   children: [{
+    path: 'index',
+    name: '支付中心',
+    meta: {
+      i18n: 'ofpay'
+    },
+    component: () =>
+      import( /* webpackChunkName: "views" */ '@/views/pinda/ofpay/index')
+  }, {
     path: 'customer',
     name: '客户支付',
     meta: {

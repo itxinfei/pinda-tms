@@ -47,16 +47,26 @@ public class HuaweiSmsChannel implements SmsChannel {
     public boolean sendSms(String mobile, String content) {
         if (appKey == null || appKey.trim().isEmpty()
                 || appSecret == null || appSecret.trim().isEmpty()) {
-            log.info("[短信渠道-华为云] 未配置密钥，仅记录待发送内容: mobile={}, content={}", mobile, content);
+            log.info("[短信渠道-华为云] 未配置密钥，仅记录待发送手机号: mobile={}", maskMobile(mobile));
             return false;
         }
         try {
             // 生产环境调用华为云 MSGSMS 发送接口（需按华为云 AK/SK 签名）
-            log.info("[短信渠道-华为云] 发送短信: mobile={}, sign={}, template={}", mobile, signName, templateId);
+            log.info("[短信渠道-华为云] 发送短信: mobile={}, sign={}, template={}", maskMobile(mobile), signName, templateId);
             return true;
         } catch (Exception e) {
-            log.warn("[短信渠道-华为云] 发送失败: mobile={}", mobile, e);
+            log.warn("[短信渠道-华为云] 发送失败: mobile={}", maskMobile(mobile), e);
             return false;
         }
+    }
+
+    /**
+     * 手机号脱敏：保留前3后4
+     */
+    private String maskMobile(String mobile) {
+        if (mobile == null || mobile.length() < 7) {
+            return "****";
+        }
+        return mobile.substring(0, 3) + "****" + mobile.substring(mobile.length() - 4);
     }
 }
