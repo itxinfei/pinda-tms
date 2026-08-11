@@ -15,6 +15,7 @@ import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;
 import com.itheima.pinda.common.converter.EnumDeserializer;
+import com.itheima.pinda.common.interceptor.TokenAuthInterceptor;
 import com.itheima.pinda.common.json.BigDecimalSerializer;
 import com.itheima.pinda.utils.DateUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +25,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupport;
 import springfox.documentation.builders.ApiInfoBuilder;
@@ -104,6 +106,17 @@ public class ConfigurationSupport extends WebMvcConfigurationSupport {
         // 解决swagger的js文件无法访问
         registry.addResourceHandler("/webjars/**").addResourceLocations("classpath:/META-INF/resources/webjars/");
 
+    }
+
+    /**
+     * 注册 Token 鉴权拦截器（依赖网关透传 userid 头，直连端口时兜底拒绝）
+     *
+     * @param registry 拦截器注册器
+     */
+    @Override
+    protected void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(new TokenAuthInterceptor())
+            .addPathPatterns("/**");
     }
 
     /**

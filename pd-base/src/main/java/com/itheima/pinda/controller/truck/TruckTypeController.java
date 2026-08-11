@@ -9,12 +9,15 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.itheima.pinda.common.utils.Constant;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
+import com.itheima.pinda.entity.truck.PdTruck;
 import com.itheima.pinda.entity.truck.PdTruckType;
 import com.itheima.pinda.entity.truck.PdTruckTypeGoodsType;
+import com.itheima.pinda.service.truck.IPdTruckService;
 import com.itheima.pinda.service.truck.IPdTruckTypeGoodsTypeService;
 import com.itheima.pinda.service.truck.IPdTruckTypeService;
 import com.itheima.pinda.DTO.truck.TruckTypeDto;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,6 +33,7 @@ import org.springframework.beans.BeanUtils;
 /**
  * TruckTypeController
  */
+@Slf4j
 @RestController
 @RequestMapping("base/truck/type")
 public class TruckTypeController {
@@ -37,6 +41,8 @@ public class TruckTypeController {
     private IPdTruckTypeService truckTypeService;
     @Autowired
     private IPdTruckTypeGoodsTypeService truckTypeGoodsTypeService;
+    @Autowired
+    private IPdTruckService truckService;
 
     /**
      * 添加车辆类型
@@ -137,7 +143,18 @@ public class TruckTypeController {
      */
     @PutMapping("/{id}/disable")
     public Result disable(@PathVariable(name = "id") String id) {
-        // TODO: 2020/1/8 待实现，是否关联数据
+        // 关联校验：存在引用该类型的车辆时禁止删除
+        IPage<PdTruck> truckPage = truckService.findByPage(1, 1, id, null, null);
+        if (truckPage != null && truckPage.getTotal() > 0) {
+            log.warn("[车辆类型] 存在 {} 辆关联车辆，禁止删除: typeId={}", truckPage.getTotal(), id);
+            return Result.error(400, "该车辆类型下存在关联车辆，无法删除");
+        }
+        // 关联校验：存在关联的货物类型时禁止删除
+        List<PdTruckTypeGoodsType> goodsTypeRefs = truckTypeGoodsTypeService.findAll(id, null);
+        if (goodsTypeRefs != null && !goodsTypeRefs.isEmpty()) {
+            log.warn("[车辆类型] 存在关联货物类型，禁止删除: typeId={}", id);
+            return Result.error(400, "该车辆类型已关联货物类型，无法删除");
+        }
         PdTruckType truckType = new PdTruckType();
         truckType.setId(id);
         truckType.setStatus(Constant.DATA_DISABLE_STATUS);

@@ -8,10 +8,13 @@ import java.util.stream.Collectors;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
+import com.itheima.pinda.entity.transportline.PdTransportLine;
 import com.itheima.pinda.entity.transportline.PdTransportLineType;
+import com.itheima.pinda.service.transportline.IPdTransportLineService;
 import com.itheima.pinda.service.transportline.IPdTransportLineTypeService;
 import com.itheima.pinda.DTO.transportline.TransportLineTypeDto;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,11 +29,15 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * TransportLineTypeController
  */
+@Slf4j
 @RestController
 @RequestMapping("base/transportLine/type")
 public class TransportLineTypeController {
     @Autowired
     private IPdTransportLineTypeService transportLineTypeService;
+
+    @Autowired
+    private IPdTransportLineService transportLineService;
 
     /**
      * 添加线路类型
@@ -128,6 +135,12 @@ public class TransportLineTypeController {
      */
     @PutMapping("/{id}/disable")
     public Result disable(@PathVariable(name = "id") String id) {
+        // 关联校验：存在引用该类型的线路时禁止删除
+        IPage<PdTransportLine> linePage = transportLineService.findByPage(1, 1, null, null, id);
+        if (linePage != null && linePage.getTotal() > 0) {
+            log.warn("[线路类型] 存在 {} 条关联线路，禁止删除: typeId={}", linePage.getTotal(), id);
+            return Result.error(400, "该线路类型下存在关联线路，无法删除");
+        }
         transportLineTypeService.disableById(id);
         return Result.ok();
     }
