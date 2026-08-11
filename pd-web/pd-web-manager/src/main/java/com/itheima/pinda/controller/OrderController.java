@@ -18,6 +18,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -33,6 +34,7 @@ import java.util.stream.Collectors;
  * @author jpf
  * @since 2019-12-26
  */
+@Slf4j
 @RestController
 @Api(tags = "订单相关API")
 @RequestMapping("order-manager/order")
@@ -106,6 +108,13 @@ public class OrderController {
     })
     @PostMapping("/{id}")
     public OrderVo updateOrder(@PathVariable(name = "id") String id, @RequestBody OrderVo vo) {
+        // 金额/支付状态已由通用更新端点屏蔽，改由专用端点管理（/{id}/reprice 重算运费、/{id}/pay 支付确认），
+        // 管理端编辑接口不再允许直接修改这两个字段，避免静默丢弃造成数据不一致
+        if (vo.getAmount() != null || vo.getPaymentStatus() != null) {
+            log.warn("[订单] 管理端编辑订单不允许直接修改金额或支付状态: id={}, amount={}, paymentStatus={}",
+                id, vo.getAmount(), vo.getPaymentStatus());
+            return null;
+        }
         OrderDTO dto = orderFeign.updateById(id, BeanUtil.parseOrderVo2DTO(vo));
         // 状态流转校验失败时远端返回 null，避免 parseOrderDTO2Vo 对 null 处理引发 NPE
         if (dto == null) {

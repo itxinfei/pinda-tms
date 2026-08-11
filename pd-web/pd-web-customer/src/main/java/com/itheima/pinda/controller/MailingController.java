@@ -548,15 +548,18 @@ public class MailingController {
         log.info("新订单 id:{} params：{}", id, orderDTO);
 
         // 改价走专用端点：通用 updateById 已屏蔽 amount，金额由服务端 calculateAmount 重算，防篡改
+        // 改价失败必须上抛给调用方，避免客户看到"编辑成功"而金额实际未更新
         try {
             Result repriceResult = orderFeign.reprice(order.getId(), orderDTOForReprice);
             if (repriceResult != null && "0".equals(String.valueOf(repriceResult.get("code")))) {
                 log.info("订单改价成功: id={}, amount={}", order.getId(), repriceResult.get("amount"));
             } else {
-                log.warn("订单改价未生效: id={}, result={}", order.getId(), repriceResult);
+                log.error("订单改价未生效: id={}, result={}", order.getId(), repriceResult);
+                return repriceResult != null ? repriceResult : Result.error(500, "订单改价失败");
             }
         } catch (Exception e) {
             log.error("订单改价异常: id={}", order.getId(), e);
+            return Result.error(500, "订单改价失败");
         }
 
         if (orderDTO.getId() != null) {
@@ -697,6 +700,16 @@ public class MailingController {
     @PutMapping("/pay/{id}")
     public Result pay(@PathVariable("id") String id) {
         try {
+            // 归属校验：仅允许支付本人订单，防止越权把他人订单置为已支付
+            String userId = RequestContext.getUserId();
+            OrderDTO order = orderFeign.findById(id);
+            if (order == null) {
+                return Result.error(400, "订单不存在");
+            }
+            if (userId != null && order.getMemberId() != null && !userId.equals(String.valueOf(order.getMemberId()))) {
+                log.warn("[订单] 越权支付被拒绝: id={}, userId={}, orderMemberId={}", id, userId, order.getMemberId());
+                return Result.error(403, "无权操作他人订单");
+            }
             // 支付走专用端点：服务端校验后置为已支付，避免伪造支付状态
             return orderFeign.pay(id);
         } catch (Exception e) {

@@ -159,7 +159,8 @@ public class OrderController {
     /**
      * 订单支付确认（专用端点，供客户支付流程调用）
      *
-     * <p>服务端校验订单存在后置支付状态为已支付，不接受请求体传参，避免伪造支付状态。</p>
+     * <p>服务端校验订单存在且未支付后置支付状态为已支付，不接受请求体传参，避免伪造支付状态。
+     * 注意：调用方（pd-web-customer MailingController.pay）需自行校验当前用户为该订单归属人。</p>
      *
      * @param id 订单id
      * @return 支付结果
@@ -172,6 +173,11 @@ public class OrderController {
         Order order = orderService.getById(id);
         if (order == null) {
             return Result.error(400, "订单不存在");
+        }
+        // 幂等保护：已支付订单不允许重复支付
+        if (OrderPaymentStatus.PAID.getStatus().equals(order.getPaymentStatus())) {
+            log.warn("[订单] 订单已支付，拒绝重复支付: id={}", id);
+            return Result.error(400, "订单已支付，请勿重复操作");
         }
         OrderDTO update = new OrderDTO();
         update.setId(id);
@@ -203,11 +209,17 @@ public class OrderController {
         orderDTO.setId(id);
         // 服务端重算运费
         Map map = orderService.calculateAmount(orderDTO);
-        if (map == null || !map.containsKey("amount")) {
-            log.error("[订单] 运费重算失败: id={}", id);
+        // 【健壮性】calculateAmount 在地址解析失败时返回含 errorMsg 的 map（amount=0），
+        // 必须一并拒绝，避免把 0 元金额持久化（与 save 端点的地址错误处理保持一致）
+        if (map == null || !map.containsKey("amount") || map.containsKey("errorMsg")) {
+            log.error("[订单] 运费重算失败: id={}, map={}", id, map);
             return Result.error(500, "运费重算失败");
         }
         BigDecimal amount = new BigDecimal(map.get("amount").toString());
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+            log.error("[订单] 运费重算金额非法: id={}, amount={}", id, amount);
+            return Result.error(500, "运费重算结果异常");
+        }
         Order orderUpdate = new Order();
         orderUpdate.setId(id);
         orderUpdate.setAmount(amount);
