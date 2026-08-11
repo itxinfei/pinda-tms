@@ -108,18 +108,20 @@ public class OrderController {
     })
     @PostMapping("/{id}")
     public OrderVo updateOrder(@PathVariable(name = "id") String id, @RequestBody OrderVo vo) {
-        // 金额/支付状态已由通用更新端点屏蔽，改由专用端点管理（/{id}/reprice 重算运费、/{id}/pay 支付确认），
-        // 管理端编辑接口不再允许直接修改这两个字段，避免静默丢弃造成数据不一致
+        OrderDTO dto = BeanUtil.parseOrderVo2DTO(vo);
+        // 金额/支付状态已由通用更新端点屏蔽，改由专用端点管理（/{id}/reprice 重算运费、/{id}/pay 支付确认）。
+        // 编辑表单回显时会携带这两个字段，这里置空并继续更新其余字段，避免整个编辑被静默丢弃；
+        // 如需修改金额/支付状态请走对应专用端点。
         if (vo.getAmount() != null || vo.getPaymentStatus() != null) {
-            log.warn("[订单] 管理端编辑订单不允许直接修改金额或支付状态: id={}, amount={}, paymentStatus={}",
-                id, vo.getAmount(), vo.getPaymentStatus());
-            return null;
+            log.info("[订单] 管理端编辑订单忽略金额/支付状态字段(走专用端点): id={}", id);
+            dto.setAmount(null);
+            dto.setPaymentStatus(null);
         }
-        OrderDTO dto = orderFeign.updateById(id, BeanUtil.parseOrderVo2DTO(vo));
+        OrderDTO updated = orderFeign.updateById(id, dto);
         // 状态流转校验失败时远端返回 null，避免 parseOrderDTO2Vo 对 null 处理引发 NPE
-        if (dto == null) {
+        if (updated == null) {
             return null;
         }
-        return BeanUtil.parseOrderDTO2Vo(dto, null);
+        return BeanUtil.parseOrderDTO2Vo(updated, null);
     }
 }
