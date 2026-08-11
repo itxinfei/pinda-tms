@@ -7,6 +7,7 @@ import com.itheima.pinda.service.IBusinessOperationService;
 import com.itheima.pinda.service.ITaskOrderClassifyService;
 import com.itheima.pinda.service.ITaskRoutePlanningService;
 import com.itheima.pinda.service.ITaskTripsSchedulingService;
+import io.seata.spring.annotation.GlobalTransactional;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +30,7 @@ public class DispatchTask {
     private IBusinessOperationService businessOperationService;
 
     @SneakyThrows
+    @GlobalTransactional(name = "dispatchSchedule", rollbackFor = Exception.class)
     public void run(String businessId, String params, String jobId, String logId) {
         String LOGID = businessId + System.currentTimeMillis();
         log.info("[{}]TestTask定时任务正在执行，参数为：{},{},{},{}", LOGID, businessId, params, jobId, logId);
