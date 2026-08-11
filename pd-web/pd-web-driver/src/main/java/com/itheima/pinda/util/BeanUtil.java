@@ -27,7 +27,8 @@ public class BeanUtil {
         vo.setMobile(user.getMobile());
         vo.setUsername(user.getAccount());
         vo.setName(user.getName());
-        // TODO: 2020/3/19 员工编号待实现
+        // 员工编号自动生成：EMP + 8位数字（基于用户ID，保证唯一且稳定）
+        vo.setWorkNumber(generateWorkNumber(user));
         //处理角色信息
         if (roleApi != null) {
             R<List<RoleDTO>> result = roleApi.list(user.getId());
@@ -152,5 +153,21 @@ public class BeanUtil {
             vo.setId(String.valueOf(area.getId()));
         }
         return vo;
+    }
+
+    /**
+     * 员工编号自动生成：EMP + 8位数字（基于用户ID，保证唯一且稳定）
+     *
+     * @param user 用户
+     * @return 员工编号
+     */
+    private static String generateWorkNumber(User user) {
+        if (user == null || user.getId() == null) {
+            return "";
+        }
+        // 取用户ID后8位作为编号主体，不足8位左侧补0
+        String idStr = String.valueOf(user.getId());
+        String suffix = idStr.length() > 8 ? idStr.substring(idStr.length() - 8) : idStr;
+        return "EMP" + String.format("%8s", suffix).replace(' ', '0');
     }
 }

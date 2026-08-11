@@ -11,6 +11,7 @@ import com.itheima.pinda.feign.transportline.TransportLineFeign;
 import com.itheima.pinda.service.ICacheLineDetailService;
 import com.itheima.pinda.service.ICacheLineService;
 import com.itheima.pinda.service.ICacheLineUseService;
+import com.itheima.pinda.service.IScheduleExceptionOrderService;
 import com.itheima.pinda.service.ITaskRoutePlanningService;
 import com.itheima.pinda.utils.IdUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +35,8 @@ public class TaskRoutePlanningServiceImpl implements ITaskRoutePlanningService {
     private ICacheLineDetailService cacheLineDetailService;
     @Autowired
     private ICacheLineUseService cacheLineUseService;
+    @Autowired
+    private IScheduleExceptionOrderService scheduleExceptionOrderService;
 
     /**
      * 路线规划
@@ -47,8 +50,17 @@ public class TaskRoutePlanningServiceImpl implements ITaskRoutePlanningService {
     public List<OrderLineSimpleDTO> execute(List<OrderClassifyGroupDTO> orderClassifyGroupDTOS, String agencyId, String jobId, String logId, String params) {
         List<OrderLineDTO> orderLineDTOS = new ArrayList<>();
         orderClassifyGroupDTOS.stream().filter(item -> "ERROR".equals(item.getKey())).forEach(item -> {
-            // TODO 处理无法调度订单
-            log.info("异常订单{}条", item.getOrders().size());
+            // 无法调度订单：登记异常，供运营人员人工处理（幂等登记）
+            List<String> errorOrderIds = item.getOrders();
+            log.info("异常订单{}条", errorOrderIds.size());
+            for (String errorOrderId : errorOrderIds) {
+                try {
+                    scheduleExceptionOrderService.registerExceptionOrder(
+                        errorOrderId, agencyId, "起始/目的机构信息缺失，无法完成线路规划");
+                } catch (Exception e) {
+                    log.error("[异常调度] 订单[{}]异常登记失败", errorOrderId, e);
+                }
+            }
         });
         // 新订单调度
         orderClassifyGroupDTOS.stream().filter(item -> (item.isNew() && !"ERROR".equals(item.getKey()))).forEach(item -> {
