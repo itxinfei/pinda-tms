@@ -79,3 +79,17 @@ mybatis-plus:
     call-setters-on-nulls: ${mybatis-plus.configuration.call-setters-on-nulls}
     jdbc-type-for-null: ${mybatis-plus.configuration.jdbc-type-for-null}
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# 统一支付配置（渠道: mock-模拟 wechat-微信 alipay-支付宝）
+pay:
+  # 默认支付渠道（开发环境用 mock，生产按需切换 wechat/alipay）
+  channel: ${PAY_CHANNEL:mock}
+  wechat:
+    # 微信支付商户号/API密钥（未配置时渠道降级为模拟参数，保证流程可联调）
+    mch-id: ${PAY_WECHAT_MCH_ID:}
+    api-key: ${PAY_WECHAT_API_KEY:}
+  alipay:
+    # 支付宝 AppId/应用私钥（未配置时渠道降级为模拟参数）
+    app-id: ${PAY_ALIPAY_APP_ID:}
+    private-key: ${PAY_ALIPAY_PRIVATE_KEY:}
+    public-key: ${PAY_ALIPAY_PUBLIC_KEY:}

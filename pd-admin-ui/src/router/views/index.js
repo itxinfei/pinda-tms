@@ -116,4 +116,41 @@ export default [{
     component: () =>
       import( /* webpackChunkName: "views" */ '@/views/pinda/trace/index')
   }]
+}, {
+  path: '/ofpay',
+  component: Layout,
+  redirect: '/ofpay/customer',
+  children: [{
+    path: 'customer',
+    name: '客户支付',
+    meta: {
+      i18n: 'ofpay'
+    },
+    component: () =>
+      import( /* webpackChunkName: "views" */ '@/views/pinda/ofpay/customer/index')
+  }, {
+    path: 'platform',
+    name: '平台支付',
+    meta: {
+      i18n: 'ofpay'
+    },
+    component: () =>
+      import( /* webpackChunkName: "views" */ '@/views/pinda/ofpay/platform/index')
+  }, {
+    path: 'receive',
+    name: '收款管理',
+    meta: {
+      i18n: 'ofpay'
+    },
+    component: () =>
+      import( /* webpackChunkName: "views" */ '@/views/pinda/ofpay/receive/index')
+  }, {
+    path: 'send',
+    name: '付款管理',
+    meta: {
+      i18n: 'ofpay'
+    },
+    component: () =>
+      import( /* webpackChunkName: "views" */ '@/views/pinda/ofpay/send/index')
+  }]
 }]
