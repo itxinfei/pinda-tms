@@ -140,6 +140,8 @@ export default {
   },
   beforeDestroy() {
     this.stopPlay()
+    // 移除 resize 监听器，避免组件销毁后监听器泄漏
+    window.removeEventListener('resize', this.resizeChart)
     if (this.chart) {
       this.chart.dispose()
       this.chart = null
