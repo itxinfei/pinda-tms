@@ -37,6 +37,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
+import io.seata.spring.annotation.GlobalTransactional;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -482,6 +483,7 @@ public class CargoController {
     }
 
     @ApiOperation(value = "交付")
+    @GlobalTransactional(name = "deliverTransportTask", rollbackFor = Exception.class)
     @ResponseBody
     @PutMapping("finish")
     public Result finish(@RequestBody TaskTransportDTO taskTransportDTO) {
