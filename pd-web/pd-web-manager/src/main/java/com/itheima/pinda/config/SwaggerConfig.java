@@ -1,7 +1,9 @@
 package com.itheima.pinda.config;
 
+import com.itheima.pinda.common.interceptor.TokenAuthInterceptor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupport;
 import springfox.documentation.builders.ApiInfoBuilder;
@@ -56,5 +58,16 @@ public class SwaggerConfig extends WebMvcConfigurationSupport {
     // 解决swagger的js文件无法访问
     registry.addResourceHandler("/webjars/**").addResourceLocations("classpath:/META-INF/resources/webjars/");
 
+  }
+
+  /**
+   * 注册 Token 鉴权拦截器（依赖网关透传 userid 头，直连端口时兜底拒绝）
+   *
+   * @param registry 拦截器注册器
+   */
+  @Override
+  protected void addInterceptors(InterceptorRegistry registry) {
+    registry.addInterceptor(new TokenAuthInterceptor())
+        .addPathPatterns("/**");
   }
 }
