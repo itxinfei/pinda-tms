@@ -1,8 +1,0 @@
-D:\MyCode\pinda-tms\pd-service-api\pd-service-work-api\src\main\java\com\itheima\pinda\feign\PickupDispatchTaskFeign.java
-D:\MyCode\pinda-tms\pd-service-api\pd-service-work-api\src\main\java\com\itheima\pinda\feign\TransportTaskFeign.java
-D:\MyCode\pinda-tms\pd-service-api\pd-service-work-api\src\main\java\com\itheima\pinda\feign\TransportOrderFeign.java
-D:\MyCode\pinda-tms\pd-service-api\pd-service-work-api\src\main\java\com\itheima\pinda\feign\hystrix\PickupDispatchTaskFeignFallback.java
-D:\MyCode\pinda-tms\pd-service-api\pd-service-work-api\src\main\java\com\itheima\pinda\feign\DriverJobFeign.java
-D:\MyCode\pinda-tms\pd-service-api\pd-service-work-api\src\main\java\com\itheima\pinda\feign\hystrix\DriverJobFeignFallback.java
-D:\MyCode\pinda-tms\pd-service-api\pd-service-work-api\src\main\java\com\itheima\pinda\feign\hystrix\TransportTaskFeignFallback.java
-D:\MyCode\pinda-tms\pd-service-api\pd-service-work-api\src\main\java\com\itheima\pinda\feign\hystrix\TransportOrderFeignFallback.java

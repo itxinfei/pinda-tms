@@ -25,3 +25,15 @@ hs_err_pid*
 
 
 */target/
+target/
+
+# IDE 配置
+*.iml
+.idea/
+.vscode/
+
+# 本地环境/配置（含敏感信息，禁止提交）
+.env
+**/.env
+**/.env.*
+!.env.example
