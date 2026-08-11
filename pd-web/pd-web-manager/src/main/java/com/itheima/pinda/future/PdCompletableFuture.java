@@ -303,8 +303,8 @@ public class PdCompletableFuture {
 //        return CompletableFuture.supplyAsync(() -> {
 //            R<Org> result = api.get(id);
 //            if (result.getIsSuccess()&&result.getData()!=null) {
-//                AgencySimpleVo agencyVo = ;
-//                //                // TODO: 2020/3/17 数据处理
+//                AgencySimpleVo agencyVo = new AgencySimpleVo();
+//                // 说明：数据处理逻辑待补全
 //                return BeanUtil.parseOrg2SimpleVo(result.getData());
 //            }
 //            return null;

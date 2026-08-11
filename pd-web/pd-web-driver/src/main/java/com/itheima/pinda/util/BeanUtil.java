@@ -96,7 +96,12 @@ public class BeanUtil {
         agencyVo.setLatitude(org.getLatitude());
         agencyVo.setContractNumber(org.getContractNumber());
         agencyVo.setStatus(org.getStatus() ? 0 : 1);
-        // TODO: 2020/3/17 处理负责人信息
+        // 负责人信息：由 org.manager 名称承载（如需完整用户对象可再经 userApi 查询）
+        if (org.getManager() != null) {
+            SysUserVo managerVo = new SysUserVo();
+            managerVo.setName(org.getManager());
+            agencyVo.setManager(managerVo);
+        }
         //处理父级信息
         if (org.getParentId() != null && org.getParentId() != 0 && orgApi != null) {
             R<Org> result = orgApi.get(org.getParentId());

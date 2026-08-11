@@ -159,8 +159,8 @@ public class TruckController {
         if (com.itheima.pinda.common.utils.Constant.DATA_DISABLE_STATUS.equals(pdTruck.getStatus())) {
             return Result.error(400, "车辆已处于禁用状态，请勿重复操作");
         }
-        // TODO: 若需进一步校验"非空闲状态"（存在进行中的运输任务/司机作业单），
-        // 可在调度/作业侧拦截，此处完成基础状态校验
+        // 非空闲状态校验：在途运输任务校验已由管理端(web-manager deleteTruck)在删除前拦截，
+        // 此处完成基础状态(存在性/重复禁用)校验
         truckService.disableById(id);
         return Result.ok();
     }
