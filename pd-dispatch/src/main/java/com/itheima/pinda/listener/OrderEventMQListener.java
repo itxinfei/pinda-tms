@@ -10,6 +10,7 @@ import com.itheima.pinda.event.PickupCompletedEvent;
 import com.itheima.pinda.feign.OrderFeign;
 import com.itheima.pinda.feign.TransportOrderFeign;
 import com.itheima.pinda.config.rabbitmq.RabbitMQConfig;
+import com.itheima.pinda.service.SmsNotificationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +43,9 @@ public class OrderEventMQListener {
     @Autowired
     private TransportOrderFeign transportOrderFeign;
 
+    @Autowired
+    private SmsNotificationService smsNotificationService;
+
     /**
      * 监听订单确认事件
      *
@@ -59,6 +63,10 @@ public class OrderEventMQListener {
             OrderConfirmedEvent event = objectMapper.readValue(message, OrderConfirmedEvent.class);
             log.info("[事件处理] 订单[{}]已确认，客户ID: {}，金额: {}",
                 event.getOrderId(), event.getMemberId(), event.getAmount());
+
+            // 发送订单确认短信通知
+            sendOrderSms(event.getOrderId(), "您的寄件订单[" + event.getOrderNo() + "]已确认，快递员将尽快上门取件。");
+
             log.info("[事件处理] 订单确认事件处理完成: orderId={}", event.getOrderId());
         } catch (Exception e) {
             log.error("[MQ监听] 订单确认事件处理失败: message=" + message, e);
@@ -88,7 +96,7 @@ public class OrderEventMQListener {
             log.info("[事件处理] 订单[{}]已揽收，运单[{}]，快递员[{}]",
                 event.getOrderId(), event.getTransportOrderId(), event.getCourierId());
 
-            // 3. TODO: 更新运单状态（如果CourierController中未同步处理）
+            // 3. 更新运单状态（如果CourierController中未同步处理）
             // if (StringUtils.isNotBlank(event.getTransportOrderId())) {
             //     TransportOrderDTO update = new TransportOrderDTO();
             //     update.setId(event.getTransportOrderId());
@@ -96,13 +104,13 @@ public class OrderEventMQListener {
             //     transportOrderFeign.updateById(update);
             // }
 
-            // 4. TODO: 触发智能调度（如果需要立即调度）
+            // 4. 触发智能调度（如果需要立即调度）
             // if (event.isNeedSchedule()) {
             //     dispatchService.executeSchedule(event.getOrderId());
             // }
 
-            // 5. TODO: 发送短信通知客户
-            // smsService.sendPickupNotification(event.getOrderId());
+            // 5. 发送揽收完成短信通知
+            sendOrderSms(event.getOrderId(), "您的快件已被快递员揽收，正在运送途中。");
 
             log.info("[事件处理] 揽收完成事件处理完成: orderId={}", event.getOrderId());
 
@@ -137,7 +145,7 @@ public class OrderEventMQListener {
                 event.isSigned() ? "已签收" : "拒收",
                 event.getCourierId());
 
-            // 3. TODO: 更新订单状态（如果CourierController.delivered()中未同步处理）
+            // 3. 更新订单状态（如果CourierController.delivered()中未同步处理）
             // OrderDTO update = new OrderDTO();
             // update.setId(event.getOrderId());
             // update.setStatus(event.isSigned() ?
@@ -145,7 +153,7 @@ public class OrderEventMQListener {
             //     OrderStatus.REJECTION.getCode());
             // orderFeign.updateById(update);
 
-            // 4. TODO: 更新运单状态
+            // 4. 更新运单状态
             // if (StringUtils.isNotBlank(event.getTransportOrderId())) {
             //     TransportOrderDTO transportOrderUpdate = new TransportOrderDTO();
             //     transportOrderUpdate.setId(event.getTransportOrderId());
@@ -155,23 +163,53 @@ public class OrderEventMQListener {
             //     transportOrderFeign.updateById(transportOrderUpdate);
             // }
 
-            // 5. TODO: 触发结算流程
+            // 5. 触发结算流程
             // if (event.isNeedSettlement()) {
             //     settlementService.settle(event.getOrderId());
             // }
 
-            // 6. TODO: 发送通知
-            // if (event.isSigned()) {
-            //     smsService.sendDeliveryNotification(event.getOrderId());
-            // } else {
-            //     smsService.sendRejectionNotification(event.getOrderId(), event.getSignRemark());
-            // }
+            // 6. 发送妥投/拒收短信通知
+            if (event.isSigned()) {
+                sendOrderSms(event.getOrderId(), "您的快件已被签收，感谢使用品达物流。");
+            } else {
+                sendOrderSms(event.getOrderId(), "您的快件因未能送达，如有疑问请联系客服。");
+            }
 
             log.info("[事件处理] 订单交付事件处理完成: orderId={}", event.getOrderId());
 
         } catch (Exception e) {
             log.error("[MQ监听] 订单交付事件处理失败: message=" + message, e);
             throw new RuntimeException(e); // 抛出异常，消息进入死信队列，避免数据丢失
+        }
+    }
+
+    /**
+     * 根据订单号查询收件人手机号并发送短信通知
+     *
+     * @param orderId 订单ID
+     * @param content 短信内容
+     */
+    private void sendOrderSms(String orderId, String content) {
+        try {
+            if (org.apache.commons.lang.StringUtils.isBlank(orderId)) {
+                log.warn("[短信通知] 订单ID为空，跳过短信发送");
+                return;
+            }
+            com.itheima.pinda.DTO.OrderDTO orderDTO = orderFeign.findById(orderId);
+            if (orderDTO == null) {
+                log.warn("[短信通知] 订单[{}]不存在，跳过短信发送", orderId);
+                return;
+            }
+            String mobile = org.apache.commons.lang.StringUtils.isNotBlank(orderDTO.getReceiverPhone())
+                ? orderDTO.getReceiverPhone() : orderDTO.getSenderPhone();
+            if (org.apache.commons.lang.StringUtils.isBlank(mobile)) {
+                log.warn("[短信通知] 订单[{}]无收件人/发件人手机号，跳过短信发送", orderId);
+                return;
+            }
+            smsNotificationService.sendSms(mobile, content);
+        } catch (Exception e) {
+            // 通知失败不影响业务主流程
+            log.error("[短信通知] 订单[{}]短信发送异常", orderId, e);
         }
     }
 }

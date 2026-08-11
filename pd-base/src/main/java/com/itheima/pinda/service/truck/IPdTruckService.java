@@ -35,6 +35,18 @@ public interface IPdTruckService extends IService<PdTruck> {
     IPage<PdTruck> findByPage(Integer page, Integer pageSize, String truckTypeId, String licensePlate, String fleetId);
 
     /**
+     * 按多个车队ID获取车辆分页数据（支持车队名称查询时一个名称匹配多个车队）
+     *
+     * @param page         页码
+     * @param pageSize     页尺寸
+     * @param truckTypeId  车辆类型id
+     * @param licensePlate 车辆号牌
+     * @param fleetIds     车队ID列表
+     * @return 车辆分页数据
+     */
+    IPage<PdTruck> findByPageByFleetIds(Integer page, Integer pageSize, String truckTypeId, String licensePlate, List<String> fleetIds);
+
+    /**
      * 获取车辆列表
      *
      * @param ids     车辆id列表

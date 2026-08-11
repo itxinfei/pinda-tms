@@ -57,6 +57,24 @@ public class PdTruckServiceImpl extends ServiceImpl<PdTruckMapper, PdTruck> impl
     }
 
     @Override
+    public IPage<PdTruck> findByPageByFleetIds(Integer page, Integer pageSize, String truckTypeId, String licensePlate, List<String> fleetIds) {
+        Page<PdTruck> iPage = new Page(page, pageSize);
+        LambdaQueryWrapper<PdTruck> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+        if (StringUtils.isNotEmpty(licensePlate)) {
+            lambdaQueryWrapper.like(PdTruck::getLicensePlate, licensePlate);
+        }
+        if (StringUtils.isNotEmpty(truckTypeId)) {
+            lambdaQueryWrapper.eq(PdTruck::getTruckTypeId, truckTypeId);
+        }
+        if (fleetIds != null && fleetIds.size() > 0) {
+            lambdaQueryWrapper.in(PdTruck::getFleetId, fleetIds);
+        }
+        lambdaQueryWrapper.eq(PdTruck::getStatus, Constant.DATA_DEFAULT_STATUS);
+        lambdaQueryWrapper.orderBy(true, false, PdTruck::getId);
+        return baseMapper.selectPage(iPage, lambdaQueryWrapper);
+    }
+
+    @Override
     public List<PdTruck> findAll(List<String> ids, String fleetId) {
         LambdaQueryWrapper<PdTruck> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         if (ids != null && ids.size() > 0) {

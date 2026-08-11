@@ -88,4 +88,8 @@ schedule:
     # 重试间隔（毫秒）
     interval-ms: ${SCHEDULE_RETRY_INTERVAL_MS:2000}
 
+# 短信通知网关（可选，配置后推送订单通知到外部短信网关）
+sms:
+  webhook-url: ${SMS_WEBHOOK_URL:}
+
 
