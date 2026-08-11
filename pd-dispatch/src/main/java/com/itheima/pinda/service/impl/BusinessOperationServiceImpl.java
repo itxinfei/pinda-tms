@@ -20,6 +20,7 @@ import com.itheima.pinda.feign.transportline.TransportLineFeign;
 import com.itheima.pinda.feign.transportline.TransportTripsFeign;
 import com.itheima.pinda.service.IBusinessOperationService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -69,10 +70,10 @@ public class BusinessOperationServiceImpl implements IBusinessOperationService {
                         // 【P0优化】查询运单（下单时已预生成，理论上应该存在）
                         TransportOrderDTO transportOrderDto = transportOrderFeign.findByOrderId(orderId);
                         if (transportOrderDto == null) {
-                            // 理论上不应该发生，如果发生说明订单确认逻辑有问题
-                            log.error("订单[{}]未找到关联运单，请检查订单确认逻辑！", orderId);
-                            // 抛出异常，而不是兜底创建，便于快速定位问题
-                            throw new RuntimeException("订单[" + orderId + "]未找到关联运单，请先确认订单");
+                            // 【健壮性】单个订单缺失运单不应中断整轮调度，
+                            // 记录错误并跳过该订单，避免影响其它线路/订单的正常调度。
+                            log.error("订单[{}]未找到关联运单，跳过该订单调度，请检查订单确认逻辑！", orderId);
+                            continue;
                         }
                         transportOrderIds.add(transportOrderDto.getId());
 
@@ -119,13 +120,27 @@ public class BusinessOperationServiceImpl implements IBusinessOperationService {
 
             TransportTripsDto transportTrips = transportTripsFeign.fineById(tripsTruckDriver.getTripsId());
             log.info("查询线路信息：{}", transportTrips);
+            if (transportTrips == null || StringUtils.isBlank(transportTrips.getDepartureTime())) {
+                log.error("车次[{}]不存在或无发车时间，跳过该线路司机作业单生成", tripsTruckDriver.getTripsId());
+                transportTaskMap.remove(transportLineId);
+                return;
+            }
             String[] departures = transportTrips.getDepartureTime().split(":");
             LocalDateTime departureDate = LocalDateTime.now().withHour(Integer.parseInt(departures[0])).withMinute(Integer.parseInt(departures[1])).withSecond(00);
 
             TransportLineDto transportLine = transportLineFeign.fineById(transportLineId);
+            if (transportLine == null || transportLine.getEstimatedTime() == null) {
+                log.error("线路[{}]不存在或无预计耗时，跳过该线路司机作业单生成", transportLineId);
+                transportTaskMap.remove(transportLineId);
+                return;
+            }
             LocalDateTime arrivalTime = departureDate.plusMinutes(transportLine.getEstimatedTime().longValue());
 
             TaskTransportDTO taskTransportDTO = transportTaskMap.get(transportLineId);
+            if (taskTransportDTO == null) {
+                log.error("线路[{}]对应的运输任务不存在，跳过该线路司机作业单生成", transportLineId);
+                return;
+            }
 
             // 创建司机任务
             DriverJobDTO driverJobDto = new DriverJobDTO();

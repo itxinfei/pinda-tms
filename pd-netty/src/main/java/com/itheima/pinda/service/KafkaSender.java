@@ -27,7 +27,14 @@ public class KafkaSender {
      */
     public ListenableFuture<SendResult<String, String>> send(String topic, String message){
         try {
-            return kafkaTemplate.send(topic, message);
+            ListenableFuture<SendResult<String, String>> future = kafkaTemplate.send(topic, message);
+            // 注册异步回调，确保发送失败（如broker不可用、消息过大）可被感知并告警，
+            // 避免消息静默丢失。此回调不影响调用方自行添加的监听器。
+            future.addCallback(
+                result -> log.debug("Kafka消息发送成功: topic={}", topic),
+                ex -> log.error("Kafka消息发送失败: topic={}, 消息将被丢弃", topic, ex)
+            );
+            return future;
         } catch (Exception e) {
             log.error("发送Kafka消息失败: topic={}", topic, e);
             return null;

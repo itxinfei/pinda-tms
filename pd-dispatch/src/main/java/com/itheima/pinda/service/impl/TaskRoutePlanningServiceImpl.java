@@ -80,6 +80,11 @@ public class TaskRoutePlanningServiceImpl implements ITaskRoutePlanningService {
             String id = item.getId();
             // 根据orderId 查到之前的线路
             CacheLineDetailEntity cacheLineDetailEntity = findBeforeLine(id, agencyId);
+            if (cacheLineDetailEntity == null) {
+                // 【健壮性】历史线路缺失时跳过该订单分组，避免将 null 传入下游导致 NPE 中断整轮调度
+                log.warn("中转订单分组[{}]无历史线路信息，跳过该分组，待人工处理", id);
+                return;
+            }
             // 返回线路信息
             orderLineDTOS.add(new OrderLineDTO(cacheLineDetailEntity, item));
         });
@@ -140,6 +145,11 @@ public class TaskRoutePlanningServiceImpl implements ITaskRoutePlanningService {
         wrapper.eq(CacheLineUseEntity::getOrderClassifyId, id);
         CacheLineUseEntity cacheLineUseEntity = cacheLineUseService.getOne(wrapper);
         log.info("查询到分组使用的线路信息:{}", cacheLineUseEntity);
+        // 【健壮性】历史线路使用记录可能不存在（如数据缺失/被清理），返回 null 交由调用方容错
+        if (cacheLineUseEntity == null) {
+            log.warn("中转订单分组[{}]未找到历史线路使用记录，跳过本次路线规划", id);
+            return null;
+        }
         String cacheLineId = cacheLineUseEntity.getCacheLineId();
         LambdaQueryWrapper<CacheLineDetailEntity> detailWrapper = new LambdaQueryWrapper<>();
         detailWrapper.eq(CacheLineDetailEntity::getCacheLineId, cacheLineId);

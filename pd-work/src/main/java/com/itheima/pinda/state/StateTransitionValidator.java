@@ -90,6 +90,12 @@ public class StateTransitionValidator {
             OrderStatus.CANCELLED.getCode()
         )));
 
+        // 网点自寄 → 网点入库 / 已取消（自寄订单交件直接入库）
+        ORDER_STATUS_TRANSITIONS.put(OrderStatus.OUTLETS_SINCE_SENT.getCode(), new HashSet<>(Arrays.asList(
+            OrderStatus.OUTLETS_WAREHOUSE.getCode(),
+            OrderStatus.CANCELLED.getCode()
+        )));
+
         // 网点入库 → 待装车 / 已取消
         ORDER_STATUS_TRANSITIONS.put(OrderStatus.OUTLETS_WAREHOUSE.getCode(), new HashSet<>(Arrays.asList(
             OrderStatus.FOR_LOADING.getCode(),
@@ -108,9 +114,10 @@ public class StateTransitionValidator {
             OrderStatus.CANCELLED.getCode()
         )));
 
-        // 网点出库 → 待派送 / 已取消
+        // 网点出库 → 待派送 / 派送中 / 已取消（快递员接件可直接进入派送，兼容跳过待派送）
         ORDER_STATUS_TRANSITIONS.put(OrderStatus.OUTLETS_EX_WAREHOUSE.getCode(), new HashSet<>(Arrays.asList(
             OrderStatus.TO_BE_DISPATCHED.getCode(),
+            OrderStatus.DISPATCHING.getCode(),
             OrderStatus.CANCELLED.getCode()
         )));
 

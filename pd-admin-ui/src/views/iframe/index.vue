@@ -32,7 +32,7 @@ export default {
     resize() {
       this.$bindResize(() => {
         this.iframeInit()
-      }
+      })
     },
     load() {
       var flag = true //URL是否包含问号

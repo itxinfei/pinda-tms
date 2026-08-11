@@ -103,4 +103,17 @@ export default [{
     component: () =>
       import( /* webpackChunkName: "views" */ '@/views/work/process/leave/detail')
   }]
+}, {
+  path: '/pinda/trace',
+  component: Layout,
+  redirect: '/pinda/trace/index',
+  children: [{
+    path: 'index',
+    name: '车辆轨迹监控',
+    meta: {
+      i18n: 'trace'
+    },
+    component: () =>
+      import( /* webpackChunkName: "views" */ '@/views/pinda/trace/index')
+  }]
 }]

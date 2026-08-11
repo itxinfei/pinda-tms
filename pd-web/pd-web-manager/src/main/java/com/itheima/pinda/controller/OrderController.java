@@ -107,6 +107,10 @@ public class OrderController {
     @PostMapping("/{id}")
     public OrderVo updateOrder(@PathVariable(name = "id") String id, @RequestBody OrderVo vo) {
         OrderDTO dto = orderFeign.updateById(id, BeanUtil.parseOrderVo2DTO(vo));
+        // 状态流转校验失败时远端返回 null，避免 parseOrderDTO2Vo 对 null 处理引发 NPE
+        if (dto == null) {
+            return null;
+        }
         return BeanUtil.parseOrderDTO2Vo(dto, null);
     }
 }

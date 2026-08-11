@@ -141,7 +141,7 @@ export default {
       return (() => {
         this.width = this.initWidth()
       })()
-    }
+    })
   },
   methods: {
     initUser() {

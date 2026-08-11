@@ -9,6 +9,9 @@ import com.itheima.pinda.DTO.OrderDTO;
 import com.itheima.pinda.DTO.OrderLocationDto;
 import com.itheima.pinda.DTO.OrderSearchDTO;
 import com.itheima.pinda.common.exception.PdException;
+import com.itheima.pinda.DTO.OrderCargoDto;
+import com.itheima.pinda.entity.OrderCargo;
+import com.itheima.pinda.service.IOrderCargoService;
 import com.itheima.pinda.common.utils.CustomIdGenerator;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.entity.Order;
@@ -41,6 +44,8 @@ public class OrderController {
     private IOrderService orderService;
     @Autowired
     private IOrderLocationService orderLocationService;
+    @Autowired
+    private IOrderCargoService orderCargoService;
     @Autowired
     private CustomIdGenerator idGenerator;
 
@@ -79,6 +84,23 @@ public class OrderController {
         order.setAmount(new BigDecimal(map.get("amount").toString()));
         orderService.saveOrder(order);
         log.info("订单信息入库:{}", order);
+
+        // 【P0修复】订单入库后同步保存货物明细，避免订单缺少货物数据
+        OrderCargoDto cargoDto = orderDTO.getOrderCargoDto();
+        if (cargoDto != null) {
+            OrderCargo orderCargo = new OrderCargo();
+            BeanUtils.copyProperties(cargoDto, orderCargo);
+            orderCargo.setId(null);
+            orderCargo.setOrderId(order.getId());
+            orderCargo.setTranOrderId(null);
+            // 缺失总重量时按 重量×数量 兜底计算
+            if (orderCargo.getTotalWeight() == null && orderCargo.getWeight() != null && orderCargo.getQuantity() != null) {
+                orderCargo.setTotalWeight(orderCargo.getWeight().multiply(new BigDecimal(orderCargo.getQuantity())));
+            }
+            orderCargoService.saveSelective(orderCargo);
+            log.info("订单货物明细入库:{}", orderCargo);
+        }
+
         OrderDTO result = new OrderDTO();
         BeanUtils.copyProperties(order, result);
         return result;
@@ -113,9 +135,20 @@ public class OrderController {
     @PutMapping("/{id}")
     public OrderDTO updateById(@PathVariable(name = "id") String id, @RequestBody OrderDTO orderDTO) {
         orderDTO.setId(id);
+        // 【安全加固】核心业务字段禁止通过普通更新接口篡改，只能由系统内部流程修改：
+        // 金额/预计到达时间由运费计算与下单流程决定；支付状态由支付回调/对账流程决定；
+        // 状态字段由 OrderServiceImpl 状态机校验保护（合法流转时才允许变更）。
+        orderDTO.setAmount(null);
+        orderDTO.setEstimatedArrivalTime(null);
+        orderDTO.setPaymentStatus(null);
+        orderDTO.setCreateTime(null);
         Order order = new Order();
         BeanUtils.copyProperties(orderDTO, order);
-        orderService.updateById(order);
+        // 状态流转校验失败时返回 null，由 Feign 调用方感知（与 TransportOrder 行为一致）
+        if (!orderService.updateById(order)) {
+            log.warn("[订单] 更新失败（可能状态流转不合法或订单不存在）: id={}, status={}", id, orderDTO.getStatus());
+            return null;
+        }
         return orderDTO;
     }
 

@@ -1,7 +1,5 @@
 package com.itheima.pinda.common.utils;
 
-import com.itheima.pinda.common.enums.OrderEnum;
-
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -181,6 +179,15 @@ public class Constant {
 
     /**
      * 岗位
+     *
+     * <p><b>重要说明</b>：本枚举描述的是<b>客户端角色编码</b>（App/前端传参用的业务角色编号），
+     * 与数据库中的岗位 ID（pd_core_station，见 pd-authority 的 {@code StaticStation}）是<b>两套不同的编码体系</b>：
+     * <ul>
+     *   <li>本枚举：PERSONNEL=1、COURIER=2、DRIVER=3（客户端角色编码）</li>
+     *   <li>StaticStation：COURIER_ID=3L、DRIVER_ID=2L（数据库岗位ID）</li>
+     * </ul>
+     * 二者映射关系为：客户端 COURIER(2) ↔ 数据库岗位3；客户端 DRIVER(3) ↔ 数据库岗位2。
+     * 使用时务必区分，切勿将本枚举值直接当作数据库岗位ID使用。</p>
      */
     public enum UserStation {
         PERSONNEL(1, "员工"), COURIER(2, "快递员"), DRIVER(3, "司机");
