@@ -55,6 +55,9 @@ gps:
     enabled: ${GPS_ALERT_ENABLED:true}
     # Webhook 通知地址（可选，配置后推送超速/停留等告警到外部网关）
     webhook-url: ${GPS_ALERT_WEBHOOK_URL:}
+  trace:
+    # 轨迹数据保留天数（超过该天数的落库数据将被定时清理；<=0 表示不清理）
+    retention-days: ${GPS_TRACE_RETENTION_DAYS:30}
 
 #mybatis
 mybatis-plus:
