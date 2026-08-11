@@ -34,6 +34,18 @@ public class OrderFeignFallback implements OrderFeign {
     }
 
     @Override
+    public Result pay(String id) {
+        log.warn("远程调用 pd-oms 失败: pay({}), 返回error", id);
+        return Result.error(500, "支付服务不可用");
+    }
+
+    @Override
+    public Result reprice(String id, OrderDTO orderDTO) {
+        log.warn("远程调用 pd-oms 失败: reprice({}), 返回error", id);
+        return Result.error(500, "改价服务不可用");
+    }
+
+    @Override
     public PageResponse<OrderDTO> findByPage(OrderDTO orderDTO) {
         log.warn("远程调用 pd-oms 失败: findByPage({}), 返回空分页", orderDTO);
         PageResponse<OrderDTO> result = new PageResponse<>();

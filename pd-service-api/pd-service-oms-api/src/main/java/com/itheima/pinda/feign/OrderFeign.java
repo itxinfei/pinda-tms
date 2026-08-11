@@ -4,6 +4,7 @@ import com.itheima.pinda.DTO.OrderDTO;
 import com.itheima.pinda.DTO.OrderLocationDto;
 import com.itheima.pinda.DTO.OrderSearchDTO;
 import com.itheima.pinda.common.utils.PageResponse;
+import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.entity.Order;
 import com.itheima.pinda.feign.hystrix.OrderFeignFallback;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -34,6 +35,25 @@ public interface OrderFeign {
      */
     @PutMapping("/{id}")
     OrderDTO updateById(@PathVariable(name = "id") String id, @RequestBody OrderDTO orderDTO);
+
+    /**
+     * 订单支付确认（专用端点，服务端校验后置为已支付）
+     *
+     * @param id 订单id
+     * @return 支付结果
+     */
+    @PutMapping("/{id}/pay")
+    Result pay(@PathVariable(name = "id") String id);
+
+    /**
+     * 订单改价（专用端点，服务端重算运费）
+     *
+     * @param id       订单id
+     * @param orderDTO 订单信息（用于重算运费）
+     * @return 改价结果
+     */
+    @PutMapping("/{id}/reprice")
+    Result reprice(@PathVariable(name = "id") String id, @RequestBody OrderDTO orderDTO);
 
     /**
      * 获取订单分页数据
