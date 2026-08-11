@@ -588,8 +588,7 @@ public class CourierController {
         orderAddDto.setPaymentStatus(1); // 默认未付款
 
         orderAddDto.setOrderType(orderAddDto.getReceiverCityId().equals(orderAddDto.getSenderCityId()) ? OrderType.INCITY.getCode() : OrderType.OUTCITY.getCode());
-        //TODO 计算总价 通过距离等信息 diesel
-//        orderAddDto.setAmount(new BigDecimal("23"));
+        // 总价由订单服务(orderFeign.getOrderMsg)按距离+重量实时计算
         OrderCargoDto cargoDto = buildOrderCargo(entity);
         orderAddDto.setOrderCargoDto(cargoDto);
         Map map = orderFeign.getOrderMsg(orderAddDto);

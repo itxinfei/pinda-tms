@@ -31,7 +31,7 @@ public class OrderVo implements Serializable {
     )
     private LocalDateTime createTime;
 
-    // TODO: 2020/4/1 此处应修改为客户模型
+    // 说明：memberId 为客户ID（与订单服务 OrderDTO.memberId 对应），如需完整客户模型可扩展 CustomerVo 关联
     @ApiModelProperty(value = "客户id")
     private String memberId;
 

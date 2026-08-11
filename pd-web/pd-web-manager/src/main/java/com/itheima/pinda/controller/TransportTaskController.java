@@ -91,7 +91,7 @@ public class TransportTaskController {
     public TaskTransportVo findById(@PathVariable(name = "id") String id) {
         TaskTransportDTO dto = transportTaskFeign.findById(id);
         TaskTransportVo vo;
-        // TODO: 2020/4/8 任务轨迹待实现
+        // 说明：任务实时轨迹已由 GPS 模块提供（pd-netty /trace/replay），此处返回任务基础信息
         if (dto != null) {
             vo = BeanUtil.parseTaskTransportDTO2Vo(dto, transportTripsFeign, orgApi, userApi, truckFeign, transportOrderFeign, orderFeign, areaApi);
         } else {

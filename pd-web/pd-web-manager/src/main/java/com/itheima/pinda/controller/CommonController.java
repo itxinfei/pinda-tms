@@ -84,7 +84,8 @@ public class CommonController {
     })
     @GetMapping(value = "user/simple")
     public List<SysUserVo> userSimple(@RequestParam(name = "station", required = false) Integer station, @RequestParam(name = "name", required = false) String name) {
-        // TODO: 2020/2/18 此处需考虑是否从token上下文中获取当前用户所属机构id作为查询条件
+        // 说明：当前为全局查询；如需按当前用户所属机构过滤，需网关在 token 校验时透传机构头(orgid)，
+        // 并在 userApi.list 中追加 orgId 条件（见 TransforCenterBusinessController 中 RequestContext 用法）
         Long stationId = null;
         if (station != null && station == Constant.UserStation.COURIER.getStation()) {
             stationId = StaticStation.COURIER_ID;
@@ -105,7 +106,7 @@ public class CommonController {
     })
     @GetMapping(value = "fleet/simple")
     public List<FleetVo> fleetSimple(@RequestParam(name = "more", required = false, defaultValue = "false") Boolean more) {
-        // TODO: 2020/2/18 此处需考虑是否从token上下文中获取当前用户所属机构id作为查询条件
+        // 说明：当前为全局查询；如需按当前用户所属机构过滤，需网关透传机构头(orgid)后追加查询条件
         // 修改点：Feign 直接返回 List 可能为 null，统一通过 Rx 安全取值
         List<FleetDto> fleetDtoList = Rx.list(fleetFeign.findAll(null, null));
         return fleetDtoList.stream().map(fleetDto -> {
@@ -138,7 +139,7 @@ public class CommonController {
     @ApiOperation(value = "获取车辆类型信息列表")
     @GetMapping(value = "truckType/simple")
     public List<TruckTypeVo> truckTypeSimple() {
-        // TODO: 2020/2/18 此处需考虑是否从token上下文中获取当前用户所属机构id作为查询条件
+        // 说明：车辆类型为全局基础数据，无需按机构过滤
         // 修改点：Feign 直接返回 List 可能为 null，统一通过 Rx 安全取值
         List<TruckTypeDto> truckTypeDtoList = Rx.list(truckTypeFeign.findAll(null));
         return truckTypeDtoList.stream().map(truckTypeDto -> {
@@ -151,7 +152,7 @@ public class CommonController {
     @ApiOperation(value = "获取线路类型信息列表")
     @GetMapping(value = "transportLineType/simple")
     public List<TransportLineTypeVo> transportLineTypeSimple() {
-        // TODO: 2020/2/18 此处需考虑是否从token上下文中获取当前用户所属机构id作为查询条件
+        // 说明：线路类型为全局基础数据，无需按机构过滤
         // 修改点：Feign 直接返回 List 可能为 null，统一通过 Rx 安全取值
         List<TransportLineTypeDto> transportLineTypeDtoList = Rx.list(transportLineTypeFeign.findAll(null));
         return transportLineTypeDtoList.stream().map(transportLineTypeDto -> {

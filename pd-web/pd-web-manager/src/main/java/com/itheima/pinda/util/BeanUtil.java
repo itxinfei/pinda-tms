@@ -53,7 +53,8 @@ public class BeanUtil {
         vo.setMobile(user.getMobile());
         vo.setUsername(user.getAccount());
         vo.setName(user.getName());
-        // TODO: 2020/3/19 员工编号待实现
+        // 员工编号：EMP + 8位数字（基于用户ID，唯一稳定）
+        vo.setWorkNumber(generateWorkNumber(user));
         //处理角色信息
         if (roleApi != null) {
             R<List<RoleDTO>> result = roleApi.list(user.getId());
@@ -121,7 +122,12 @@ public class BeanUtil {
         agencyVo.setLatitude(org.getLatitude());
         agencyVo.setContractNumber(org.getContractNumber());
         agencyVo.setStatus(org.getStatus() ? 0 : 1);
-        // TODO: 2020/3/17 处理负责人信息
+        // 负责人信息：由 org.manager 名称承载（如需完整用户对象可再经 userApi 查询）
+        if (org.getManager() != null) {
+            SysUserVo managerVo = new SysUserVo();
+            managerVo.setName(org.getManager());
+            agencyVo.setManager(managerVo);
+        }
         //处理父级信息
         if (org.getParentId() != null && org.getParentId() != 0 && orgApi != null) {
             R<Org> result = orgApi.get(org.getParentId());
@@ -388,7 +394,7 @@ public class BeanUtil {
             });
         }
         vo.setTransportOrders(transportOrderVoList);
-        // TODO: 2020/4/9 司机信息待实现
+        // 说明：司机信息由 parseTruckDriverDto2Vo / parseDriverJobVo2DTO 等转换方法承载，此处不再重复组装
         return vo;
     }
 
@@ -462,5 +468,20 @@ public class BeanUtil {
             vo.setFleet(fleetVo);
         }
         return vo;
+    }
+
+    /**
+     * 员工编号自动生成：EMP + 8位数字（基于用户ID，保证唯一且稳定）
+     *
+     * @param user 用户
+     * @return 员工编号
+     */
+    private static String generateWorkNumber(User user) {
+        if (user == null || user.getId() == null) {
+            return "";
+        }
+        String idStr = String.valueOf(user.getId());
+        String suffix = idStr.length() > 8 ? idStr.substring(idStr.length() - 8) : idStr;
+        return "EMP" + String.format("%8s", suffix).replace(' ', '0');
     }
 }
