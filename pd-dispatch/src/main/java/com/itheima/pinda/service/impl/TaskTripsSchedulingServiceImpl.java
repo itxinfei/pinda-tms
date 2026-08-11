@@ -138,8 +138,9 @@ public class TaskTripsSchedulingServiceImpl implements ITaskTripsSchedulingServi
         }
 
         List<TransportTripsDto> transportTripsDtos = transportTripsFeign.findAll(null, tripsIds);
-        // 远程调用失败(fallback 返回 null)时按无数据降级，避免 NPE
-        if (CollectionUtils.isEmpty(transportTripsDtos)) {
+        // 仅远程调用失败(fallback 返回 null)时按无数据降级，避免 NPE；
+        // 空列表(非 null)保持原有行为：走下方"未找到最优方案"兜底调度
+        if (transportTripsDtos == null) {
             return null;
         }
 
