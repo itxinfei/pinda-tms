@@ -72,13 +72,14 @@ public class MailingController {
     private final AreaApi areaApi;
     private final PickupDispatchTaskFeign pickupDispatchTaskFeign;
     private final OrderFeign orderFeign;
+    private final PayFeign payFeign;
     private final CargoFeign cargoFeign;
     private final IMemberService memberService;
     private final AddressBookFeign addressBookFeign;
     private final CourierScopeFeign courierScopeFeign;
     private final EventPublisher eventPublisher;
 
-    public MailingController(AgencyScopeFeign agencyScopeFeign, OrgApi orgApi, TransportTaskFeign transportTaskFeign, TransportOrderFeign transportOrderFeign, UserApi userApi, AreaApi areaApi, PickupDispatchTaskFeign pickupDispatchTaskFeign, OrderFeign orderFeign, CargoFeign cargoFeign, IMemberService memberService, AddressBookFeign addressBookFeign, CourierScopeFeign courierScopeFeign, EventPublisher eventPublisher) {
+    public MailingController(AgencyScopeFeign agencyScopeFeign, OrgApi orgApi, TransportTaskFeign transportTaskFeign, TransportOrderFeign transportOrderFeign, UserApi userApi, AreaApi areaApi, PickupDispatchTaskFeign pickupDispatchTaskFeign, OrderFeign orderFeign, PayFeign payFeign, CargoFeign cargoFeign, IMemberService memberService, AddressBookFeign addressBookFeign, CourierScopeFeign courierScopeFeign, EventPublisher eventPublisher) {
         this.agencyScopeFeign = agencyScopeFeign;
         this.orgApi = orgApi;
         this.transportTaskFeign = transportTaskFeign;
@@ -87,6 +88,7 @@ public class MailingController {
         this.areaApi = areaApi;
         this.pickupDispatchTaskFeign = pickupDispatchTaskFeign;
         this.orderFeign = orderFeign;
+        this.payFeign = payFeign;
         this.cargoFeign = cargoFeign;
         this.memberService = memberService;
         this.addressBookFeign = addressBookFeign;
@@ -713,8 +715,8 @@ public class MailingController {
                 log.warn("[订单] 越权支付被拒绝: id={}, userId={}, orderMemberId={}", id, userId, order.getMemberId());
                 return Result.error(403, "无权操作他人订单");
             }
-            // 支付走专用端点：服务端校验后置为已支付，避免伪造支付状态
-            return orderFeign.pay(id);
+            // 走统一支付服务创建支付单（微信/支付宝/模拟渠道），返回预支付参数供前端拉起支付
+            return payFeign.createPayment(id);
         } catch (Exception e) {
             log.error("订单支付失败: id={}", id, e);
             return Result.error();
