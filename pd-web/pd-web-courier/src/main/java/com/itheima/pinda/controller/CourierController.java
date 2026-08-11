@@ -274,13 +274,15 @@ public class CourierController {
     public Result detail(@PathVariable("id") String id, @RequestBody PickupDispatchDetailDTO pickupDispatchDetailDTO) {
         log.info("揽收：{},{}", id, pickupDispatchDetailDTO);
         pickupDispatchDetailDTO.getGoodsTypeId();
+        // 揽收时无论是否填写支付方式，订单状态都应更新为"已取件"(23001)
+        // 否则交件(warehousing)时订单仍停留在"待取件"(23000)，会因状态跳变被订单状态机拦截
+        OrderDTO orderEditDTO = new OrderDTO();
+        orderEditDTO.setId(pickupDispatchDetailDTO.getOrderNumber());
+        orderEditDTO.setStatus(OrderStatus.PICKED_UP.getCode());
         if (null != pickupDispatchDetailDTO.getPaymentMethod()) {
-            OrderDTO orderEditDTO = new OrderDTO();
-            orderEditDTO.setId(pickupDispatchDetailDTO.getOrderNumber());
             orderEditDTO.setPaymentMethod(pickupDispatchDetailDTO.getPaymentMethod());
-            orderEditDTO.setStatus(OrderStatus.PICKED_UP.getCode());
-            orderFeign.updateById(orderEditDTO.getId(), orderEditDTO);
         }
+        orderFeign.updateById(orderEditDTO.getId(), orderEditDTO);
 
         List<OrderCargoDto> orderCargoDtos = cargoFeign.findAll(null, pickupDispatchDetailDTO.getOrderNumber());
         log.info("揽收-订单附属信息：{},{}", pickupDispatchDetailDTO.getOrderNumber(), orderCargoDtos);

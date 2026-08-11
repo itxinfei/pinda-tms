@@ -1,7 +1,8 @@
 export default {
   route: {
     dashboard: 'Dashboard',
-    profile: 'Profile'
+    profile: 'Profile',
+    trace: 'Vehicle Trace Monitor'
   },
   navbar: {
     setting: 'Settings',

@@ -1,8 +1,8 @@
 spring:
   cloud:
     nacos:
-      username: ${nacos.username:pinda}
-      password: ${nacos.password:pinda}
+      username: ${NACOS_USERNAME:pinda}
+      password: ${NACOS_PASSWORD:pinda}
       discovery:
         server-addr: 101.43.184.54:8848
         group: pinda-tms
@@ -34,3 +34,48 @@ spring:
       value-serializer: ${spring.kafka.producer.value-serializer}
     consumer:
       group-id: ${spring.kafka.consumer.group-id}
+
+  # 数据源（轨迹落库用，配置项从 Nacos 共享配置拉取，与其它模块保持一致）
+  datasource:
+    druid:
+      type: ${spring.datasource.druid.type}
+      driver-class-name: ${spring.datasource.druid.driver-class-name}
+      url: ${spring.datasource.druid.url}
+      username: ${spring.datasource.druid.username}
+      password: ${spring.datasource.druid.password}
+      initial-size: ${spring.datasource.druid.initial-size}
+      max-active: ${spring.datasource.druid.max-active}
+      min-idle: ${spring.datasource.druid.min-idle}
+      max-wait: ${spring.datasource.druid.max-wait}
+
+# GPS 异常告警配置（可选）
+gps:
+  alert:
+    # 告警开关
+    enabled: ${GPS_ALERT_ENABLED:true}
+    # Webhook 通知地址（可选，配置后推送超速/停留等告警到外部网关）
+    webhook-url: ${GPS_ALERT_WEBHOOK_URL:}
+
+#mybatis
+mybatis-plus:
+  mapper-locations: ${mybatis-plus.mapper-locations}
+  #实体扫描，多个package用逗号或者分号分隔
+  typeAliasesPackage: ${mybatis-plus.typeAliasesPackage}
+  global-config:
+    #数据库相关配置
+    db-config:
+      #主键类型  AUTO:"数据库ID自增", INPUT:"用户输入ID", ID_WORKER:"全局唯一ID (数字类型唯一ID)", UUID:"全局唯一ID UUID";
+      id-type: ${mybatis-plus.global-config.db-config.id-type}
+      #字段策略 IGNORED:"忽略判断",NOT_NULL:"非 NULL 判断"),NOT_EMPTY:"非空判断"
+      field-strategy: ${mybatis-plus.global-config.db-config.field-strategy}
+      #驼峰下划线转换
+      column-underline: ${mybatis-plus.global-config.db-config.column-underline}
+    banner: ${mybatis-plus.global-config.banner}
+
+  #原生配置
+  configuration:
+    map-underscore-to-camel-case: ${mybatis-plus.configuration.map-underscore-to-camel-case}
+    cache-enabled: ${mybatis-plus.configuration.cache-enabled}
+    call-setters-on-nulls: ${mybatis-plus.configuration.call-setters-on-nulls}
+    jdbc-type-for-null: ${mybatis-plus.configuration.jdbc-type-for-null}
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
