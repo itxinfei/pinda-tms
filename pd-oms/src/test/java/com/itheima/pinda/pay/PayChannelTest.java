@@ -32,9 +32,14 @@ public class PayChannelTest {
     @Test
     public void testMockChannelCallbackVerified() {
         MockPayChannel channel = new MockPayChannel();
-        // 模拟渠道回调恒合法
-        assertTrue(channel.verifyCallback(Collections.singletonMap("payNo", "pay-1")));
-        assertEquals("pay-1", channel.parseTradeNo(Collections.singletonMap("payNo", "pay-1")));
+        // 模拟渠道回调需同时携带 payNo 与 tradeNo 才验签通过（防空参数伪造）
+        java.util.Map<String, String> fullParams = new java.util.HashMap<>();
+        fullParams.put("payNo", "pay-1");
+        fullParams.put("tradeNo", "trade-1");
+        assertTrue(channel.verifyCallback(fullParams));
+        assertEquals("pay-1", channel.parseTradeNo(fullParams));
+        // 缺少 tradeNo 时拒绝
+        assertFalse(channel.verifyCallback(Collections.singletonMap("payNo", "pay-1")));
         // 模拟渠道退款成功
         assertTrue(channel.refund("order-1", "pay-1", new BigDecimal("23.50")));
     }
@@ -46,9 +51,14 @@ public class PayChannelTest {
         String params = channel.createPayment("order-1", "pay-1", new BigDecimal("23.50"));
         assertNotNull(params);
         assertTrue(params.contains("pay-1"));
-        // 回调验签：未配置时按参数完整性校验
-        assertTrue(channel.verifyCallback(Collections.singletonMap("out_trade_no", "pay-1")));
-        assertEquals("pay-1", channel.parseTradeNo(Collections.singletonMap("out_trade_no", "pay-1")));
+        // 回调验签：未配置商户密钥时 fail-closed（拒绝回调，防止伪造支付）
+        assertFalse(channel.verifyCallback(new java.util.HashMap<String, String>() {{
+            put("out_trade_no", "pay-1");
+            put("result_code", "SUCCESS");
+        }}));
+        assertEquals("pay-1", channel.parseTradeNo(new java.util.HashMap<String, String>() {{
+            put("out_trade_no", "pay-1");
+        }}));
     }
 
     @Test
@@ -58,8 +68,8 @@ public class PayChannelTest {
         String params = channel.createPayment("order-1", "pay-1", new BigDecimal("23.50"));
         assertNotNull(params);
         assertTrue(params.contains("pay-1"));
-        // 回调验签：未配置时按参数完整性校验
-        assertTrue(channel.verifyCallback(new java.util.HashMap<String, String>() {{
+        // 回调验签：未配置商户参数时 fail-closed（拒绝回调，防止伪造支付）
+        assertFalse(channel.verifyCallback(new java.util.HashMap<String, String>() {{
             put("out_trade_no", "pay-1");
             put("trade_status", "TRADE_SUCCESS");
         }}));

@@ -53,7 +53,7 @@ public class BeanUtil {
         vo.setMobile(user.getMobile());
         vo.setUsername(user.getAccount());
         vo.setName(user.getName());
-        // 员工编号：EMP + 8位数字（基于用户ID，唯一稳定）
+        // 员工编号：EMP + 用户ID（左补零至至少8位，保留完整ID，唯一）
         vo.setWorkNumber(generateWorkNumber(user));
         //处理角色信息
         if (roleApi != null) {
@@ -471,7 +471,7 @@ public class BeanUtil {
     }
 
     /**
-     * 员工编号自动生成：EMP + 8位数字（基于用户ID，保证唯一且稳定）
+     * 员工编号自动生成：EMP + 用户ID（左补零至至少8位，保留完整ID，保证唯一）
      *
      * @param user 用户
      * @return 员工编号

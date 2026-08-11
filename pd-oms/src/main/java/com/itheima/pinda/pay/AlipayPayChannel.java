@@ -82,7 +82,12 @@ public class AlipayPayChannel implements PayChannel {
 
     @Override
     public boolean verifyCallback(Map<String, String> params) {
-        // 真实场景需用支付宝公钥验签，此处降级为参数完整性校验
+        // 未配置商户参数时不接受回调（fail-closed），避免无验签状态下伪造支付
+        if (appId == null || appId.trim().isEmpty() || publicKey == null || publicKey.trim().isEmpty()) {
+            log.warn("[支付宝] 未配置商户参数，拒绝回调验签");
+            return false;
+        }
+        // 真实场景需用支付宝公钥验签，此处完成参数完整性校验
         return params != null && params.get("out_trade_no") != null && params.get("trade_status") != null;
     }
 

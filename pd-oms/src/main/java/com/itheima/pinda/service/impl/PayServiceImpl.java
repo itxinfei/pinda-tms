@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -81,6 +82,10 @@ public class PayServiceImpl implements IPayService {
         }
 
         PayChannel channel = resolveChannel(defaultChannel);
+        if (channel == null) {
+            log.error("[支付] 未知支付渠道，无法创建支付单: channel={}", defaultChannel);
+            return null;
+        }
         String payNo = idGenerator.nextId(new PaymentOrder()).toString();
 
         PaymentOrder paymentOrder = new PaymentOrder();
@@ -100,7 +105,31 @@ public class PayServiceImpl implements IPayService {
             log.error("[支付] 渠道预下单失败: orderId={}, channel={}", orderId, channel.channelCode(), e);
             return null;
         }
-        paymentOrderService.save(paymentOrder);
+        try {
+            paymentOrderService.save(paymentOrder);
+        } catch (org.springframework.dao.DuplicateKeyException e) {
+            // 并发创建同一订单支付单时，唯一索引(uk_order_id)兜底：复用已创建的支付单
+            log.warn("[支付] 订单[{}]并发创建支付单被唯一索引拦截，复用已有支付单", orderId);
+            LambdaQueryWrapper<PaymentOrder> reuseWrapper = new LambdaQueryWrapper<>();
+            reuseWrapper.eq(PaymentOrder::getOrderId, orderId)
+                .eq(PaymentOrder::getStatus, PaymentOrder.STATUS_PENDING);
+            PaymentOrder reused = paymentOrderService.getOne(reuseWrapper);
+            return reused != null ? reused : paymentOrder;
+        }
+        // 模拟渠道：服务端直接完成支付，保持"支付即完成"语义（真实渠道由回调驱动）
+        if (PaymentOrder.CHANNEL_MOCK.equals(paymentOrder.getPayChannel())) {
+            Map<String, String> mockCallback = new HashMap<>();
+            mockCallback.put("payNo", paymentOrder.getPayNo());
+            mockCallback.put("tradeNo", "MOCK" + System.currentTimeMillis());
+            mockCallback.put("amount", paymentOrder.getAmount() == null ? null : paymentOrder.getAmount().toPlainString());
+            boolean paid = handleCallback(PaymentOrder.CHANNEL_MOCK, mockCallback);
+            if (paid) {
+                PaymentOrder paidOrder = queryPayment(orderId);
+                if (paidOrder != null) {
+                    return paidOrder;
+                }
+            }
+        }
         log.info("[支付] 创建支付单成功: orderId={}, payNo={}, channel={}, amount={}",
             orderId, payNo, channel.channelCode(), order.getAmount());
         return paymentOrder;
@@ -137,6 +166,27 @@ public class PayServiceImpl implements IPayService {
         if (paymentOrder == null) {
             log.warn("[支付] 回调对应支付单不存在: payNo={}", payNo);
             return false;
+        }
+        // 渠道一致性校验：回调渠道必须与支付单创建渠道一致，防止跨渠道伪造
+        if (!paymentOrder.getPayChannel().equals(channelCode)) {
+            log.warn("[支付] 回调渠道与支付单不一致: payNo={}, 支付单渠道={}, 回调渠道={}",
+                payNo, paymentOrder.getPayChannel(), channelCode);
+            return false;
+        }
+        // 金额一致性校验：回调金额与支付单金额一致才确认支付，防止篡改金额
+        if (params.get("amount") != null) {
+            try {
+                BigDecimal callbackAmount = new BigDecimal(params.get("amount"));
+                if (paymentOrder.getAmount() != null
+                        && callbackAmount.compareTo(paymentOrder.getAmount()) != 0) {
+                    log.warn("[支付] 回调金额与支付单不一致: payNo={}, 支付单金额={}, 回调金额={}",
+                        payNo, paymentOrder.getAmount(), callbackAmount);
+                    return false;
+                }
+            } catch (NumberFormatException e) {
+                log.warn("[支付] 回调金额格式非法: payNo={}, amount={}", payNo, params.get("amount"));
+                return false;
+            }
         }
         if (PaymentOrder.STATUS_PAID == paymentOrder.getStatus()) {
             log.info("[支付] 支付单已处理，跳过重复回调: payNo={}", payNo);
@@ -204,6 +254,13 @@ public class PayServiceImpl implements IPayService {
         update.setStatus(PaymentOrder.STATUS_REFUNDED);
         update.setUpdateTime(LocalDateTime.now());
         paymentOrderService.updateById(update);
+
+        // 联动订单支付状态为已退款，保持订单与支付单生命周期一致
+        Order orderUpdate = new Order();
+        orderUpdate.setId(paymentOrder.getOrderId());
+        orderUpdate.setPaymentStatus(OrderPaymentStatus.REFUNDED.getStatus());
+        orderService.updateById(orderUpdate);
+
         log.info("[支付] 退款成功: orderId={}, payNo={}", orderId, paymentOrder.getPayNo());
         return true;
     }

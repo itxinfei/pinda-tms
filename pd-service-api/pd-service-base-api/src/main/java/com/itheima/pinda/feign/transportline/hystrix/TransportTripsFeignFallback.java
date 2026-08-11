@@ -31,8 +31,9 @@ public class TransportTripsFeignFallback implements TransportTripsFeign {
 
     @Override
     public List<TransportTripsDto> findAll(String transportLineId, List<String> ids) {
-        log.warn("远程调用 pd-base 失败: findAll(transportLineId={}, ids={}), 返回空列表", transportLineId, ids);
-        return Collections.emptyList();
+        // 返回 null 表示"无法验证"（而非空列表），便于调用方在删除等关键操作上 fail-closed
+        log.warn("远程调用 pd-base 失败: findAll(transportLineId={}, ids={}), 返回null", transportLineId, ids);
+        return null;
     }
 
     @Override
@@ -55,7 +56,8 @@ public class TransportTripsFeignFallback implements TransportTripsFeign {
 
     @Override
     public List<TransportTripsTruckDriverDto> findAllTruckDriverTransportTrips(String transportTripsId, String truckId, String userId) {
-        log.warn("远程调用 pd-base 失败: findAllTruckDriverTransportTrips(transportTripsId={}, truckId={}, userId={}), 返回空列表", transportTripsId, truckId, userId);
-        return Collections.emptyList();
+        // 返回 null 表示"无法验证"（而非空列表），便于调用方在删除等关键操作上 fail-closed
+        log.warn("远程调用 pd-base 失败: findAllTruckDriverTransportTrips(transportTripsId={}, truckId={}, userId={}), 返回null", transportTripsId, truckId, userId);
+        return null;
     }
 }

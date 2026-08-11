@@ -91,7 +91,7 @@ schedule:
 # 短信通知网关（可选，配置后推送订单通知到外部短信网关）
 sms:
   # 启用渠道: http-通用网关 aliyun-阿里云 tencent-腾讯云 huawei-华为云 device-设备接口
-  channel: ${SMS_CHANNEL:http}
+  active-channel: ${SMS_CHANNEL:http}
   # 通用 HTTP 网关地址（默认通道，兼容原 webhook-url 配置）
   webhook-url: ${SMS_WEBHOOK_URL:}
   channel:
