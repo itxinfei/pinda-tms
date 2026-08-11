@@ -1,6 +1,7 @@
 package com.itheima.pinda.execute;
 
 import com.itheima.pinda.common.utils.SpringContextUtils;
+import com.itheima.pinda.config.ScheduleRetryProperties;
 import com.itheima.pinda.entity.ScheduleJobEntity;
 import com.itheima.pinda.entity.ScheduleJobLogEntity;
 import com.itheima.pinda.service.IScheduleJobLogService;
@@ -40,18 +41,18 @@ public class ScheduleJob extends QuartzJobBean {
 
         long startTime = System.currentTimeMillis();
 
-        // 失败自动重试次数（总尝试次数 = 重试次数 + 1）
-        final int MAX_RETRY = 2;
-        // 重试间隔（毫秒）
-        final long RETRY_INTERVAL_MS = 2000L;
+        // 失败重试参数：从配置中心读取（schedule.retry.*），支持运行时调整
+        ScheduleRetryProperties retryProps = SpringContextUtils.getBean(ScheduleRetryProperties.class);
+        int maxAttempts = Math.max(retryProps.getMaxAttempts(), 1); // 至少执行 1 次
+        long retryIntervalMs = Math.max(retryProps.getIntervalMs(), 0); // 间隔非负
 
         Exception lastException = null;
         boolean success = false;
         int attempt = 0;
-        while (attempt <= MAX_RETRY) {
+        while (attempt < maxAttempts) {
             try {
                 //通过反射调用目标对象，在目标对象中封装智能调度核心逻辑
-                logger.info("定时任务准备执行（第{}次尝试），任务id为：{}", attempt + 1, scheduleJob.getId());
+                logger.info("定时任务准备执行（第{}次尝试，共{}次），任务id为：{}", attempt + 1, maxAttempts, scheduleJob.getId());
 
                 //获得目标对象
                 Object target = SpringContextUtils.getBean(scheduleJob.getBeanName());
@@ -67,11 +68,11 @@ public class ScheduleJob extends QuartzJobBean {
             } catch (Exception ex) {
                 lastException = ex;
                 logger.error("定时任务执行失败（第{}次尝试），任务id为：{}，将{}重试",
-                    attempt + 1, scheduleJob.getId(), attempt < MAX_RETRY ? "进行" : "不再");
+                    attempt + 1, scheduleJob.getId(), attempt + 1 < maxAttempts ? "进行" : "不再");
                 attempt++;
-                if (attempt <= MAX_RETRY) {
+                if (attempt < maxAttempts) {
                     try {
-                        Thread.sleep(RETRY_INTERVAL_MS);
+                        Thread.sleep(retryIntervalMs);
                     } catch (InterruptedException ie) {
                         Thread.currentThread().interrupt();
                         break;
@@ -83,8 +84,9 @@ public class ScheduleJob extends QuartzJobBean {
         if (!success) {
             logEntity.setStatus(0);//失败
             // 记录完整重试信息，便于排查
-            logEntity.setError("重试" + MAX_RETRY + "次后仍失败。最后一次异常：" + ExceptionUtils.getErrorStackTrace(lastException));
-            logger.error("定时任务执行失败（已重试{}次），任务id为：{}", MAX_RETRY, scheduleJob.getId());
+            int retryCount = maxAttempts - 1;
+            logEntity.setError("重试" + retryCount + "次后仍失败。最后一次异常：" + ExceptionUtils.getErrorStackTrace(lastException));
+            logger.error("定时任务执行失败（已重试{}次），任务id为：{}", retryCount, scheduleJob.getId());
         } else if (attempt > 0) {
             logger.info("定时任务第{}次尝试执行成功，任务id为：{}", attempt + 1, scheduleJob.getId());
         }
