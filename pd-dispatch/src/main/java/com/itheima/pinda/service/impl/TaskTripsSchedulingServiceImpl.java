@@ -138,6 +138,10 @@ public class TaskTripsSchedulingServiceImpl implements ITaskTripsSchedulingServi
         }
 
         List<TransportTripsDto> transportTripsDtos = transportTripsFeign.findAll(null, tripsIds);
+        // 远程调用失败(fallback 返回 null)时按无数据降级，避免 NPE
+        if (CollectionUtils.isEmpty(transportTripsDtos)) {
+            return null;
+        }
 
         LocalDateTime nowDate = LocalDateTime.now();
 

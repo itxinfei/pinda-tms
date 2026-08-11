@@ -91,6 +91,10 @@ public class PdCompletableFuture {
         return CompletableFuture.supplyAsync(() -> {
             List<String> list = tripsIdSet.stream().collect(Collectors.toList());
             List<TransportTripsDto> result = api.findAll(null, list);
+            // 远程调用失败(fallback 返回 null)时返回空 Map，避免 NPE
+            if (result == null) {
+                return new HashMap<>();
+            }
             return result.stream().collect(Collectors.toMap(TransportTripsDto::getId, item -> item));
         });
     }
