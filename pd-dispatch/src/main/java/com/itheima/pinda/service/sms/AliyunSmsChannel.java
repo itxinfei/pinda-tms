@@ -1,17 +1,14 @@
 package com.itheima.pinda.service.sms;
 
-import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
-import java.util.HashMap;
-import java.util.Map;
+import org.springframework.web.client.RestTemplate;
 
 /**
  * 阿里云短信渠道
  *
- * <p>适配阿里云短信服务（SMS，Dysmsapi）。
+ * <p>适配阿里云短信服务（SMS，Dysmsapi），按阿里云 RPC 签名规范生成签名后调用发送接口。
  * 通过配置注入 AccessKey/签名/模板；未配置时降级为日志记录，保证流程可运行。</p>
  */
 @Slf4j
@@ -42,6 +39,8 @@ public class AliyunSmsChannel implements SmsChannel {
     @Value("${sms.channel.aliyun.template-code:}")
     private String templateCode;
 
+    private final RestTemplate restTemplate = new RestTemplate();
+
     @Override
     public String channelCode() {
         return "aliyun";
@@ -55,20 +54,66 @@ public class AliyunSmsChannel implements SmsChannel {
             return false;
         }
         try {
-            Map<String, Object> params = new HashMap<>();
+            // 阿里云 RPC 签名（Dysmsapi）：公共参数 + 业务参数按字典序拼接后 HMAC-SHA1 签名
+            java.util.TreeMap<String, String> params = new java.util.TreeMap<>();
             params.put("AccessKeyId", accessKeyId);
+            params.put("Action", "SendSms");
+            params.put("Version", "2017-05-25");
+            params.put("Format", "JSON");
+            params.put("RegionId", "cn-hangzhou");
+            params.put("SignatureMethod", "HMAC-SHA1");
+            params.put("SignatureVersion", "1.0");
+            params.put("SignatureNonce", String.valueOf(System.nanoTime()));
+            params.put("Timestamp", java.time.format.DateTimeFormatter
+                .ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
+                .format(java.time.ZonedDateTime.now(java.time.ZoneOffset.UTC)));
+            params.put("PhoneNumbers", mobile);
             params.put("SignName", signName);
             params.put("TemplateCode", templateCode);
-            params.put("PhoneNumbers", mobile);
-            params.put("TemplateParam", JSON.toJSONString(new HashMap<String, Object>() {{
-                put("content", content);
-            }}));
-            // 生产环境调用阿里云 Dysmsapi 发送接口（需按阿里云签名规范生成签名）
-            log.info("[短信渠道-阿里云] 发送短信: mobile={}, sign={}, template={}", maskMobile(mobile), signName, templateCode);
-            return true;
+            params.put("TemplateParam", "{\"content\":\"" + content + "\"}");
+
+            // 构造待签名字符串: GET&%2F&(urlencoded 参数按字典序拼接)
+            StringBuilder canonical = new StringBuilder();
+            params.forEach((k, v) -> {
+                if (canonical.length() > 0) {
+                    canonical.append("&");
+                }
+                canonical.append(SmsSignUtils.percentEncode(k)).append("=").append(SmsSignUtils.percentEncode(v));
+            });
+            String stringToSign = "GET&%2F&" + SmsSignUtils.percentEncode(canonical.toString());
+            // RPC 签名使用 HMAC-SHA1，密钥为 AccessKeySecret + "&"
+            String signature = hmacSha1Base64(accessKeySecret + "&", stringToSign);
+            params.put("Signature", signature);
+
+            // 拼接查询串并发起请求
+            StringBuilder query = new StringBuilder();
+            params.forEach((k, v) -> {
+                if (query.length() > 0) {
+                    query.append("&");
+                }
+                query.append(SmsSignUtils.percentEncode(k)).append("=").append(SmsSignUtils.percentEncode(v));
+            });
+            String url = "https://dysmsapi.aliyuncs.com/?" + query;
+            String resp = restTemplate.getForObject(url, String.class);
+            log.info("[短信渠道-阿里云] 发送短信: mobile={}, sign={}, template={}, resp={}",
+                maskMobile(mobile), signName, templateCode, resp);
+            return resp != null && resp.contains("\"Code\":\"OK\"");
         } catch (Exception e) {
             log.warn("[短信渠道-阿里云] 发送失败: mobile={}", maskMobile(mobile), e);
             return false;
+        }
+    }
+
+    /**
+     * HMAC-SHA1 Base64（阿里云 RPC 签名）
+     */
+    private String hmacSha1Base64(String secret, String data) {
+        try {
+            javax.crypto.Mac mac = javax.crypto.Mac.getInstance("HmacSHA1");
+            mac.init(new javax.crypto.spec.SecretKeySpec(secret.getBytes(java.nio.charset.StandardCharsets.UTF_8), "HmacSHA1"));
+            return java.util.Base64.getEncoder().encodeToString(mac.doFinal(data.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        } catch (Exception e) {
+            throw new IllegalStateException("HMAC-SHA1 计算失败", e);
         }
     }
 
