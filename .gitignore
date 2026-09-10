@@ -37,3 +37,20 @@ target/
 **/.env
 **/.env.*
 !.env.example
+
+# IDE/工具配置（本地个人工具，非项目代码）
+.codebuddy/
+.codeium/
+.codegpt/
+.travis.yml
+
+# 构建产物（jar包不应提交，由Maven构建生成）
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+
+# 文档/讲义/资源（大文件，非代码）
+docs/讲义/
+docs/项目需要的jar/
+docs/superpowers/
+docs/zipkin-server-*.jar
+docs/settings.xml
