@@ -1,0 +1,139 @@
+# ============================================
+# 品达TMS 应用编排：14 个 Spring Boot 微服务 + pd-admin-ui 前端
+#
+# 部署（镜像 tag 由环境变量 TAG 注入，TAG 一般取 git 短提交号）：
+#   TAG=1a2b3c4 docker compose -f deploy/apps/docker-compose.app.yml up -d --remove-orphans
+#
+# 说明：
+#   - 微服务通过宿主机 IP 192.168.20.130 访问 MySQL/Redis/Nacos/Kafka/RabbitMQ；
+#   - 各服务沿用自身 bootstrap 中写定的 active profile，Nacos dataId 与之对应；
+#   - gateway / auth-server 的 Nacos 地址与命名空间由 NACOS_* 环境变量注入。
+# ============================================
+name: pinda-apps
+
+# 内存档位
+x-jvm-core: &jvm-core
+  JAVA_OPTS: "-Xms128m -Xmx256m -XX:+UseG1GC -XX:MaxGCPauseMillis=100"
+x-jvm-small: &jvm-small
+  JAVA_OPTS: "-Xms96m -Xmx192m -XX:+UseG1GC -XX:MaxGCPauseMillis=100"
+
+# gateway / auth-server 接入 Nacos 所需的公共环境变量
+x-nacos-env: &nacos-env
+  NACOS_IP: 192.168.20.130
+  NACOS_PORT: "8848"
+  NACOS_ID: 1cb93ce4-dc0e-4730-b759-d35fd7ed93c3
+
+services:
+  # ---------- 网关与鉴权（profile=test） ----------
+  pd-gateway:
+    image: pinda/pd-gateway:${TAG:-latest}
+    container_name: pd-gateway
+    restart: unless-stopped
+    ports: ["8760:8760"]
+    environment:
+      <<: [*jvm-core, *nacos-env]
+
+  pd-auth-server:
+    image: pinda/pd-auth-server:${TAG:-latest}
+    container_name: pd-auth-server
+    restart: unless-stopped
+    ports: ["9000:9000"]
+    environment:
+      <<: [*jvm-core, *nacos-env]
+
+  # ---------- 基础微服务 ----------
+  pd-base:
+    image: pinda/pd-base:${TAG:-latest}
+    container_name: pd-base
+    restart: unless-stopped
+    ports: ["8185:8185"]
+    environment: *jvm-core
+
+  pd-oms:
+    image: pinda/pd-oms:${TAG:-latest}
+    container_name: pd-oms
+    restart: unless-stopped
+    ports: ["8186:8186"]
+    environment: *jvm-core
+
+  pd-work:
+    image: pinda/pd-work:${TAG:-latest}
+    container_name: pd-work
+    restart: unless-stopped
+    ports: ["8187:8187"]
+    environment: *jvm-core
+
+  pd-user:
+    image: pinda/pd-user:${TAG:-latest}
+    container_name: pd-user
+    restart: unless-stopped
+    ports: ["8189:8189"]
+    environment: *jvm-core
+
+  pd-dispatch:
+    image: pinda/pd-dispatch:${TAG:-latest}
+    container_name: pd-dispatch
+    restart: unless-stopped
+    ports: ["8190:8190"]
+    environment: *jvm-core
+
+  pd-aggregation:
+    image: pinda/pd-aggregation:${TAG:-latest}
+    container_name: pd-aggregation
+    restart: unless-stopped
+    ports: ["8191:8191"]
+    environment: *jvm-core
+
+  pd-netty:
+    image: pinda/pd-netty:${TAG:-latest}
+    container_name: pd-netty
+    restart: unless-stopped
+    ports: ["8192:8192"]
+    environment: *jvm-core
+
+  pd-druid:
+    image: pinda/pd-druid:${TAG:-latest}
+    container_name: pd-druid
+    restart: unless-stopped
+    ports: ["8193:8193"]
+    environment: *jvm-small
+
+  # ---------- Web 聚合层 ----------
+  pd-web-manager:
+    image: pinda/pd-web-manager:${TAG:-latest}
+    container_name: pd-web-manager
+    restart: unless-stopped
+    ports: ["8161:8161"]
+    environment: *jvm-small
+
+  pd-web-driver:
+    image: pinda/pd-web-driver:${TAG:-latest}
+    container_name: pd-web-driver
+    restart: unless-stopped
+    ports: ["8162:8162"]
+    environment: *jvm-small
+
+  pd-web-courier:
+    image: pinda/pd-web-courier:${TAG:-latest}
+    container_name: pd-web-courier
+    restart: unless-stopped
+    ports: ["8163:8163"]
+    environment: *jvm-small
+
+  pd-web-customer:
+    image: pinda/pd-web-customer:${TAG:-latest}
+    container_name: pd-web-customer
+    restart: unless-stopped
+    ports: ["8164:8164"]
+    environment: *jvm-small
+
+  # ---------- 管理后台前端 ----------
+  pd-admin-ui:
+    image: pinda/pd-admin-ui:${TAG:-latest}
+    container_name: pd-admin-ui
+    restart: unless-stopped
+    ports: ["8080:80"]
+    environment:
+      NGINX_HOST: 192.168.20.130
+      # nginx 将 /api 反代到网关
+      DOCKER_REQUEST_DOMAIN_PREFIX: http://192.168.20.130:8760

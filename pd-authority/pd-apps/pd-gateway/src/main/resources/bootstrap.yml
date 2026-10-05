@@ -18,12 +18,14 @@ spring:
       config:
         server-addr: ${pinda.nacos.ip}:${pinda.nacos.port}
         file-extension: yml
+        group: pinda-tms
         namespace: ${pinda.nacos.namespace}
-        shared-dataids: common.yml,redis.yml,mysql.yml
+        shared-dataids: common.yml, redis.yml, mysql.yml
         refreshable-dataids: common.yml
         enabled: true
       discovery:
         server-addr: ${pinda.nacos.ip}:${pinda.nacos.port}
+        group: pinda-tms
         namespace: ${pinda.nacos.namespace}
         metadata:
           management.context-path: ${server.servlet.context-path:}${spring.mvc.servlet.path:}${management.endpoints.web.base-path:}
