@@ -29,6 +29,8 @@ x-redis-env: &redis-env
   SPRING_REDIS_HOST: 192.168.20.130
   SPRING_REDIS_PORT: "6379"
   J2CACHE_LETTUCE_HOSTS: 192.168.20.130:6379
+  REDIS_HOST: 192.168.20.130
+  REDIS_PORT: "6379"
 
 services:
   # ---------- 网关与鉴权（profile=test） ----------

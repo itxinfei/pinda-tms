@@ -112,11 +112,12 @@
 
 ### 4.4 地图页
 ```
-<u-map 全屏>
+<map 全屏>（⚠️ **uview-plus 没有 `u-map` 组件**，必须用 uni-app 原生 `<map>`）
   [浮层: u-button 定位/打卡/导航(右上角竖排)]
-  [底部 sheet: u-sheet 显示当前点信息(车牌/距离/状态)]
+  [底部 sheet: `u-popup`（或 `u-action-sheet`）+ 自定义内容，显示当前点信息(车牌/距离/状态)]
+  > ⚠️ **uview-plus 没有 `u-sheet` 组件**
 ```
-> 小程序端坐标须先经 `common/utils/coord.js` 做 BD-09→GCJ-02 转换。
+> 小程序端坐标须先经 `common/utils/coord.ts` 做 BD-09→GCJ-02 转换。
 
 ### 4.5 任务大厅页（司机/快递员核心）
 ```
@@ -212,7 +213,7 @@ page {
 - ❌ 用 emoji 当图标、用截图当占位图。
 - ❌ 表单无校验、提交无 loading/无反馈。
 - ❌ 列表无分页/无下拉刷新/无限加载（数据可能多）。
-- ❌ 直接 `uni.request` 调接口（必须经 `common/request.js` 拦截器）。
+- ❌ 直接 `uni.request` 调接口（必须经 `common/request/index.ts` 拦截器）。
 
 ---
 
