@@ -6,15 +6,15 @@ import com.alibaba.fastjson.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.text.DecimalFormat;
-import lombok.extern.slf4j.Slf4j;
-
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 百度地图操作工具类
@@ -34,15 +34,54 @@ public class BaiduMapUtils {
     // 可在启动时通过 -D参数传入：-Dbaidu.map.ak=xxx
     private static String AK = System.getProperty("baidu.map.ak", "");
 
+    // 连接/读取超时（毫秒），避免外部服务抖动时请求线程被无限阻塞
+    private static final int CONNECT_TIMEOUT = 1000;
+    private static final int READ_TIMEOUT = 2000;
+
+    // 地址解析结果本地缓存：降低百度API调用频次（TTL 30分钟，零依赖）
+    private static final long CACHE_TTL_MS = 30 * 60 * 1000L;
+    private static final ConcurrentHashMap<String, CacheValue<String>> COORD_CACHE = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, CacheValue<Double>> DISTANCE_CACHE = new ConcurrentHashMap<>();
+
+    private static final class CacheValue<T> {
+        final T value;
+        final long expireAt;
+        CacheValue(T value) {
+            this.value = value;
+            this.expireAt = System.currentTimeMillis() + CACHE_TTL_MS;
+        }
+        boolean alive() {
+            return System.currentTimeMillis() < expireAt;
+        }
+    }
+
     /**
      * 调用百度地图地理编码服务接口，根据地址获取坐标（经度、纬度）
      * @param address
      * @return
      */
     public static String getCoordinate(String address){
+        if (address == null || address.trim().isEmpty()) {
+            return null;
+        }
+        CacheValue<String> cached = COORD_CACHE.get(address);
+        if (cached != null && cached.alive()) {
+            return cached.value;
+        }
+        String coord = doGetCoordinate(address);
+        if (coord != null) {
+            COORD_CACHE.put(address, new CacheValue<>(coord));
+        }
+        return coord;
+    }
+
+    private static String doGetCoordinate(String address){
         String httpUrl = "http://api.map.baidu.com/geocoding/v3/?address=" + address + "&output=json&ak=" + AK;
         String json = loadJSON(httpUrl);
         Map map = JSON.parseObject(json, Map.class);
+        if (map == null) {
+            return null;
+        }
 
         String status = map.get("status").toString();
         if(status.equals("0")){
@@ -55,8 +94,7 @@ public class BaiduMapUtils {
             DecimalFormat df = new DecimalFormat("#.######");
             String lngStr = df.format(Double.parseDouble(lng));
             String latStr = df.format(Double.parseDouble(lat));
-            String r = latStr + "," + lngStr;
-            return r;
+            return latStr + "," + lngStr;
         }
 
         return null;
@@ -69,13 +107,31 @@ public class BaiduMapUtils {
      * @return
      */
     public static Double getDistance(String origin,String destination){
+        if (origin == null || destination == null) {
+            return null;
+        }
+        String cacheKey = origin + "|" + destination;
+        CacheValue<Double> cached = DISTANCE_CACHE.get(cacheKey);
+        if (cached != null && cached.alive()) {
+            return cached.value;
+        }
+        Double distance = doGetDistance(origin, destination);
+        if (distance != null) {
+            DISTANCE_CACHE.put(cacheKey, new CacheValue<>(distance));
+        }
+        return distance;
+    }
+
+    private static Double doGetDistance(String origin,String destination){
         String httpUrl = "http://api.map.baidu.com/directionlite/v1/driving?origin="
                 +origin+"&destination="
                 +destination+"&ak=" + AK;
 
         String json = loadJSON(httpUrl);
-
         Map map = JSON.parseObject(json, Map.class);
+        if (map == null) {
+            return null;
+        }
         if ("0".equals(map.getOrDefault("status", "500").toString())) {
             Map childMap = (Map) map.get("result");
             JSONArray jsonArray = (JSONArray) childMap.get("routes");
@@ -88,7 +144,7 @@ public class BaiduMapUtils {
     }
 
     /**
-     * 调用百度地图驾车路线规划服务接口，根据寄件人地址和收件人地址坐标计算订单距离
+     * 调用百度地图驾车路线规划服务接口，根据寄件人地址和收件人地址坐标计算线路耗时
      * @param origin
      * @param destination
      * @return
@@ -99,8 +155,10 @@ public class BaiduMapUtils {
                 +destination+"&ak=" + AK;
 
         String json = loadJSON(httpUrl);
-
         Map map = JSON.parseObject(json, Map.class);
+        if (map == null) {
+            return null;
+        }
         if ("0".equals(map.getOrDefault("status", "500").toString())) {
             Map childMap = (Map) map.get("result");
             JSONArray jsonArray = (JSONArray) childMap.get("routes");
@@ -113,27 +171,35 @@ public class BaiduMapUtils {
     }
 
     /**
-     * 调用服务接口，返回百度地图服务端的结果
+     * 调用服务接口，返回百度地图服务端的结果（带连接/读取超时保护）
      * @param httpUrl
      * @return
      */
     public static String loadJSON(String httpUrl){
         StringBuilder json = new StringBuilder();
+        HttpURLConnection urlConnection = null;
         try {
             URL url = new URL(httpUrl);
-            URLConnection urlConnection = url.openConnection();
-            BufferedReader in = new BufferedReader(new InputStreamReader(urlConnection.getInputStream(), "UTF-8"));
-            String inputLine = null;
-            while ((inputLine = in.readLine()) != null) {
-                json.append(inputLine);
+            urlConnection = (HttpURLConnection) url.openConnection();
+            urlConnection.setConnectTimeout(CONNECT_TIMEOUT);
+            urlConnection.setReadTimeout(READ_TIMEOUT);
+            urlConnection.setRequestMethod("GET");
+            try (BufferedReader in = new BufferedReader(new InputStreamReader(urlConnection.getInputStream(), "UTF-8"))) {
+                String inputLine;
+                while ((inputLine = in.readLine()) != null) {
+                    json.append(inputLine);
+                }
             }
-            in.close();
         } catch (MalformedURLException e) {
             log.error("百度地图API URL异常: {}", httpUrl, e);
             return "";
         } catch (IOException e) {
             log.error("百度地图API请求IO异常: {}", httpUrl, e);
             return "";
+        } finally {
+            if (urlConnection != null) {
+                urlConnection.disconnect();
+            }
         }
         log.debug(json.toString());
         return json.toString();

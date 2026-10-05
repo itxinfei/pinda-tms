@@ -112,11 +112,17 @@ public class EntCoordSyncJob {
     public static String loadJSON(String url) {
         StringBuilder json = new StringBuilder();
         HttpURLConnection conn = null;
-        try (BufferedReader in = new BufferedReader(
-                new InputStreamReader((conn = (HttpURLConnection) new URL(url).openConnection()).getInputStream(), "UTF-8"))) {
-            String inputLine;
-            while ((inputLine = in.readLine()) != null) {
-                json.append(inputLine.trim());
+        try {
+            conn = (HttpURLConnection) new URL(url).openConnection();
+            // 超时保护：避免外部地理服务抖动时线程被无限阻塞
+            conn.setConnectTimeout(1000);
+            conn.setReadTimeout(2000);
+            try (BufferedReader in = new BufferedReader(
+                    new InputStreamReader(conn.getInputStream(), "UTF-8"))) {
+                String inputLine;
+                while ((inputLine = in.readLine()) != null) {
+                    json.append(inputLine.trim());
+                }
             }
         } catch (MalformedURLException e) {
             log.error("[坐标同步] 无效的URL: {}", url, e);
@@ -197,26 +203,25 @@ public class EntCoordSyncJob {
      * @return
      */
     public static boolean isInScope(List<Map> polygon, double longitude, double latitude) {
+        if (polygon == null || polygon.isEmpty()) {
+            return false;
+        }
+
         Path2D.Double generalPath = new Path2D.Double();
 
-        //获取第一个起点经纬度的坐标
+        //获取第一个起点经纬度的坐标（仅读取，禁止修改入参，否则同一多边形被重复判定时会逐步丢失顶点）
         Map first = polygon.get(0);
 
         //通过移动到以double精度指定的指定坐标，把第一个起点添加到路径中
         generalPath.moveTo(Double.parseDouble(first.getOrDefault("lng", "").toString()), Double.parseDouble(first.getOrDefault("lat", "").toString()));
 
-        //把集合中的第一个点删除防止重复添加
-        polygon.remove(0);
-
-        //循环集合里剩下的所有经纬度坐标
-        for (Map d : polygon) {
-            //通过从当前坐标绘制直线到以double精度指定的新指定坐标，将路径添加到路径。
-            //从第一个点开始，不断往后绘制经纬度点
+        //从第二个顶点开始依次连线，避免 remove(0) 对调用方集合产生副作用
+        for (int i = 1; i < polygon.size(); i++) {
+            Map d = polygon.get(i);
             generalPath.lineTo(Double.parseDouble(d.getOrDefault("lng", "").toString()), Double.parseDouble(d.getOrDefault("lat", "").toString()));
-
         }
 
-        // 最后要多边形进行封闭，起点及终点
+        // 最后对多边形进行封闭，起点及终点
         generalPath.lineTo(Double.parseDouble(first.getOrDefault("lng", "").toString()), Double.parseDouble(first.getOrDefault("lat", "").toString()));
 
         //将直线绘制回最后一个 moveTo的坐标来关闭当前子路径。
