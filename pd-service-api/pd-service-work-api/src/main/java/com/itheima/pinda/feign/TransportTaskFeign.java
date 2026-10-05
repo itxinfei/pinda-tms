@@ -8,8 +8,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+// 注意：不要在接口上加类级 @RequestMapping。否则 Feign 代理与 fallback @Component 都会被
+// Spring MVC 注册相同路径，启动时报 Ambiguous mapping。路径前缀下沉到每个方法。
 @FeignClient(value = "pd-work", fallback = TransportTaskFeignFallback.class)
-@RequestMapping("transport-task")
 public interface TransportTaskFeign {
     /**
      * 新增运输任务
@@ -17,7 +18,7 @@ public interface TransportTaskFeign {
      * @param dto 运输任务信息
      * @return 运输任务信息
      */
-    @PostMapping("")
+    @PostMapping("/transport-task")
     TaskTransportDTO save(@RequestBody TaskTransportDTO dto);
 
     /**
@@ -27,7 +28,7 @@ public interface TransportTaskFeign {
      * @param dto 运输任务信息
      * @return 运输任务信息
      */
-    @PutMapping("/{id}")
+    @PutMapping("/transport-task/{id}")
     TaskTransportDTO updateById(@PathVariable(name = "id") String id, @RequestBody TaskTransportDTO dto);
 
     /**
@@ -36,7 +37,7 @@ public interface TransportTaskFeign {
      * @param dto 查询参数
      * @return 运输任务分页数据
      */
-    @PostMapping("/page")
+    @PostMapping("/transport-task/page")
     PageResponse<TaskTransportDTO> findByPage(@RequestBody TaskTransportDTO dto);
 
     /**
@@ -45,7 +46,7 @@ public interface TransportTaskFeign {
      * @param id 运输任务id
      * @return 运输任务信息
      */
-    @GetMapping("/{id}")
+    @GetMapping("/transport-task/{id}")
     TaskTransportDTO findById(@PathVariable(name = "id") String id);
 
     /**
@@ -54,7 +55,7 @@ public interface TransportTaskFeign {
      * @param dto 查询条件
      * @return 运单列表
      */
-    @PostMapping("/list")
+    @PostMapping("/transport-task/list")
     List<TaskTransportDTO> findAll(@RequestBody TaskTransportDTO dto);
 
     /**
@@ -62,7 +63,7 @@ public interface TransportTaskFeign {
      *
      * @return 运输任务列表
      */
-    @GetMapping("/listByOrderIdOrTaskId")
+    @GetMapping("/transport-task/listByOrderIdOrTaskId")
     List<TaskTransportDTO> findAllByOrderIdOrTaskId(@RequestParam(name = "transportOrderId", required = false) String transportOrderId,
                                                     @RequestParam(name = "taskTransportId", required = false) String taskTransportId);
 }

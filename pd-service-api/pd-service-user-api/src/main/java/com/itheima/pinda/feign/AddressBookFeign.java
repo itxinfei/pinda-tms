@@ -6,8 +6,8 @@ import com.itheima.pinda.entity.AddressBook;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
+// 不要在接口上加类级 @RequestMapping；路径前缀下沉到方法，避免被 MVC 注册与本地 Controller 冲突。
 @FeignClient(name = "pd-user")
-@RequestMapping("addressBook")
 public interface AddressBookFeign {
 
     /**
@@ -18,7 +18,7 @@ public interface AddressBookFeign {
      * @param userId
      * @return
      */
-    @GetMapping("page")
+    @GetMapping("/addressBook/page")
     PageResponse<AddressBook> page(@RequestParam("page") Integer page,@RequestParam("pageSize") Integer pageSize, @RequestParam("userId")String userId,@RequestParam("keyword") String keyword);
 
     /**
@@ -27,7 +27,7 @@ public interface AddressBookFeign {
      * @param entity
      * @return
      */
-    @PostMapping("")
+    @PostMapping("/addressBook")
     Result save(@RequestBody AddressBook entity);
 
     /**
@@ -37,7 +37,7 @@ public interface AddressBookFeign {
      * @param entity
      * @return
      */
-    @PutMapping("/{id}")
+    @PutMapping("/addressBook/{id}")
     Result update(@PathVariable(name = "id") String id, @RequestBody AddressBook entity);
 
     /**
@@ -46,7 +46,7 @@ public interface AddressBookFeign {
      * @param id
      * @return
      */
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/addressBook/{id}")
     Result del(@PathVariable(name = "id") String id);
 
     /**
@@ -55,6 +55,6 @@ public interface AddressBookFeign {
      * @param id
      * @return
      */
-    @GetMapping("detail/{id}")
+    @GetMapping("/addressBook/detail/{id}")
     AddressBook detail(@PathVariable(name = "id") String id);
 }
