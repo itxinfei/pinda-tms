@@ -14,8 +14,8 @@ import java.util.List;
  *
  * @author jpfss
  */
+// 不要在接口上加类级 @RequestMapping（会与 fallback 同时被 MVC 注册，报 Ambiguous mapping）。
 @FeignClient(value = "pd-work", fallback = TransportOrderFeignFallback.class)
-@RequestMapping("transport-order")
 public interface TransportOrderFeign {
     /**
      * 新增运单
@@ -23,7 +23,7 @@ public interface TransportOrderFeign {
      * @param dto 运单信息
      * @return 运单信息
      */
-    @PostMapping("")
+    @PostMapping("/transport-order")
     TransportOrderDTO save(@RequestBody TransportOrderDTO dto);
 
     /**
@@ -33,7 +33,7 @@ public interface TransportOrderFeign {
      * @param dto 运单信息
      * @return 运单信息
      */
-    @PutMapping("/{id}")
+    @PutMapping("/transport-order/{id}")
     TransportOrderDTO updateById(@PathVariable(name = "id") String id, @RequestBody TransportOrderDTO dto);
 
     /**
@@ -46,7 +46,7 @@ public interface TransportOrderFeign {
      * @param schedulingStatus 调度状态调度状态(1.待调度2.未匹配线路3.已调度)
      * @return 运单分页数据
      */
-    @GetMapping("/page")
+    @GetMapping("/transport-order/page")
     PageResponse<TransportOrderDTO> findByPage(@RequestParam(name = "page") Integer page,
                                                @RequestParam(name = "pageSize") Integer pageSize,
                                                @RequestParam(name = "orderId", required = false) String orderId,
@@ -59,7 +59,7 @@ public interface TransportOrderFeign {
      * @param id 运单id
      * @return 运单信息
      */
-    @GetMapping("/{id}")
+    @GetMapping("/transport-order/{id}")
     TransportOrderDTO findById(@PathVariable(name = "id") String id);
 
     /**
@@ -68,7 +68,7 @@ public interface TransportOrderFeign {
      * @param orderId 订单id
      * @return 运单信息
      */
-    @GetMapping("/orderId/{orderId}")
+    @GetMapping("/transport-order/orderId/{orderId}")
     TransportOrderDTO findByOrderId(@PathVariable(name = "orderId") String orderId);
 
     /**
@@ -77,7 +77,7 @@ public interface TransportOrderFeign {
      * @param ids
      * @return
      */
-    @GetMapping("orderIds")
+    @GetMapping("/transport-order/orderIds")
     List<TransportOrderDTO> findByOrderIds(@RequestParam(name = "ids", required = false) List<String> ids);
 
     /**
@@ -86,6 +86,6 @@ public interface TransportOrderFeign {
      * @param transportOrderSearchDTO
      * @return
      */
-    @PostMapping("list")
+    @PostMapping("/transport-order/list")
     List<TransportOrderDTO> list(@RequestBody TransportOrderSearchDTO transportOrderSearchDTO);
 }

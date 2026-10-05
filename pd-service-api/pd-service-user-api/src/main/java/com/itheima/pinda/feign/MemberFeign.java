@@ -7,8 +7,8 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 import springfox.documentation.annotations.ApiIgnore;
 
+// 不要在接口上加类级 @RequestMapping；路径前缀下沉到方法，避免被 MVC 注册与本地 Controller 冲突。
 @FeignClient(name = "pd-user")
-@RequestMapping("member")
 @ApiIgnore
 public interface MemberFeign {
     /**
@@ -18,7 +18,7 @@ public interface MemberFeign {
      * @param pageSize
      * @return
      */
-    @GetMapping("page")
+    @GetMapping("/member/page")
     PageResponse<Member> page(@RequestParam("page") Integer page,@RequestParam("pageSize") Integer pageSize);
 
     /**
@@ -27,7 +27,7 @@ public interface MemberFeign {
      * @param entity
      * @return
      */
-    @PostMapping("")
+    @PostMapping("/member")
     Result save(@RequestBody Member entity);
 
     /**
@@ -37,7 +37,7 @@ public interface MemberFeign {
      * @param entity
      * @return
      */
-    @PutMapping("/{id}")
+    @PutMapping("/member/{id}")
     Result update(@PathVariable(name = "id") String id, @RequestBody Member entity);
 
     /**
@@ -46,7 +46,7 @@ public interface MemberFeign {
      * @param id
      * @return
      */
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/member/{id}")
     Result del(@PathVariable(name = "id") String id);
 
     /**
@@ -55,6 +55,6 @@ public interface MemberFeign {
      * @param id
      * @return
      */
-    @GetMapping("detail/{id}")
+    @GetMapping("/member/detail/{id}")
     Member detail(@PathVariable(name = "id") String id);
 }

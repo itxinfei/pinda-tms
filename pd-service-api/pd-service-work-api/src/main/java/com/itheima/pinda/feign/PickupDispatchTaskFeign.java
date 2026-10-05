@@ -8,8 +8,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+// 不要在接口上加类级 @RequestMapping（会与 fallback 同时被 MVC 注册，报 Ambiguous mapping）。
 @FeignClient(value = "pd-work", fallback = PickupDispatchTaskFeignFallback.class)
-@RequestMapping("pickup-dispatch-task")
 public interface PickupDispatchTaskFeign {
     /**
      * 新增取派件任务
@@ -17,17 +17,17 @@ public interface PickupDispatchTaskFeign {
      * @param dto 取派件任务信息
      * @return 取派件任务信息
      */
-    @PostMapping("")
+    @PostMapping("/pickup-dispatch-task")
     TaskPickupDispatchDTO save(@RequestBody TaskPickupDispatchDTO dto);
 
     /**
-     * 修改取派件任务信息
+     * 修改取派件任务
      *
      * @param id  取派件任务id
      * @param dto 取派件任务信息
      * @return 取派件任务信息
      */
-    @PutMapping("/{id}")
+    @PutMapping("/pickup-dispatch-task/{id}")
     TaskPickupDispatchDTO updateById(@PathVariable(name = "id") String id, @RequestBody TaskPickupDispatchDTO dto);
 
     /**
@@ -36,7 +36,7 @@ public interface PickupDispatchTaskFeign {
      * @param dto 查询条件
      * @return 取派件分页数据
      */
-    @PostMapping("/page")
+    @PostMapping("/pickup-dispatch-task/page")
     PageResponse<TaskPickupDispatchDTO> findByPage(@RequestBody TaskPickupDispatchDTO dto);
 
     /**
@@ -45,7 +45,7 @@ public interface PickupDispatchTaskFeign {
      * @param id 任务Id
      * @return 任务详情
      */
-    @GetMapping("/{id}")
+    @GetMapping("/pickup-dispatch-task/{id}")
     TaskPickupDispatchDTO findById(@PathVariable(name = "id") String id);
 
     /**
@@ -54,7 +54,7 @@ public interface PickupDispatchTaskFeign {
      * @param dto 查询条件
      * @return 取派件任务列表
      */
-    @PostMapping("/list")
+    @PostMapping("/pickup-dispatch-task/list")
     List<TaskPickupDispatchDTO> findAll(@RequestBody TaskPickupDispatchDTO dto);
 
     /**
@@ -63,6 +63,6 @@ public interface PickupDispatchTaskFeign {
      * @param orderId 订单Id
      * @return 任务详情
      */
-    @GetMapping("/orderId/{orderId}/{taskType}")
+    @GetMapping("/pickup-dispatch-task/orderId/{orderId}/{taskType}")
     TaskPickupDispatchDTO findByOrderId(@PathVariable("orderId") String orderId, @PathVariable("taskType") Integer taskType);
 }

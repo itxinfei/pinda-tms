@@ -8,8 +8,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+// 不要在接口上加类级 @RequestMapping（会与 fallback 同时被 MVC 注册，报 Ambiguous mapping）。
 @FeignClient(value = "pd-work", fallback = DriverJobFeignFallback.class)
-@RequestMapping("driver-job")
 public interface DriverJobFeign {
     /**
      * 新增司机作业单
@@ -17,7 +17,7 @@ public interface DriverJobFeign {
      * @param dto 司机作业单信息
      * @return 司机作业单信息
      */
-    @PostMapping("")
+    @PostMapping("/driver-job")
     DriverJobDTO save(@RequestBody DriverJobDTO dto);
 
     /**
@@ -27,7 +27,7 @@ public interface DriverJobFeign {
      * @param dto 司机作业单信息
      * @return 司机作业单信息
      */
-    @PutMapping("/{id}")
+    @PutMapping("/driver-job/{id}")
     DriverJobDTO updateById(@PathVariable(name = "id") String id, @RequestBody DriverJobDTO dto);
 
     /**
@@ -36,7 +36,7 @@ public interface DriverJobFeign {
      * @param dto 查询参数
      * @return 司机作业单分页数据
      */
-    @PostMapping("/page")
+    @PostMapping("/driver-job/page")
     PageResponse<DriverJobDTO> findByPage(@RequestBody DriverJobDTO dto);
 
     /**
@@ -45,7 +45,7 @@ public interface DriverJobFeign {
      * @param id 司机作业单id
      * @return 司机作业单信息
      */
-    @GetMapping("/{id}")
+    @GetMapping("/driver-job/{id}")
     DriverJobDTO findById(@PathVariable(name = "id") String id);
 
     /**
@@ -54,6 +54,6 @@ public interface DriverJobFeign {
      * @param dto
      * @return
      */
-    @PostMapping("/findAll")
+    @PostMapping("/driver-job/findAll")
     List<DriverJobDTO> findAll(@RequestBody DriverJobDTO dto);
 }
