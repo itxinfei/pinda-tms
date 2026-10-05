@@ -1,6 +1,8 @@
 # Docker build context 排除项
 .git
 .gitignore
+target
+**/target
 node_modules
 **/node_modules
 .idea
@@ -10,4 +12,4 @@ dist
 .DS_Store
 deploy/gitea
 deploy/server
-# 注意：target 不能排除（Dockerfile 需要 COPY fat jar）；CI 会把 jar 复制到 deploy/jars 后构建
+# jar 在 CI 中已复制到 deploy/jars，Dockerfile 从那里 COPY，故 target 可安全排除
