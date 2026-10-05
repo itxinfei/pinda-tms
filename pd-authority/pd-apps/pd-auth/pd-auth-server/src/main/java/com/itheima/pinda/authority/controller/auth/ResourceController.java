@@ -1,7 +1,9 @@
 package com.itheima.pinda.authority.controller.auth;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.itheima.pinda.authority.dto.auth.ResourceQueryDTO;
 import com.itheima.pinda.authority.dto.auth.ResourceSaveDTO;
@@ -158,6 +160,25 @@ public class ResourceController extends BaseController {
             resource.setUserId(getUserId());
         }
         return success(resourceService.findVisibleResource(resource));
+    }
+
+    /**
+     * 查询所有需要鉴权的资源标识
+     * 返回 "请求方法+URI"（如 POST/org），供网关 AccessFilter 冷启动时通过 Feign 获取并缓存
+     *
+     * @return 需要鉴权的资源标识列表
+     */
+    @ApiOperation(value = "查询所有需要鉴权的资源", notes = "返回 method+url 标识列表")
+    @GetMapping("/list")
+    @SysLog("查询所有需要鉴权的资源")
+    public R<List<String>> list() {
+        List<Resource> list = resourceService.list();
+        // 仅保留方法与URI均非空的资源，组装成 方法+URI 标识
+        List<String> result = list.stream()
+                .filter(r -> StrUtil.isNotBlank(r.getMethod()) && StrUtil.isNotBlank(r.getUrl()))
+                .map(r -> r.getMethod() + r.getUrl())
+                .collect(Collectors.toList());
+        return success(result);
     }
 
 
