@@ -44,7 +44,7 @@
             <properties>
                 <pom.profile.name>test</pom.profile.name>
                 <!--Nacos配置中心地址-->
-                <pom.nacos.ip>192.168.1.80</pom.nacos.ip>
+                <pom.nacos.ip>192.168.20.130</pom.nacos.ip>
                 <pom.nacos.port>8848</pom.nacos.port>
                 <!--Nacos配置中心命名空间,用于支持多环境.这里必须使用ID，不能使用名称,默认为空-->
                 <pom.nacos.namespace>1cb93ce4-dc0e-4730-b759-d35fd7ed93c3</pom.nacos.namespace>

@@ -17,12 +17,14 @@ spring:
       config:
         server-addr: ${pinda.nacos.ip}:${pinda.nacos.port}
         file-extension: yml
+        group: pinda-tms
         namespace: ${pinda.nacos.namespace}
         shared-dataids: common.yml,redis.yml,mysql.yml
         refreshable-dataids: common.yml
         enabled: true
       discovery:
         server-addr: ${pinda.nacos.ip}:${pinda.nacos.port}
+        group: pinda-tms
         namespace: ${pinda.nacos.namespace}
         metadata: # 元数据，用于权限服务实时获取各个服务的所有接口
           management.context-path: ${server.servlet.context-path:}${spring.mvc.servlet.path:}${management.endpoints.web.base-path:}
