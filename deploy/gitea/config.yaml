@@ -21,7 +21,8 @@ cache:
 container:
   network: ""
   privileged: false
-  options: "-v /var/run/docker.sock:/var/run/docker.sock -v /data/m2:/root/.m2"
+  # 注意：act_runner 会自动挂载 docker.sock 到 job 容器，options 里不要再挂，否则 Duplicate mount point
+  options: "-v /data/m2:/root/.m2"
   # 允许 job 容器挂载的卷白名单
   valid_volumes:
     - "/var/run/docker.sock"
