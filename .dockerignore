@@ -1,0 +1,14 @@
+# Docker build context 排除项
+.git
+.gitignore
+target
+**/target
+node_modules
+**/node_modules
+.idea
+*.iml
+*.log
+dist
+.DS_Store
+deploy/gitea
+deploy/server
