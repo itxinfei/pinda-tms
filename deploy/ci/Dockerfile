@@ -22,7 +22,8 @@ RUN curl -fsSL https://download.docker.com/linux/static/stable/x86_64/docker-${D
     && rm -rf /tmp/docker
 
 # Node 14（含 npm 6，与前端 package-lock v1 兼容）
-RUN curl -fsSL https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.xz | tar -xJ -C /opt \
+# 使用 npmmirror 国内镜像，避免 nodejs.org 连接失败
+RUN curl -fsSL https://cdn.npmmirror.com/binaries/node/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.xz | tar -xJ -C /opt \
     && ln -s /opt/node-${NODE_VERSION}-linux-x64/bin/node /usr/local/bin/node \
     && ln -s /opt/node-${NODE_VERSION}-linux-x64/bin/npm /usr/local/bin/npm \
     && ln -s /opt/node-${NODE_VERSION}-linux-x64/bin/npx /usr/local/bin/npx
