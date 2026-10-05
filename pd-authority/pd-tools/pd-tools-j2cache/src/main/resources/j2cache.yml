@@ -1,8 +1,8 @@
 # 该配置文件，只做注释参考，请勿修改此文件。（修改后也不会有任何效果，如要修改配置，请在nacos中修改redis.yml）
 pinda:
   redis:
-    ip: 127.0.0.1
-    port: 6379
+    ip: ${REDIS_HOST:127.0.0.1}
+    port: ${REDIS_PORT:6379}
     password:
 
 # redis 通用配置
