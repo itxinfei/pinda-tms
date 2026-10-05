@@ -23,6 +23,7 @@ import net.oschina.j2cache.CacheChannel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -47,6 +48,7 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
     @Autowired
     private RoleOrgService roleOrgService;
     @Autowired
+    @Lazy
     private DataScopeContext dataScopeContext;
     @Autowired
     private CodeGenerate codeGenerate;
