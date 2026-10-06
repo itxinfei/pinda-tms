@@ -2,6 +2,8 @@ package com.itheima.pinda.authority.controller.auth;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -193,6 +195,18 @@ public class MenuController extends BaseController {
         log.info("查询用户可用的所有菜单路由树:{}", list);
         List<VueRouter> treeList = dozer.mapList(list, VueRouter.class);
         log.info("查询用户可用的所有菜单路由树:{}", treeList);
+        // 2026-10-06 修复：dozer 只映射 path/name/component，VueRouter.meta 为 null，
+        // 而类上 @JsonInclude(NON_NULL) 会让 meta 字段在 JSON 中直接消失。前端
+        // SidebarItem 依赖 meta.title 渲染菜单，缺 meta 会导致叶子菜单不渲染、父级
+        // submenu 无标题，登录成功但侧边栏空白。这里按每个菜单的 name/icon 补齐 meta。
+        Map<Long, String> iconMap = list.stream().collect(Collectors.toMap(
+                Menu::getId,
+                menu -> menu.getIcon() == null ? "" : menu.getIcon(),
+                (oldVal, newVal) -> oldVal));
+        treeList.forEach(router -> router.setMeta(RouterMeta.builder()
+                .title(router.getName())
+                .icon(iconMap.getOrDefault(router.getId(), ""))
+                .build()));
 
         List<VueRouter> build = TreeUtil.build(treeList);
         log.info("查询用户可用的所有菜单路由树:{}", build);
