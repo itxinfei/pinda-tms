@@ -8,14 +8,52 @@
 #   - 微服务通过宿主机 IP 192.168.20.130 访问 MySQL/Redis/Nacos/Kafka/RabbitMQ；
 #   - 各服务沿用自身 bootstrap 中写定的 active profile，Nacos dataId 与之对应；
 #   - gateway / auth-server 的 Nacos 地址与命名空间由 NACOS_* 环境变量注入。
+#
+# 加固（2026-10-06）：
+#   1) ulimits nofile=65535：容器默认软限只有 1024，长连接的 gateway/netty 最先
+#      中招，报 "Too many open files"，症状极易被误判成内存泄漏。
+#   2) mem_limit：取「堆 + MaxMetaspaceSize + MaxDirectMemorySize + 线程栈 +
+#      code cache」声明上限之和，保证正常水位不触顶。触顶说明该服务自身失控，
+#      交给 cgroup 精确杀它一个，而不是整机换页让内核随机挑牺牲者。
+#   3) JVM 补堆外上限与 OOM 现场：堆外不设限时，实测 -Xmx256m 的服务常驻能到
+#      630M、线程 210 个——真正吃内存的在堆外。
+#   4) healthcheck：TCP 探活。注意 docker 只会标记 unhealthy、不会自动重启，它的
+#      作用是把「进程活着但不应答」（长 GC 停顿/死锁）暴露出来——restart:
+#      unless-stopped 只管进程退出，管不了这种情况。
+#   上限合计（应用≈13G + 中间件≈7.3G）故意大于 15.5G 物理内存：上限是天花板，
+#   不是预留；实测常驻合计约 8.3G。
 # ============================================
 name: pinda-apps
 
-# 内存档位
+# 文件描述符（容器默认软限 1024）
+x-ulimits: &app-ulimits
+  nofile:
+    soft: 65535
+    hard: 65535
+
+# JVM 档位
 x-jvm-core: &jvm-core
-  JAVA_OPTS: "-Xms128m -Xmx256m -XX:+UseG1GC -XX:MaxGCPauseMillis=100"
+  JAVA_OPTS: "-Xms128m -Xmx256m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:MaxMetaspaceSize=256m -XX:MaxDirectMemorySize=256m -Xss512k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp"
 x-jvm-small: &jvm-small
-  JAVA_OPTS: "-Xms96m -Xmx192m -XX:+UseG1GC -XX:MaxGCPauseMillis=100"
+  JAVA_OPTS: "-Xms96m -Xmx192m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:MaxMetaspaceSize=192m -XX:MaxDirectMemorySize=128m -Xss512k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp"
+
+# 服务级加固档位
+x-app-core: &app-core
+  mem_limit: 1g
+  ulimits: *app-ulimits
+x-app-small: &app-small
+  mem_limit: 768m
+  ulimits: *app-ulimits
+x-app-static: &app-static
+  mem_limit: 128m
+  ulimits: *app-ulimits
+
+# 探活公共参数（test 里的端口各服务单独写，YAML 锚点无法参数化）
+x-hc-common: &hc-common
+  interval: 30s
+  timeout: 5s
+  retries: 5
+  start_period: 120s
 
 # gateway / auth-server 接入 Nacos 所需的公共环境变量
 x-nacos-env: &nacos-env
@@ -35,128 +73,194 @@ x-redis-env: &redis-env
 services:
   # ---------- 网关与鉴权（profile=test） ----------
   pd-gateway:
+    <<: *app-core
     image: pinda/pd-gateway:${TAG:-latest}
     container_name: pd-gateway
     restart: unless-stopped
     ports: ["8760:8760"]
+    healthcheck:
+      <<: *hc-common
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8760' || exit 1"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
       # CORS 白名单: 覆盖默认(localhost), 允许局域网前端 80/8080 端口访问(无端口=80页面)
-      JAVA_OPTS: "-Xms128m -Xmx256m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -Dcors.allowed.origins=http://192.168.20.130,http://192.168.20.130:8080,http://localhost:8080,http://localhost:3000"
+      # 注意：本服务显式写了 JAVA_OPTS，会整体覆盖 x-jvm-core 锚点，
+      # 所以堆外与 OOM 参数必须在下面这一行重复一遍，否则锚点的加固对网关无效。
+      JAVA_OPTS: "-Xms128m -Xmx256m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:MaxMetaspaceSize=256m -XX:MaxDirectMemorySize=256m -Xss512k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -Dcors.allowed.origins=http://192.168.20.130,http://192.168.20.130:8080,http://localhost:8080,http://localhost:3000"
 
   pd-auth-server:
+    <<: *app-core
     image: pinda/pd-auth-server:${TAG:-latest}
     container_name: pd-auth-server
     restart: unless-stopped
     ports: ["9000:9000"]
+    healthcheck:
+      <<: *hc-common
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/9000' || exit 1"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
 
   # ---------- 基础微服务 ----------
   pd-base:
+    <<: *app-core
     image: pinda/pd-base:${TAG:-latest}
     container_name: pd-base
     restart: unless-stopped
     ports: ["8185:8185"]
+    healthcheck:
+      <<: *hc-common
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8185' || exit 1"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
 
   pd-oms:
+    <<: *app-core
     image: pinda/pd-oms:${TAG:-latest}
     container_name: pd-oms
     restart: unless-stopped
     ports: ["8186:8186"]
+    healthcheck:
+      <<: *hc-common
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8186' || exit 1"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
 
   pd-work:
+    <<: *app-core
     image: pinda/pd-work:${TAG:-latest}
     container_name: pd-work
     restart: unless-stopped
     ports: ["8187:8187"]
+    healthcheck:
+      <<: *hc-common
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8187' || exit 1"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
 
   pd-user:
+    <<: *app-core
     image: pinda/pd-user:${TAG:-latest}
     container_name: pd-user
     restart: unless-stopped
     ports: ["8189:8189"]
+    healthcheck:
+      <<: *hc-common
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8189' || exit 1"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
 
   pd-dispatch:
+    <<: *app-core
     image: pinda/pd-dispatch:${TAG:-latest}
     container_name: pd-dispatch
     restart: unless-stopped
     ports: ["8190:8190"]
+    healthcheck:
+      <<: *hc-common
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8190' || exit 1"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
 
   pd-aggregation:
+    <<: *app-core
     image: pinda/pd-aggregation:${TAG:-latest}
     container_name: pd-aggregation
     restart: unless-stopped
     ports: ["8191:8191"]
+    healthcheck:
+      <<: *hc-common
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8191' || exit 1"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
 
+  # netty 承载长连接与直接内存，按 core 档给足堆外额度
   pd-netty:
+    <<: *app-core
     image: pinda/pd-netty:${TAG:-latest}
     container_name: pd-netty
     restart: unless-stopped
     ports: ["8192:8192"]
+    healthcheck:
+      <<: *hc-common
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8192' || exit 1"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
 
   pd-druid:
+    <<: *app-small
     image: pinda/pd-druid:${TAG:-latest}
     container_name: pd-druid
     restart: unless-stopped
     ports: ["8193:8193"]
+    healthcheck:
+      <<: *hc-common
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8193' || exit 1"]
     environment:
       <<: [*jvm-small, *nacos-env, *redis-env]
 
   # ---------- Web 聚合层 ----------
   pd-web-manager:
+    <<: *app-small
     image: pinda/pd-web-manager:${TAG:-latest}
     container_name: pd-web-manager
     restart: unless-stopped
     ports: ["8161:8161"]
+    healthcheck:
+      <<: *hc-common
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8161' || exit 1"]
     environment:
       <<: [*jvm-small, *nacos-env, *redis-env]
 
   pd-web-driver:
+    <<: *app-small
     image: pinda/pd-web-driver:${TAG:-latest}
     container_name: pd-web-driver
     restart: unless-stopped
     ports: ["8162:8162"]
+    healthcheck:
+      <<: *hc-common
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8162' || exit 1"]
     environment:
       <<: [*jvm-small, *nacos-env, *redis-env]
 
   pd-web-courier:
+    <<: *app-small
     image: pinda/pd-web-courier:${TAG:-latest}
     container_name: pd-web-courier
     restart: unless-stopped
     ports: ["8163:8163"]
+    healthcheck:
+      <<: *hc-common
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8163' || exit 1"]
     environment:
       <<: [*jvm-small, *nacos-env, *redis-env]
 
   pd-web-customer:
+    <<: *app-small
     image: pinda/pd-web-customer:${TAG:-latest}
     container_name: pd-web-customer
     restart: unless-stopped
     ports: ["8164:8164"]
+    healthcheck:
+      <<: *hc-common
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8164' || exit 1"]
     environment:
       <<: [*jvm-small, *nacos-env, *redis-env]
 
   # ---------- 管理后台前端 ----------
   pd-admin-ui:
+    <<: *app-static
     image: pinda/pd-admin-ui:${TAG:-latest}
     container_name: pd-admin-ui
     restart: unless-stopped
     ports: ["8080:80"]
+    healthcheck:
+      <<: *hc-common
+      # 容器内监听 80，宿主机才是 8080
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/80' || exit 1"]
     environment:
       NGINX_HOST: 192.168.20.130
       # nginx 将 /api 反代到网关
-      DOCKER_REQUEST_DOMAIN_PREFIX: http://192.168.20.130:8760
+      # 2026-10-06 修复: 原 http://192.168.20.130:8760 在 bridge 网络容器内访问宿主 eth0 IP 被防火墙拦(超时),
+      # 改走 compose 同网络服务名 pd-gateway(容器间直连, 实测 200)
+      DOCKER_REQUEST_DOMAIN_PREFIX: http://pd-gateway:8760
