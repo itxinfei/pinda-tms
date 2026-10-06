@@ -3,7 +3,13 @@ import db from '@/utils/localstorage'
 
 const apiList = {
   // 获取当前系统的所有枚举
-  dictionaryEnums: '/gate/dictionary/enums'
+  // 2026-10-06 修正：原为 '/gate/dictionary/enums'（重构前的遗留旧契约），
+  // 拼上 VUE_APP_BASE_API='/api' 后为 /api/gate/dictionary/enums，
+  // 但网关无 /gate/** 路由 → 实测 404。
+  // 后端真实端点：AuthorityGeneralController.enums()（无类级 @RequestMapping）
+  // 实际路径为 /enums，实测 GET /api/enums 返回 200 + 完整枚举 JSON。
+  // 详见 docs/需求文档/后端接口文档.md §8.3
+  dictionaryEnums: '/enums'
 }
 
 export default {
