@@ -17,6 +17,11 @@
 - IoT 设备上报**复用现有通道**：`pd-netty` 的 Netty + HTTP（`POST /netty/push`），**不引 MQTT**。
 - 管理端维持 Vue2 + Element UI。
 - 接口风格：`@RequestMapping("xxx")`（无前导斜杠）+ `@PostMapping("/page")`。
+- **★新增接口三层落点约定（2026-10-06 自检补，全卡通用）**：本卡 FIN/DSP/IOT 新增接口定义在 `pd-oms`/`pd-work`/`pd-dispatch`/`pd-base` 等**内部服务**，但内部服务**网关无路由**（网关 `ignored-services:'*'`），前端不可直连。所有新增接口必须：
+  1. **数据/服务层**：在业务内部服务实现（Feign 互调，如运费规则、VRP 求解）；
+  2. **网关暴露层**：由 `pd-web-manager` 新建聚合 Controller 暴露，网关路径 `/api/web-manager/<模块>/*`（如 `/api/web-manager/freight-bill/*`、`/api/web-manager/payment/*`、`/api/web-manager/dispatch/*`、`/api/web-manager/iot/*`）；C 端查询类走 `pd-web-customer`；
+  3. **权限注册**：接口注册进 `pd_auth.pd_auth_resource` 并绑定菜单角色（阻断 C，见《联调就绪检查清单》§2），否则网关判"未知请求"拒绝。
+  **禁止**把内部服务路径（如 `pd-oms /pay/*`）直接写进前端 API 配置——必 404 或被网关拒。
 
 ### ⚠️ 关于"外协运力池"的红线澄清（必须先读）
 用户已明确**不对接任何外部厂商/三方物流 API**。
@@ -101,6 +106,64 @@ CREATE TABLE pd_freight_bill_detail (
 ### 要点
 - **计费明细落库**：把 Drools 算出的运费结果**持久化**到明细（现状只算不存，无法对账追溯）。
 - 调账必须留痕，禁止直接改原金额。
+
+### 合规约束（R10-1 · P1 · 依据《合规开发优先级清单》#16 /《物流行业合规与监管要求》R10）
+- **运价透明可查**：运费计算规则（Drools 规则）须对司机/客户**透明展示**，结算单含计费明细（基础运费 + 附加项），禁止暗箱；呼应 §10.4 价格固化。
+- **运费保障**：支持结算保障 / 垫付机制（COD / 月结账期），司机结算单（FIN-2）与回款（FIN-3）闭环，避免运费拖欠争议。
+- 上述费率/结算规则变更须**留痕可审计**（呼应 R6-3 审计）。
+
+### FIN-1.1 客户价格协议（P1 扩展 · 对标 G7 财运通结算 · 2026-10-06 并入）
+
+> **解决**：B 端客户（企业/月结）没有专属计价，只能吃默认 Drools 规则 → 无法谈价、无法月结对账。
+
+```sql
+CREATE TABLE pd_price_agreement (
+  id            VARCHAR(64) NOT NULL,
+  member_id     VARCHAR(64) NOT NULL COMMENT '客户id（月结/企业客户）',
+  line_id       VARCHAR(64) NULL COMMENT '线路id（空=全线路）',
+  goods_type_id VARCHAR(64) NULL COMMENT '货物类型id（空=全部）',
+  weight_min    DECIMAL(10,2) NULL COMMENT '重量段下限(kg)',
+  weight_max    DECIMAL(10,2) NULL COMMENT '重量段上限(kg)',
+  price_type    INT NOT NULL COMMENT '计价方式 1按票 2按吨 3按方',
+  price         DECIMAL(12,2) NOT NULL COMMENT '单价',
+  discount      DECIMAL(5,2) NOT NULL DEFAULT 1.00 COMMENT '月结折扣(0.90=9折)',
+  effective_from DATE NOT NULL,
+  effective_to   DATE NULL,
+  status        INT NOT NULL DEFAULT 1 COMMENT '1生效 0停用',
+  create_time   DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_member (member_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='客户价格协议';
+```
+
+- **计费衔接**：Drools 计算前先查客户有效协议（member_id+线路+货物类型+重量段命中）→ **命中走协议价，未命中走默认规则**；协议变更留痕（R10-1 透明可查）。
+- **接口**（归 FIN-1 `@RequestMapping("freight-bill")` 扩展）：`POST /price-agreement`（增改）、`GET /price-agreement/page`、`POST /price-agreement/{id}/disable`。
+- **管理端页**：客户管理 → 价格协议（`pinda/customer/priceAgreement`，P1）。
+
+### FIN-1.2 电子发票（P1 扩展 · 对标 G7 财运通结算 · 2026-10-06 并入）
+
+> **解决**：对账后要开票，现无发票记录。**测试/开发环境不接真实税控**（税盘/百望等外部对接属"外部厂商 API"边界，不实现），只做申请-开具-邮寄状态管理。
+
+```sql
+CREATE TABLE pd_invoice (
+  id            VARCHAR(64) NOT NULL,
+  invoice_no    VARCHAR(64) NULL COMMENT '发票号（税控开具后回填；测试环境自编）',
+  bill_id       VARCHAR(64) NOT NULL COMMENT '关联账单（FIN-1）',
+  member_id     VARCHAR(64) NOT NULL,
+  amount        DECIMAL(14,2) NOT NULL,
+  type          INT NOT NULL DEFAULT 1 COMMENT '1增值税普票 2增值税专票',
+  status        INT NOT NULL DEFAULT 1 COMMENT '1待申请 2已申请 3已开具 4已邮寄 5已作废',
+  tax_no        VARCHAR(64) NULL COMMENT '客户税号',
+  mail_address  VARCHAR(255) NULL COMMENT '邮寄地址',
+  create_time   DATETIME NOT NULL,
+  invoice_time  DATETIME NULL,
+  PRIMARY KEY (id),
+  KEY idx_bill (bill_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='电子发票';
+```
+
+- **接口**（归 FIN-1 扩展）：`POST /invoice/apply`（按账单申请）、`POST /invoice/{id}/issue`（标记开具，测试环境自编发票号）、`POST /invoice/{id}/mail`（邮寄）、`GET /invoice/page`。
+- **不做**：不接真实税控开票（边界条款）；不做发票真伪查验。
 
 ## FIN-2 司机趟次工资结算
 
@@ -214,10 +277,12 @@ CREATE TABLE pd_payment_record (
 | GET | `/profit/order/{orderId}` | 单订单利润 |
 | GET | `/profit/summary` | 利润汇总（按车队/车辆/线路/月份，支持排序找亏损线） |
 | GET | `/profit/ranking` | 线路/车辆利润排行（找出最赚与最亏） |
+| GET | `/profit/drill/{dimension}` | **联动钻取（P1 · 承接 OPS-4 §6.7）**：dimension=order/truck/line/fleet，订单→车辆→趟次→利润逐层下钻 |
 
 ### 要点
 - **V1 只做毛利**（收入 − 直接成本），不做分摊间接成本（避免过度设计）。
 - 管理端**利润驾驶舱页**：卡片 + 排行（对标 G7"打开老板看数就能看到利润"）。
+- **移动端老板视图（P1 扩展 · 2026-10-06 并入）**：复用司机端 App（admin 角色可见）或管理端 H5 适配，**只看 KPI**（今日业务量 / 毛利 / 在途异常数 / 成本占比 / 亏损线 Top3），调 `/profit/summary` + `/profit/ranking`，**不做明细操作**。
 
 ---
 
@@ -334,6 +399,29 @@ CREATE TABLE pd_carrier_driver (
 - `TaskTransport` 需区分**自营/外协**（可加 `carrier_id` 字段，为空即自营）。
 - 外协结算走 FIN-1 的账单（对承运商的应付）。
 
+### 承运商 KPI 考核（P1 扩展 · 行业基准：教材 TMS/芸柚/HashMicro · 2026-10-06 并入）
+
+> **解决**：外协车"谁准时率高、谁货损多、谁异常多"无量化，靠感觉；KPI 考核给派单决策与结算（续约/淘汰）数据支撑。
+
+- **指标**（纯统计查询，零表改动）：准时率（任务实际到达 vs 计划到达）、货损率（异常货损件数/总件数）、异常率（`pd_transport_alert` 按承运商聚合）、月完成趟次。
+- **接口**（归 DSP-2 `@RequestMapping("carrier")` 扩展，P1）：`GET /carrier/{id}/kpi`（单承运商考核卡）、`GET /carrier/kpi/list`（承运商考核对比表，支持按月筛选）。
+- **落点**：管理端承运商管理页加"考核"入口；考核结果仅展示，不做自动封禁（避免误伤，红线保留人工判定）。
+- **DoD**：指标口径可解释（在接口文档注明计算公式）；可按月/承运商筛选；不建新表。
+
+### 承运商端自助门户（P1 扩展 · 参照联云 SLMS 承运商端 · 2026-10-06 并入）
+
+> **解决**：外协承运商（加盟）接单/节点确认/回单/对账全在微信电话里来回，无自助入口。联云把承运商端做成了独立产品线（SLMS：全部运单/未指派/待调度/已调度/待称重/已交接/已装车/运输中/到达签收/已签收/异常闭环/黑名单记录）。G7 亦强调外协"统一管理、可控运力池"。本项目 DSP-2 已有外协池，补**承运商端入口**即闭环。
+
+- **形态（P1）**：司机端 App 增加"承运商"身份（复用统一账号体系，外协司机登录即承运商视图），不新开发独立 App——承运商/外协司机看到：**待接单任务（接/拒）→ 节点确认（装车/在途/到达/签收，同司机端节点）→ 回单上传（复用 POD）→ 运费对账（应收对账单确认，复用 FIN-1 账单）**。
+- **接口**（归 DSP-2 `@RequestMapping("carrier")`，P1）：`GET /carrier/task/list`（待接单任务）、`POST /carrier/task/{id}/accept|reject`（接/拒单）、`GET /carrier/settlement/statement`（承运商应收对账单）。
+- **权限**：`pd_auth_resource` 新增承运商角色（复用 driver 角色扩展或新增 `CARRIER`），路由走 `/api/web-driver` 承运商视图。
+- **不做**：独立承运商门户系统（SLMS 级）、承运商入驻审批流（P2 再议）。
+
+### 承运商黑名单记录（P2 扩展 · 参照联云 SLMS 黑名单 · 2026-10-06 并入）
+
+- 在 DSP-2 KPI 基础上，管理端可**人工拉黑/备注**承运商（原因+时间+操作人，入 `pd_carrier` 扩展字段或新表 `pd_carrier_blacklist`）；调度派单时黑名单承运商不出现在 `/carrier/capacity` 候选；仅人工判定，不自动封禁（红线）。
+- **DoD**：黑名单可增删查；拉黑后调度候选自动排除；操作留痕。
+
 ## DSP-3 抢派双模
 
 ### 新建表
@@ -404,6 +492,7 @@ CREATE TABLE pd_iot_weight (
 ```
 - 异常判定：装货后/运输中重量骤降 → 告警 `WEIGHT_ABNORMAL`（防盗/防货损）。
 - **视频复用已规划的司机视频能力（VID）**，不另起视频系统。
+- **合规约束（R2-4 · P1 · 依据《合规开发优先级清单》#9 /《物流行业合规与监管要求》R2/R11）**：司机视频（盲区预警 / 驾驶员状态）数据须**直传监管平台或本平台**，不得经不可控的中间转发环节（GB/T 28181 / JT/T 1078 国标接入，或云厂商 RTC 直传）。视频/状态结果落库用于 OPS-5 驾驶行为分析，但**原始视频流路径须可审计、不落地到非授权节点**。
 - 接口：`POST /iot/weight/report`、`GET /iot/weight/task/{taskId}`。
 
 ## IOT-3 能源（油卡 / 加油）结算

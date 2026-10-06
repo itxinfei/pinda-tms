@@ -9,25 +9,25 @@
         left join pd_transport_order to_
         on o_.id = to_.order_id
         <where>
-            <if test="params.courierId != null and params.courierId != ''">
-                and tpd_.courier_id = #{params.courierId}
+            <if test="courierId != null and courierId != ''">
+                and tpd_.courier_id = #{courierId}
             </if>
-            <if test="params.status != null and params.status != ''">
-                and tpd_.status = #{params.status}
+            <if test="status != null and status != ''">
+                and tpd_.status = #{status}
             </if>
-            <if test="params.taskType != null and params.taskType != ''">
-                and tpd_.task_type = #{params.taskType}
+            <if test="taskType != null and taskType != ''">
+                and tpd_.task_type = #{taskType}
             </if>
-            <if test="params.date != null and params.date != ''">
+            <if test="date != null and date != ''">
 
-                and tpd_.actual_end_time &gt;= STR_TO_DATE(CONCAT(#{params.date},' ','00:00:00'), '%Y-%m-%d %H:%i:%s')
-                and tpd_.actual_end_time &lt;= STR_TO_DATE(CONCAT(#{params.date},' ','23:59:59'), '%Y-%m-%d %H:%i:%s')
+                and tpd_.actual_end_time &gt;= STR_TO_DATE(CONCAT(#{date},' ','00:00:00'), '%Y-%m-%d %H:%i:%s')
+                and tpd_.actual_end_time &lt;= STR_TO_DATE(CONCAT(#{date},' ','23:59:59'), '%Y-%m-%d %H:%i:%s')
             </if>
-            <if test="params.keyword != null and params.keyword != ''">
+            <if test="keyword != null and keyword != ''">
                 and (
-                o_.sender_name LIKE CONCAT('%',#{params.keyword},'%')
-                or o_.sender_phone LIKE CONCAT('%',#{params.keyword},'%')
-                or to_.id LIKE CONCAT('%',#{params.keyword},'%')
+                o_.sender_name LIKE CONCAT('%',#{keyword},'%')
+                or o_.sender_phone LIKE CONCAT('%',#{keyword},'%')
+                or to_.id LIKE CONCAT('%',#{keyword},'%')
                 )
             </if>
         </where>

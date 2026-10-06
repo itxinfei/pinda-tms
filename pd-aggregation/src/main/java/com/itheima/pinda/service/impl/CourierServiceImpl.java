@@ -18,16 +18,18 @@ public class CourierServiceImpl implements CourierService {
 
     @Override
     public PageResponse<TaskPickupDispatchDTO> findByPage(AppCourierQueryDTO dto) {
-        IPage<TaskPickupDispatchDTO> iPage = new Page();
-        iPage.setSize(dto.getPageSize());
-        iPage.setCurrent(dto.getPage());
+        // 兜底：调用方可能不传 page/pageSize（setPage(null) 会覆盖 DTO 字段默认值），
+        // 直接传入 MyBatis-Plus 的 Page 会导致 LIMIT null,null 的 SQL 异常（500）。
+        Integer page = dto.getPage() == null ? 1 : dto.getPage();
+        Integer pageSize = dto.getPageSize() == null ? 10 : dto.getPageSize();
+        IPage<TaskPickupDispatchDTO> iPage = new Page<>(page, pageSize);
         courierMapper.findByPage(iPage, dto);
 
         return PageResponse.<TaskPickupDispatchDTO>builder()
                 .counts(iPage.getTotal())
                 .pages(iPage.getPages())
-                .pagesize(dto.getPageSize())
-                .page(dto.getPage())
+                .pagesize(pageSize)
+                .page(page)
                 .items(iPage.getRecords())
                 .build();
     }

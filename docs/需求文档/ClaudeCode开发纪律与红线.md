@@ -23,7 +23,7 @@
 10. **禁止过度设计（YAGNI）**：不引入当前用不到的抽象/模式/框架/缓存/MQ。
 11. **禁止硬编码**：cron/阈值/地图 Key/坐标类型/上报间隔一律外部化到配置文件。
 12. **配置零改动后端坐标**：后端存百度 BD-09；微信小程序用腾讯 GCJ-02，前端做 BD-09→GCJ-02 转换，**后端正则不动**。
-13. **禁止裸请求**：前端所有 `uni.request` 必须过 `common/request.js` 拦截器（JWT 自动附加/401 刷新）。
+13. **禁止裸请求**：前端所有 `uni.request` 必须过 `common/request.js` 拦截器（JWT 自动附加；401 清 token 跳登录重登，**后端无 refreshToken，禁实现静默刷新**）。
 14. **认证/计费规则放后端**：前端只调用不计算核心业务规则（运费、状态机、计费）。
 
 ## 3. 质量与交付
@@ -64,17 +64,40 @@
   2. JWT 请求头字段是 **`token`**（不是 `Authorization`）；有效期 7200s，**无 refreshToken** → 401 清 token 重登。
      后端登录 **已存在** `POST /anno/login` + `GET /anno/captcha?key={uuid}`，**不得新建登录服务**。
   3. 轨迹查询只认 `businessId`+`type`（**无 `orderId`**）；`/trace/page` 才支持 `transportTaskId`。客户按订单查轨迹需后端改造，**不得前端伪造参数**。
-  4. 🔴 **三端接口必须先注册进 `pd_auth.pd_auth_resource` 并绑定角色**，否则网关 `AccessFilter` 判"未知请求"**直接拒绝**。
-     实测该表仅 48 条，全是后台权限接口（/org /role /resource /station /user /menu…），**无任何 driver/courier/customer 业务接口**，且**无自动注册机制**。
+  4. 🔴 **新增接口必须先注册进 `pd_auth.pd_auth_resource` 并绑定角色**，否则网关 `AccessFilter` 判"未知请求"**直接拒绝**。
+     ✅ **三端接口已注册（2026-10-06 实测复核）**：资源表 48 → **90 条**（含三端业务接口 10 条），新增 DRIVER/COURIER/CUSTOMER 三端角色，执行 `docs/sql/阻断C_三端接口注册与账号闭环.sql`；driver 端 `GET /user/profile` 经网关 5/5 返回 200。⚠️ **无自动注册机制**——后续新建对外接口（告警/支付/财务/调度/IoT）仍须手工插表并绑定角色。
      ❌ **禁止**把三端前缀加入忽略鉴权绕过——跳过 token 校验会导致下游 `TokenAuthInterceptor` 401。
-  5. 🔴 **Redis 必须已生效才能联调**。配置已于 2026-10-06 推入 Nacos，但需 `docker restart <pd-gateway> <pd-auth-server>` 才生效。
-     验收：`curl -o /dev/null -w "%{http_code}" "http://192.168.20.130:8760/api/auth/anno/captcha?key=k1"` → **期望 200**。
-     未生效时表现为：验证码 500、所有网关请求 `500 pre:AccessFilter`（**这不是你的代码 bug**）。
+  5. ✅ **网关鉴权已于 2026-10-06 修复**（原记"Redis 待重启"不准确，真实根因是网关 `j2cache.config-location` 误指向**不存在的** `classpath:/j2cache-absent.properties`，已改为 `classpath:j2cache.properties` 并推送 Nacos，无需重启即恢复）。
+     验收：`curl -o /dev/null -w "%{http_code}" "http://192.168.20.130:8760/api/authority/menu/router"` → **期望 200**。
+     若又现 `500 pre:AccessFilter`：**先查 j2cache 配置指向的文件是否真实存在**，不要盲目重启。
   6. **严禁新建/重写状态机**：`StateTransitionValidator` 已实现且在用（`TaskTransportServiceImpl:243/287/331`、`TransportOrderServiceImpl:74/84`）。真实缺口是**跨端同步桥**（司机发车未联动 Order 23005），不是校验器。
-  7. **环境地址**：服务实跑 Docker 网 `172.21.0.x`，宿主机 `192.168.20.130`；Nacos `8848`（ns `1cb93ce4-dc0e-4730-b759-d35fd7ed93c3`，group `pinda-tms`）。**密码不入库，勿写进任何仓库文件。**
+  7. **环境地址**：服务实跑 Docker 网 `172.21.0.x`，宿主机 `192.168.20.130`；Nacos `8848`（ns `1cb93ce4-dc0e-4730-b759-d35fd7ed93c3`，group **`pinda-tms`**）。**密码不入库，勿写进任何仓库文件。**
 
-- **开工前必读顺序**：《文档与代码一致性核查报告.md》（**§6/§7 为最新环境事实**）→ 本文件 → 《UI 设计规范与页面模板.md》→ 《规格书》第 1/12 章。
-  ⚠️ 《规格书》§5/§6 尚未同步 2026-10-06 的网关前缀与阻断 C，**环境类事实一律以核查报告为准**。
+- **报障前必做（2026-10-06 新增）**：接口报错时**先探活再读代码**。
+  ```bash
+  # 1) 探活：404=进程在，502/拒绝=进程挂了
+  curl -s -o /dev/null -w "%{http_code}\n" --max-time 5 "http://192.168.20.130:9000/actuator/health"
+  # 2) 对比：直连服务 vs 经网关，谁错？
+  curl -s -o /dev/null -w "%{http_code}\n" "http://192.168.20.130:9000/menu/router"
+  curl -s -o /dev/null -w "%{http_code}\n" "http://192.168.20.130:8760/api/authority/menu/router"
+  ```
+  直连 200 + 经网关 500 → **网关侧问题**；两边都 502 → **进程挂了，重启即可**。
+  📖 完整流程见《环境故障排障手册.md》。
+
+- **四个已踩过的坑（改相关代码前必读）**：
+
+  | 坑 | 现象 | 正确做法 |
+  |---|---|---|
+  | **菜单 userId 取不到** | 登录成功但**左侧菜单为空** | `MenuController.myRouter` 用 `StrUtil.isBlank(userId)` 时 `getUserId()` 取当前登录人。⚠️ `userId` 是 String，**绝不可用 `userId <= 0` 判断**（抛 NumberFormatException）。已修复并编译通过，**待部署** |
+  | **菜单脏缓存** | 改完代码仍空菜单 | `redis-cli -h 192.168.20.130 -p 6379 DEL "user_menu:null"` |
+  | **资源表 url 填法** | 接口永远"未知请求" | 填**服务内路径** `/user/profile`，**不能带 `/api` 和 `web-driver` 段** |
+  | **Nacos group 混淆** | 改了配置不起作用 | 全部服务显式用 `group: pinda-tms`；`DEFAULT_GROUP` 已清理，勿往那里写 |
+  | **状态值口径** | 前端写死数字、各端理解不同 | 🚫 **禁止硬编码状态数字**（`status == 23005` ❌）。取值与中文对照一律查《数据字典与枚举口径.md》；⚠️ 三处陷阱：`230011` 是笔误（正确 23011）、`DriverJobStatus.CONFIRM`="改派" 而 `TransportTaskStatus.CONFIRM`="待确认"（**同码不同义**）、`MANUAL_DISTRIBUTED` 中英语义相反 |
+
+  ⚠️ **"接口返回 200" ≠ "鉴权生效"**：`AccessFilter` 关卡1 被 `if (resourceNeed2Auth != null)` 包裹，清单为 null 时**整段跳过、所有请求放行**。判断鉴权是否真工作，要对比**已注册接口**与**未注册接口**返回是否一致。
+
+- **开工前必读顺序**：《需求文档v2_现状梳理与竞品借鉴.md》（**最先读，现状实测**）→ 本文件 → 《UI 设计规范与页面模板.md》→ 《开发规范与需求规格说明书.md》第 1/12 章。
+  ✅ 《规格书》§3.4/§3.5 已同步 2026-10-06 网关路由与鉴权事实；环境类事实以《联调就绪检查清单.md》《环境故障排障手册.md》为准。
 
 ---
 *任何与《规格书》冲突的"优化"默认无效，须先修订文档并经人工确认。*

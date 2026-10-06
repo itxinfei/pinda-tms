@@ -4,24 +4,24 @@
     <select id="findDriverJobByPage" resultType="com.itheima.pinda.DTO.DriverJobDTO"
             parameterType="com.itheima.pinda.DTO.webManager.DriverJobQueryDTO">
         SELECT driver_job.* FROM pd_driver_job driver_job
-        <if test="params.driverName != null and params.driverName != ''">
+        <if test="driverName != null and driverName != ''">
             LEFT JOIN pd_auth_user auth_user ON driver_job.driver_id = auth_user.id
         </if>
-        <if test="params.taskTransportId != null and params.taskTransportId != ''">
+        <if test="taskTransportId != null and taskTransportId != ''">
             LEFT JOIN pd_task_transport task_transport ON driver_job.task_transport_id = task_transport.id
         </if>
         <where>
-            <if test="params.status != null">
-                AND driver_job.status = #{params.status}
+            <if test="status != null">
+                AND driver_job.status = #{status}
             </if>
-            <if test="params.id != null and params.id != ''">
-                AND driver_job.id LIKE CONCAT('%',#{params.id},'%')
+            <if test="id != null and id != ''">
+                AND driver_job.id LIKE CONCAT('%',#{id},'%')
             </if>
-            <if test="params.driverName != null and params.driverName != ''">
-                AND auth_user.name LIKE CONCAT('%',#{params.driverName},'%')
+            <if test="driverName != null and driverName != ''">
+                AND auth_user.name LIKE CONCAT('%',#{driverName},'%')
             </if>
-            <if test="params.taskTransportId != null and params.taskTransportId != ''">
-                AND task_transport.id LIKE CONCAT('%',#{params.taskTransportId},'%')
+            <if test="taskTransportId != null and taskTransportId != ''">
+                AND task_transport.id LIKE CONCAT('%',#{taskTransportId},'%')
             </if>
         </where>
         order by driver_job.create_time desc
@@ -34,35 +34,35 @@
         LEFT JOIN pd_transport_order transport_order ON pdorder.id=transport_order.order_id
         LEFT JOIN pd_auth_user auth_user ON task_pickup_dispatch.courier_id = auth_user.id
         <where>
-            <if test="params.taskType != null">
-                AND task_pickup_dispatch.task_type = #{params.taskType}
+            <if test="taskType != null">
+                AND task_pickup_dispatch.task_type = #{taskType}
             </if>
-            <if test="params.status != null">
-                AND task_pickup_dispatch.status = #{params.status}
+            <if test="status != null">
+                AND task_pickup_dispatch.status = #{status}
             </if>
-            <if test="params.transportOrderId != null and params.transportOrderId != ''">
-                AND transport_order.id LIKE CONCAT('%',#{params.transportOrderId},'%')
+            <if test="transportOrderId != null and transportOrderId != ''">
+                AND transport_order.id LIKE CONCAT('%',#{transportOrderId},'%')
             </if>
-            <if test="params.courierName != null and params.courierName != ''">
-                AND auth_user.name LIKE CONCAT('%',#{params.courierName},'%')
+            <if test="courierName != null and courierName != ''">
+                AND auth_user.name LIKE CONCAT('%',#{courierName},'%')
             </if>
-            <if test="params.senderName != null and params.senderName != ''">
-                AND pdorder.sender_name LIKE CONCAT('%',#{params.senderName},'%')
+            <if test="senderName != null and senderName != ''">
+                AND pdorder.sender_name LIKE CONCAT('%',#{senderName},'%')
             </if>
-            <if test="params.senderProvinceId != null and params.senderProvinceId != ''">
-                AND pdorder.sender_province_id = #{params.senderProvinceId}
+            <if test="senderProvinceId != null and senderProvinceId != ''">
+                AND pdorder.sender_province_id = #{senderProvinceId}
             </if>
-            <if test="params.senderCityId != null and params.senderCityId != ''">
-                AND pdorder.sender_city_id = #{params.senderCityId}
+            <if test="senderCityId != null and senderCityId != ''">
+                AND pdorder.sender_city_id = #{senderCityId}
             </if>
-            <if test="params.receiverName != null and params.receiverName != ''">
-                AND pdorder.receiver_name LIKE CONCAT('%',#{params.receiverName},'%')
+            <if test="receiverName != null and receiverName != ''">
+                AND pdorder.receiver_name LIKE CONCAT('%',#{receiverName},'%')
             </if>
-            <if test="params.receiverProvinceId != null and params.receiverProvinceId != ''">
-                AND pdorder.receiver_province_id = #{params.receiverProvinceId}
+            <if test="receiverProvinceId != null and receiverProvinceId != ''">
+                AND pdorder.receiver_province_id = #{receiverProvinceId}
             </if>
-            <if test="params.receiverCityId != null and params.receiverCityId != ''">
-                AND pdorder.receiver_city_id = #{params.receiverCityId}
+            <if test="receiverCityId != null and receiverCityId != ''">
+                AND pdorder.receiver_city_id = #{receiverCityId}
             </if>
         </where>
         order by task_pickup_dispatch.create_time desc
@@ -73,41 +73,41 @@
         SELECT * FROM pd_transport_order transport_order
         LEFT JOIN pd_order pdorder ON transport_order.order_id = pdorder.id
         <where>
-            <if test="params.id != null and params.id != ''">
-                AND transport_order.id LIKE CONCAT('%',#{params.id},'%')
+            <if test="id != null and id != ''">
+                AND transport_order.id LIKE CONCAT('%',#{id},'%')
             </if>
-            <if test="params.status != null">
-                AND transport_order.status = #{params.status}
+            <if test="status != null">
+                AND transport_order.status = #{status}
             </if>
-            <if test="params.senderName != null and params.senderName != ''">
-                AND pdorder.sender_name LIKE CONCAT('%',#{params.senderName},'%')
+            <if test="senderName != null and senderName != ''">
+                AND pdorder.sender_name LIKE CONCAT('%',#{senderName},'%')
             </if>
-            <if test="params.senderPhone != null and params.senderPhone != ''">
-                AND pdorder.sender_phone LIKE CONCAT('%',#{params.senderPhone},'%')
+            <if test="senderPhone != null and senderPhone != ''">
+                AND pdorder.sender_phone LIKE CONCAT('%',#{senderPhone},'%')
             </if>
-            <if test="params.senderProvinceId != null and params.senderProvinceId != ''">
-                AND pdorder.sender_province_id = #{params.senderProvinceId}
+            <if test="senderProvinceId != null and senderProvinceId != ''">
+                AND pdorder.sender_province_id = #{senderProvinceId}
             </if>
-            <if test="params.senderCityId != null and params.senderCityId != ''">
-                AND pdorder.sender_city_id = #{params.senderCityId}
+            <if test="senderCityId != null and senderCityId != ''">
+                AND pdorder.sender_city_id = #{senderCityId}
             </if>
-            <if test="params.senderCountyId != null and params.senderCountyId != ''">
-                AND pdorder.sender_county_id = #{params.senderCountyId}
+            <if test="senderCountyId != null and senderCountyId != ''">
+                AND pdorder.sender_county_id = #{senderCountyId}
             </if>
-            <if test="params.receiverName != null and params.receiverName != ''">
-                AND pdorder.receiver_name LIKE CONCAT('%',#{params.receiverName},'%')
+            <if test="receiverName != null and receiverName != ''">
+                AND pdorder.receiver_name LIKE CONCAT('%',#{receiverName},'%')
             </if>
-            <if test="params.receiverPhone != null and params.receiverPhone != ''">
-                AND pdorder.receiver_phone LIKE CONCAT('%',#{params.receiverPhone},'%')
+            <if test="receiverPhone != null and receiverPhone != ''">
+                AND pdorder.receiver_phone LIKE CONCAT('%',#{receiverPhone},'%')
             </if>
-            <if test="params.receiverProvinceId != null and params.receiverProvinceId != ''">
-                AND pdorder.receiver_province_id = #{params.receiverProvinceId}
+            <if test="receiverProvinceId != null and receiverProvinceId != ''">
+                AND pdorder.receiver_province_id = #{receiverProvinceId}
             </if>
-            <if test="params.receiverCityId != null and params.receiverCityId != ''">
-                AND pdorder.receiver_city_id = #{params.receiverCityId}
+            <if test="receiverCityId != null and receiverCityId != ''">
+                AND pdorder.receiver_city_id = #{receiverCityId}
             </if>
-            <if test="params.receiverCountyId != null and params.receiverCountyId != ''">
-                AND pdorder.receiver_county_id = #{params.receiverCountyId}
+            <if test="receiverCountyId != null and receiverCountyId != ''">
+                AND pdorder.receiver_county_id = #{receiverCountyId}
             </if>
         </where>
         order by transport_order.create_time desc
@@ -119,14 +119,14 @@
         LEFT JOIN pd_driver_job driver_job ON task_transport.id = driver_job.task_transport_id
         LEFT JOIN pd_auth_user auth_user ON driver_job.driver_id = auth_user.id
         <where>
-            <if test="params.id != null and params.id != ''">
-                AND task_transport.id LIKE CONCAT('%',#{params.id},'%')
+            <if test="id != null and id != ''">
+                AND task_transport.id LIKE CONCAT('%',#{id},'%')
             </if>
-            <if test="params.driverName != null and params.driverName != ''">
-                AND auth_user.name LIKE CONCAT('%',#{params.driverName},'%')
+            <if test="driverName != null and driverName != ''">
+                AND auth_user.name LIKE CONCAT('%',#{driverName},'%')
             </if>
-            <if test="params.status != null">
-                AND task_transport.status = #{params.status}
+            <if test="status != null">
+                AND task_transport.status = #{status}
             </if>
         </where>
         order by task_transport.create_time desc

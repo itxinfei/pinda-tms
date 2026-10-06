@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>品达 TMS 产品差距分析与商业化升级路线图</title>
+<style>
+  :root{
+    --blue:#185FA5; --blue-soft:#E6F1FB; --green:#3B6D11; --red:#A32D2D;
+    --amber:#BA7517; --ink:#1f2933; --muted:#6b7280; --line:#e3e8ee; --bg:#f7f9fc;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.65;}
+  .wrap{max-width:1080px;margin:0 auto;padding:40px 28px 80px;}
+  header.cover{border-left:6px solid var(--blue);padding:6px 0 6px 18px;margin-bottom:28px;}
+  header.cover h1{font-size:26px;margin:0 0 6px;font-weight:700;}
+  header.cover .sub{color:var(--muted);font-size:14px;}
+  .meta{display:flex;flex-wrap:wrap;gap:18px;font-size:12px;color:var(--muted);margin-top:10px;}
+  .meta span b{color:var(--ink);font-weight:600;}
+  h2{font-size:20px;margin:38px 0 14px;padding-bottom:8px;border-bottom:2px solid var(--line);}
+  h3{font-size:16px;margin:22px 0 10px;color:var(--blue);}
+  p{margin:8px 0;}
+  .callout{background:var(--blue-soft);border:1px solid #B5D4F4;border-radius:10px;padding:16px 18px;font-size:14px;}
+  .callout b{color:var(--blue);}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13px;}
+  th,td{border:1px solid var(--line);padding:9px 10px;text-align:left;vertical-align:top;}
+  th{background:#f0f4f8;font-weight:600;}
+  tr:nth-child(even) td{background:#fbfcfe;}
+  .tag{display:inline-block;padding:1px 8px;border-radius:10px;font-size:11px;font-weight:600;}
+  .tA{background:#FCEBEB;color:var(--red);}
+  .tB{background:#FAEEDA;color:var(--amber);}
+  .tC{background:#EAF3DE;color:var(--green);}
+  .bar{height:9px;border-radius:5px;background:#eef2f6;overflow:hidden;min-width:60px;}
+  .bar > i{display:block;height:100%;border-radius:5px;}
+  .sc{font-variant-numeric:tabular-nums;font-size:12px;color:var(--muted);}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin:16px 0;}
+  .card{border:1px solid var(--line);border-radius:12px;padding:16px 18px;background:#fff;}
+  .card.phase1{border-top:4px solid var(--red);}
+  .card.phase2{border-top:4px solid var(--amber);}
+  .card.phase3{border-top:4px solid var(--green);}
+  .card h4{margin:0 0 4px;font-size:15px;}
+  .card .when{font-size:12px;color:var(--muted);margin-bottom:10px;}
+  .card ul{margin:6px 0;padding-left:18px;font-size:13px;}
+  .card ul li{margin:4px 0;}
+  .pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;background:#eef2f6;color:#475569;margin-right:6px;}
+  .arch{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch;margin:14px 0;}
+  .box{flex:1;min-width:140px;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:#fff;font-size:12px;}
+  .box b{display:block;font-size:13px;margin-bottom:4px;color:var(--blue);}
+  .arrow{display:flex;align-items:center;color:var(--muted);font-size:20px;}
+  .risk{font-size:13px;}
+  .risk td:first-child{font-weight:600;white-space:nowrap;}
+  footer{margin-top:50px;border-top:1px solid var(--line);padding-top:16px;font-size:12px;color:var(--muted);}
+  code{background:#eef2f6;padding:1px 5px;border-radius:4px;font-size:12px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="cover">
+  <h1>品达 TMS 产品差距分析与商业化升级路线图</h1>
+  <div class="sub">从"教学/演示级脚手架"到"可商用物流运输管理系统"的演进策略</div>
+  <div class="meta">
+    <span><b>文档类型</b>：产品战略 / 路线图</span>
+    <span><b>版本</b>：v1.0</span>
+    <span><b>日期</b>：2026-10-06</span>
+    <span><b>适用范围</b>：pinda-tms（自营/加盟运输管理）</span>
+  </div>
+</header>
+
+<div class="callout">
+  <b>核心定调：</b>品达 TMS 当前本质是一个<b>教学/演示级脚手架</b>——业务领域建模完整度在其中属于中上水平，核心闭环（下单→调度→执行→轨迹→签收）是通的，但离"生产可用"和"商业产品"仍存在<b>代际差距</b>。若用于学习/内部演示/小范围自用，现状已合格；若要走向商业化，需要在架构、可观测性、高可用、安全、移动端、算法与多租户等维度系统性补齐，预计需要<b>专职团队 + 18 个月左右的路线图</b>。
+</div>
+
+<h2>一、项目现状盘点</h2>
+
+<h3>1.1 已做对的地方（亮点）</h3>
+<ul>
+  <li><b>业务领域建模完整</b>：12 级订单状态机、调度 5 阶段、DFS 路径规划、Drools 运费引擎。</li>
+  <li><b>模块分层合理</b>：OMS / dispatch / work / base / netty / user / aggregation / web 职责清晰；网关 + 鉴权已打通。</li>
+  <li><b>联调地基已补齐</b>：机构主表（pd_agency）、司机账号闭环、三端接口注册（resource 48→90）均已落地。</li>
+  <li><b>移动端路线已拍板</b>：uni-app + Vue3 + uView-plus，北斗定位、司机视频需求已立项。</li>
+</ul>
+
+<h3>1.2 技术栈基线（现状）</h3>
+<table>
+  <tr><th style="width:22%">组件</th><th style="width:30%">现状</th><th>说明 / 风险</th></tr>
+  <tr><td>JDK / 框架</td><td>JDK 1.8 · Spring Boot 2.2.5 · Cloud Hoxton.SR3</td><td>已停更，安全补丁缺失，升级成本被锁定</td></tr>
+  <tr><td>网关</td><td>Zuul 1.x（blocking I/O）</td><td>已停更，无限流/熔断/灰度能力</td></tr>
+  <tr><td>消息队列</td><td>Kafka（轨迹）· RabbitMQ（调度）</td><td>无 RocketMQ；无统一事件总线</td></tr>
+  <tr><td>分布式事务</td><td>Seata 1.2</td><td>初级，覆盖有限</td></tr>
+  <tr><td>规则引擎</td><td>Drools 6.5</td><td>可用，但运费规则维护体验差</td></tr>
+  <tr><td>权限</td><td>Shiro 1.4 + 品达鉴权脚手架</td><td>已知 CVE 未处理</td></tr>
+  <tr><td>前端</td><td>Vue2 管理端 + uni-app（规划中）</td><td>管理端技术栈偏旧</td></tr>
+  <tr><td>可观测性</td><td>无</td><td>无监控/日志聚合/链路追踪</td></tr>
+  <tr><td>README 宣称但未落地</td><td>ES / HBase / Spark / MongoDB / XXL-JOB / RocketMQ / SkyWalking / Prometheus</td><td>空头支票，需重新评估真实必要性</td></tr>
+</table>
+
+<h2>二、能力成熟度差距分析</h2>
+
+<h3>2.1 十维度评分卡（0–5 分）</h3>
+<p style="color:var(--muted);font-size:13px;">分数越高越接近商业产品水平；红色=本项目，蓝色=生产级自研 TMS，绿色=商业 SaaS TMS。</p>
+<table>
+  <tr><th>能力维度</th><th style="width:30%">本项目</th><th style="width:30%">生产级</th><th style="width:30%">商业 SaaS</th></tr>
+  <tr><td>业务建模完整性</td><td><div class="bar"><i style="width:80%;background:var(--red)"></i></div><span class="sc">4.0</span></td><td><div class="bar"><i style="width:90%;background:var(--blue)"></i></div><span class="sc">4.5</span></td><td><div class="bar"><i style="width:100%;background:var(--green)"></i></div><span class="sc">5.0</span></td></tr>
+  <tr><td>架构/技术栈现代性</td><td><div class="bar"><i style="width:40%;background:var(--red)"></i></div><span class="sc">2.0</span></td><td><div class="bar"><i style="width:80%;background:var(--blue)"></i></div><span class="sc">4.0</span></td><td><div class="bar"><i style="width:90%;background:var(--green)"></i></div><span class="sc">4.5</span></td></tr>
+  <tr><td>可观测性/监控</td><td><div class="bar"><i style="width:10%;background:var(--red)"></i></div><span class="sc">0.5</span></td><td><div class="bar"><i style="width:80%;background:var(--blue)"></i></div><span class="sc">4.0</span></td><td><div class="bar"><i style="width:90%;background:var(--green)"></i></div><span class="sc">4.5</span></td></tr>
+  <tr><td>高可用/弹性</td><td><div class="bar"><i style="width:20%;background:var(--red)"></i></div><span class="sc">1.0</span></td><td><div class="bar"><i style="width:80%;background:var(--blue)"></i></div><span class="sc">4.0</span></td><td><div class="bar"><i style="width:100%;background:var(--green)"></i></div><span class="sc">5.0</span></td></tr>
+  <tr><td>安全合规</td><td><div class="bar"><i style="width:30%;background:var(--red)"></i></div><span class="sc">1.5</span></td><td><div class="bar"><i style="width:80%;background:var(--blue)"></i></div><span class="sc">4.0</span></td><td><div class="bar"><i style="width:90%;background:var(--green)"></i></div><span class="sc">4.5</span></td></tr>
+  <tr><td>移动端 / IoT</td><td><div class="bar"><i style="width:40%;background:var(--red)"></i></div><span class="sc">2.0</span></td><td><div class="bar"><i style="width:70%;background:var(--blue)"></i></div><span class="sc">3.5</span></td><td><div class="bar"><i style="width:100%;background:var(--green)"></i></div><span class="sc">5.0</span></td></tr>
+  <tr><td>DevOps / 自动化</td><td><div class="bar"><i style="width:40%;background:var(--red)"></i></div><span class="sc">2.0</span></td><td><div class="bar"><i style="width:80%;background:var(--blue)"></i></div><span class="sc">4.0</span></td><td><div class="bar"><i style="width:90%;background:var(--green)"></i></div><span class="sc">4.5</span></td></tr>
+  <tr><td>数据智能 / 算法</td><td><div class="bar"><i style="width:30%;background:var(--red)"></i></div><span class="sc">1.5</span></td><td><div class="bar"><i style="width:70%;background:var(--blue)"></i></div><span class="sc">3.5</span></td><td><div class="bar"><i style="width:100%;background:var(--green)"></i></div><span class="sc">5.0</span></td></tr>
+  <tr><td>测试质量</td><td><div class="bar"><i style="width:10%;background:var(--red)"></i></div><span class="sc">0.5</span></td><td><div class="bar"><i style="width:70%;background:var(--blue)"></i></div><span class="sc">3.5</span></td><td><div class="bar"><i style="width:80%;background:var(--green)"></i></div><span class="sc">4.0</span></td></tr>
+  <tr><td>多租户 / SaaS</td><td><div class="bar"><i style="width:0%;background:var(--red)"></i></div><span class="sc">0.0</span></td><td><div class="bar"><i style="width:60%;background:var(--blue)"></i></div><span class="sc">3.0</span></td><td><div class="bar"><i style="width:100%;background:var(--green)"></i></div><span class="sc">5.0</span></td></tr>
+</table>
+
+<h3>2.2 分维度差距详解（按严重度）</h3>
+<table>
+  <tr><th style="width:8%">等级</th><th style="width:20%">维度</th><th>核心缺口</th></tr>
+  <tr><td><span class="tag tA">A 级</span></td><td>架构与技术栈</td><td>JDK8 + Boot 2.2 + Zuul 1.x 已停更；无 Sentinel 限流熔断；大量 README 中间件未落地（ES/HBase/Spark/MongoDB/XXL-JOB/RocketMQ/SkyWalking/Prometheus）。</td></tr>
+  <tr><td><span class="tag tA">A 级</span></td><td>可观测性</td><td>无监控（Prometheus/Grafana）、无日志聚合（ELK）、无链路追踪（SkyWalking）；排障全靠看代码 + 直连库 + 手工造数。</td></tr>
+  <tr><td><span class="tag tA">A 级</span></td><td>高可用/弹性</td><td>网关、auth-server、MySQL、Redis 均为单实例；无集群、无熔断降级、无限流、无灰度发布。</td></tr>
+  <tr><td><span class="tag tB">B 级</span></td><td>安全合规</td><td>FastJSON 1.2.x、Shiro 1.4、Spring 老版本已知 CVE 未处理（当前决策：暂不处理，上线前必须重评）。</td></tr>
+  <tr><td><span class="tag tB">B 级</span></td><td>数据智能/算法</td><td>调度为基础 DFS，缺 VRP 运筹优化、缺 ML 预测（时效/智能定价）；AI 调度是商业 TMS 核心卖点。</td></tr>
+  <tr><td><span class="tag tB">B 级</span></td><td>移动端/IoT</td><td>uni-app 方案刚定，北斗/视频刚立项，均未见实现；轨迹靠 10s 定时 HTTP 上报，非实时流。</td></tr>
+  <tr><td><span class="tag tB">B 级</span></td><td>测试护栏</td><td>几乎无单测/集成测试；<code>params.</code> 字段错配、null 分页 500 等低级 bug 本该被测试拦截。</td></tr>
+  <tr><td><span class="tag tC">C 级</span></td><td>DevOps</td><td>仅 pd-aggregation 有 Gitea CI 雏形；无完整流水线、无制品库、无多环境管理。</td></tr>
+  <tr><td><span class="tag tC">C 级</span></td><td>业务覆盖</td><td>缺财务结算/对账、缺完整计费规则引擎、缺报表/BI/运营驾驶舱、客户门户深度不足。</td></tr>
+</table>
+
+<h2>三、与三类标杆的差距定位</h2>
+<table>
+  <tr><th style="width:26%">参照系</th><th>差距判断</th><th style="width:18%">补齐工程量</th></tr>
+  <tr><td>开源教学项目</td><td>本项目已属<b>中上</b>，业务闭环完整，用作学习/演示完全合格。</td><td>—</td></tr>
+  <tr><td>生产级企业自研 TMS</td><td>架构现代性、可观测性、高可用、安全 4 维差距最大。</td><td>约 2–3 年</td></tr>
+  <tr><td>商业 SaaS TMS（满帮/福佑/G7/易流/唯智/富勒）</td><td><b>代际差距</b>：AI 调度、IoT 实时感知、SaaS 多租户、生态对接（ETC/油卡/保险/支付）。</td><td>代际（需平台+生态）</td></tr>
+</table>
+
+<h2>四、商业化升级总体目标</h2>
+<h3>4.1 愿景与定位</h3>
+<ul>
+  <li><b>愿景</b>：成为面向中小物流企业的"运输管理 + 实时感知 + 智能调度"一体化 SaaS。</li>
+  <li><b>定位</b>：自营/加盟运输管理优先，逐步开放为多租户 SaaS；以"轨迹实时化 + 调度智能化 + 结算自动化"为差异化。</li>
+  <li><b>非目标</b>：不自建 RTMP 音视频集群（用云厂商 SDK）；不盲目堆砌 README 中的重型中间件（按真实需求评估）。</li>
+</ul>
+
+<h3>4.2 目标架构演进</h3>
+<div class="arch">
+  <div class="box"><b>接入层</b>Spring Cloud Gateway（替代 Zuul）+ Sentinel 限流熔断 + OAuth2/JWT</div>
+  <div class="box"><b>应用层</b>OMS/调度/作业/基础/轨迹 微服务集群（多实例 + 注册中心）</div>
+  <div class="box"><b>数据/智能层</b>实时数仓 + 特征平台 + VRP/ML 调度服务</div>
+  <div class="box"><b>可观测层</b>Prometheus + Grafana + ELK + SkyWalking（统一接入）</div>
+</div>
+<div class="arch">
+  <div class="box"><b>移动/IoT</b>uni-app 三端 + 北斗车载终端（JT/T 808）+ 司机视频（云 RTC）</div>
+  <div class="box"><b>平台层</b>多租户隔离（租户/组织/数据行级）+ 计费/结算引擎 + 开放 API</div>
+  <div class="box"><b>基础设施</b>容器化（K8s）+ CI/CD + 多环境 + 配置/密钥管理</div>
+</div>
+
+<h2>五、演进路线图（三期）</h2>
+<div class="grid">
+  <div class="card phase1">
+    <h4>一期 · 地基（0–3 个月）</h4>
+    <div class="when">目标：从"能跑"到"敢上线"</div>
+    <ul>
+      <li><b>安全</b>：修复 FastJSON/Shiro/Spring 已知 CVE</li>
+      <li><b>可观测</b>：接入 Prometheus+Grafana、ELK、SkyWalking</li>
+      <li><b>高可用</b>：网关/鉴权/DB/Redis 去单点，引入熔断限流</li>
+      <li><b>测试</b>：核心链路单测 + 集成测试护栏</li>
+    </ul>
+    <div><span class="pill">退出标准</span>压测达标、监控告警闭环、P0 安全清零</div>
+  </div>
+  <div class="card phase2">
+    <h4>二期 · 产品力（3–9 个月）</h4>
+    <div class="when">目标：从"可用"到"好用"</div>
+    <ul>
+      <li><b>移动端落地</b>：uni-app 三端上线 + 北斗定位 + 司机视频</li>
+      <li><b>调度升级</b>：DFS → VRP 运筹 + ML 时效/定价预测</li>
+      <li><b>财务闭环</b>：计费规则引擎 + 结算/对账</li>
+      <li><b>轨迹实时化</b>：Kafka 流式轨迹 + 实时追踪</li>
+    </ul>
+    <div><span class="pill">退出标准</span>移动端日活验证、调度提效指标、结算对账通过</div>
+  </div>
+  <div class="card phase3">
+    <h4>三期 · 商业化（9–18 个月）</h4>
+    <div class="when">目标：从"单系统"到"平台"</div>
+    <ul>
+      <li><b>多租户 SaaS</b>：租户隔离 + 计费套餐 + 自助开通</li>
+      <li><b>BI 驾驶舱</b>：运营/财务/时效多维分析</li>
+      <li><b>生态对接</b>：ETC/油卡/保险/支付/开放 API</li>
+      <li><b>智能化运营</b>：异常预警、智能客服、数据增值</li>
+    </ul>
+    <div><span class="pill">退出标准</span>多租户生产验证、首批付费客户、生态接入可用</div>
+  </div>
+</div>
+
+<h2>六、组织与资源</h2>
+<table>
+  <tr><th style="width:22%">角色</th><th style="width:14%">建议规模</th><th>职责</th></tr>
+  <tr><td>产品经理</td><td>1–2</td><td>路线图、需求优先级、商业化设计</td></tr>
+  <tr><td>后端（Java）</td><td>3–5</td><td>微服务、调度算法、结算引擎</td></tr>
+  <tr><td>前端 / 移动</td><td>2–3</td><td>管理端 + uni-app 三端 + 可视化</td></tr>
+  <tr><td>数据 / 算法</td><td>1–2</td><td>VRP/ML、实时数仓、BI</td></tr>
+  <tr><td>SRE / 运维</td><td>1–2</td><td>K8s、可观测、CI/CD、安全</td></tr>
+  <tr><td>测试</td><td>1–2</td><td>自动化测试、质量护栏</td></tr>
+</table>
+
+<h2>七、风险与依赖</h2>
+<table class="risk">
+  <tr><th style="width:20%">风险</th><th style="width:10%">等级</th><th>缓解</th></tr>
+  <tr><td>技术栈锁定（JDK8/停更组件）</td><td><span class="tag tA">高</span></td><td>制定渐进式升级计划，先网关/安全，再框架</td></tr>
+  <tr><td>安全漏洞暴露</td><td><span class="tag tA">高</span></td><td>上线前强制安全重评与修复</td></tr>
+  <tr><td>无测试护栏致回归风险</td><td><span class="tag tB">中</span></td><td>一期即补核心链路测试</td></tr>
+  <tr><td>算法能力短板</td><td><span class="tag tB">中</span></td><td>引入数据/算法专职，或先接第三方调度</td></tr>
+  <tr><td>商业化资源不足</td><td><span class="tag tB">中</span></td><td>分期投入，先做自营验证 PMF 再扩 SaaS</td></tr>
+</table>
+
+<h2>八、关键里程碑</h2>
+<table>
+  <tr><th style="width:18%">时间</th><th>里程碑</th></tr>
+  <tr><td>M1（第 1 月）</td><td>安全修复完成 + 可观测三件套上线 + 核心链路测试护栏</td></tr>
+  <tr><td>M2（第 3 月）</td><td>高可用改造完成、压测达标、具备内测上线条件</td></tr>
+  <tr><td>M3（第 6 月）</td><td>移动端三端 + 北斗/视频上线、调度算法 V1 落地</td></tr>
+  <tr><td>M4（第 9 月）</td><td>财务结算闭环、轨迹实时化、产品力验证</td></tr>
+  <tr><td>M5（第 12 月）</td><td>多租户 SaaS 架构就绪、首批试点租户</td></tr>
+  <tr><td>M6（第 18 月）</td><td>生态对接 + BI 驾驶舱、商业化规模推广</td></tr>
+</table>
+
+<h2>九、下一步（30 天行动）</h2>
+<ol>
+  <li><b>决策</b>：确认产品定位（自用 vs SaaS），据此裁剪路线图。</li>
+  <li><b>安全</b>：对 FastJSON/Shiro/Spring 做依赖清点，排修复计划。</li>
+  <li><b>可观测</b>：搭建 Prometheus+Grafana 最小可用监控，先覆盖网关与 DB。</li>
+  <li><b>测试</b>：为核心聚合查询（司机/快递员/管理端）补集成测试，固化近期修复。</li>
+  <li><b>移动端</b>：启动 uni-app 工程骨架，先打通司机端登录+轨迹上报。</li>
+</ol>
+
+<footer>
+  本文档基于 pinda-tms 当前实测状态（192.168.20.130 联调环境）与行业标杆对比生成，评分含主观判断，仅供内部决策参考。路线图为建议性规划，实际执行需结合资源与业务优先级动态调整。
+</footer>
+
+</div>
+</body>
+</html>

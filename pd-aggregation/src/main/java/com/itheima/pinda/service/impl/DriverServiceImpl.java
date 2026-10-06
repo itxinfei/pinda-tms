@@ -18,16 +18,16 @@ public class DriverServiceImpl implements DriverService {
 
     @Override
     public PageResponse<DriverJobDTO> findByPage(AppDriverQueryDTO dto) {
-        IPage<DriverJobDTO> iPage = new Page();
-        iPage.setSize(dto.getPageSize());
-        iPage.setCurrent(dto.getPage());
+        int page = (dto.getPage() == null || dto.getPage() < 1) ? 1 : dto.getPage();
+        int pageSize = (dto.getPageSize() == null || dto.getPageSize() < 1) ? 10 : dto.getPageSize();
+        IPage<DriverJobDTO> iPage = new Page<>(page, pageSize);
         driverMapper.findByPage(iPage, dto);
 
         return PageResponse.<DriverJobDTO>builder()
                 .counts(iPage.getTotal())
                 .pages(iPage.getPages())
-                .pagesize(dto.getPageSize())
-                .page(dto.getPage())
+                .pagesize(pageSize)
+                .page(page)
                 .items(iPage.getRecords())
                 .build();
     }
