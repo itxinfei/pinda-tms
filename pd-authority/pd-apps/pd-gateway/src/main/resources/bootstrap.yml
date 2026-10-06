@@ -34,4 +34,11 @@ logging:
   level:
     root: debug
 
+# j2cache L2 显式兜底(与pd-auth-server一致): 容器内127.0.0.1是容器自身,
+# 中间件均在宿主192.168.20.130, host来自compose注入的环境变量REDIS_HOST
+j2cache:
+  lettuce:
+    mode: single
+    hosts: ${REDIS_HOST:127.0.0.1}:${REDIS_PORT:6379}
+
 
