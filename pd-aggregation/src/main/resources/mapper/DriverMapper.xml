@@ -12,14 +12,11 @@
         LEFT JOIN pd_auth_user au ON dj.driver_id = au.id
         LEFT JOIN pd_task_transport tt ON dj.task_transport_id = tt.id
         WHERE 1=1
-        <if test="params.driverId != null and params.driverId != ''">
-            AND dj.driver_id = #{params.driverId}
+        <if test="driverId != null and driverId != ''">
+            AND dj.driver_id = #{driverId}
         </if>
-        <if test="params.status != null">
-            AND dj.status = #{params.status}
-        </if>
-        <if test="params.taskTransportId != null and params.taskTransportId != ''">
-            AND dj.task_transport_id = #{params.taskTransportId}
+        <if test="status != null">
+            AND dj.status = #{status}
         </if>
         ORDER BY dj.create_time DESC
     </select>

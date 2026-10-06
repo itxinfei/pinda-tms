@@ -24,60 +24,60 @@ public class WebManagerServiceImpl implements WebManagerService {
 
     @Override
     public PageResponse<DriverJobDTO> findDriverJobByPage(DriverJobQueryDTO dto) {
-        IPage<DriverJobDTO> iPage = new Page();
-        iPage.setSize(dto.getPageSize());
-        iPage.setCurrent(dto.getPage());
+        int page = (dto.getPage() == null || dto.getPage() < 1) ? 1 : dto.getPage();
+        int pageSize = (dto.getPageSize() == null || dto.getPageSize() < 1) ? 10 : dto.getPageSize();
+        IPage<DriverJobDTO> iPage = new Page<>(page, pageSize);
         webManagerMapper.findDriverJobByPage(iPage, dto);
         return PageResponse.<DriverJobDTO>builder()
                 .counts(iPage.getTotal())
                 .pages(iPage.getPages())
-                .pagesize(dto.getPageSize())
-                .page(dto.getPage())
+                .pagesize(pageSize)
+                .page(page)
                 .items(iPage.getRecords())
                 .build();
     }
 
     @Override
     public PageResponse<TaskPickupDispatchDTO> findTaskPickupDispatchJobByPage(TaskPickupDispatchQueryDTO dto) {
-        IPage<TaskPickupDispatchDTO> iPage = new Page();
-        iPage.setSize(dto.getPageSize());
-        iPage.setCurrent(dto.getPage());
+        int page = (dto.getPage() == null || dto.getPage() < 1) ? 1 : dto.getPage();
+        int pageSize = (dto.getPageSize() == null || dto.getPageSize() < 1) ? 10 : dto.getPageSize();
+        IPage<TaskPickupDispatchDTO> iPage = new Page<>(page, pageSize);
         webManagerMapper.findTaskPickupDispatchJobByPage(iPage, dto);
         return PageResponse.<TaskPickupDispatchDTO>builder()
                 .counts(iPage.getTotal())
                 .pages(iPage.getPages())
-                .pagesize(dto.getPageSize())
-                .page(dto.getPage())
+                .pagesize(pageSize)
+                .page(page)
                 .items(iPage.getRecords())
                 .build();
     }
 
     @Override
     public PageResponse<TransportOrderDTO> findTransportOrderByPage(TransportOrderQueryDTO dto) {
-        IPage<TransportOrderDTO> iPage = new Page();
-        iPage.setSize(dto.getPageSize());
-        iPage.setCurrent(dto.getPage());
+        int page = (dto.getPage() == null || dto.getPage() < 1) ? 1 : dto.getPage();
+        int pageSize = (dto.getPageSize() == null || dto.getPageSize() < 1) ? 10 : dto.getPageSize();
+        IPage<TransportOrderDTO> iPage = new Page<>(page, pageSize);
         webManagerMapper.findTransportOrderByPage(iPage, dto);
         return PageResponse.<TransportOrderDTO>builder()
                 .counts(iPage.getTotal())
                 .pages(iPage.getPages())
-                .pagesize(dto.getPageSize())
-                .page(dto.getPage())
+                .pagesize(pageSize)
+                .page(page)
                 .items(iPage.getRecords())
                 .build();
     }
 
     @Override
     public PageResponse<TaskTransportDTO> findTaskTransportByPage(TaskTransportQueryDTO dto) {
-        IPage<TaskTransportDTO> iPage = new Page();
-        iPage.setSize(dto.getPageSize());
-        iPage.setCurrent(dto.getPage());
+        int page = (dto.getPage() == null || dto.getPage() < 1) ? 1 : dto.getPage();
+        int pageSize = (dto.getPageSize() == null || dto.getPageSize() < 1) ? 10 : dto.getPageSize();
+        IPage<TaskTransportDTO> iPage = new Page<>(page, pageSize);
         webManagerMapper.findTaskTransportByPage(iPage, dto);
         return PageResponse.<TaskTransportDTO>builder()
                 .counts(iPage.getTotal())
                 .pages(iPage.getPages())
-                .pagesize(dto.getPageSize())
-                .page(dto.getPage())
+                .pagesize(pageSize)
+                .page(page)
                 .items(iPage.getRecords())
                 .build();
     }
