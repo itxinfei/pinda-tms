@@ -41,8 +41,8 @@ services:
     ports: ["8760:8760"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
-      # CORS 白名单: 允许局域网前端 192.168.20.130:8080 跨端口访问(默认仅 localhost)
-      JAVA_OPTS: "-Xms128m -Xmx256m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -Dcors.allowed.origins=http://192.168.20.130:8080,http://localhost:8080,http://localhost:3000"
+      # CORS 白名单: 覆盖默认(localhost), 允许局域网前端 80/8080 端口访问(无端口=80页面)
+      JAVA_OPTS: "-Xms128m -Xmx256m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -Dcors.allowed.origins=http://192.168.20.130,http://192.168.20.130:8080,http://localhost:8080,http://localhost:3000"
 
   pd-auth-server:
     image: pinda/pd-auth-server:${TAG:-latest}

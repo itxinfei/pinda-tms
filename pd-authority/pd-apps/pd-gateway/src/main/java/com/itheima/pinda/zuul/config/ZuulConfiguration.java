@@ -23,7 +23,7 @@ public class ZuulConfiguration extends BaseConfig {
      * 可通过系统属性 -Dcors.allowed.origins=https://xxx.com,https://yyy.com 覆盖
      */
     private static final List<String> ALLOWED_ORIGINS = Arrays.asList(
-            System.getProperty("cors.allowed.origins", "http://192.168.20.130:8080,http://localhost:8080,http://localhost:3000").split(",")
+            System.getProperty("cors.allowed.origins", "http://192.168.20.130,http://192.168.20.130:8080,http://localhost:8080,http://localhost:3000").split(",")
     );
 
     @Bean
