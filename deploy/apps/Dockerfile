@@ -10,7 +10,9 @@ FROM openjdk:8-jre-slim
 ARG JAR_FILE
 
 # 字体库: 验证码(Java2D/SunFontManager)与图表生成必需, 缺失会导致NoClassDefFoundError
-RUN apt-get update \
+# Debian 11 已EOL, deb.debian.org security源404, 切换 archive.debian.org 归档源
+RUN sed -i 's|deb.debian.org/debian-security|archive.debian.org/debian-security|g; s|deb.debian.org/debian |archive.debian.org/debian |g' /etc/apt/sources.list \
+    && apt-get update \
     && apt-get install -y --no-install-recommends fontconfig libfreetype6 \
     && rm -rf /var/lib/apt/lists/*
 
