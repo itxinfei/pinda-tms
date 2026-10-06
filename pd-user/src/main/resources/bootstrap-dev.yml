@@ -72,7 +72,8 @@ j2cache:
     config_section: lettuce
   sync_ttl_to_redis: true
   default_cache_null_object: false
-  serialization: fst  #序列化方式：fst、kyro、Java
+  # 2026-10-06 修复：广播命令必须用 json 解析（fst 解析 JSON 命令会 NPE，详见 prod）
+  serialization: json  #序列化方式：fst、kyro、Java、json
 caffeine:
   properties: /caffeine.properties   # 这个配置文件需要放在项目中
 lettuce:

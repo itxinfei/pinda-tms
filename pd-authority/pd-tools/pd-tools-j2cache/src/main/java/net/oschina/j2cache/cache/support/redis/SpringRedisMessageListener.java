@@ -2,9 +2,10 @@ package net.oschina.j2cache.cache.support.redis;
 
 import net.oschina.j2cache.Command;
 import net.oschina.j2cache.cluster.ClusterPolicy;
-import net.oschina.j2cache.util.SerializationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.nio.charset.StandardCharsets;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
 
@@ -38,7 +39,11 @@ public class SpringRedisMessageListener implements MessageListener {
             return;
         }
         try {
-            Command cmd = Command.parse(String.valueOf(SerializationUtils.deserialize(messageBody)));
+            // 2026-10-06 修复：发送端 SpringRedisPubSubPolicy.publish 固定用 cmd.json()
+            // 广播 UTF-8 JSON 字符串，接收端必须与之对称地直接按 JSON 解析。原实现先经
+            // 配置的 serializer 反序列化纯 JSON 字节——FST 抛 NPE、JDK 抛流损坏，导致
+            // j2cache 集群命令(evict/clear)全部接收失败、跨节点 L1 缓存无法同步。
+            Command cmd = Command.parse(new String(messageBody, StandardCharsets.UTF_8));
             if (cmd == null || isLocalCommand(cmd))
                 return;
 

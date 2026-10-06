@@ -108,6 +108,13 @@ const whiteList = ['/login']
 
 let asyncRouter
 
+// 守卫诊断: 生产构建会删除console.log, 改用全局数组记录
+function glog (msg) {
+  try {
+    (window.__guardLog = window.__guardLog || []).push(String(msg))
+  } catch (e) {}
+}
+
 // 导航守卫，渲染动态路由
 router.beforeEach((to, from, next) => {
   NProgress.start()
@@ -117,33 +124,33 @@ router.beforeEach((to, from, next) => {
     const token = db.get('TOKEN')
     const user = db.get('USER')
     const userRouter = get('USER_ROUTER')
-    console.log('[GUARD] path=' + to.path + ' token=' + (token && token.length ? 'Y' : 'N') + ' user=' + (user ? 'Y' : 'N') + ' asyncRouter=' + (asyncRouter ? 'Y' : 'N') + ' userRouter=' + (userRouter ? userRouter.length : 'null'))
+    glog('path=' + to.path + ' token=' + (token && token.length ? 'Y' : 'N') + ' user=' + (user ? 'Y' : 'N') + ' asyncRouter=' + (asyncRouter ? 'Y' : 'N') + ' userRouter=' + (userRouter ? userRouter.length : 'null'))
     if (token && token.length && user) {
       if (!asyncRouter) {
         // 2026-10-06 修复: 空数组[]也是truthy, 之前菜单接口返回空时把[]缓存进USER_ROUTER,
         // 导致后端修好后刷新仍用空缓存不重新拉菜单(侧边栏永远为空)。改为空数组也重新拉取。
         if (!userRouter || userRouter.length === 0) {
-          console.log('[GUARD] -> getRouter()')
+          glog('-> getRouter()')
           loginApi.getRouter({})
             .then((response) => {
               const res = response.data
-              console.log('[GUARD] getRouter OK code=' + res.code + ' menuLen=' + ((res.data || []).length))
+              glog('getRouter OK code=' + res.code + ' menuLen=' + ((res.data || []).length))
               asyncRouter = res.data
               store.commit('account/setRoutes', asyncRouter)
               save('USER_ROUTER', asyncRouter)
               go(to, next)
             })
             .catch((err) => {
-              console.log('[GUARD] getRouter FAIL ' + (err && err.message) + ' status=' + (err && err.response && err.response.status))
+              glog('getRouter FAIL ' + (err && err.message) + ' status=' + (err && err.response && err.response.status))
               next('/login')
             })
         } else {
-          console.log('[GUARD] cached userRouter len=' + userRouter.length)
+          glog('cached userRouter len=' + userRouter.length)
           asyncRouter = userRouter
           go(to, next)
         }
       } else {
-        console.log('[GUARD] asyncRouter already set -> next')
+        glog('asyncRouter already set -> next')
         next()
       }
     } else {

@@ -72,7 +72,11 @@ j2cache:
     config_section: lettuce
   sync_ttl_to_redis: true
   default_cache_null_object: false
-  serialization: fst  #序列化方式：fst、kyro、Java
+  # 2026-10-06 修复：广播命令必须用 json 解析。发送端 SpringRedisPubSubPolicy 固定发
+  # cmd.json()，接收端 SpringRedisMessageListener 用此处配置的序列化器解析——fst 解析
+  # JSON 会抛 NPE 导致集群命令(evict/clear)全部接收失败。已实测 fastjson 1.2.47 对
+  # AddressBook 的 LocalDateTime 可正确往返，故统一为 json。
+  serialization: json  #序列化方式：fst、kyro、Java、json
 caffeine:
   properties: /caffeine.properties   # 这个配置文件需要放在项目中
 lettuce:
