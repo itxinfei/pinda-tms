@@ -27,6 +27,23 @@ hs_err_pid*
 */target/
 target/
 
+# AI 助手/工具私域目录（含 memory、临时脚本、配置备份，禁止提交）
+.workbuddy/
+.codebuddy/
+
+# 日志与运行时输出
+logs/
+log.path_IS_UNDEFINED/
+*.log
+
+# 前端依赖与构建产物
+node_modules/
+dist/
+
+# 操作系统垃圾文件
+.DS_Store
+Thumbs.db
+
 # IDE 配置
 *.iml
 .idea/
