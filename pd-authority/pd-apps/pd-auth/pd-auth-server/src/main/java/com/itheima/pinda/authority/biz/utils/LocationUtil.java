@@ -17,7 +17,8 @@ import java.util.Map;
 @Slf4j
 @Component
 public class LocationUtil {
-    @Value("${location.ak}")
+    // location.ak 为百度地图key, 开发/测试环境可不配置(默认空, 代码已处理空值不调用地图API)
+    @Value("${location.ak:}")
     private String ak;
     public static final String KEY_LAT = "lat";
     public static final String KEY_LNG = "lng";
