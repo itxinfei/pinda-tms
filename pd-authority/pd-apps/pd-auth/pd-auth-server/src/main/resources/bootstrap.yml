@@ -32,6 +32,13 @@ spring:
     proxy-target-class: true
     auto: true
 
+# j2cache L2 显式注入(容器化后nacos的j2cache.*前缀key无法被SpringJ2CacheConfigUtil扁平匹配,
+# 这里用bootstrap.yml本地配置兜底, host来自环境变量REDIS_HOST)
+j2cache:
+  lettuce:
+    mode: single
+    hosts: ${REDIS_HOST:127.0.0.1}:${REDIS_PORT:6379}
+
 # 只能配置在bootstrap.yml ，否则会生成 log.path_IS_UNDEFINED 文件夹
 # window会自动在 代码所在盘 根目录下自动创建文件夹，  如： D:/data/projects/logs
 logging:
