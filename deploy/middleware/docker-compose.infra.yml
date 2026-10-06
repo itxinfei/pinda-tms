@@ -1,0 +1,196 @@
+# ============================================
+# 品达TMS 中间件编排：MySQL / Redis / Nacos / Zookeeper / Kafka / RabbitMQ
+#
+# 本文件按 192.168.20.130 上**实际运行**的容器参数还原（docker inspect），
+# 此前这些容器由零散 docker run 创建、仓库中无可复现编排，且 docs/部署文档.md 的
+# 镜像选择已与实际漂移（zookeeper/kafka 镜像、seata 运行方式均不一致）。
+#
+# 首次启用必须先迁移数据，否则容器内已有状态会随重建丢失：
+#   zookeeper/kafka/rabbitmq 原本没有任何挂载卷，nacos 只挂了 logs、
+#   内嵌 Derby 配置库留在容器可写层。见本目录 migrate-data.sh。
+#
+# 启动（迁移完成后）：
+#   docker compose -f deploy/middleware/docker-compose.infra.yml up -d
+# ============================================
+name: pinda-infra
+
+x-ulimits: &ulimits
+  ulimits:
+    nofile:
+      soft: 65535
+      hard: 65535
+
+services:
+  mysql57:
+    image: mysql:5.7
+    container_name: mysql57
+    restart: unless-stopped
+    <<: *ulimits
+    ports:
+      - "3306:3306"
+    volumes:
+      - /data/mysql:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: "123456"
+    # 缓冲池 128M(出厂默认) -> 1G：/data/mysql 数据 231M，原先大部分查询落盘，
+    # 与本机单块接近饱和的虚拟盘互相放大；max_connections 151 -> 500，
+    # 覆盖 8 个服务各自 Druid max-active=50（合计 400）的最坏情况。
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_general_ci
+      - --innodb-buffer-pool-size=1G
+      - --max-connections=500
+    mem_limit: 2g
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  redis:
+    image: redis:5
+    container_name: redis
+    restart: unless-stopped
+    <<: *ulimits
+    ports:
+      - "6379:6379"
+    volumes:
+      - /data/redis:/data
+    # volatile-lru 而非 allkeys-lru：resource 这个 Hash 无 TTL，存的是网关鉴权
+    # 用的整张权限资源表，被淘汰会直接打穿权限体系。
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --maxmemory
+      - 1gb
+      - --maxmemory-policy
+      - volatile-lru
+    mem_limit: 1536m
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  nacos:
+    image: nacos/nacos-server:1.4.1
+    container_name: nacos
+    restart: unless-stopped
+    <<: *ulimits
+    ports:
+      - "8848:8848"
+    volumes:
+      - /data/nacos:/home/nacos/logs
+      # 原本只有 logs 被挂出，35 条微服务配置存在容器可写层的内嵌 Derby 里，
+      # docker rm nacos 即永久消失。
+      - /data/nacos-data:/home/nacos/data
+    environment:
+      MODE: standalone
+      JVM_XMS: 256m
+      JVM_XMX: 256m
+      JVM_XMN: 128m
+      JVM_MS: 128m
+      JVM_MMS: 320m
+      PREFER_HOST_MODE: ip
+      FUNCTION_MODE: all
+      TOMCAT_ACCESSLOG_ENABLED: "false"
+    mem_limit: 1g
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://127.0.0.1:8848/nacos/v1/ns/operator/metrics || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  zookeeper:
+    image: zookeeper:3.5
+    container_name: zookeeper
+    restart: unless-stopped
+    <<: *ulimits
+    ports:
+      - "2181:2181"
+    volumes:
+      - /data/zookeeper/data:/data
+      - /data/zookeeper/datalog:/datalog
+    environment:
+      ZOO_STANDALONE_ENABLED: "true"
+      ZOO_TICK_TIME: 2000
+      ZOO_INIT_LIMIT: 5
+      ZOO_SYNC_LIMIT: 2
+      ZOO_MAX_CLIENT_CNXNS: 60
+      # PURGEINTERVAL 语义是“每 N 个快照触发一次清理”，0 = 永不清理。
+      # 实机原值为 0，已导致 /datalog 累积 193M 事务日志只增不删。
+      ZOO_AUTOPURGE_PURGEINTERVAL: 1
+      ZOO_AUTOPURGE_SNAPRETAINCOUNT: 3
+      ZOO_ADMINSERVER_ENABLED: "true"
+    command: ["zkServer.sh", "start-foreground"]
+    mem_limit: 768m
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 2181 || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: bitnami/kafka:2.6.0
+    container_name: kafka
+    restart: unless-stopped
+    <<: *ulimits
+    ports:
+      - "9092:9092"
+    volumes:
+      - /data/kafka:/bitnami/kafka
+    environment:
+      KAFKA_CFG_ZOOKEEPER_CONNECT: 192.168.20.130:2181
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://192.168.20.130:9092
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+      # bitnami 默认堆 1024m，配上 1g 容器上限会在堆写满时触发 cgroup OOM；
+      # 当前实测 RSS 407M，512m 足够。
+      KAFKA_HEAP_OPTS: "-Xms256m -Xmx512m"
+    command: ["/opt/bitnami/scripts/kafka/run.sh"]
+    mem_limit: 1g
+    depends_on:
+      - zookeeper
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/9092' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  rabbitmq:
+    image: rabbitmq:3.8-management
+    container_name: rabbitmq
+    # Beam 的节点名由 hostname 推导(rabbit@<hostname>)。钉死它，重建后节点名才稳定。
+    hostname: rabbitmq
+    restart: unless-stopped
+    <<: *ulimits
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      # 挂整个 /var/lib/rabbitmq 而不是只挂 mnesia：.erlang.cookie 在父目录里，
+      # 只挂 mnesia 会让重建后的节点拿到新 cookie、以新节点身份重新加入。
+      - /data/rabbitmq:/var/lib/rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: pinda
+      RABBITMQ_DEFAULT_PASS: pinda123
+      RABBITMQ_LOGS: "-"
+      # 不设的话 Beam 按宿主机 15G 的一半(约 7.7G)算高水位，节点会一路涨到
+      # 把整机内存挤爆；这里按容器上限的 80% 显式固定。
+      RABBITMQ_VM_MEMORY_HIGH_WATERMARK: 800M
+    # 注意：现有 mnesia 目录名是 rabbit@<旧容器ID>，钉住 hostname 后新节点名为
+    # rabbit@rabbitmq，会另起一份空库；旧目录原样留在 /data/rabbitmq/mnesia 下不删，
+    # 需要接回时按官方 node_name 改名流程处理即可。当前 5 个队列消息数均为 0，
+    # 且 Spring AMQP 连接时会重新声明队列/交换机，因此新节点不丢业务拓扑。
+    command: ["rabbitmq-server"]
+    mem_limit: 1g
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping"]
+      interval: 30s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
