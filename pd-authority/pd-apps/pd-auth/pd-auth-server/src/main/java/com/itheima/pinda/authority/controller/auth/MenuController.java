@@ -3,10 +3,10 @@ package com.itheima.pinda.authority.controller.auth;
 import java.util.ArrayList;
 import java.util.List;
 
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.itheima.pinda.auth.client.properties.AuthClientProperties;
 import com.itheima.pinda.auth.server.utils.JwtTokenServerUtils;
-import com.itheima.pinda.auth.utils.JwtUserInfo;
 import com.itheima.pinda.authority.dto.auth.MenuSaveDTO;
 import com.itheima.pinda.authority.dto.auth.MenuTreeDTO;
 import com.itheima.pinda.authority.dto.auth.MenuUpdateDTO;
@@ -17,6 +17,7 @@ import com.itheima.pinda.authority.biz.service.auth.MenuService;
 import com.itheima.pinda.base.BaseController;
 import com.itheima.pinda.base.R;
 import com.itheima.pinda.base.entity.SuperEntity;
+import com.itheima.pinda.context.BaseContextConstants;
 import com.itheima.pinda.database.mybatis.conditions.Wraps;
 import com.itheima.pinda.database.mybatis.conditions.query.LbqWrapper;
 import com.itheima.pinda.dozer.DozerUtils;
@@ -131,9 +132,10 @@ public class MenuController extends BaseController {
     @GetMapping
     @Deprecated
     public R<List<MenuTreeDTO>> myMenus(@RequestParam(value = "group", required = false) String group, @RequestParam(value = "userId", required = false) String userId) {
-      /*  if (userId == null || userId <= 0) {
-            userId = getUserId();
-        }*/
+        // 2026-10-06 同 myRouter：恢复从上下文取 userId（userId 为 String，用 isBlank 判断）
+        if (StrUtil.isBlank(userId)) {
+            userId = String.valueOf(getUserId());
+        }
         List<Menu> list = menuService.findVisibleMenu(group, userId);
         List<MenuTreeDTO> treeList = dozer.mapList(list, MenuTreeDTO.class);
 
@@ -175,14 +177,18 @@ public class MenuController extends BaseController {
     @GetMapping("/router")
     public R<List<VueRouter>> myRouter(@RequestParam(value = "group", required = false) String group, @RequestParam(value = "userId", required = false) String userId, HttpServletRequest request) {
         log.info("查询用户可用的所有菜单路由树");
-      /*  if (userId == null || userId <= 0) {
-            userId = getUserId();
+        // 2026-10-06 修复：原代码取 userId 的逻辑被整段注释，导致前端不传 userId 时
+        // 一直以 null 查询（缓存 key 变成 "user_menu:null"），进而查不到任何菜单、登录后菜单为空。
+        // 说明：网关 TokenContextFilter 会向下游注入 userid 头，此处优先从请求头直接取
+        //（ContextHandlerInterceptor 依赖 springfox 的 PropertySourcedRequestMappingHandlerMapping,
+        // 实测部分容器环境未注册到 ThreadLocal, 导致 getUserId() 返回 0 查询空）。
+        // 注意：userId 是 String，不能用 "<= 0" 判断（会抛 NumberFormatException），须用 isBlank。
+        if (StrUtil.isBlank(userId)) {
+            userId = request.getHeader(BaseContextConstants.JWT_KEY_USER_ID);
         }
-        if (userId == 0) {
-            String userToken = request.getHeader("token");
-            JwtUserInfo userInfo = jwtTokenServerUtils.getUserInfo(userToken);
-            userId = userInfo.getUserId();
-        }*/
+        if (StrUtil.isBlank(userId)) {
+            userId = String.valueOf(getUserId());
+        }
         List<Menu> list = menuService.findVisibleMenu(group, userId);
         log.info("查询用户可用的所有菜单路由树:{}", list);
         List<VueRouter> treeList = dozer.mapList(list, VueRouter.class);

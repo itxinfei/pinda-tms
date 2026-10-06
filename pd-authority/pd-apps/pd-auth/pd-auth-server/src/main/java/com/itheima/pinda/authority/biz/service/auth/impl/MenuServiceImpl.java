@@ -64,7 +64,10 @@ public class MenuServiceImpl extends ServiceImpl<MenuMapper, Menu> implements Me
             return Collections.emptyList();
         }
 
-        List<Long> list = (List<Long>) cacheObject.getValue();
+        // j2cache json序列化会把小数值Long反序列化为Integer, 泛型擦除后强转(List<Long>)不报错,
+        // 但流处理时 Integer->Long 参数转换抛 ClassCastException, 此处统一转 Long
+        List<Long> list = ((List<?>) cacheObject.getValue()).stream()
+                .map(n -> ((Number) n).longValue()).collect(Collectors.toList());
 
         //使用 this::getByIdWithCache 会导致无法读取缓存
 //        List<Menu> menuList = list.stream().map(this::getByIdWithCache).collect(Collectors.toList());
