@@ -117,24 +117,33 @@ router.beforeEach((to, from, next) => {
     const token = db.get('TOKEN')
     const user = db.get('USER')
     const userRouter = get('USER_ROUTER')
-    if (token.length && user) {
+    console.log('[GUARD] path=' + to.path + ' token=' + (token && token.length ? 'Y' : 'N') + ' user=' + (user ? 'Y' : 'N') + ' asyncRouter=' + (asyncRouter ? 'Y' : 'N') + ' userRouter=' + (userRouter ? userRouter.length : 'null'))
+    if (token && token.length && user) {
       if (!asyncRouter) {
         // 2026-10-06 修复: 空数组[]也是truthy, 之前菜单接口返回空时把[]缓存进USER_ROUTER,
         // 导致后端修好后刷新仍用空缓存不重新拉菜单(侧边栏永远为空)。改为空数组也重新拉取。
         if (!userRouter || userRouter.length === 0) {
+          console.log('[GUARD] -> getRouter()')
           loginApi.getRouter({})
             .then((response) => {
               const res = response.data
+              console.log('[GUARD] getRouter OK code=' + res.code + ' menuLen=' + ((res.data || []).length))
               asyncRouter = res.data
               store.commit('account/setRoutes', asyncRouter)
               save('USER_ROUTER', asyncRouter)
               go(to, next)
             })
+            .catch((err) => {
+              console.log('[GUARD] getRouter FAIL ' + (err && err.message) + ' status=' + (err && err.response && err.response.status))
+              next('/login')
+            })
         } else {
+          console.log('[GUARD] cached userRouter len=' + userRouter.length)
           asyncRouter = userRouter
           go(to, next)
         }
       } else {
+        console.log('[GUARD] asyncRouter already set -> next')
         next()
       }
     } else {
@@ -179,6 +188,13 @@ function filterAsyncRouter(routes) {
   return routes.filter((route) => {
     const component = route.component
     if (component) {
+      // 2026-10-06 修复：后端返回的菜单可能缺 meta。FEBS 侧边栏 SidebarItem 依赖
+      // meta.title 渲染——叶子菜单外层有 v-if="onlyOneChild.meta"，缺 meta 会整个
+      // 不渲染，父级 el-submenu 也因 v-if="item.meta" 没有标题，最终登录成功但左侧
+      // 菜单空白。此处兜底，用菜单 name 作为标题构造 meta。
+      if (!route.meta) {
+        route.meta = { title: route.name, icon: route.icon || '' }
+      }
       if (route.component === 'Layout') {
         route.component = Layout
       } else {
