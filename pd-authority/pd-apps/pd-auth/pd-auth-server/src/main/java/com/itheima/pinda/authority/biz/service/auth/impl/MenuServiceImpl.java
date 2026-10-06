@@ -71,7 +71,10 @@ public class MenuServiceImpl extends ServiceImpl<MenuMapper, Menu> implements Me
 
         //使用 this::getByIdWithCache 会导致无法读取缓存
 //        List<Menu> menuList = list.stream().map(this::getByIdWithCache).collect(Collectors.toList());
-        List<Menu> menuList = list.stream().map(((MenuService) AopContext.currentProxy())::getByIdWithCache).filter(Objects::nonNull).collect(Collectors.toList());
+        // 2026-10-06 修复: getByIdWithCache 走 @Cacheable(MENU) 缓存 Menu 对象, j2cache FST 序列化
+        // 不支持 LocalDateTime("cannot support legacy JDK serialization methods")导致整链崩溃,
+        // 此处改直查库绕开 Menu 对象缓存(仅菜单链路, 其余缓存不受影响)
+        List<Menu> menuList = list.stream().map(id -> baseMapper.selectById(id)).filter(Objects::nonNull).collect(Collectors.toList());
 
         if (StrUtil.isEmpty(group)) {
             return menuList;
