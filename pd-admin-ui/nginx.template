@@ -57,6 +57,17 @@ http {
         location / {
             root   html;
             index  index.html index.htm;
+            # index.html 不缓存: 每次发布后浏览器刷新立即拿到新版本(解决菜单旧JS缓存问题)
+            location = /index.html {
+                add_header Cache-Control "no-cache, no-store, must-revalidate";
+                expires -1;
+            }
+            # 带内容hash的静态资源可永久缓存(文件名变即内容变)
+            location ~* \.(js|css|png|jpg|jpeg|gif|svg|ico|woff2?)$ {
+                add_header Cache-Control "public, max-age=31536000, immutable";
+                expires 1y;
+                try_files $uri =404;
+            }
         }
         location = /50x.html {
             root   html;
