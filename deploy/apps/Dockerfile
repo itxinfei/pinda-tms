@@ -5,15 +5,14 @@
 #     --build-arg JAR_FILE=pd-base/target/pd-base-1.0.0-SNAPSHOT.jar \
 #     -t pinda/pd-base:<tag> .
 # ============================================
-FROM openjdk:8-jre-slim
+# 基础镜像: Temurin 8 JRE(Ubuntu 22.04, 源持续维护; openjdk:8-jre-slim的Debian11已EOL, security源404)
+FROM eclipse-temurin:8-jre-jammy
 
 ARG JAR_FILE
 
 # 字体库: 验证码(Java2D/SunFontManager)与图表生成必需, 缺失会导致NoClassDefFoundError
-# Debian 11 已EOL, deb.debian.org security源404, 切换 archive.debian.org 归档源
-RUN sed -i 's|deb.debian.org/debian-security|archive.debian.org/debian-security|g; s|deb.debian.org/debian |archive.debian.org/debian |g' /etc/apt/sources.list \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends fontconfig libfreetype6 \
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends fontconfig \
     && rm -rf /var/lib/apt/lists/*
 
 # 时区设置（容器默认 UTC，统一为东八区）
