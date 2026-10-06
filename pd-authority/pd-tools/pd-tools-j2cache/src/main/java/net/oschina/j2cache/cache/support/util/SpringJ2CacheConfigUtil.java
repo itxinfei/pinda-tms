@@ -29,18 +29,23 @@ public class SpringJ2CacheConfigUtil {
             if (a instanceof MapPropertySource) {
                 MapPropertySource c = (MapPropertySource) a;
                 c.getSource().forEach((k, v) -> {
-                    String key = k;
+                    String key = String.valueOf(k);
+                    // nacos/spring环境中key带 j2cache. 前缀，去掉后再按section匹配
+                    String rawKey = key;
+                    if (key.startsWith("j2cache.")) {
+                        key = key.substring("j2cache.".length());
+                    }
                     if (key.startsWith(config.getBroadcast() + ".")) {
                         config.getBroadcastProperties().setProperty(key.substring((config.getBroadcast() + ".").length()),
-                                environment.getProperty(key));
+                                environment.getProperty(rawKey));
                     }
                     if (key.startsWith(config.getL1CacheName() + ".")) {
                         config.getL1CacheProperties().setProperty(key.substring((config.getL1CacheName() + ".").length()),
-                                environment.getProperty(key));
+                                environment.getProperty(rawKey));
                     }
                     if (key.startsWith(l2_section + ".")) {
                         config.getL2CacheProperties().setProperty(key.substring((l2_section + ".").length()),
-                                environment.getProperty(key));
+                                environment.getProperty(rawKey));
                     }
                 });
             }
@@ -65,17 +70,22 @@ public class SpringJ2CacheConfigUtil {
 
     private static void setProperty(J2CacheConfig config, StandardEnvironment environment, String l2_section, String[] propertyNames) {
         for (String key : propertyNames) {
+            String rawKey = key;
+            // nacos/spring环境中key带 j2cache. 前缀，去掉后再按section匹配
+            if (key.startsWith("j2cache.")) {
+                key = key.substring("j2cache.".length());
+            }
             if (key.startsWith(config.getBroadcast() + ".")) {
                 config.getBroadcastProperties().setProperty(key.substring((config.getBroadcast() + ".").length()),
-                        environment.getProperty(key));
+                        environment.getProperty(rawKey));
             }
             if (key.startsWith(config.getL1CacheName() + ".")) {
                 config.getL1CacheProperties().setProperty(key.substring((config.getL1CacheName() + ".").length()),
-                        environment.getProperty(key));
+                        environment.getProperty(rawKey));
             }
             if (key.startsWith(l2_section + ".")) {
                 config.getL2CacheProperties().setProperty(key.substring((l2_section + ".").length()),
-                        environment.getProperty(key));
+                        environment.getProperty(rawKey));
             }
         }
 
