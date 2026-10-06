@@ -119,7 +119,9 @@ router.beforeEach((to, from, next) => {
     const userRouter = get('USER_ROUTER')
     if (token.length && user) {
       if (!asyncRouter) {
-        if (!userRouter) {
+        // 2026-10-06 修复: 空数组[]也是truthy, 之前菜单接口返回空时把[]缓存进USER_ROUTER,
+        // 导致后端修好后刷新仍用空缓存不重新拉菜单(侧边栏永远为空)。改为空数组也重新拉取。
+        if (!userRouter || userRouter.length === 0) {
           loginApi.getRouter({})
             .then((response) => {
               const res = response.data
