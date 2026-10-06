@@ -4,6 +4,7 @@ package com.itheima.pinda.authority.controller.common;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.servlet.ServletUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.itheima.pinda.authority.entity.auth.User;
 import com.itheima.pinda.authority.entity.common.LoginLog;
 import com.itheima.pinda.authority.biz.service.auth.UserService;
 import com.itheima.pinda.authority.biz.service.common.LoginLogService;
@@ -22,7 +23,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.constraints.NotBlank;
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -43,6 +46,30 @@ public class LoginLogController extends BaseController {
     private LoginLogService loginLogService;
     @Autowired
     private UserService userService;
+
+    /**
+     * 登录成功后前端打点记录登录日志
+     * 2026-10-06 补: 前端 Login.js 调 GET /authority/loginLog/anno/login/{account}?description=xxx,
+     * 后端原无此接口导致 404 控制台报错, 此处补齐(仅插入一条日志, 不影响登录主流程)
+     */
+    @ApiOperation(value = "记录登录日志", notes = "记录登录日志(登录成功后前端打点)")
+    @GetMapping("/anno/login/{account}")
+    public R<Boolean> saveLoginLog(@PathVariable String account,
+                                   @RequestParam(value = "description", required = false) String description,
+                                   HttpServletRequest request) {
+        LoginLog loginLog = new LoginLog();
+        loginLog.setAccount(account);
+        loginLog.setDescription(description);
+        loginLog.setLoginDate(LocalDate.now());
+        loginLog.setRequestIp(ServletUtil.getClientIP(request));
+        User user = userService.getOne(Wraps.<User>lbQ().eq(User::getAccount, account));
+        if (user != null) {
+            loginLog.setUserId(user.getId());
+            loginLog.setUserName(user.getName());
+        }
+        loginLogService.save(loginLog);
+        return success(true);
+    }
 
     /**
      * 分页查询登录日志
