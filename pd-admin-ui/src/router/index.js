@@ -6,6 +6,7 @@ import store from '@/store/index'
 import loginApi from '@/api/Login.js'
 import NProgress from 'nprogress'
 import 'nprogress/nprogress.css'
+import { staticMenu } from './menu'
 Vue.use(Router)
 
 const constRouter = [
@@ -127,28 +128,13 @@ router.beforeEach((to, from, next) => {
     glog('path=' + to.path + ' token=' + (token && token.length ? 'Y' : 'N') + ' user=' + (user ? 'Y' : 'N') + ' asyncRouter=' + (asyncRouter ? 'Y' : 'N') + ' userRouter=' + (userRouter ? userRouter.length : 'null'))
     if (token && token.length && user) {
       if (!asyncRouter) {
-        // 2026-10-06 修复: 空数组[]也是truthy, 之前菜单接口返回空时把[]缓存进USER_ROUTER,
-        // 导致后端修好后刷新仍用空缓存不重新拉菜单(侧边栏永远为空)。改为空数组也重新拉取。
-        if (!userRouter || userRouter.length === 0) {
-          glog('-> getRouter()')
-          loginApi.getRouter({})
-            .then((response) => {
-              const res = response.data
-              glog('getRouter OK code=' + res.code + ' menuLen=' + ((res.data || []).length))
-              asyncRouter = res.data
-              store.commit('account/setRoutes', asyncRouter)
-              save('USER_ROUTER', asyncRouter)
-              go(to, next)
-            })
-            .catch((err) => {
-              glog('getRouter FAIL ' + (err && err.message) + ' status=' + (err && err.response && err.response.status))
-              next('/login')
-            })
-        } else {
-          glog('cached userRouter len=' + userRouter.length)
-          asyncRouter = userRouter
-          go(to, next)
-        }
+        // 2026-10-06 重构: 静态菜单直出。不再依赖后端 menu/router 接口 + localStorage 缓存,
+        // 彻底解决浏览器缓存旧JS/空缓存/接口抖动导致的侧边栏空白。开发测试环境固定全量菜单。
+        glog('static menu render len=' + staticMenu.length)
+        asyncRouter = staticMenu
+        store.commit('account/setRoutes', asyncRouter)
+        save('USER_ROUTER', asyncRouter)
+        go(to, next)
       } else {
         glog('asyncRouter already set -> next')
         next()
