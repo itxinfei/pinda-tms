@@ -4,12 +4,16 @@ import com.alibaba.fastjson.JSON;
 import com.itheima.pinda.common.utils.SpringContextUtils;
 import com.itheima.pinda.entity.LocationEntity;
 import com.itheima.pinda.entity.LocationRecord;
+import com.itheima.pinda.enums.CoordSystem;
+import com.itheima.pinda.enums.LocationSource;
+import com.itheima.pinda.feign.truck.TruckFeign;
 import com.itheima.pinda.service.GpsAlertService;
 import com.itheima.pinda.service.ILocationRecordService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -59,6 +63,15 @@ public class GpsTraceConsumer {
      */
     @Autowired
     private GpsAlertService gpsAlertService;
+
+    /**
+     * 车辆 Feign 客户端（P0-4 北斗字段最小改造 · D-13）
+     *
+     * <p>用于收到 type=truck 的 GPS 上报后，更新 pd_truck 的 online_status=1 + last_heartbeat_time=now()。
+     * 远程调用失败时由 TruckFeignFallback 兜底降级，不影响轨迹主流程。</p>
+     */
+    @Autowired
+    private TruckFeign truckFeign;
 
     /**
      * 批量落库阈值：缓冲达到该条数时执行批量写入
@@ -237,13 +250,32 @@ public class GpsTraceConsumer {
     }
 
     /**
-     * 处理GPS数据
+     * 处理GPS数据（P0-4 北斗字段最小改造 · D-13 加坐标系/来源兜底 + 心跳更新）
      *
      * @param location 位置信息
      */
     private void processGpsData(LocationEntity location) {
         if (location == null || !StringUtils.hasText(location.getBusinessId()) || !StringUtils.hasText(location.getType())) {
             log.warn("[GPS消费] 忽略无效轨迹点: businessId或type为空");
+            return;
+        }
+
+        // P0-4 兜底：coordSystem 缺失补默认 BD09（与后端 BaiduMapUtils 一致），非法值跳过
+        String coordSystem = location.getCoordSystem();
+        if (!StringUtils.hasText(coordSystem)) {
+            location.setCoordSystem(CoordSystem.BD09.getCode());
+            log.debug("[GPS消费] coordSystem 缺失，兜底 BD09: businessId={}", location.getBusinessId());
+        } else if (!CoordSystem.isValid(coordSystem)) {
+            log.warn("[GPS消费] 坐标系非法被丢弃: businessId={}, coordSystem={}", location.getBusinessId(), coordSystem);
+            return;
+        }
+        // P0-4 兜底：source 缺失补默认 MOBILE，非法值跳过
+        String source = location.getSource();
+        if (!StringUtils.hasText(source)) {
+            location.setSource(LocationSource.MOBILE.getCode());
+            log.debug("[GPS消费] source 缺失，兜底 MOBILE: businessId={}", location.getBusinessId());
+        } else if (!LocationSource.isValid(source)) {
+            log.warn("[GPS消费] 来源非法被丢弃: businessId={}, source={}", location.getBusinessId(), source);
             return;
         }
 
@@ -259,8 +291,9 @@ public class GpsTraceConsumer {
         }
 
         long count = TRACE_COUNT.incrementAndGet();
-        log.debug("[GPS消费] 轨迹点接收: businessId={}, type={}, lng={}, lat={}, 累计处理: {}",
-            location.getBusinessId(), location.getType(), location.getLng(), location.getLat(), count);
+        log.debug("[GPS消费] 轨迹点接收: businessId={}, type={}, lng={}, lat={}, coordSystem={}, source={}, 累计处理: {}",
+            location.getBusinessId(), location.getType(), location.getLng(), location.getLat(),
+            location.getCoordSystem(), location.getSource(), count);
 
         // 2. 异常检测（读取时加锁，与写入保持同步）
         synchronized (tracePoints) {
@@ -269,6 +302,70 @@ public class GpsTraceConsumer {
 
         // 3. 持久化到数据库（批量缓冲，达到阈值或定时刷入）
         enqueueForPersist(location);
+
+        // 4. P0-4 心跳更新：车辆类型上报时，异步更新 pd_truck 在线状态与心跳时间
+        if ("truck".equalsIgnoreCase(location.getType())) {
+            updateTruckHeartbeat(location);
+        }
+    }
+
+    /**
+     * 更新车辆在线状态与心跳时间（P0-4 北斗字段最小改造 · D-13）
+     *
+     * <p>远程调用 pd-base，失败时由 TruckFeignFallback 兜底降级，
+     * 不影响轨迹主流程。device_gps_id 即上报的 businessId（车辆 id）。</p>
+     *
+     * @param location 位置信息
+     */
+    private void updateTruckHeartbeat(LocationEntity location) {
+        try {
+            // 心跳时间用上报时间解析后的 LocalDateTime，缺失则用当前时间
+            LocalDateTime heartbeatTime;
+            try {
+                heartbeatTime = LocalDateTime.parse(location.getCurrentTime(), TIME_FORMATTER);
+            } catch (Exception e) {
+                heartbeatTime = LocalDateTime.now();
+            }
+            truckFeign.updateHeartbeat(location.getBusinessId(), heartbeatTime);
+        } catch (Exception e) {
+            log.warn("[GPS心跳] 更新车辆心跳失败（已降级，不影响主流程）: businessId={}", location.getBusinessId(), e);
+        }
+    }
+
+    /**
+     * 心跳超时阈值（分钟，超过该时长无上报的车辆判定为离线）
+     */
+    private static final long HEARTBEAT_TIMEOUT_MINUTES = 5;
+
+    /**
+     * 心跳超时离线扫描定时任务（P0-4 北斗字段最小改造 · D-13）
+     *
+     * <p>每 60 秒扫描一次 pd_truck 表，将 last_heartbeat_time 早于
+     * now()-5min 的车辆 online_status 置 0。
+     * 符合 D-21：使用 Spring @Scheduled，不引入 XXL-JOB。</p>
+     */
+    @Scheduled(fixedDelay = 60_000)
+    public void scanOfflineTrucks() {
+        try {
+            LocalDateTime threshold = LocalDateTime.now().minusMinutes(HEARTBEAT_TIMEOUT_MINUTES);
+            com.itheima.pinda.common.utils.Result result = truckFeign.markOffline(threshold);
+            if (result == null) {
+                log.debug("[GPS心跳扫描] 远程调用返回 null（已降级）");
+                return;
+            }
+            Object codeObj = result.get("code");
+            // Result 成功时 code=0，失败时非 0
+            if (codeObj == null || (codeObj instanceof Integer && (Integer) codeObj != 0)) {
+                log.debug("[GPS心跳扫描] 远程调用失败（已降级）: {}", result.get("msg"));
+                return;
+            }
+            Object data = result.get("data");
+            if (data instanceof Integer && (Integer) data > 0) {
+                log.info("[GPS心跳扫描] 离线车辆更新: {} 辆", data);
+            }
+        } catch (Exception e) {
+            log.warn("[GPS心跳扫描] 扫描失败（已降级，不影响主流程）", e);
+        }
     }
 
     /**
@@ -291,6 +388,9 @@ public class GpsTraceConsumer {
             record.setTeam(location.getTeam());
             record.setTransportTaskId(location.getTransportTaskId());
             record.setCreateTime(LocalDateTime.now());
+            // P0-4 北斗字段最小改造 · D-13：落库时同步带上坐标系与来源
+            record.setCoordSystem(location.getCoordSystem());
+            record.setSource(location.getSource());
 
             PERSIST_BUFFER.add(record);
             if (PERSIST_BUFFER.size() >= BATCH_INSERT_THRESHOLD) {
@@ -392,7 +492,10 @@ public class GpsTraceConsumer {
                 if (speedKmh > SPEED_LIMIT) {
                     // 接入告警服务：日志 + 可选 Webhook 通知
                     gpsAlertService.alert("SPEED_OVER", current.getBusinessId(),
-                        String.format("超速提醒: 速度=%.1fkm/h, 阈值=%dkm/h, 位置=(%s, %s)",
+                        // SPEED_LIMIT 是 double（120.0），这里必须用 %f 系；写成 %d 会抛
+                        // IllegalFormatConversionException，被上层 catch 当成"解析失败"，
+                        // 结果该轨迹点既不落库也不告警（实测除首个点外每点都丢）。
+                        String.format("超速提醒: 速度=%.1fkm/h, 阈值=%.0fkm/h, 位置=(%s, %s)",
                             speedKmh, SPEED_LIMIT, current.getLng(), current.getLat()));
                 }
             }

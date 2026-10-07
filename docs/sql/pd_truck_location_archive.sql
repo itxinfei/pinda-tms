@@ -26,3 +26,14 @@ CREATE TABLE IF NOT EXISTS `pd_oms`.`pd_truck_location_archive` (
   KEY `idx_archive_time` (`archive_time`),
   KEY `idx_business_id` (`business_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='GPS轨迹归档表';
+
+-- ------------------------------------------------------------
+-- 主表补列（2026-10-07）：实体 LocationRecord 早已带 coordSystem/source
+-- （P0-4 北斗字段最小改造 · D-13），但线上 pd_truck_location 一直没有这两列。
+-- 因为 MyBatis-Plus 默认 NOT_NULL 策略，字段为空时不会出现在 INSERT 里，所以
+-- 一直没暴露；一旦真机上报带上坐标系，整批 saveBatch 就会 Unknown column 失败，
+-- 表现是"轨迹一条都不落库"。
+-- ------------------------------------------------------------
+ALTER TABLE `pd_oms`.`pd_truck_location`
+  ADD COLUMN `coord_system` varchar(16) DEFAULT NULL COMMENT '坐标系 WGS84/GCJ02/BD09/CGCS2000',
+  ADD COLUMN `source` varchar(16) DEFAULT NULL COMMENT '定位来源 GPS/北斗';
