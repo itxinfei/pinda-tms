@@ -6,7 +6,8 @@ set -uo pipefail
 
 GITEA=${GITEA:-http://127.0.0.1:3000}
 REPO=${REPO:-pinda/pinda-tms}
-AUTH=${AUTH:-pinda:pinda123}
+# 凭据不写进仓库（这是开源仓库）。机器上放 /etc/pinda-gitea-cred（root 0600，内容 user:pass）。
+AUTH=${AUTH:-$(cat /etc/pinda-gitea-cred 2>/dev/null || true)}
 OUT_DIR=${OUT_DIR:-/var/www/deployinfo}
 DEPLOY_TAG=${TAG:-${1:-}}
 # 没显式给 TAG 时，用运行中容器实际在用的镜像 tag 当"当前部署版本"

@@ -31,7 +31,9 @@ services:
     volumes:
       - /data/mysql:/var/lib/mysql
     environment:
-      MYSQL_ROOT_PASSWORD: "123456"
+      # 口令不入库：由同目录 .env 提供（机器上 /data/deploy/middleware/.env，root 0600）。
+      # 缺这个文件 compose 会直接报错，不会静默用一个新密码把库改掉。
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?缺少 .env 里的 MYSQL_ROOT_PASSWORD}
     # 缓冲池 128M(出厂默认) -> 1G：/data/mysql 数据 231M，原先大部分查询落盘，
     # 与本机单块接近饱和的虚拟盘互相放大；max_connections 151 -> 500，
     # 覆盖 8 个服务各自 Druid max-active=50（合计 400）的最坏情况。
@@ -176,8 +178,8 @@ services:
       # 只挂 mnesia 会让重建后的节点拿到新 cookie、以新节点身份重新加入。
       - /data/rabbitmq:/var/lib/rabbitmq
     environment:
-      RABBITMQ_DEFAULT_USER: pinda
-      RABBITMQ_DEFAULT_PASS: pinda123
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:?缺少 .env 里的 RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:?缺少 .env 里的 RABBITMQ_DEFAULT_PASS}
       RABBITMQ_LOGS: "-"
       # 不设的话 Beam 按宿主机 15G 的一半(约 7.7G)算高水位，节点会一路涨到
       # 把整机内存挤爆；这里按容器上限的 80% 显式固定。
