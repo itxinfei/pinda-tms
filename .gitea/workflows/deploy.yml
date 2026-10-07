@@ -25,6 +25,35 @@ jobs:
           echo "本次构建 TAG=$TAG"
           echo "TAG=$TAG" >> "$GITHUB_ENV"
 
+      - name: 校验 profile 与 Nacos dataId 配对
+        # bootstrap-*.yml 用的是自指占位符（enabled: ${spring...enabled}），值必须由服务级
+        # dataId 覆盖。profile 与 dataId 对不上时不是 404 而是启动期 IllegalStateException，
+        # 容器反复重启、docker ps 只显示 health: starting——2026-10-07 就是这样崩了 4 个服务。
+        # 所以在打包前先把这件事验掉，缺配置直接让流水线红在第一步，而不是部署上线后崩。
+        run: |
+          set -e
+          NS=${NACOS_NS:-1cb93ce4-dc0e-4730-b759-d35fd7ed93c3}
+          NACOS=${NACOS_ADDR:-http://192.168.20.130:8848}
+          missing=0
+          for f in $(git ls-files '*/src/main/resources/bootstrap.yml' | grep -v pd-admin-ui); do
+            dir=$(dirname $(dirname $(dirname $(dirname $f))))
+            app=$(awk '/^  application:/{getline; if($1=="name:") print $2}' $f)
+            prof=$(awk '/^  profiles:/{getline; if($1=="active:") print $2}' $f)
+            case "$app" in ''|@*) app=$(basename $dir) ;; esac   # 网关/鉴权的 name 是 Maven 占位符，退回目录名
+            code=$(curl -s -o /dev/null -w '%{http_code}' -m 8 "$NACOS/nacos/v1/cs/configs?dataId=${app}-${prof}.yml&group=pinda-tms&tenant=${NS}")
+            if [ "$code" = "200" ]; then
+              echo "  ok   $app  profile=$prof"
+            else
+              echo "  MISS $app  profile=$prof  缺 dataId ${app}-${prof}.yml (HTTP $code)"
+              missing=1
+            fi
+          done
+          if [ "$missing" = "1" ]; then
+            echo "有服务找不到自己的服务级 Nacos 配置。要么补 dataId，要么把 spring.profiles.active 改回已有配置的 profile。"
+            echo "详见 docs/部署文档.md §2.8（缺失时的现象与修法）。"
+            exit 1
+          fi
+
       - name: Maven 打包全部模块
         run: |
           # CI settings（阿里云镜像 + RDC 私有仓库凭据）不在仓库文本里：
