@@ -182,11 +182,74 @@
 3. **导入并构建工程**：导入 Maven 工程与各微服务，完成编译。
 4. **启动微服务与前端**：依次启动后端微服务与管理端 / 移动端，即可访问。
 
-> 详细的部署、配置与二次开发说明见下方「8. 相关资料」。运行本项目需配套虚拟机镜像，请见文末「9. 配套虚拟机」向作者索取。
+> 详细的部署、配置与二次开发说明见下方「9. 相关资料」。运行本项目需配套虚拟机镜像，请见文末「10. 配套虚拟机」向作者索取。
 
 ---
 
-## 8. 📚 相关资料
+## 8. 📸 系统截图
+
+> 以下截图来自真实运行环境。**后台管理端业务页面与三端 App 界面截图将在项目运行后陆续补充**（讲义与需求文档中没有对应的成品界面图），届时直接替换占位框即可。
+
+### 8.1 后台管理端
+
+<table>
+<tr>
+<td align="center" width="50%">
+  <img src="docs/screenshots/admin-login.png" alt="管理端登录"/>
+  <br/><sub><b>管理端登录</b> · 统一账号 + 验证码校验</sub>
+</td>
+<td align="center" width="50%">
+  <div style="border:2px dashed #d0d7de;border-radius:8px;padding:52px 12px;color:#8b949e;background:#fafbfc;">
+    📷 待补充<br/><sub>订单管理 / 调度管理 / 运单管理等业务页面<br/>（项目运行后截图替换）</sub>
+  </div>
+</td>
+</tr>
+</table>
+
+### 8.2 移动端 App
+
+<table>
+<tr>
+<td align="center" width="33%"><b>客户端 · 品达速运</b><br/><br/>
+  <div style="border:2px dashed #d0d7de;border-radius:8px;padding:40px 8px;color:#8b949e;background:#fafbfc;">📷 待补充<br/><sub>寄件 / 查物流</sub></div>
+</td>
+<td align="center" width="33%"><b>快递员端 · 品达快递员</b><br/><br/>
+  <div style="border:2px dashed #d0d7de;border-radius:8px;padding:40px 8px;color:#8b949e;background:#fafbfc;">📷 待补充<br/><sub>取派件任务</sub></div>
+</td>
+<td align="center" width="33%"><b>司机端 · 品达司机宝</b><br/><br/>
+  <div style="border:2px dashed #d0d7de;border-radius:8px;padding:40px 8px;color:#8b949e;background:#fafbfc;">📷 待补充<br/><sub>运输任务 / 位置上报</sub></div>
+</td>
+</tr>
+</table>
+
+### 8.3 运维与中间件
+
+<table>
+<tr>
+<td align="center" width="50%">
+  <img src="docs/screenshots/ops-deploy-status.png" alt="部署状态总览"/>
+  <br/><sub><b>部署状态总览</b> · 全部微服务健康监测</sub>
+</td>
+<td align="center" width="50%">
+  <img src="docs/screenshots/ops-nacos.png" alt="Nacos 控制台"/>
+  <br/><sub><b>Nacos 注册 / 配置中心</b> · 服务与配置统一管理</sub>
+</td>
+</tr>
+<tr>
+<td align="center" width="50%">
+  <img src="docs/screenshots/ops-rabbitmq.png" alt="RabbitMQ 管理台"/>
+  <br/><sub><b>RabbitMQ 管理台</b> · 消息队列运行监控</sub>
+</td>
+<td align="center" width="50%">
+  <img src="docs/screenshots/dev-api-docs.png" alt="接口文档"/>
+  <br/><sub><b>Knife4j 聚合接口文档</b> · 网关统一入口在线调试</sub>
+</td>
+</tr>
+</table>
+
+---
+
+## 9. 📚 相关资料
 
 以下文档均为仓库内本地文件，可直接跳转阅读：
 
@@ -206,14 +269,14 @@
 
 ---
 
-## 9. 📦 配套虚拟机（环境镜像）
+## 10. 📦 配套虚拟机（环境镜像）
 
 > 本项目的学习与部署**依赖配套的虚拟机镜像**——镜像中已预置好运行所需的中间件、数据库与基础环境，省去自行搭建的繁琐。
 > 该镜像通过**百度网盘**分发，**链接不公开**，需要请直接向作者索取最新网盘地址。
 
 ---
 
-## 10. 🤝 商业服务与联系
+## 11. 🤝 商业服务与联系
 
 <div align="center">
 
@@ -221,7 +284,7 @@
 <tr>
 <td align="center" width="50%">
 
-### 10.1 🛠️ 付费技术服务
+### 11.1 🛠️ 付费技术服务
 
 本项目 **Apache-2.0 完全开源免费**。同时作者提供商业支持，助你少走弯路：
 
@@ -236,7 +299,7 @@
 </td>
 <td align="center" width="50%">
 
-### 10.2 💬 加入社区
+### 11.2 💬 加入社区
 
 <img src="docs/心飞为你飞.jpg" width="170" alt="微信公众号二维码" style="border-radius:8px;border:1px solid #e5e7eb;">
 
@@ -253,7 +316,7 @@
 
 <br>
 
-### 10.3 ⭐ 如果这个项目对你有帮助，欢迎点个 Star 支持，这是对我最大的鼓励！
+### 11.3 ⭐ 如果这个项目对你有帮助，欢迎点个 Star 支持，这是对我最大的鼓励！
 
 </div>
 
