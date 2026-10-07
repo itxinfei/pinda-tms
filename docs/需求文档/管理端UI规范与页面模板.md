@@ -1,8 +1,8 @@
 # 品达物流 TMS — 管理端 UI 规范与页面模板（Vue2.6 + Element UI + ECharts + 百度地图）
 
-> **目的**：补齐《页面功能审查报告.md》§七-5 / §八-规范项指出的缺口——管理端缺 Element UI 版设计 Token 与页面模板（既有《UI设计规范与页面模板.md》仅覆盖移动端 uni-app）。本规范约束 Claude Code 写 `pd-admin-ui`（Vue 2.6.10 + Element UI 2.12 + ECharts 4.2）业务页时的样式与结构。
+> **目的**：补齐管理端缺 Element UI 版设计 Token 与页面模板的缺口——管理端缺 Element UI 版设计 Token 与页面模板（既有《UI设计规范与页面模板.md》仅覆盖移动端 uni-app）。本规范约束 Claude Code 写 `pd-admin-ui`（Vue 2.6.10 + Element UI 2.12 + ECharts 4.2）业务页时的样式与结构。
 > **强制力**：等同《开发规范与需求规格说明书》§1 红线 + 移动端 UI 规范 §8。所有管理端业务页**必须**遵守；自定义 HTML/CSS 绕过 Element 组件视为不合格。
-> **配套**：《管理端业务页面开发任务卡.md》（页面功能/接口/验收）、《页面功能审查报告.md》（现状审计与主色冲突证据）。
+> **配套**：《管理端业务页面开发任务卡.md》（页面功能/接口/验收）。
 > **生成日期**：2026-10-07（复审补齐，索引第 34 条）。
 
 ---
@@ -11,7 +11,7 @@
 
 1. **只用 Element UI 组件，不写裸样式**：布局用 `el-container`/`el-row`/`el-col`，列表 `el-table`，表单 `el-form`，弹窗 `el-dialog`，下拉 `el-select`，标签 `el-tag`，分页 `el-pagination`。**禁止**手写 `<div>`+`<style>` 替代组件做布局/按钮/卡片。
 2. **设计 Token 全集中**：颜色/间距/字号/圆角/阴影只允许引用 `src/styles/tokens.scss`（§2）或 Element 主题变量，**禁止页面内硬编码 hex / px**（图表色与地图浮层除外，见 §5/§6）。
-3. **品牌主色全端统一（✅ 2026-10-07 定案）**：主色 **`#2B6CFF`**（与移动端 `--c-primary` 同一品牌色）。**废弃**现状三处冲突色：Element 默认 `#1890ff`、`#409EFF`、`#E05635`（实测证据见《页面功能审查报告》§五：dashboard 30 处 / user/Index 19 处 / auth/role 14 处硬编码）。落地方式：`element-variables.scss` 覆写 `$--color-primary:#2B6CFF`，全局替换硬编码色为变量。
+3. **品牌主色全端统一（✅ 2026-10-07 定案）**：主色 **`#2B6CFF`**（与移动端 `--c-primary` 同一品牌色）。**废弃**现状三处冲突色：Element 默认 `#1890ff`、`#409EFF`、`#E05635`（实测：dashboard 30 处 / user/Index 19 处 / auth/role 14 处硬编码冲突色，主色定案已废弃）。落地方式：`element-variables.scss` 覆写 `$--color-primary:#2B6CFF`，全局替换硬编码色为变量。
 4. **结构走模板**：每类页面套用 §4 标准骨架，不允许自由布局。
 5. **三态必做**：列表/查询页必须有 加载中 / 空 / 错误 三态（`v-loading` / `el-empty` / 重试按钮）。
 6. **图表与地图遵循专项规范**（§5/§6）：图表色板取自 Token，地图浮层/聚合按统一交互。
