@@ -1,27 +1,32 @@
 <div align="center">
 
-# 🚚 品达物流 TMS（pinda-tms）
+# 🚚 品达物流 TMS
 
-**对运输作业从运力资源准备到最终货物抵达目的地的全流程管理。**
+<p>
+  <b>面向运输企业与承运商的开源运输管理系统（TMS）</b><br/>
+  <span>全流程闭环 · 四端协同 · 微服务架构 · 开箱即用</span>
+</p>
 
-![Spring Cloud](https://img.shields.io/badge/Spring%20Cloud-微服务-blue)
-![Nacos](https://img.shields.io/badge/Nacos-注册配置-orange)
-![MySQL](https://img.shields.io/badge/MySQL-数据库-4479A1)
-![Redis](https://img.shields.io/badge/Redis-缓存-DC382D)
-![Drools](https://img.shields.io/badge/Drools-规则引擎-red)
-![Quartz](https://img.shields.io/badge/Quartz-定时调度-brightgreen)
-![J2Cache](https://img.shields.io/badge/J2Cache-两级缓存-blueviolet)
-![Redisson](https://img.shields.io/badge/Redisson-分布式锁-critical)
-![Seata](https://img.shields.io/badge/Seata-分布式事务-green)
-![Zipkin](https://img.shields.io/badge/Zipkin-链路追踪-informational)
-![Canal](https://img.shields.io/badge/Canal-数据同步-blue)
-![Apache Druid](https://img.shields.io/badge/Apache%20Druid-实时分析-orange)
-![百度地图](https://img.shields.io/badge/百度地图-地图服务-00BFFF)
-![Netty](https://img.shields.io/badge/Netty-通信框架-black)
-![Kafka](https://img.shields.io/badge/Kafka-消息队列-231F20)
-![Vue](https://img.shields.io/badge/Vue-管理端-42b883)
-![uni-app](https://img.shields.io/badge/uni--app-移动端-434343)
-![Shiro/JWT](https://img.shields.io/badge/Shiro%2FJWT-安全鉴权-success)
+<p>
+  <img src="docs/badges/spring-cloud.svg" alt="Spring Cloud"/>
+  <img src="docs/badges/nacos.svg" alt="Nacos"/>
+  <img src="docs/badges/mysql.svg" alt="MySQL"/>
+  <img src="docs/badges/redis.svg" alt="Redis"/>
+  <img src="docs/badges/drools.svg" alt="Drools"/>
+  <img src="docs/badges/quartz.svg" alt="Quartz"/>
+  <img src="docs/badges/j2cache.svg" alt="J2Cache"/>
+  <img src="docs/badges/redisson.svg" alt="Redisson"/>
+  <img src="docs/badges/seata.svg" alt="Seata"/>
+  <img src="docs/badges/zipkin.svg" alt="Zipkin"/>
+  <img src="docs/badges/canal.svg" alt="Canal"/>
+  <img src="docs/badges/druid.svg" alt="Apache Druid"/>
+  <img src="docs/badges/baidu-map.svg" alt="百度地图"/>
+  <img src="docs/badges/netty.svg" alt="Netty"/>
+  <img src="docs/badges/kafka.svg" alt="Kafka"/>
+  <img src="docs/badges/vue.svg" alt="Vue"/>
+  <img src="docs/badges/uniapp.svg" alt="uni-app"/>
+  <img src="docs/badges/shiro-jwt.svg" alt="Shiro/JWT"/>
+</p>
 
 </div>
 
