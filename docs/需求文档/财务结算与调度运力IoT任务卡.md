@@ -112,6 +112,22 @@ CREATE TABLE pd_freight_bill_detail (
 - **运费保障**：支持结算保障 / 垫付机制（COD / 月结账期），司机结算单（FIN-2）与回款（FIN-3）闭环，避免运费拖欠争议。
 - 上述费率/结算规则变更须**留痕可审计**（呼应 R6-3 审计）。
 
+### FIN-1.0a 应收 / 应付双账（P2 扩展 · 参照 EvolveTMS/BCKFreight · 2026-10-07 并入）
+
+> 现状 `pd_freight_bill` 是**应收（客户/加盟方）**；承运商应付（外协运费）在 DSP-2 提到"走 FIN-1 账单"但无独立应付表。补**应付侧**视图，应收/应付分开建模（EvolveTMS 模式）：
+
+- **新表（P2，pd-work 库）**：`pd_carrier_payable`（承运商应付账单：carrier_id / 账期 / 趟次 / 应付总额 / 已付金额 / 状态 0待结算 1部分结算 2已结算 / 到期日 / 备注）+ 明细 `pd_carrier_payable_detail`（task_transport_id / 应付运费 / 扣款(货损/晚点) / 补贴 / 小计）。
+- **接口**（归 FIN-1 或 DSP-2 `@RequestMapping("freight-bill")`，P2）：`/freight-bill/payable/generate`（按承运商+账期生成）、`/freight-bill/payable/page`、`/freight-bill/payable/{id}/pay`（登记付款）。
+- **联动**：承运商对账确认走 L-1 承运商端门户（`/carrier/settlement/statement`）；扣款依据 N-6 KPI/货损异常，留痕可审计。
+- **DoD**：应收/应付两账分开查询与导出；付款登记留痕；不引新中间件。
+
+#### FIN-1.0a-EXT 运费审计（FA-1，**P1** · 对标 MercuryGate/Blue Yonder · 2026-10-07 第三轮并入）
+> 结算闭环关键环节：系统算费金额（rated）与承运商实际开票金额（invoiced）自动比对，差异超阈值转争议，杜绝"票多少付多少"。
+- **字段扩展（不新增表）**：`pd_carrier_payable_detail` 加 `rated_amount`（系统算费）、`invoiced_amount`（发票金额，取 pd_invoice）、`diff_amount`（差额=invoiced-rated）、`audit_status`（0未审计 1一致 2有差异 3争议中 4已裁决）。
+- **规则（yml 可配）**：`|diff_rate| ≤ 阈值（默认 2%）` 判一致；超阈值 audit_status=2 并生成差异记录；差异由财务复核（裁决按 rated 或 invoiced，填裁决原因）。
+- **接口**（`freight-bill`）：`/freight-bill/payable/audit`（批量比对）、`/freight-bill/payable/diff/page`（差异列表）、`/freight-bill/payable/diff/{id}/resolve`（裁决）。
+- **DoD**：明细可查算费/发票/差额；超阈值自动标差异；裁决留痕；不新增表、不引新组件。
+
 ### FIN-1.1 客户价格协议（P1 扩展 · 对标 G7 财运通结算 · 2026-10-06 并入）
 
 > **解决**：B 端客户（企业/月结）没有专属计价，只能吃默认 Drools 规则 → 无法谈价、无法月结对账。

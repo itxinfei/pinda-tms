@@ -26,7 +26,22 @@ for c in mysql57 redis nacos zookeeper kafka rabbitmq; do
 done
 
 echo
-echo "=== 3. 构建残留是否收在保留窗口内 ==="
+echo "=== 3. 宿主->容器可达性（网桥网关地址在不在） ==="
+for n in $(docker network ls --format '{{.Name}}' | grep -vE '^(host|bridge|none)$'); do
+  id=$(docker network inspect "$n" -f '{{.Id}}')
+  sub=$(docker network inspect "$n" -f '{{range .IPAM.Config}}{{.Subnet}}{{end}}')
+  gw=$(docker network inspect "$n" -f '{{range .IPAM.Config}}{{.Gateway}}{{end}}')
+  br="br-${id:0:12}"
+  [ -z "$gw" ] && continue
+  if ip link show "$br" >/dev/null 2>&1 && ip -4 -o addr show dev "$br" 2>/dev/null | grep -q "inet ${gw%/*}/"; then
+    printf "  %-20s %s 正常\n" "$n" "$gw"
+  else
+    printf "  %-20s %s 缺失(!) 修复: ip addr add %s/%s dev %s\n" "$n" "$gw" "$gw" "${sub##*/}" "$br"; fail=1
+  fi
+done
+
+echo
+echo "=== 4. 构建残留是否收在保留窗口内 ==="
 worst=0
 while read -r repo n; do
   [ "$n" -gt "$worst" ] && worst=$n
@@ -38,12 +53,12 @@ docker builder du 2>/dev/null | tail -1 | sed 's/^/  /'
 docker system df | awk 'NR==1 || /Volumes/ {print "  "$0}'
 
 echo
-echo "=== 4. 磁盘与内存水位 ==="
+echo "=== 5. 磁盘与内存水位 ==="
 df -h / | tail -1 | awk '{print "  根分区: "$3" 已用 / "$5" 使用率 / "$4" 可用"}'
 free -m | awk 'NR==2{printf "  内存: 用 %sM / 共 %sM，可用 %sM\n", $3, $2, $7} NR==3{printf "  交换: 用 %sM / 共 %sM\n", $3, $2}'
 
 echo
-echo "=== 5. 鉴权链路冒烟（nginx -> 网关 -> auth-server -> redis） ==="
+echo "=== 6. 鉴权链路冒烟（nginx -> 网关 -> auth-server -> redis） ==="
 code=$(curl -s -o /dev/null -w '%{http_code}' -m 8 http://127.0.0.1:8080/api/authority/anno/captcha)
 echo "  验证码接口: HTTP $code"
 [ "$code" = "200" ] || fail=1

@@ -21,7 +21,7 @@ set -uo pipefail
 KEEP=${KEEP:-5}
 TAG=${TAG:-}
 DRY_RUN=${DRY_RUN:-0}
-BUILDER_KEEP=${BUILDER_KEEP:-2GB}
+BUILDER_KEEP_AGE=${BUILDER_KEEP_AGE:-72h}
 
 log() { printf '%s\n' "$*"; }
 
@@ -80,9 +80,10 @@ d=$(docker images -f dangling=true -q | wc -l)
 log "  悬空 $d 个"
 [ "$DRY_RUN" = "1" ] || docker image prune -f >/dev/null 2>&1 || true
 
-log "=== BuildKit 缓存封顶 $BUILDER_KEEP ==="
-# Docker 29 起 --keep-storage 已废弃并改名 --max-used-space（用旧名会静默不生效）
-[ "$DRY_RUN" = "1" ] || docker builder prune -f --max-used-space "$BUILDER_KEEP" >/dev/null 2>&1 || true
+log "=== BuildKit 缓存按时间回收（未使用超过 $BUILDER_KEEP_AGE） ==="
+# 实测：dockerd 内置 BuildKit 上 --max-used-space / --keep-storage 都是空操作（输出 Total: 0B），
+# 容量封顶要靠 daemon.json 的 builder.gc.policy；这里能真正生效的是按时间的 --filter until=
+[ "$DRY_RUN" = "1" ] || docker builder prune -f --filter "until=$BUILDER_KEEP_AGE" >/dev/null 2>&1 || true
 
 after=$(docker system df --format '{{.Size}}' | head -1)
 log ""
