@@ -1,0 +1,212 @@
+# ============================================
+# 品达TMS 自动构建与部署（Gitea Actions）
+# push 到 master 后：Maven 打包 -> 构建 14 个微服务镜像 + 前端镜像 -> 滚动重启
+# ============================================
+name: build-deploy
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest   # 由 act_runner 用本地 ci/pinda-ci:latest 镜像启动
+    steps:
+      - name: 检出代码
+        # 不使用 actions/checkout（避免从 GitHub 下载依赖），直接匿名 clone 本仓库
+        run: |
+          rm -rf ./* ./.??*
+          # depth 50 而不是 1：增量构建要能 diff 到"上次部署的那个提交"
+          git clone --depth 50 -b "${GITHUB_REF_NAME:-master}" "http://192.168.20.130:3000/pinda/pinda-tms.git" .
+
+      - name: 计算镜像 TAG（git 短提交号）
+        run: |
+          TAG=$(echo "${GITHUB_SHA}" | cut -c1-7)
+          echo "本次构建 TAG=$TAG"
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+
+      - name: Maven 打包全部模块
+        run: |
+          # CI settings（阿里云镜像 + RDC 私有仓库凭据）不在仓库文本里：
+          # act_runner 已把宿主机 /data/ci 只读挂进作业容器（见 /data/runner/config.yaml 的 container.options）
+          test -s /ci/maven-settings.xml || { echo "缺少 /data/ci/maven-settings.xml，无法取用 RDC 凭据"; exit 1; }
+          cp /ci/maven-settings.xml /tmp/ci-settings.xml
+          mvn -T 4 clean package -DskipTests -Dmaven.javadoc.skip=true -B -s /tmp/ci-settings.xml
+
+      # 字体库+时区从每次构建的关键路径上摘出来：这个基础镜像只建一次并长期复用，
+      # 14 个服务镜像都 FROM 它。改 Dockerfile.base 时请把 tag 递增（:2）以触发重建。
+      - name: 准备运行时基础镜像
+        run: |
+          set -e
+          BASE=pinda/jre8-fontconfig:1
+          if docker image inspect "$BASE" >/dev/null 2>&1; then
+            echo "已存在 $BASE，跳过构建"
+          else
+            echo "构建 $BASE（约 1-2 分钟，只此一次）"
+            docker build -f deploy/apps/Dockerfile.base -t "$BASE" .
+          fi
+
+      - name: 构建 14 个微服务镜像
+        run: |
+          set -e
+          # 把各模块 fat jar 复制到 deploy/jars（构建上下文内），避免 .dockerignore 排除 target
+          mkdir -p deploy/jars
+          cp pd-authority/pd-apps/pd-gateway/target/pd-gateway.jar deploy/jars/pd-gateway.jar
+          cp pd-authority/pd-apps/pd-auth/pd-auth-server/target/pd-auth-server.jar deploy/jars/pd-auth-server.jar
+          cp pd-base/target/pd-base-1.0.0-SNAPSHOT.jar deploy/jars/pd-base.jar
+          cp pd-oms/target/pd-oms-1.0.0-SNAPSHOT.jar deploy/jars/pd-oms.jar
+          cp pd-work/target/pd-work-1.0.0-SNAPSHOT.jar deploy/jars/pd-work.jar
+          cp pd-user/target/pd-user-1.0.0-SNAPSHOT.jar deploy/jars/pd-user.jar
+          cp pd-dispatch/target/pd-dispatch-1.0.0-SNAPSHOT.jar deploy/jars/pd-dispatch.jar
+          cp pd-aggregation/target/pd-aggregation-1.0.0-SNAPSHOT.jar deploy/jars/pd-aggregation.jar
+          cp pd-netty/target/pd-netty-1.0.0-SNAPSHOT.jar deploy/jars/pd-netty.jar
+          cp pd-druid/target/pd-druid-1.0.0-SNAPSHOT.jar deploy/jars/pd-druid.jar
+          cp pd-web/pd-web-manager/target/pd-web-manager-1.0.0-SNAPSHOT.jar deploy/jars/pd-web-manager.jar
+          cp pd-web/pd-web-driver/target/pd-web-driver-1.0.0-SNAPSHOT.jar deploy/jars/pd-web-driver.jar
+          cp pd-web/pd-web-courier/target/pd-web-courier-1.0.0-SNAPSHOT.jar deploy/jars/pd-web-courier.jar
+          cp pd-web/pd-web-customer/target/pd-web-customer-1.0.0-SNAPSHOT.jar deploy/jars/pd-web-customer.jar
+          SERVICES="
+          pd-gateway:deploy/jars/pd-gateway.jar
+          pd-auth-server:deploy/jars/pd-auth-server.jar
+          pd-base:deploy/jars/pd-base.jar
+          pd-oms:deploy/jars/pd-oms.jar
+          pd-work:deploy/jars/pd-work.jar
+          pd-user:deploy/jars/pd-user.jar
+          pd-dispatch:deploy/jars/pd-dispatch.jar
+          pd-aggregation:deploy/jars/pd-aggregation.jar
+          pd-netty:deploy/jars/pd-netty.jar
+          pd-druid:deploy/jars/pd-druid.jar
+          pd-web-manager:deploy/jars/pd-web-manager.jar
+          pd-web-driver:deploy/jars/pd-web-driver.jar
+          pd-web-courier:deploy/jars/pd-web-courier.jar
+          pd-web-customer:deploy/jars/pd-web-customer.jar
+          "
+          # 只重建"这次真的改到的服务"。
+          # 注意不能用 jar 的 sha256 判断：Spring Boot fat jar 不是可复现产物（zip 条目带构建
+          # 时间戳），实测同一份源码两次打包 pd-base 的摘要就不同（de6168d… vs 5043c87…）。
+          # 所以按 git 改动的模块路径判断，共享代码/构建定义一律视为全量。
+          PREV=$(for c in $(docker ps --format '{{.Names}}' | grep '^pd-'); do
+                    docker inspect -f '{{.Config.Image}}' "$c" 2>/dev/null | awk -F: '{print $2}';
+                  done | sort | uniq -c | sort -rn | head -1 | awk '{print $2}')
+          full=1
+          if [ -n "$PREV" ] && git cat-file -e "${PREV}^{commit}" 2>/dev/null; then
+            CHANGED=$(git diff --name-only "$PREV" HEAD 2>/dev/null)
+            echo "上次部署=$PREV，改动文件 $(printf '%s\n' "$CHANGED" | grep -c . ) 个"
+            full=0
+            # 根 pom / 公共模块 / 构建与部署定义变化 -> 全量
+            printf '%s\n' "$CHANGED" | grep -qE '^(pom\.xml|pd-common/|pd-service-api/|deploy/apps/|\.gitea/workflows/)' && full=1
+            # pd-authority、pd-web 下"非具体服务目录"的改动属于共享库
+            printf '%s\n' "$CHANGED" | grep -E '^pd-authority/' | grep -qvE '^pd-authority/pd-apps/(pd-gateway/|pd-auth/pd-auth-server/)' && full=1
+            printf '%s\n' "$CHANGED" | grep -E '^pd-web/' | grep -qvE '^pd-web/pd-web-(manager|driver|courier|customer)/' && full=1
+          else
+            echo "无法确定上次部署版本（PREV='${PREV:-空}'），本次全量构建"
+          fi
+          [ "$full" = "1" ] && echo "判定：全量重建" || echo "判定：只重建被改到的服务"
+
+          built=0; skipped=0
+          while IFS=: read -r svc jar; do
+            [ -n "$svc" ] || continue
+            env_name=$(printf '%s' "$svc" | tr 'a-z-' 'A-Z_')_TAG
+            case "$svc" in
+              pd-gateway)     own='pd-authority/pd-apps/pd-gateway/' ;;
+              pd-auth-server) own='pd-authority/pd-apps/pd-auth/pd-auth-server/' ;;
+              pd-web-*)       own="pd-web/${svc}/" ;;
+              *)              own="${svc}/" ;;
+            esac
+            if [ "$full" = "0" ] && ! printf '%s\n' "${CHANGED:-}" | grep -q "^$own"; then
+              cur=$(docker inspect -f '{{.Config.Image}}' "$svc" 2>/dev/null | awk -F: '{print $2}' || true)
+              if [ -n "$cur" ] && docker image inspect "pinda/${svc}:${cur}" >/dev/null 2>&1; then
+                echo "== 跳过 $svc（${own} 无改动，钉住在跑的 ${cur}，不重建不重启）"
+                echo "${env_name}=${cur}" >> "$GITHUB_ENV"
+                skipped=$((skipped+1)); continue
+              fi
+            fi
+            # 上下文只放这一个 jar（硬链接零拷贝）：以仓库根为上下文时每次要传 1.119GB
+            mkdir -p ".ctx/${svc}"
+            ln -f "$jar" ".ctx/${svc}/app.jar" 2>/dev/null || cp -f "$jar" ".ctx/${svc}/app.jar"
+            echo ">> build $svc ($(du -h ".ctx/${svc}/app.jar" | cut -f1))"
+            docker build -f deploy/apps/Dockerfile -t "pinda/${svc}:${TAG}" ".ctx/${svc}"
+            built=$((built+1))
+          done < <(printf '%s\n' "$SERVICES" | grep -v '^[[:space:]]*$')
+          echo "本次镜像：重建 $built 个，跳过 $skipped 个"
+
+      - name: 构建前端镜像
+        run: |
+          set -e
+          # 增量判断：以"当前在跑的 pd-admin-ui 镜像 tag"作为上次部署的前端版本，
+          # 若 pd-admin-ui/ 目录自那以后没改动，就只把旧镜像 retag 到新 TAG，跳过 npm install + vue build（实测省约 9 分钟）
+          # 前端目录自上次部署没改动时，把该服务的 tag 钉在旧值上：不跑 npm、不重建镜像、容器也不重启
+          PREV=$(docker inspect -f '{{.Config.Image}}' pd-admin-ui 2>/dev/null | awk -F: '{print $2}' || true)
+          if [ -n "$PREV" ] && [ "$PREV" != "$TAG" ] && git cat-file -e "${PREV}^{commit}" 2>/dev/null \
+             && git diff --quiet "$PREV" HEAD -- pd-admin-ui/ 2>/dev/null; then
+            echo "== pd-admin-ui 自 $PREV 以来无改动，沿用旧镜像，跳过 npm install 与 vue build"
+            echo "PD_ADMIN_UI_TAG=$PREV" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          echo "本次需要构建前端（上次部署=$PREV，本次=$TAG）"
+          cd pd-admin-ui
+          # node-sass 预编译 binding 走国内镜像
+          npm config set sass_binary_site https://npmmirror.com/mirrors/node-sass
+          # npm 以 root 运行时默认把 install 脚本降权为 nobody，导致 node-sass 无法写 vendor/.node-gyp(EACCES)
+          npm config set unsafe-perm true
+          # chromedriver 仅 e2e 测试用、构建不需要，跳过其二进制下载（否则下载失败）
+          npm config set chromedriver_skip_download true
+          # git:// 协议被内网防火墙拦截（eve 等 git 依赖），重写为 https
+          git config --global url."https://github.com/".insteadOf "git://github.com/"
+          # npm 偶发 cb() never called 挂起：timeout 强制超时退出，触发下方重试分支
+          timeout 900 npm install --registry=https://registry.npmmirror.com --no-audit --no-fund || \
+            (echo "npm install 首次失败，清理缓存重试"; npm cache clean --force && \
+             timeout 900 npm install --registry=https://registry.npmmirror.com --no-audit --no-fund) || \
+            (echo "npm install 再次失败，最后一次重试"; sleep 5 && \
+             timeout 900 npm install --registry=https://registry.npmmirror.com --no-audit --no-fund)
+          # 显式指定产物目录名（不依赖可能编码异常的 .env.docker）
+          export VUE_APP_PROJECT_NAME=pinda
+          npm run build:docker
+          # 校验产物存在再构建镜像
+          ls -la pinda && test -f pinda/index.html
+          docker build -t "pinda/pd-admin-ui:${TAG}" .
+
+      - name: 滚动部署
+        run: |
+          export TAG
+          docker compose -f deploy/apps/docker-compose.app.yml up -d --remove-orphans
+          echo "部署完成，当前运行容器："
+          docker compose -f deploy/apps/docker-compose.app.yml ps
+
+      # 镜像是本地 build、不推 registry，act_runner v0.6.1 又没有内置 GC，
+      # 所以每次构建都会往宿主机堆 git-sha tag（实测 22 小时堆出 191 个 tag）。
+      # 部署成功后就地清理；用 if: always() 是为了部署失败时也能清掉上一轮残留。
+      - name: 清理构建残留
+        if: always()
+        run: |
+          export TAG
+          if [ -f deploy/ci/cleanup-images.sh ]; then
+            KEEP=5 DRY_RUN=0 bash deploy/ci/cleanup-images.sh
+          else
+            # 部署侧兜底：/etc/cron.d 里每天有 pinda-image-cleanup.sh，不会因为漏提交而堆盘
+            echo "跳过：deploy/ci/cleanup-images.sh 不在本次提交里"
+          fi
+# v2: 启用仓库Actions unit后重试
+# v3: 恢复runner config.yaml后重试
+# v4: 修复docker.sock重复挂载
+# v5: 重启runner后重试完整流水线
+# v6: 切换宿主机act_runner运行
+# v7: 最小化config测试
+# v8: 修复Maven命令拆行(-DskipTests command not found)
+# v9: jar复制到deploy/jars解决.dockerignore排除target导致COPY失败
+# v10: npm ci改为npm install(仓库无package-lock.json)
+# v11: git协议重写修复eve依赖(git://被防火墙拦)
+# v12: 跳过chromedriver安装脚本+重建node-sass,重新排除target瘦身构建上下文
+# v13: 正常安装+chromedriver skip下载,node-sass走预编译binding
+# v14: unsafe-perm修复node-sass脚本被降权导致的EACCES
+# v15: 显式export产物目录名并构建前校验pinda/index.html
+# v16: Feign接口去掉类级@RequestMapping(消除与fallback的Ambiguous),pd-druid补mysql驱动
+# v17: compose全服务注入redis/nacos环境变量(容器内127.0.0.1失效,显式指向宿主机)
+# v18: RoleServiceImpl@Lazy解除dataScopeContext构造器循环依赖;npm install失败自动重试(cb() never called)
+# v19: j2cache.yml redis地址环境变量化(REDIS_HOST),compose注入REDIS_HOST修复容器内验证码redis
+# v20: npm install加timeout 900(挂起也会被强制终止并触发重试,修复v19前端卡死9小时)
+# v21: 部署后清理构建残留(每服务保留最近5个tag+回收悬空镜像+封顶BuildKit缓存2GB),脚本在 deploy/ci/cleanup-images.sh
+# v22: 构建提速——apt/时区摘到一次性基础镜像 pinda/jre8-fontconfig:1（ARG 位置导致 14 个镜像各自重跑 apt），Maven -T 4 并行，前端无改动时 retag 跳过 npm+vue build
+# v23: 只构建有改动的服务——按 jar 的 sha256 与在跑镜像比对，相同则把该服务 tag 钉在旧值(compose 支持 PD_<SVC>_TAG 覆盖)不重建不重启；前端按目录 diff 同理；清理脚本去掉两次 docker system df(单次实测14s)
+# v24: 修正 v23 的判定依据——fat jar 不可复现（同源码两次打包 sha 不同），改为按 git 改动模块路径判断，共享模块/构建定义一律全量
+# v25: 前端 nginx 改为运行时重新解析网关地址（resolver 127.0.0.11 + 变量 proxy_pass）——网关容器重建换 IP 后旧配置会一直 502
