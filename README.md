@@ -208,16 +208,49 @@
 
 ---
 
-## 📮 联系作者
+## 🤝 商业服务与联系
 
-| 方式 | 信息 |
-| --- | --- |
-| 作者 / 仓库所有者 | **itxinfei** |
-| Gitee 主页 | [https://gitee.com/itxinfei](https://gitee.com/itxinfei) |
-| 项目仓库 | [https://gitee.com/itxinfei/pinda-tms](https://gitee.com/itxinfei/pinda-tms) |
-| 配套虚拟机（百度网盘） | 向作者索取链接 |
+<div align="center">
 
-欢迎通过 Gitee 主页与作者联系，获取配套虚拟机、交流使用问题或提交反馈建议。
+<table>
+<tr>
+<td align="center" width="50%">
+
+### 🛠️ 付费技术服务
+
+本项目 **Apache-2.0 完全开源免费**。同时作者提供商业支持，助你少走弯路：
+
+- 🔧 **二次开发 / 功能定制**（对接平台、新增业务、UI 调整）
+- 🚀 **私有化部署交付**（服务器、域名、环境一条龙，含配套虚拟机镜像）
+- 🎓 **项目讲解 / 毕设答疑**（架构、源码、面试考点）
+- 📦 **全量建库脚本 + 演示数据**
+- 💬 日常技术答疑与长期维护支持
+
+<b>👉 商务联系 QQ：<code>747011882</code></b>
+
+</td>
+<td align="center" width="50%">
+
+### 💬 加入社区
+
+<img src="docs/心飞为你飞.jpg" width="170" alt="微信公众号二维码" style="border-radius:8px;border:1px solid #e5e7eb;">
+
+<sub>扫码关注微信公众号「心飞为你飞」</sub>
+
+<br>
+
+🔗 仓库：[gitee.com/itxinfei/pinda-tms](https://gitee.com/itxinfei/pinda-tms)
+🏠 作者主页：[gitee.com/itxinfei](https://gitee.com/itxinfei)
+
+</td>
+</tr>
+</table>
+
+<br>
+
+### ⭐ 如果这个项目对你有帮助，欢迎点个 Star 支持，这是对我最大的鼓励！
+
+</div>
 
 ---
 
