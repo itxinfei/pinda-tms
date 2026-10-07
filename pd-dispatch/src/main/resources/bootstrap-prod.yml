@@ -42,7 +42,7 @@ spring:
           test-on-borrow: ${spring.datasource.druid.test-on-borrow}
           test-on-return: ${spring.datasource.druid.test-on-return}
           stat-view-servlet:
-              enabled: ${spring.datasource.druid.stat-view-servlet.stat-view-servlet}
+              enabled: ${spring.datasource.druid.stat-view-servlet.enabled}
               url-pattern: ${spring.datasource.druid.stat-view-servlet.url-pattern}
           filter:
               stat:
