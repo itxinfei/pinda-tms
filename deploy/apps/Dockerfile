@@ -1,16 +1,18 @@
 # ============================================
 # 品达TMS 微服务通用镜像（一份复用，全部 14 个 Spring Boot 服务）
-# 构建上下文为【仓库根目录】，通过 JAR_FILE 传入各模块产出的 fat jar：
-#   docker build -f deploy/apps/Dockerfile \
-#     --build-arg JAR_FILE=deploy/jars/pd-base.jar -t pinda/pd-base:<tag> .
 #
-# 字体/时区等重活放在 pinda/jre8-fontconfig:1（见 Dockerfile.base，只建一次）。
-# 注意：ARG 必须放在最后一条会用到它的指令前——放在 RUN 之前会让 ARG 值一变
-# 就把后面所有层缓存打掉，14 个服务各自重跑 apt（实测多花约 15 分钟）。
+# 构建上下文 = 只含该服务 jar 的目录（CI 里用硬链接准备，见 .gitea/workflows/deploy.yml）：
+#   mkdir -p .ctx/pd-base && ln -f deploy/jars/pd-base.jar .ctx/pd-base/app.jar
+#   docker build -f deploy/apps/Dockerfile -t pinda/pd-base:<tag> .ctx/pd-base
+#
+# 为什么不用仓库根目录当上下文：legacy builder 每次 build 都要把整个上下文打包传给
+# daemon，而 deploy/jars 里放着 14 个 fat jar，实测上下文 1.119GB、每个镜像白传一次
+# （14 个服务 ≈ 9GB 传输，单镜像多花约 70 秒）。上下文只放一个 jar 后是 ~80MB。
+#
+# 字体库/时区在 pinda/jre8-fontconfig:1（见 Dockerfile.base，只建一次）。
 # ============================================
 FROM pinda/jre8-fontconfig:1
 
 # JVM 参数由运行时环境变量 JAVA_OPTS 注入（便于在 compose 中限制内存）
-ARG JAR_FILE
-COPY ${JAR_FILE} /app.jar
+COPY app.jar /app.jar
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Djava.security.egd=file:/dev/./urandom -jar /app.jar"]

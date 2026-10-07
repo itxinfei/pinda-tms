@@ -7,8 +7,12 @@
 #
 # 安全边界（重要）：
 #   - 只动 pinda/pd-* 这一批应用镜像，绝不碰基础镜像与中间件镜像
-#     （mysql/redis/nacos/kafka/zookeeper/rabbitmq/gitea/*、ci/pinda-ci、
-#      eclipse-temurin 等，这些按你们的策略是有意长期保留的）；
+#     （运行时基础镜像 pinda/jre8-fontconfig:*、mysql/redis/nacos/kafka/
+#      zookeeper/rabbitmq/gitea/*、ci/pinda-ci、eclipse-temurin 等，这些是
+#      有意长期保留的）。注意：基础镜像名是 pinda/jre8-fontconfig，不以
+#      pinda/pd- 开头，本脚本的仓库过滤(grep '^pinda/pd-')天然不会选中它；
+#      若以后放宽该过滤，必须同时显式排除 pinda/jre8-fontconfig，否则下次
+#      构建会退回 14 次 apt；
 #   - 任何被容器（含已退出容器）引用的镜像一律不删；
 #   - 当前部署的 TAG 与最新 KEEP 个 tag 保留；
 #   - 支持 DRY_RUN=1 先看会删什么，不实际执行。
