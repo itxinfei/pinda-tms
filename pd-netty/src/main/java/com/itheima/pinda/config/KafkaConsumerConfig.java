@@ -27,7 +27,10 @@ import java.util.Map;
 @EnableKafka
 public class KafkaConsumerConfig {
 
-    @Value("${spring.kafka.consumer.bootstrap-servers:localhost:9092}")
+    // 与 Spring Boot 自身 Kafka 自动配置、以及 Nacos 里的 pd-*-prod.yml 用同一个 key；
+    // 原先读 spring.kafka.consumer.bootstrap-servers（该 key 无处配置），默认值 localhost 在容器里指向自身，
+    // 表现为消费者不停刷 "Connection to node -1 (localhost/127.0.0.1:9092) could not be established"。
+    @Value("${spring.kafka.bootstrap-servers:192.168.20.130:9092}")
     private String bootstrapServers;
 
     @Value("${spring.kafka.consumer.group-id:gps-trace-consumer-group}")
