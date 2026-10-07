@@ -1,6 +1,7 @@
 package com.itheima.pinda.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -63,7 +64,9 @@ public class LocationRecord implements Serializable {
 
     /**
      * 设备上报时间 yyyyMMddHHmmss
+     * <p>current_time 是 MySQL 保留字，必须带反引号，否则批量 INSERT/ORDER BY 直接语法报错。</p>
      */
+    @TableField("`current_time`")
     private String currentTime;
 
     /**
@@ -80,4 +83,16 @@ public class LocationRecord implements Serializable {
      * 入库时间
      */
     private LocalDateTime createTime;
+
+    /**
+     * 坐标系标识（P0-4 北斗字段最小改造 · D-13）
+     * <p>WGS84 / GCJ02 / BD09 / CGCS2000，默认 BD09（与后端 BaiduMapUtils 一致）。</p>
+     */
+    private String coordSystem;
+
+    /**
+     * 数据来源（P0-4 北斗字段最小改造 · D-13）
+     * <p>MOBILE / PDA / JT808 / NETTY_TCP / HTTP。</p>
+     */
+    private String source;
 }
