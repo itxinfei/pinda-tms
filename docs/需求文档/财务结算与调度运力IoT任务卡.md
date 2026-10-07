@@ -5,7 +5,7 @@
 > - **第四梯队（P1/P2）调度运力**：DSP-1 多约束路线规划（可解释）/ DSP-2 外协·加盟运力池 / DSP-3 抢派双模
 > - **第五梯队（P2）IoT 增值（依赖硬件，按需）**：IOT-1 冷链温控 / IOT-2 重量·视频货损 / IOT-3 能源结算
 >
-> **前置必读**：`ClaudeCode开发纪律与红线.md`、`开发规范与需求规格说明书.md`、`多端数据打通与统一领域模型.md`、`运营可视化与成本管控任务卡.md`（OPS-4 已建 `pd_task_cost`）、`UI设计规范与页面模板.md`。
+> **前置必读**：`ClaudeCode开发纪律与红线.md`、`开发规范与需求规格说明书.md`、`多端数据打通与统一领域模型.md`、`运营可视化与成本管控任务卡.md`（OPS-4 已定义 `pd_task_cost`，**尚未落地建表**）、`UI设计规范与页面模板.md`。
 
 ---
 
@@ -38,7 +38,7 @@
 | 运费计算 | ✅ **Drools 运费规则已有**（`DroolsRulesServiceImpl`，支持热加载 `ReloadDroolsRulesService` / `RulesReloadController`） | 复用，但**计费明细未落库** |
 | 订单金额 | ✅ `Order.amount`、`paymentMethod`(1预结/2到付)、`paymentStatus`(1未付/2已付) | 有字段，无结算流程 |
 | 结算/对账/账单 | ❌ **完全无**（搜索"结算/对账/bill/承运商"几乎无匹配实体） | 全新域，需建表 |
-| 趟次成本 | ✅ OPS-4 已建 `pd_task_cost` | 利润 = 收入 − 成本 |
+| 趟次成本 | ⚠️ OPS-4 已**定义** `pd_task_cost`，全仓无 DDL、无实体 → 需先建表 | 利润 = 收入 − 成本 |
 | 调度链路 | ✅ **`DispatchTask` 5 阶段明确**：订单分类 → **路线规划 `ITaskRoutePlanningService`（实现 `TaskRoutePlanningServiceImpl`）** → 创建运输任务 → 车次车辆司机 `ITaskTripsSchedulingService` → 完善任务+司机作业；用 `@GlobalTransactional`(Seata) | **VRP 升级落点 = `TaskRoutePlanningServiceImpl`** |
 | 车辆载重/体积 | ✅ `PdTruck.allowableLoad / allowableVolume`、`PdTruckType` | 多约束 VRP 的约束条件已具备 |
 | 线路/车次 | ✅ `PdTransportLine`、`PdTransportTrips`、`PdTransportTripsTruckDriver` | 可复用 |
