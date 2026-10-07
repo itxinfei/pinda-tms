@@ -2,11 +2,11 @@ spring:
   cloud:
     nacos:
       discovery:
-        server-addr: 47.94.207.39:8848
+        server-addr: ${NACOS_SERVER_ADDR:192.168.20.130:8848}
         group: pinda-tms
         namespace: f422e93d-2e54-4251-94f5-1fbfeaf689b3
       config:
-        server-addr: 47.94.207.39:8848
+        server-addr: ${NACOS_SERVER_ADDR:192.168.20.130:8848}
         file-extension: yml
         group: pinda-tms
         namespace: f422e93d-2e54-4251-94f5-1fbfeaf689b3

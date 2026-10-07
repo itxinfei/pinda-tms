@@ -1,0 +1,16 @@
+# ============================================
+# 运行时基础镜像：JRE8 + 验证码所需字体库 + 东八区
+# 只建一次并长期复用（14 个服务镜像都 FROM 它），把 apt 从每次构建的关键路径上摘掉。
+#   docker build -f deploy/apps/Dockerfile.base -t pinda/jre8-fontconfig:1 .
+# 改了本文件请把 tag 递增（:2），CI 检测到 tag 不存在会自动重建。
+# ============================================
+# Temurin 8 JRE(Ubuntu 22.04 源持续维护; openjdk:8-jre-slim 的 Debian11 已 EOL、security 源 404)
+FROM eclipse-temurin:8-jre-jammy
+
+# 字体库: 验证码(Java2D/SunFontManager)与图表生成必需, 缺失会导致 NoClassDefFoundError
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends fontconfig \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV TZ=Asia/Shanghai
+RUN ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime && echo ${TZ} > /etc/timezone

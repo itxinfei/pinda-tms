@@ -60,6 +60,9 @@ x-nacos-env: &nacos-env
   NACOS_IP: 192.168.20.130
   NACOS_PORT: "8848"
   NACOS_ID: 1cb93ce4-dc0e-4730-b759-d35fd7ed93c3
+  # 其余 12 服务的 bootstrap-*.yml 占位 ${NACOS_SERVER_ADDR:192.168.20.130:8848} 显式注入，
+  # 不再仅依赖 jar 内默认值（含端口，整体作为 server-addr）
+  NACOS_SERVER_ADDR: 192.168.20.130:8848
 
 # 中间件地址兜底（环境变量优先级高于 jar 内默认值/nacos 配置）：
 # 容器内 127.0.0.1 指向容器自身，必须显式指向宿主机映射端口

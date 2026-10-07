@@ -11,7 +11,7 @@ spring:
   application:
     name: @project.artifactId@
   profiles:
-    active: test #@pom.profile.name@
+    active: prod #@pom.profile.name@ （统一 prod；Nacos 地址由 NACOS_IP 环境变量注入 192.168.20.130）
   cloud:
     nacos:
       config:

@@ -28,7 +28,7 @@
                 <pom.profile.name>dev</pom.profile.name>
                 <!--Nacos配置中心地址-->
                 <!--<pom.nacos.ip>nacos.itcast.cn</pom.nacos.ip>-->
-                <pom.nacos.ip>101.43.184.54</pom.nacos.ip>
+                <pom.nacos.ip>192.168.20.130</pom.nacos.ip>
                 <!--<pom.nacos.ip>127.0.0.1</pom.nacos.ip>-->
                 <pom.nacos.port>8848</pom.nacos.port>
                 <!--Nacos配置中心命名空间,用于支持多环境.这里必须使用ID，不能使用名称,默认为空-->
@@ -56,7 +56,7 @@
             <properties>
                 <pom.profile.name>prod</pom.profile.name>
                 <!--Nacos配置中心地址-->
-                <pom.nacos.ip>127.0.0.1</pom.nacos.ip>
+                <pom.nacos.ip>192.168.20.130</pom.nacos.ip>
                 <pom.nacos.port>8848</pom.nacos.port>
                 <!--Nacos配置中心命名空间,用于支持多环境.这里必须使用ID，不能使用名称,默认为空-->
                 <pom.nacos.namespace>5747bed4-a142-4cd1-a42b-5a5affdb176a</pom.nacos.namespace>
