@@ -43,6 +43,10 @@ services:
       - --innodb-buffer-pool-size=1G
       - --max-connections=500
     mem_limit: 2g
+    # memory.low（docker 把 reservation 落到 cgroup v2 的 memory.low）：
+    # 2026-10-07 实测过 1G 缓冲池里 246M 被换进 swap，表现为查询突然变慢。
+    mem_reservation: 1200m
+    oom_score_adj: -500
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD"]
       interval: 20s
@@ -70,6 +74,8 @@ services:
       - --maxmemory-policy
       - volatile-lru
     mem_limit: 1536m
+    mem_reservation: 256m
+    oom_score_adj: -500
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 15s
@@ -99,6 +105,8 @@ services:
       FUNCTION_MODE: all
       TOMCAT_ACCESSLOG_ENABLED: "false"
     mem_limit: 1g
+    mem_reservation: 512m
+    oom_score_adj: -500
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://127.0.0.1:8848/nacos/v1/ns/operator/metrics || exit 1"]
       interval: 20s
@@ -129,6 +137,8 @@ services:
       ZOO_ADMINSERVER_ENABLED: "true"
     command: ["zkServer.sh", "start-foreground"]
     mem_limit: 768m
+    mem_reservation: 128m
+    oom_score_adj: -500
     healthcheck:
       test: ["CMD-SHELL", "nc -z 127.0.0.1 2181 || exit 1"]
       interval: 20s
@@ -154,6 +164,8 @@ services:
       KAFKA_HEAP_OPTS: "-Xms256m -Xmx512m"
     command: ["/opt/bitnami/scripts/kafka/run.sh"]
     mem_limit: 1g
+    mem_reservation: 256m
+    oom_score_adj: -500
     depends_on:
       - zookeeper
     healthcheck:
@@ -190,6 +202,8 @@ services:
     # 且 Spring AMQP 连接时会重新声明队列/交换机，因此新节点不丢业务拓扑。
     command: ["rabbitmq-server"]
     mem_limit: 1g
+    mem_reservation: 128m
+    oom_score_adj: -500
     healthcheck:
       test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping"]
       interval: 30s

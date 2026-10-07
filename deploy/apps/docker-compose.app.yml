@@ -20,8 +20,19 @@
 #   4) healthcheck：TCP 探活。注意 docker 只会标记 unhealthy、不会自动重启，它的
 #      作用是把「进程活着但不应答」（长 GC 停顿/死锁）暴露出来——restart:
 #      unless-stopped 只管进程退出，管不了这种情况。
-#   上限合计（应用≈13G + 中间件≈7.3G）故意大于 15.5G 物理内存：上限是天花板，
-#   不是预留；实测常驻合计约 8.3G。
+#   5) mem_reservation（2026-10-07）：cgroup v2 上 docker 把它落到 **memory.low**，
+#      即"软预留"——内存压力时最后才被回收，而不是硬占用。加这条的原因很实在：
+#      当天实测宿主 swap 已用 1.6G，mysqld 有 246M、Seata 有 632M 被换出，
+#      而 mysql57 的 memory.min/low 都是 0——缓冲池被人挤走，表现就是查询突然变慢、
+#      页面"很卡"。上限（mem_limit）只是天花板，防不住这种换页。
+#      预留合计 应用 7.7G（9×640m + 5×384m + 32m）+ 中间件 2.4G ≈ 10.1G，小于 15.5G
+#      物理内存，是刻意的：构建峰值（Maven 单轮实测 3.3G）压过来时，被回收的应该是
+#      构建容器，而不是正在服务的 JVM 和数据库缓冲池。
+#   6) cpu_shares（权重，不是硬顶）：16 核。给链路必经的 gateway/auth-server/netty
+#      加倍权重，构建期（runner 限 --cpus=8）用户请求不会被 JIT/GC 抢光 CPU。
+#      不给应用设硬 cpus 上限：JVM 启动期就要吃满几核，硬顶只会把部署拖成"起不来"。
+#   7) oom_score_adj：中间件 -500、应用 -200、构建容器 +500（在 act_runner 的
+#      container.options 里给），整机真出 OOM 时先杀构建，不动数据和服务。
 # ============================================
 name: pinda-apps
 
@@ -40,12 +51,25 @@ x-jvm-small: &jvm-small
 # 服务级加固档位
 x-app-core: &app-core
   mem_limit: 1g
+  mem_reservation: 640m      # -> memory.low，实测本档常驻 459~676M
+  oom_score_adj: -200
+  cpu_shares: 1024
   ulimits: *app-ulimits
+# 链路必经（gateway / auth-server / netty）：CPU 权重加倍，构建期不抢它们的核
+x-app-edge: &app-edge
+  <<: *app-core
+  cpu_shares: 2048
 x-app-small: &app-small
   mem_limit: 768m
+  mem_reservation: 384m      # 实测本档常驻 382~500M
+  oom_score_adj: -200
+  cpu_shares: 1024
   ulimits: *app-ulimits
 x-app-static: &app-static
   mem_limit: 128m
+  mem_reservation: 32m       # nginx 实测常驻 14M
+  oom_score_adj: -200
+  cpu_shares: 512
   ulimits: *app-ulimits
 
 # 探活公共参数（test 里的端口各服务单独写，YAML 锚点无法参数化）
@@ -76,7 +100,7 @@ x-redis-env: &redis-env
 services:
   # ---------- 网关与鉴权（profile=test） ----------
   pd-gateway:
-    <<: *app-core
+    <<: *app-edge
     image: pinda/pd-gateway:${PD_GATEWAY_TAG:-${TAG:-latest}}
     container_name: pd-gateway
     restart: unless-stopped
@@ -92,7 +116,7 @@ services:
       JAVA_OPTS: "-Xms128m -Xmx256m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:MaxMetaspaceSize=256m -XX:MaxDirectMemorySize=256m -Xss512k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -Dcors.allowed.origins=http://192.168.20.130,http://192.168.20.130:8080,http://localhost:8080,http://localhost:3000"
 
   pd-auth-server:
-    <<: *app-core
+    <<: *app-edge
     image: pinda/pd-auth-server:${PD_AUTH_SERVER_TAG:-${TAG:-latest}}
     container_name: pd-auth-server
     restart: unless-stopped
@@ -178,7 +202,7 @@ services:
 
   # netty 承载长连接与直接内存，按 core 档给足堆外额度
   pd-netty:
-    <<: *app-core
+    <<: *app-edge
     image: pinda/pd-netty:${PD_NETTY_TAG:-${TAG:-latest}}
     container_name: pd-netty
     restart: unless-stopped
