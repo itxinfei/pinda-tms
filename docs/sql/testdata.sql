@@ -2,7 +2,9 @@
 -- 品达TMS 开发测试环境 造数脚本
 -- 目标: 4端(管理/司机/快递员/客户)可登录 + 核心业务数据 ≥10条
 -- 幂等: 全部使用 INSERT IGNORE(主键冲突跳过), 可重复执行
--- 用法: docker exec -i mysql57 mysql -uroot -p123456 < testdata.sql
+-- 用法: 口令不写进脚本，从服务器 /data/deploy/middleware/.env 取 MYSQL_ROOT_PASSWORD
+--       DB_PASS=$(sed -n 's/^MYSQL_ROOT_PASSWORD=//p' /data/deploy/middleware/.env) \
+--         && docker exec -i mysql57 mysql -uroot -p"$DB_PASS" < testdata.sql
 -- 生成: 2026-10-06 (表结构实测于 192.168.20.130)
 -- ============================================================
 

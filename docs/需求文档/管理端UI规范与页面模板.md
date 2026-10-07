@@ -21,6 +21,8 @@
 ## 第 2 章 设计 Token（唯一真源）
 
 > 在 `src/styles/tokens.scss` 定义 SCSS 变量 + CSS 变量（双轨），并在 `element-variables.scss` 覆写 Element 主题。
+>
+> **落地状态（2026-10-07 实测）**：`src/styles/tokens.scss` **尚未创建**，`src/styles/` 现只有 `variables.scss`、`element-variables.scss` 等 8 个文件，管理端主色仍是 `element-variables.scss:7` 的 `#1890ff`。本节按"目标规范"读：改造前先建 `tokens.scss`，再全仓清零硬编码色，别把它当既成事实引用。
 
 ### 2.1 颜色（语义化，禁止其他色值）
 
@@ -76,7 +78,7 @@
 ```
 
 - 路由由后端 `getRouter` 下发（`filterAsyncRouter` 映射 `@/views/${path}.vue`），新增页面必须注册 `pd_auth_resource` 并绑定菜单角色，否则网关拒绝（阻断 C）。
-- 请求统一走 `src/utils/request`（Axios，`baseURL=/api`，自动注入 `token` 头，`code!==0` 为失败，401 清 token 跳登录）。**禁止裸 `fetch`**。
+- 请求统一走 `src/utils/request`（Axios，`baseURL=/api`）。**实装口径以代码为准**：请求头是 `Authorization: bearer <token>`（`request.js:45`），并在到期前 5 分钟自动用 `refresh_token` 续期（`request.js:40-42`、`grant_type=refresh_token` 在 `:104`），客户端凭据走 `getBasicAuth()`；`code!==0` 判失败，401 清 token 跳登录。**禁止裸 `fetch`**。
 
 ### 3.2 统一反馈（禁止自造）
 
