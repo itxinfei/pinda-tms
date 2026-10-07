@@ -64,9 +64,12 @@ public class LocationRecord implements Serializable {
 
     /**
      * 设备上报时间 yyyyMMddHHmmss
-     * <p>current_time 是 MySQL 保留字，必须带反引号，否则批量 INSERT/ORDER BY 直接语法报错。</p>
+     * <p>列名刻意不叫 current_time：那是 MySQL 保留字，手写 SQL 不加反引号时
+     * `select current_time from pd_truck_location` 会返回**当前时钟**而不是列值，
+     * 属于静默错数据。2026-10-07 已把列改名为 report_time（Java 字段名不变，
+     * 调用方无需改动）。</p>
      */
-    @TableField("`current_time`")
+    @TableField("report_time")
     private String currentTime;
 
     /**

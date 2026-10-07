@@ -63,9 +63,10 @@ public class LocationRecordArchive implements Serializable {
 
     /**
      * 设备上报时间 yyyyMMddHHmmss
-     * <p>current_time 是 MySQL 保留字，必须带反引号。</p>
+     * <p>列名 report_time，理由同 {@link LocationRecord}：current_time 是 MySQL 保留字，
+     * 手写 SQL 忘加反引号会静默返回当前时钟。</p>
      */
-    @TableField("`current_time`")
+    @TableField("report_time")
     private String currentTime;
 
     /**
