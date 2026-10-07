@@ -5,13 +5,14 @@
 # 用法：在【仓库根目录】执行
 #   bash deploy/server/setup-devops.sh
 # 可选变量：
-#   GITEA_ADMIN_USER=pinda GITEA_ADMIN_PASS=pinda123 bash deploy/server/setup-devops.sh
+#   GITEA_ADMIN_USER=<用户名> GITEA_ADMIN_PASS=<口令> bash deploy/server/setup-devops.sh
+#   口令必须显式传入，脚本与仓库里都不留默认值（本仓库是公开开源仓库）。
 # ============================================
 set -e
 
 GITEA_URL="http://192.168.20.130:3000"
 GITEA_ADMIN_USER="${GITEA_ADMIN_USER:-pinda}"
-GITEA_ADMIN_PASS="${GITEA_ADMIN_PASS:-pinda123}"
+: "${GITEA_ADMIN_PASS:?必须显式提供 GITEA_ADMIN_PASS（不在仓库里留默认口令）}"
 GITEA_ADMIN_EMAIL="${GITEA_ADMIN_EMAIL:-pinda@local}"
 
 echo "[1/3] 构建 CI 作业镜像 ci/pinda-ci:latest"

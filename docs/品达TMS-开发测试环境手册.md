@@ -38,9 +38,9 @@
 | MySQL 5.7 | mysql57 | 192.168.20.130:3306 | root | 123456 | 业务库见 §3.1 |
 | Redis 5 | redis | 192.168.20.130:6379 | （无） | 无密码 | 验证码/缓存/j2cache L2 |
 | Nacos 1.4.1 | nacos | 192.168.20.130:8848 | pinda | pinda | 控制台登录 |
-| RabbitMQ | rabbitmq | 192.168.20.130:15672（管理台） | pinda | pinda123 | tags: administrator |
+| RabbitMQ | rabbitmq | 192.168.20.130:15672（管理台） | pinda | 见机器上 /data/deploy/middleware/.env（不入库） | tags: administrator |
 | Kafka | kafka | 192.168.20.130:9092 | （无） | 无认证 | 依赖 zookeeper:2181 |
-| Gitea 1.21 | gitea | 192.168.20.130:3000 | pinda | pinda123 | SSH 端口 2222 |
+| Gitea 1.21 | gitea | 192.168.20.130:3000 | pinda | 见内部凭据（不入库） | SSH 端口 2222 |
 | Seata | （宿主 systemd） | 8091 | （无） | 无认证 | 非容器，/opt/seata |
 
 ### 3.1 Nacos 关键配置项
@@ -189,5 +189,5 @@ echo '123456' | sudo -S journalctl -u act-runner --no-pager -n 50
 ## 8. 注意事项
 1. 以上全部为开发测试环境凭据，**请勿用于生产**。
 2. 服务器时区为 UTC，查看日志时间注意 +8h 换算。
-3. Gitea 仓库远程地址（带凭据）：`http://pinda:pinda123@192.168.20.130:3000/pinda/pinda-tms.git`
+3. Gitea 仓库远程地址（带凭据）：`http://<用户>:<口令>.168.20.130:3000/pinda/pinda-tms.git`
 4. 密码修改后请同步更新 Nacos 配置与本文档。

@@ -29,7 +29,10 @@ BUILDER_KEEP_AGE=${BUILDER_KEEP_AGE:-72h}
 
 log() { printf '%s\n' "$*"; }
 
-before=$(docker system df --format '{{.Size}}' | head -1)
+# docker system df 单次实测 14 秒（要走完整个 containerd 内容统计），只为打一行装饰性汇总，
+# 默认跳过；需要看容量时 SHOW_DF=1 打开。
+if [ "${SHOW_DF:-0}" = "1" ]; then before=$(docker system df --format '{{.Size}}' | head -1); else before="?"; fi
+n_before=$(docker images -q | wc -l)
 
 # 收集"绝不能删"的镜像：所有容器（含 exited）引用的镜像名与镜像 ID
 protected_ids=$(mktemp)
@@ -89,8 +92,9 @@ log "=== BuildKit 缓存按时间回收（未使用超过 $BUILDER_KEEP_AGE） =
 # 容量封顶要靠 daemon.json 的 builder.gc.policy；这里能真正生效的是按时间的 --filter until=
 [ "$DRY_RUN" = "1" ] || docker builder prune -f --filter "until=$BUILDER_KEEP_AGE" >/dev/null 2>&1 || true
 
-after=$(docker system df --format '{{.Size}}' | head -1)
+n_after=$(docker images -q | wc -l)
+if [ "${SHOW_DF:-0}" = "1" ]; then after=$(docker system df --format '{{.Size}}' | head -1); else after="?"; fi
 log ""
-log "汇总: 保留 $kept_total 个、处理 $deleted_total 个旧 tag；镜像层占用 $before -> $after"
+log "汇总: 保留 $kept_total 个、处理 $deleted_total 个旧 tag；镜像条目 $n_before -> $n_after（容量对比用 SHOW_DF=1）"
 [ "$DRY_RUN" = "1" ] && log "(预演模式，未做任何删除)"
 exit 0

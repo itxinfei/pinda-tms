@@ -73,6 +73,13 @@ http {
             root   html;
         }
         location /api {
+            # 用变量 + resolver 让 nginx 每次运行时重新解析服务名。
+            # 直接写 proxy_pass http://pd-gateway:8760 时 nginx 只在启动那一刻解析一次并缓存，
+            # 网关容器被重建换 IP 后前端仍连旧地址 -> connection refused -> 502（实测踩过：
+            # upstream: "http://172.21.0.2:8760/..." 而 DNS 已指向 172.21.0.12）。
+            # 127.0.0.11 是 Docker 内置 DNS；proxy_pass 带变量后必须自己带上 URI。
+            resolver 127.0.0.11 valid=10s ipv6=off;
+            set $api_upstream ${DOCKER_REQUEST_DOMAIN_PREFIX};
             proxy_set_header   Host $host:$proxy_port;
             proxy_redirect off;
             proxy_set_header X-Real-IP $remote_addr;
@@ -80,7 +87,7 @@ http {
             proxy_connect_timeout 60;
             proxy_read_timeout 600;
             proxy_send_timeout 600;
-            proxy_pass ${DOCKER_REQUEST_DOMAIN_PREFIX};
+            proxy_pass $api_upstream$request_uri;
         }
     }
 }

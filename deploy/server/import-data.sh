@@ -5,12 +5,14 @@
 # 用法：在【仓库根目录】执行
 #   bash deploy/server/import-data.sh
 # 可选变量：
-#   MYSQL_CONTAINER=mysql57 DB_PASS=123456 bash deploy/server/import-data.sh
+#   MYSQL_CONTAINER=mysql57 DB_PASS=<口令> bash deploy/server/import-data.sh
+#   不给 DB_PASS 时自动读机器上的 /data/deploy/middleware/.env（该文件不入库、root 0600）
 # ============================================
 set -e
 
 MYSQL_CONTAINER="${MYSQL_CONTAINER:-mysql57}"
-DB_PASS="${DB_PASS:-123456}"
+DB_PASS="${DB_PASS:-$(sed -n 's/^MYSQL_ROOT_PASSWORD=//p' /data/deploy/middleware/.env 2>/dev/null | head -1)}"
+: "${DB_PASS:?未提供 DB_PASS，且读不到 /data/deploy/middleware/.env}"
 
 dc() { docker exec -i "$MYSQL_CONTAINER" mysql -uroot -p"$DB_PASS" "$@"; }
 # 严格导入（失败即中断）

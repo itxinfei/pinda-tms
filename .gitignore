@@ -72,8 +72,5 @@ docs/superpowers/
 docs/zipkin-server-*.jar
 docs/settings.xml
 
-# Gitea 内部 CI 工作流（含内部 RDC 凭据，仅本地使用，不推公网 Gitee）
-.gitea/
-
-# 推送说明（本地备忘，非项目代码，不推公网 Gitee）
+# 推送说明（本地备忘，非项目代码，不入库）
 PUSH_GUIDE.md
