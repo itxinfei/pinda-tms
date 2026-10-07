@@ -74,3 +74,6 @@ docs/settings.xml
 
 # Gitea 内部 CI 工作流（含内部 RDC 凭据，仅本地使用，不推公网 Gitee）
 .gitea/
+
+# 推送说明（本地备忘，非项目代码，不推公网 Gitee）
+PUSH_GUIDE.md
