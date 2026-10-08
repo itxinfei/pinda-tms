@@ -15,15 +15,18 @@ set -uo pipefail
 DRY_RUN=${DRY_RUN:-0}
 changed=0
 
-names=$(docker network ls --format '{{.Name}}' | grep -vE '^(host|bridge|none)$')
-[ -z "$names" ] && { echo "没有自定义网络"; exit 0; }
+# host/none 上没有网桥，跳过；默认的 bridge 网络（docker0）必须一起管，
+# 否则挂在 docker0 上的容器（如 Gitea 的 3000 发布端口）resume 后没人补网关。
+names=$(docker network ls --format '{{.Name}}' | grep -vE '^(host|none)$')
+[ -z "$names" ] && { echo "没有网络"; exit 0; }
 
 # 一次 inspect 取全部网络，避免每分钟起十几个 docker 进程
 while IFS='|' read -r net driver id sub gw; do
   [ "$driver" = "bridge" ] || continue
   [ -n "$sub" ] && [ -n "$gw" ] || continue
 
-  br="br-${id:0:12}"
+  # 只有自定义网络用 br-<网桥ID>，默认 bridge 用的是 docker0
+  if [ "$net" = "bridge" ]; then br=docker0; else br="br-${id:0:12}"; fi
   if ! ip link show "$br" >/dev/null 2>&1; then
     echo "跳过 $net: 网桥 $br 不存在"
     continue
