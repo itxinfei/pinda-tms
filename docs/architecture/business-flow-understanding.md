@@ -12,8 +12,7 @@
 
 | 事实 | 证据 |
 | --- | --- |
-| 订单 3 条、运单 3 张、运单 100% 带 `order_id` | 线上 `select` 实测：`pd_oms.pd_order`=3、`pd_work.pd_transport_order`=3、`有order_id=3` |
-| **全部停在 `status=1`** | 同上（`status=1 rows=3`，两侧都是 1） |
+| 2026-10-07 当时订单 3 条、运单 3 张，**全部停在 `status=1`**；**2026-10-08 复测已归零** | 10-07 实测 `pd_oms.pd_order`=3、`pd_work.pd_transport_order`=3（`status=1` 各 3）；10-08 复测 `pd_oms.pd_order`=0、`pd_work.pd_transport_order`=0、`pinda_tms.pd_order`=0。同期 `pd_auth_user`=13、`pd_truck_driver`=10、`pd_member`=3、`pd_area`=44703 **都没变**，只有订单侧空了。服务器 `@@log_bin=0`，没有可追溯的删除记录，**因此无法断定是谁在什么时候删的** |
 | 取派任务、司机作业、轨迹、结算 全 0 行 | `pd_work.pd_task_pickup_dispatch`=0、`pd_driver_job`=0、`pd_oms.pd_truck_location`=0 |
 | 快递员列表接口实测返回 0 行 | 网关 `GET /api/web-manager/business-hall/courier/page` → `{"counts":0,...}`，而 `会员分页` counts=3 |
 

@@ -67,6 +67,8 @@ C-11 的调用面（逐个 grep 过，不是猜的）：`memberFeign.detail` 有
 
 ## 5. 我这轮改了什么 / 什么没改
 
+
+
 已改并验证：S-1（建 `pd_dispatch.pd_schedule_exception_order`，用仓库里已跟踪但从未执行的脚本）；
 `pd_work.pd_status_transition_history`（新增脚本并执行，13 列与实体对齐，此前审计历史静默全丢）；
 C-3/C-4/C-5 的 pd-user 地址簿部分（提交 `92f624a`）。
@@ -92,3 +94,31 @@ C-3/C-4/C-5 的 pd-user 地址簿部分（提交 `92f624a`）。
 | A-5 菜单越权 | 直连 auth 无身份头时，`/menu/router?userId=1` 与不带参数返回一致（`data:[]`）→ 查询参数已不起作用 |
 | deploy-check 第 8 节 | 已装到 `/usr/local/bin`；输出"未轮换：pd-auth-server 仍从镜像内 classpath 读私钥"，全篇"结论: 全部通过"（未轮换属提示级，不判失败） |
 | S-1 缺表 | 建表前后对照：12:50/13:00/13:10/13:20 每 10 分钟一条 `定时重试执行异常` → 13:30 那一拍起无报错，近 4 分钟 `doesn't exist` 计数 0 |
+
+## 6. 地址簿越权修复的在线验证（2026-10-08 15:00，pd-user:d5dae20）
+
+造两个带标记的会员与两条地址（zzu_memA 拥有 zzu_addrA、zzu_memB 拥有 zzu_addrB），
+直接打 pd-user 容器并切换 `userid` 头。基线 `pd_users.pd_address_book=0`、`pd_member=3`。
+
+| 探针 | 期望 | 实测 |
+| --- | --- | --- |
+| 甲读乙的地址 | 403 | `{"msg":"无权访问该地址","code":403}` |
+| 乙读自己的地址 | code:0 带数据 | `{"msg":"success","code":0,"data":{"id":"zzu_addrB","userId":"zzu_memB",…}}` |
+| 不带身份头读 | 401 | `{"msg":"缺少身份信息，拒绝访问地址簿","code":401}` |
+| 甲删乙的地址 | 403 且行仍在 | 403；随后 `count(*) where id=zzu_addrB` = 1 |
+| 甲以 body 里的 userId 冒充乙新增 | 403 | `{"msg":"只能给自己的账号新增地址","code":403}` |
+| 甲改乙的行（body 带 id） | 403 | `{"msg":"无权访问该地址","code":403}` |
+| 乙改自己的行、body **不带 isDefault** | 不再 500 | `{"msg":"success","code":0}`，落库 name=owner-self → 拆箱 NPE 确认已修 |
+| 同一行归属是否被 body 改掉 | 不变 | 落库 `user_id` 仍是 zzu_memB → 归属不可转移确认 |
+
+清理：`delete from pd_users.pd_address_book where id like 'zzu%' or user_id like 'zzu%'`，
+并清掉 redis 里 addressBook 相关键；复核回到基线 address_book=0 / member=3、
+`--scan --pattern '*zzu*'` 命中 0、`pd_users.undo_log`=0、影子表 `pinda_tms.pd_address_book`=0。
+
+## 7. 验证过程中新暴露的一条既有缺陷（不是我引入的）
+
+| C-13 | `PUT /addressBook/{id}` 只要请求体里不带 `id`，就在**进入方法之前**被 j2cache 的清除注解炸掉：`@CacheEvictor({@Cache(region="addressBook", key="ab", params="1.id")})` 取的是第 2 个入参（entity）的 `id`，而按 REST 习惯 id 只在路径上、body 里没有 → 切面拿到 null 后 `NullPointerException`（伴随 `IllegalAccessException: 无法访问对象[1].id`），HTTP 500 且我的归属校验根本没机会执行 | 实测：不带 id 的 PUT 全部 500，堆栈顶为 `AddressBookController$$EnhancerBySpringCGLIB.update(<generated>)`、经 `TxXidFilter.java:32`；带上 `{"id":…}` 同一请求立刻变成正常的 403/200。注解本身是既有代码（本次未改），所以这是**既存缺陷**，我的修复只是把它暴露到台面上 | **P1** |
+
+顺带一个必须说清的口径：因为 C-13 的存在，"甲改乙的地址"这条越权**在改之前也是走不通的**——它先被 500 挡住，
+不是被权限挡住。所以这条的实际收益是"本人可用 + 越权有明确 403 语义"，而不是"堵住了一条正在发生的越权"。
+
