@@ -32,7 +32,7 @@
 
 | 被推翻的说法 | 实测/证据 |
 | --- | --- |
-| "pd_aggregation 副本表都是空的，pd_area 0 行" | 实测 `pd_aggregation.pd_area=44703`（与 `pd_auth` 44474 基本一致，靠建库/灌数脚本产生）；真正空的是 `pd_order`、`pd_core_org`。**结论仍是无同步机制，但依据不同** |
+| "pd_aggregation 副本表都是空的，pd_area 0 行" | 实测 `pd_aggregation.pd_area=44703`；2026-10-08 复测三库 `pd_area` **各 44703 行**（`pd_auth` / `pd_aggregation` / `pinda_tms`，本文件旧版把 pd_auth 误记成 44474，已改正）。真正空的是 `pd_order`、`pd_core_org` 这类业务副本。**结论仍是无同步机制，但依据不同** |
 | "pd_auth 库里没有 `pd_area` 表，`Area` 实体指向不存在的表" | 实测 `pd_auth.pd_area` 存在且有 44474 行 |
 | "pd-work 的 `StateTransitionValidator` 是死代码" | 它被 `TaskTransportServiceImpl`、`TransportOrderServiceImpl` 调用且有 `StateTransitionValidatorTest`；真正的问题是**与 pd-oms 内联 map 重复定义两份** |
 
@@ -46,3 +46,14 @@
 | `pd_aggregation` 副本是否有隐式同步作业 | 未见同步任务/触发器 | 查 Quartz 表与 crontab、确认 `pd_area` 副本是谁灌的 |
 | 自寄单（23002）实际是否卡单 | 需真实样本 | 按 `pickup_type=1` 统计状态分布 |
 | `TruckFeign` fallback 静默降级是否掩盖过心跳失败 | fallback 返回空且异常被吞 | 临时把 pd-base 停 30 秒，看心跳缺失是否有告警 |
+
+## 续：支撑域体检（2026-10-08）
+
+主干之外的四块地基（认证授权 / 主数据 / 计费支付通知 / 前端契约与公共层）另见
+`support-domains-review.md`，编号 A-x / B-x / C-x / D-x，风险关系图 `support-domains-risk-map.dot`。
+本轮被子代理说错、被我推翻或改级的 4 条单独记在该文件 §6，其中最重要的是：
+
+- **推翻**"全仓无 refreshToken"：后端确实没有刷新接口，但前端 `utils/request.js:40-42,104,225-239` 有完整 refresh 流程 —— 真实缺陷是"前端有刷新、后端无接口"。
+- **实测补强**：`pd_oms.rule` 与 `pinda_tms.rule` **各 0 行**（`rule_key='tms'` 查不到），配合 `OrderServiceImpl.java:257-262` → 当前运费计算返回 null，不是"运价口径不统一"这么轻。
+- **实测补强**：三库 `pd_area` 各 44703 行，把 `导入区划四级_可重复执行.sql:47` 的 `TRUNCATE`（而 `:52` 回填是注释）从"脚本危险"抬成"一次误执行清掉 134109 行"。
+- **改级**：`pd-file-server` 在注册中心实测不存在（14 个服务，无此项）且三端 `AttachmentClient` 无 fallback → 附件/POD 上传是运行时必抛，P2 → P1。

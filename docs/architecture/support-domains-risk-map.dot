@@ -1,0 +1,133 @@
+// 支撑域风险地图（认证授权 / 主数据 / 计费支付 / 前端契约与公共层）
+// 读法：菱形=风险命题，矩形=证据锚点（文件:行号 或 实测事实），虚线=推断/待证。
+// 与维护：本图与 support-domains-review.md 的编号（A-x/B-x/C-x/D-x）一一对应，改文必改图。
+// 过滤建议：只看 P0 —— 搜 "P0" 或按 cluster 分域展开；全图 40 余节点，勿在一张图里追全链路。
+digraph support_domains_risk {
+  rankdir=TB;
+  nodesep=0.28;
+  ranksep=0.55;
+  fontname="Microsoft YaHei";
+  labelloc=t;
+  label="品达TMS 支撑域风险地图 2026-10-08（实心=代码+实测双证，虚线=推断待证）\n图例：菱形=风险  矩形=证据  虚线=低置信  红=P0  橙=P1  灰=P2";
+  compound=true;
+
+  node [fontname="Microsoft YaHei", fontsize=10];
+  edge [fontname="Microsoft YaHei", fontsize=9];
+
+  // ---------- P0 风险命题 ----------
+  node [shape=diamond, style=filled, fillcolor="#ffd9d9", color="#b00000"];
+  A1 [label="A-1 JWT签名私钥在公开仓库\n可伪造任意身份token"];
+  A2 [label="A-2 数据权限DataScope\n拦截器零装配点"];
+  B1 [label="B-1 区划脚本TRUNCATE\n回填语句是注释"];
+  B2 [label="B-2 两处String.equals(Long)\n自动分单必抛"];
+  B3 [label="B-3 运价规则表0行\n计价返回null"];
+  B5 [label="B-5 网点三个真相\n新表零引用"];
+  C1 [label="C-1 默认渠道mock\n服务端自付"];
+  C2 [label="C-2 回调验签不可达\n字段非空即放行"];
+  C3 [label="C-3 真实回调被网关401\n渠道进不来"];
+  C4 [label="C-4 支付宝退款桩\n未发网关return true"];
+
+  // ---------- P1 风险命题 ----------
+  node [shape=diamond, style=filled, fillcolor="#fff2cc", color="#b66000"];
+  A3 [label="A-3 口令双轨裸MD5\n重置固定123456"];
+  A4 [label="A-4 JWT userId\n当司机档案主键"];
+  A5 [label="A-5 /menu 接受userId参数\n越权读他人菜单"];
+  B4 [label="B-4 运价三列全UNIQUE\n刷价靠无鉴权GET"];
+  C5 [label="C-5 无对账无关单无补偿\nqueryPayment全false"];
+  C6 [label="C-6 结算只生单不推进\n表在库里不存在"];
+  C7 [label="C-7 无体积重\n续重向下取整"];
+  C8 [label="C-8 pd-file-server无实例\n附件上传必抛"];
+  D1 [label="D-1 6个前端api模块\n后端无此路由"];
+  D2 [label="D-2 Result无isError\n错误表现为空数据"];
+  D3 [label="D-3 业务服务无异常Advice"];
+  D4 [label="D-4 重置密码GET vs POST"];
+  D5 [label="D-5 操作日志明文存口令"];
+  D6 [label="D-6 静态菜单+守卫只判token"];
+
+  // ---------- 证据锚点 ----------
+  node [shape=box, style="rounded,filled", fillcolor="#f4f4f4", color="#9a9a9a"];
+  E_pri  [label="git ls-files 命中2个pri.key\n636B DER 30820278 / origin_master同命中"];
+  E_gate [label="pd-gateway-prod.yml:10 header-name=token\n:19-22 ignore.auth.url=[/anno,/captcha]"];
+  E_ds   [label="DataScopeInterceptor.java:40 唯一命中\nUserServiceImpl.java:61-63 传null"];
+  E_area [label="导入区划四级.sql:47 TRUNCATE / :52 LOAD DATA注释\n实测3库各44703行"];
+  E_eq   [label="TaskOrderClassifyServiceImpl:210,:330\nOrder.java:65,70,75=String / Area=Entity<Long>"];
+  E_rule [label="实测 pd_oms.rule=0行 pinda_tms.rule=0行\nReloadDroolsRulesService:34-37 / OrderServiceImpl:257-262"];
+  E_agcy [label="pd_agency_建表与初始化.sql:6-9,25\n全仓0处实体/Mapper引用"];
+  E_mock [label="PayServiceImpl:53 pay.channel:mock\n:120-132 自调handleCallback置PAID"];
+  E_cbk  [label="PayController.java:60-67 只收JSON body\nWechatPayChannel:128-150 兜底out_trade_no!=null"];
+  E_ref  [label="AlipayPayChannel:183-184 签名后return true\nWechatPayChannel:186-190 模拟退款成功"];
+  E_qry  [label="三渠道queryPayment均return false\n全仓@Scheduled只有2处"];
+  E_file [label="实测注册中心14个服务无pd-file-server\nAttachmentClient:16-19 无fallback"];
+  E_menu [label="MenuController.java:181-195,:136-141\n参数优先于身份头"];
+  E_pwd  [label="UserServiceImpl:78,154,175 md5\nBizConstant:15 =MD5(123456)"];
+  E_drv  [label="pd-web-driver/UserController:81\n实测 drivers=10 auth_users=13"];
+  E_ui   [label="api/{Dictionary,Tenant,Application,SystemApi,Msgs,Attachment}.js\n后端@RequestMapping顶层仅22个"];
+  E_res  [label="AxiosApi.js:43-58 无条件resolve\nResult.java:20,23-25 只有code/msg"];
+  E_adv  [label="DefaultGlobalExceptionHandler:52 abstract\n子类只有auth与gateway两个"];
+  E_log  [label="SysLogAspect:102,111 存全部入参\nUserController:230-235 @SysLog(修改密码)"];
+  E_st   [label="router/menu.js:1-5 静态菜单\nrouter/index.js:120-146 只判TOKEN"];
+
+  // ---------- 后果节点 ----------
+  node [shape=box, style=filled, fillcolor="#e6f4ea", color="#1a7f37"];
+  OUT_cash [label="收款链三条路全断\n自付 / 可伪造 / 进不来"];
+  OUT_price [label="运费算不出（null）\n报价与账单各自漂移"];
+  OUT_disp [label="自动分单永不成功\n区域数据可被一次清空"];
+  OUT_auth [label="权限层实际不存在\n身份可伪造可越权"];
+  OUT_data [label="错误静默成空数据\n排障无从下手"];
+
+  // ---------- 域边界 ----------
+  subgraph cluster_auth { label="认证授权域"; color="#8888aa"; fontname="Microsoft YaHei";
+    A1; A2; A3; A4; A5; }
+  subgraph cluster_master { label="主数据域"; color="#8888aa"; fontname="Microsoft YaHei";
+    B1; B2; B3; B4; B5; }
+  subgraph cluster_pay { label="计费·支付·通知·文件"; color="#8888aa"; fontname="Microsoft YaHei";
+    C1; C2; C3; C4; C5; C6; C7; C8; }
+  subgraph cluster_fe { label="前端契约与公共层"; color="#8888aa"; fontname="Microsoft YaHei";
+    D1; D2; D3; D4; D5; D6; }
+
+  // ---------- 证据 → 风险（type=evidence） ----------
+  edge [arrowhead=normal, color="#444444"];
+  E_pri -> A1;
+  E_ds -> A2;
+  E_pwd -> A3;
+  E_drv -> A4;
+  E_menu -> A5;
+  E_area -> B1;
+  E_eq -> B2;
+  E_rule -> B3;
+  E_agcy -> B5;
+  E_mock -> C1;
+  E_cbk -> C2;
+  E_gate -> C3;
+  E_ref -> C4;
+  E_qry -> C5;
+  E_file -> C8;
+  E_ui -> D1;
+  E_res -> D2;
+  E_adv -> D3;
+  E_log -> D5;
+  E_st -> D6;
+  E_gate -> A1 [style=dashed, color="#b66000", label="网关用同一把pub.key"];
+
+  // ---------- 风险 → 后果（type=leads-to） ----------
+  C1 -> OUT_cash; C2 -> OUT_cash; C3 -> OUT_cash;
+  C4 -> OUT_cash [label="退款假成功"];
+  B3 -> OUT_price; B4 -> OUT_price [style=dashed];
+  C6 -> OUT_price [label="结算无推进"];
+  C7 -> OUT_price [label="轻泡货亏运费"];
+  B1 -> OUT_disp; B2 -> OUT_disp;
+  A1 -> OUT_auth; A2 -> OUT_auth; A5 -> OUT_auth; D6 -> OUT_auth;
+  A3 -> OUT_auth [style=dashed, label="口令强度"];
+  A4 -> OUT_disp [style=dashed, label="司机身份错档案"];
+  D1 -> OUT_data; D2 -> OUT_data; D3 -> OUT_data; D4 -> OUT_data;
+  C8 -> OUT_data [style=dashed, label="上传500被吞"];
+  D5 -> OUT_auth [style=dashed, label="凭据落库可越权读"];
+
+  // ---------- 待证推断（低置信，勿当事实） ----------
+  node [shape=diamond, style="filled,dashed", fillcolor="#eeeeee", color="#888888"];
+  U_dup [label="待证: 影子表副本是否有人读\n(见主报告断点二)"];
+  U_id  [label="待证: IdWorker(1,1) 多实例是否已撞号\n需查 duplicate-key 日志"];
+  U_sms [label="待证: prod 是否配了 sms.active-channel\n实测23个dataId未见 → 现走默认http空URL"];
+  edge [style=dashed, color="#888888"];
+  U_dup -> OUT_data; U_id -> OUT_disp; U_sms -> OUT_data;
+}
