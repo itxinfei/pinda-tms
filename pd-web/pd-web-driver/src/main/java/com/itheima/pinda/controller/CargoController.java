@@ -14,7 +14,9 @@ import com.itheima.pinda.authority.enumeration.common.StaticStation;
 import com.itheima.pinda.base.R;
 import com.itheima.pinda.common.context.RequestContext;
 import com.itheima.pinda.common.enums.ErrorCode;
+import com.itheima.pinda.common.exception.PdException;
 import com.itheima.pinda.common.utils.EntCoordSyncJob;
+import com.itheima.pinda.common.utils.OwnershipAssert;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.util.Rx;
@@ -25,7 +27,9 @@ import com.itheima.pinda.enums.pickuptask.PickupDispatchTaskStatus;
 import com.itheima.pinda.enums.pickuptask.PickupDispatchTaskType;
 import com.itheima.pinda.enums.transportorder.TransportOrderStatus;
 import com.itheima.pinda.enums.transporttask.TransportTaskStatus;
+import com.itheima.pinda.DTO.DriverExceptionReportDTO;
 import com.itheima.pinda.feign.*;
+import com.itheima.pinda.feign.DriverExceptionReportFeign;
 import com.itheima.pinda.feign.agency.AgencyScopeFeign;
 import com.itheima.pinda.feign.transportline.TransportTripsFeign;
 import com.itheima.pinda.feign.user.CourierScopeFeign;
@@ -87,7 +91,9 @@ public class CargoController {
 
     private final CourierScopeFeign courierScopeFeign;
 
-    public CargoController(PickupDispatchTaskFeign pickupDispatchTaskFeign, AgencyScopeFeign agencyScopeFeign, OrderFeign orderFeign, TransportTaskFeign transportTaskFeign, DriverJobFeign driverJobFeign, OrgApi orgApi, AreaApi areaApi, TransportOrderFeign transportOrderFeign, TransportTripsFeign transportTripsFeign, UserApi userApi,CourierScopeFeign courierScopeFeign) {
+    private final DriverExceptionReportFeign driverExceptionReportFeign;
+
+    public CargoController(PickupDispatchTaskFeign pickupDispatchTaskFeign, AgencyScopeFeign agencyScopeFeign, OrderFeign orderFeign, TransportTaskFeign transportTaskFeign, DriverJobFeign driverJobFeign, OrgApi orgApi, AreaApi areaApi, TransportOrderFeign transportOrderFeign, TransportTripsFeign transportTripsFeign, UserApi userApi,CourierScopeFeign courierScopeFeign, DriverExceptionReportFeign driverExceptionReportFeign) {
         this.pickupDispatchTaskFeign = pickupDispatchTaskFeign;
         this.agencyScopeFeign = agencyScopeFeign;
         this.orderFeign = orderFeign;
@@ -98,7 +104,8 @@ public class CargoController {
         this.transportOrderFeign = transportOrderFeign;
         this.transportTripsFeign = transportTripsFeign;
         this.userApi = userApi;
-        this.courierScopeFeign =courierScopeFeign;
+        this.courierScopeFeign = courierScopeFeign;
+        this.driverExceptionReportFeign = driverExceptionReportFeign;
     }
 
     @SneakyThrows
@@ -313,6 +320,11 @@ public class CargoController {
         if (driverJobDTO == null) {
             return Result.error(404, "司机作业单不存在");
         }
+        // 归属校验：作业单必须属于当前登录司机，防止越权查看他人车次明细
+        Result deny = OwnershipAssert.checkEquals(driverJobDTO.getDriverId(), RequestContext.getUserId(), "无权查看他人作业单");
+        if (deny != null) {
+            return deny;
+        }
 
         Map<String, TaskTransportDTO> transportTaskDTOMap = new HashMap<>();
         TaskTransportDTO transportTaskDTO = transportTaskFeign.findById(driverJobDTO.getTaskTransportId());
@@ -377,6 +389,11 @@ public class CargoController {
             return Result.ok().put("data", PageResponse.<String>builder()
                     .counts(0L).page(0).pagesize(0).pages(0L).build());
         }
+        // 归属校验：作业单必须属于当前登录司机，防止越权拉取他人货物明细
+        Result deny = OwnershipAssert.checkEquals(driverJob.getDriverId(), RequestContext.getUserId(), "无权查看他人作业单");
+        if (deny != null) {
+            return deny;
+        }
         TaskTransportDTO transportTaskDTO = transportTaskFeign.findById(driverJob.getTaskTransportId());
         List<String> result = transportTaskDTO.getTransportOrderIds();
         log.info("获取货物明细 运输任务： {}", transportTaskDTO);
@@ -393,6 +410,7 @@ public class CargoController {
     }
 
     @ApiOperation(value = "提货")
+    @GlobalTransactional(name = "driverPickUp", rollbackFor = Exception.class)
     @ResponseBody
     @PutMapping("pickUp")
     public Result pickUp(@RequestBody TaskTransportDTO taskTransportDTO) {
@@ -400,43 +418,63 @@ public class CargoController {
         //  获取司机id  并放入参数
         String driverId = RequestContext.getUserId();
 
-        DriverJobDTO driverJobDTO = new DriverJobDTO();
-        driverJobDTO.setPage(1);
-        driverJobDTO.setPageSize(1);
-        driverJobDTO.setStatus(DriverJobStatus.PROCESSING.getCode());
-        driverJobDTO.setDriverId(driverId);
-
-        // 校验是否有在途任务
-        PageResponse<DriverJobDTO> result = driverJobFeign.findByPage(driverJobDTO);
-        if (result != null && !CollectionUtils.isEmpty(result.getItems())) {
-            return Result.error(ErrorCode.ONTHEWAY, "在途任务尚未结束，无法提货");
-        }
-
+        // 先按请求体id取作业单，归属校验必须在任何业务判断之前
         DriverJobDTO driverJob = driverJobFeign.findById(taskTransportDTO.getId());
         if (driverJob == null) {
             return Result.error(400, "司机作业单不存在");
         }
+        Result ownershipDeny = OwnershipAssert.checkEquals(driverJob.getDriverId(), driverId, "无权操作他人作业单");
+        if (ownershipDeny != null) {
+            return ownershipDeny;
+        }
+
         String taskTransportId = driverJob.getTaskTransportId();
         if (StringUtils.isBlank(taskTransportId)) {
             return Result.error(400, "运输任务ID为空");
         }
+        // 获取运输任务（在途判断与后续更新都要用）
+        TaskTransportDTO taskTransport = transportTaskFeign.findById(taskTransportId);
+        if (taskTransport == null) {
+            return Result.error(400, "运输任务不存在");
+        }
+
+        // 校验当前司机是否存在在途作业单
+        DriverJobDTO processingQuery = new DriverJobDTO();
+        processingQuery.setPage(1);
+        processingQuery.setPageSize(10);
+        processingQuery.setStatus(DriverJobStatus.PROCESSING.getCode());
+        processingQuery.setDriverId(driverId);
+        PageResponse<DriverJobDTO> processingPage = driverJobFeign.findByPage(processingQuery);
+        List<DriverJobDTO> processingJobs = Rx.items(processingPage);
+        if (!processingJobs.isEmpty()) {
+            // 断点续提放行条件：在途作业单有且只有当前这一单，且其运输任务并未推进到 PROCESSING
+            // （说明上次提货在"修改运输任务状态"之前 Feign 失败，作业单残留 PROCESSING，允许重试续提）
+            boolean onlyCurrentJob = processingJobs.stream()
+                    .allMatch(item -> driverJob.getId().equals(item.getId()));
+            boolean transportNotProcessing = !TransportTaskStatus.PROCESSING.getCode().equals(taskTransport.getStatus());
+            if (!(onlyCurrentJob && transportNotProcessing)) {
+                return Result.error(ErrorCode.ONTHEWAY, "在途任务尚未结束，无法提货");
+            }
+            log.info("断点续提：作业单{}上次提货中途失败，允许继续提货", driverJob.getId());
+        }
+
         String startAgencyId = driverJob.getStartAgencyId();
         // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
         Org org = Rx.data(orgApi.get(Long.parseLong(startAgencyId)));
         if (org == null) {
             return Result.error(ErrorCode.ONTHEWAY, "起始机构不存在");
         }
-        // 获取全部运单
-        TaskTransportDTO taskTransport = transportTaskFeign.findById(taskTransportId);
-        if (taskTransport == null) {
-            return Result.error(400, "运输任务不存在");
-        }
         // 修改司机作业单
-        driverJobDTO = new DriverJobDTO();
-        driverJobDTO.setStatus(DriverJobStatus.PROCESSING.getCode());
-        driverJobDTO.setStartHandover(org.getManager());
-        //driverJobDTO.setActualArrivalTime(LocalDateTime.now());
-        driverJobFeign.updateById(driverJob.getId(), driverJobDTO);
+        DriverJobDTO driverJobUpdate = new DriverJobDTO();
+        driverJobUpdate.setStatus(DriverJobStatus.PROCESSING.getCode());
+        driverJobUpdate.setStartHandover(org.getManager());
+        //driverJobUpdate.setActualArrivalTime(LocalDateTime.now());
+        DriverJobDTO driverJobResult = driverJobFeign.updateById(driverJob.getId(), driverJobUpdate);
+        if (driverJobResult == null) {
+            // Feign 走了降级返回 null，远程写未生效，抛异常回滚全局事务，避免留下半提货物状态
+            log.error("提货失败：司机作业单更新未生效 driverJobId={}", driverJob.getId());
+            throw new PdException("司机作业单更新失败", 500);
+        }
         // 修改运输任务表
         TaskTransportDTO taskTransportUpdate = new TaskTransportDTO();
         taskTransportUpdate.setIds(taskTransport.getIds());
@@ -449,7 +487,11 @@ public class CargoController {
         taskTransportUpdate.setActualPickUpGoodsTime(LocalDateTime.now());
         taskTransportUpdate.setActualDepartureTime(taskTransportUpdate.getActualPickUpGoodsTime());
 
-        transportTaskFeign.updateById(taskTransportId, taskTransportUpdate);
+        TaskTransportDTO transportTaskResult = transportTaskFeign.updateById(taskTransportId, taskTransportUpdate);
+        if (transportTaskResult == null) {
+            log.error("提货失败：运输任务更新未生效 taskTransportId={}", taskTransportId);
+            throw new PdException("运输任务更新失败", 500);
+        }
 
 
         List<String> transportOrderIds = taskTransport.getTransportOrderIds();
@@ -458,7 +500,11 @@ public class CargoController {
         for (String transportOrderId : transportOrderIds) {
             TransportOrderDTO transportOrderDTO = new TransportOrderDTO();
             transportOrderDTO.setStatus(TransportOrderStatus.LOADED.getCode());
-            transportOrderFeign.updateById(transportOrderId, transportOrderDTO);
+            TransportOrderDTO updateResult = transportOrderFeign.updateById(transportOrderId, transportOrderDTO);
+            if (updateResult == null) {
+                log.error("提货失败：运单状态更新未生效 transportOrderId={}", transportOrderId);
+                throw new PdException("运单状态更新失败", 500);
+            }
             log.info("修改运单状态: {} {}", transportOrderId, transportOrderDTO);
         }
 
@@ -476,7 +522,11 @@ public class CargoController {
             // 修复：原实现误将枚举值字符串 "IN_TRANSIT" 写入 currentAgencyId，应写入起始机构ID
             orderDTO.setCurrentAgencyId(startAgencyId);
             orderDTO.setStatus(OrderStatus.IN_TRANSIT.getCode());
-            orderFeign.updateById(orderId, orderDTO);
+            OrderDTO orderUpdateResult = orderFeign.updateById(orderId, orderDTO);
+            if (orderUpdateResult == null) {
+                log.error("提货失败：订单状态更新未生效 orderId={}", orderId);
+                throw new PdException("订单状态更新失败", 500);
+            }
             log.info("修改订单状态和当前机构: {} {}", orderId, orderDTO);
         }
         return Result.ok();
@@ -494,6 +544,16 @@ public class CargoController {
         DriverJobDTO driverJob = driverJobFeign.findById(taskTransportDTO.getId());
         if (driverJob == null) {
             return Result.error(400, "司机作业单不存在");
+        }
+        // 归属校验：作业单必须属于当前登录司机，防止越权交付
+        Result ownershipDeny = OwnershipAssert.checkEquals(driverJob.getDriverId(), RequestContext.getUserId(), "无权操作他人作业单");
+        if (ownershipDeny != null) {
+            return ownershipDeny;
+        }
+        // 幂等：作业单已完成说明上次交付已走完，App 重试直接返回成功，不重复建派件任务
+        if (DriverJobStatus.COMPLETED.getCode().equals(driverJob.getStatus())) {
+            log.info("作业单已完成，幂等返回成功 driverJobId={}", driverJob.getId());
+            return Result.ok();
         }
         String taskTransportId = driverJob.getTaskTransportId();
         if (StringUtils.isBlank(taskTransportId)) {
@@ -516,7 +576,11 @@ public class CargoController {
         driverJobDTO.setStatus(DriverJobStatus.COMPLETED.getCode());
         driverJobDTO.setFinishHandover(org.getManager());
         driverJobDTO.setActualArrivalTime(LocalDateTime.now());
-        driverJobFeign.updateById(driverJob.getId(), driverJobDTO);
+        DriverJobDTO driverJobResult = driverJobFeign.updateById(driverJob.getId(), driverJobDTO);
+        if (driverJobResult == null) {
+            log.error("交付失败：司机作业单更新未生效 driverJobId={}", driverJob.getId());
+            throw new PdException("司机作业单更新失败", 500);
+        }
         // 修改运输任务表
         TaskTransportDTO taskTransportUpdate = new TaskTransportDTO();
         taskTransportUpdate.setId(taskTransport.getId());
@@ -528,9 +592,15 @@ public class CargoController {
         taskTransportUpdate.setDeliverLatitude(taskTransportDTO.getDeliverLatitude());
         taskTransportUpdate.setDeliverLongitude(taskTransportDTO.getDeliverLongitude());
         taskTransportUpdate.setActualArrivalTime(driverJobDTO.getActualArrivalTime());
-        taskTransportUpdate.setActualDeliveryTime(taskTransportUpdate.getActualDeliveryTime());
+        // 修复自赋值 bug：原代码把 actualDeliveryTime 设成它自己（恒为 null），
+        // 实际交付时间应使用本次取到的实际到达时间
+        taskTransportUpdate.setActualDeliveryTime(driverJobDTO.getActualArrivalTime());
 
-        transportTaskFeign.updateById(taskTransportId, taskTransportUpdate);
+        TaskTransportDTO transportTaskResult = transportTaskFeign.updateById(taskTransportId, taskTransportUpdate);
+        if (transportTaskResult == null) {
+            log.error("交付失败：运输任务更新未生效 taskTransportId={}", taskTransportId);
+            throw new PdException("运输任务更新失败", 500);
+        }
 
         log.info("到达机构：{}.运输任务更新状态：{}", endAgencyId, taskTransportUpdate);
 
@@ -548,10 +618,18 @@ public class CargoController {
 
             // 获取订单id
             TransportOrderDTO transportOrder = transportOrderFeign.findById(transportOrderId);
+            if (transportOrder == null || StringUtils.isBlank(transportOrder.getOrderId())) {
+                log.error("交付失败：运单不存在或未关联订单 transportOrderId={}", transportOrderId);
+                throw new PdException("运单不存在或未关联订单", 400);
+            }
             String orderId = transportOrder.getOrderId();
 
             // 修改订单状态
             OrderDTO orderDTO = orderFeign.findById(orderId);
+            if (orderDTO == null) {
+                log.error("交付失败：订单不存在 orderId={}", orderId);
+                throw new PdException("订单不存在", 400);
+            }
             OrderDTO orderDTOUpdate = new OrderDTO();
             orderDTOUpdate.setCurrentAgencyId(taskTransport.getEndAgencyId());
             //查询订单位置信息
@@ -572,43 +650,73 @@ public class CargoController {
                 // 到达目的地
                 transportOrderDTO.setStatus(TransportOrderStatus.ARRIVED_END.getCode());
                 orderDTOUpdate.setStatus(OrderStatus.OUTLETS_EX_WAREHOUSE.getCode());
-                // 创建快递员派送任务
-                String courierId = null;
-
-                courierId = getCourierId(orderDTO);
-                if(StringUtils.isBlank(courierId)){
-                    //岗位id
-                    Long stationId = StaticStation.COURIER_ID;
-                    R<List<User>> userRs = userApi.list(null, stationId, null, Long.valueOf(endAgencyId));
-                    // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
-                    List<User> userList = Rx.dataList(userRs);
-                    if (!userList.isEmpty()) {
-                        User user = userList.get(0);
-                        courierId = user.getId().toString();
+                // 幂等关键：先按 orderId + DISPATCH 类型查派件任务，
+                // 已存在非取消任务则直接复用，防止 App 重试新建第二条导致下游 getOne 抛 TooManyResultsException
+                TaskPickupDispatchDTO dispatchQuery = new TaskPickupDispatchDTO();
+                dispatchQuery.setOrderId(orderDTO.getId());
+                dispatchQuery.setTaskType(PickupDispatchTaskType.DISPATCH.getCode());
+                List<TaskPickupDispatchDTO> existDispatchTasks = pickupDispatchTaskFeign.findAll(dispatchQuery);
+                TaskPickupDispatchDTO existDispatchTask = null;
+                if (existDispatchTasks != null) {
+                    for (TaskPickupDispatchDTO item : existDispatchTasks) {
+                        if (!PickupDispatchTaskStatus.CANCELLED.getCode().equals(item.getStatus())) {
+                            existDispatchTask = item;
+                            break;
+                        }
                     }
                 }
 
-                log.info("网点出库分配快递员:{},快递员:{}", endAgencyId, courierId);
+                if (existDispatchTask != null) {
+                    log.info("派件任务已存在，幂等复用 orderId={}, taskId={}", orderId, existDispatchTask.getId());
+                } else {
+                    // 仅首次创建时才需要分配快递员
+                    String courierId = getCourierId(orderDTO);
+                    if (StringUtils.isBlank(courierId)) {
+                        //岗位id
+                        Long stationId = StaticStation.COURIER_ID;
+                        R<List<User>> userRs = userApi.list(null, stationId, null, Long.valueOf(endAgencyId));
+                        // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
+                        List<User> userList = Rx.dataList(userRs);
+                        if (!userList.isEmpty()) {
+                            User user = userList.get(0);
+                            courierId = user.getId().toString();
+                        }
+                    }
 
-                TaskPickupDispatchDTO pickupDispatchTaskDTO = new TaskPickupDispatchDTO();
-                pickupDispatchTaskDTO.setOrderId(orderDTO.getId());
-                pickupDispatchTaskDTO.setTaskType(PickupDispatchTaskType.DISPATCH.getCode());
-                pickupDispatchTaskDTO.setStatus(PickupDispatchTaskStatus.PENDING.getCode());
-                pickupDispatchTaskDTO.setAssignedStatus(StringUtils.isNotBlank(courierId) ? PickupDispatchTaskAssignedStatus.DISTRIBUTED.getCode() : PickupDispatchTaskAssignedStatus.MANUAL_DISTRIBUTED.getCode());
-                pickupDispatchTaskDTO.setCreateTime(LocalDateTime.now());
-                pickupDispatchTaskDTO.setAgencyId(endAgencyId);
-                pickupDispatchTaskDTO.setCourierId(courierId);
-                pickupDispatchTaskDTO.setEstimatedStartTime(LocalDateTime.now());
-                pickupDispatchTaskDTO.setEstimatedEndTime(LocalDateTime.now().plusHours(1));
-                pickupDispatchTaskFeign.save(pickupDispatchTaskDTO);
-                log.info("保存快递员派件任务信息：{}", pickupDispatchTaskDTO);
+                    log.info("网点出库分配快递员:{},快递员:{}", endAgencyId, courierId);
+
+                    TaskPickupDispatchDTO pickupDispatchTaskDTO = new TaskPickupDispatchDTO();
+                    pickupDispatchTaskDTO.setOrderId(orderDTO.getId());
+                    pickupDispatchTaskDTO.setTaskType(PickupDispatchTaskType.DISPATCH.getCode());
+                    pickupDispatchTaskDTO.setStatus(PickupDispatchTaskStatus.PENDING.getCode());
+                    pickupDispatchTaskDTO.setAssignedStatus(StringUtils.isNotBlank(courierId) ? PickupDispatchTaskAssignedStatus.DISTRIBUTED.getCode() : PickupDispatchTaskAssignedStatus.MANUAL_DISTRIBUTED.getCode());
+                    pickupDispatchTaskDTO.setCreateTime(LocalDateTime.now());
+                    pickupDispatchTaskDTO.setAgencyId(endAgencyId);
+                    pickupDispatchTaskDTO.setCourierId(courierId);
+                    pickupDispatchTaskDTO.setEstimatedStartTime(LocalDateTime.now());
+                    pickupDispatchTaskDTO.setEstimatedEndTime(LocalDateTime.now().plusHours(1));
+                    TaskPickupDispatchDTO savedDispatchTask = pickupDispatchTaskFeign.save(pickupDispatchTaskDTO);
+                    if (savedDispatchTask == null) {
+                        log.error("交付失败：派件任务保存未生效 orderId={}", orderId);
+                        throw new PdException("派件任务保存失败", 500);
+                    }
+                    log.info("保存快递员派件任务信息：{}", pickupDispatchTaskDTO);
+                }
             } else {
                 transportOrderDTO.setStatus(TransportOrderStatus.ARRIVED.getCode());
                 orderDTOUpdate.setStatus(OrderStatus.IN_TRANSIT.getCode());
             }
-            transportOrderFeign.updateById(transportOrderId, transportOrderDTO);
+            TransportOrderDTO transportOrderUpdateResult = transportOrderFeign.updateById(transportOrderId, transportOrderDTO);
+            if (transportOrderUpdateResult == null) {
+                log.error("交付失败：运单状态更新未生效 transportOrderId={}", transportOrderId);
+                throw new PdException("运单状态更新失败", 500);
+            }
             log.info("修改运单状态: {} {}", transportOrderId, transportOrderDTO);
-            orderFeign.updateById(orderId, orderDTOUpdate);
+            OrderDTO orderUpdateResult = orderFeign.updateById(orderId, orderDTOUpdate);
+            if (orderUpdateResult == null) {
+                log.error("交付失败：订单状态更新未生效 orderId={}", orderId);
+                throw new PdException("订单状态更新失败", 500);
+            }
             log.info("修改订单状态和当前机构: {} {}", orderId, orderDTOUpdate);
         }
 
@@ -616,14 +724,20 @@ public class CargoController {
     }
 
     private String getCourierId(OrderDTO orderDTO) {
-        List<CourierScopeDto> courierScopeDtoList = courierScopeFeign.findAllCourierScope(orderDTO.getSenderCountyId(), null);
+        // 修复：派件应按【收件区县】查快递员范围，原误用发件区县（深圳）导致查不到广州快递员
+        String receiverCountyId = orderDTO.getReceiverCountyId();
+        List<CourierScopeDto> courierScopeDtoList = courierScopeFeign.findAllCourierScope(receiverCountyId, null);
         if(courierScopeDtoList==null || courierScopeDtoList.size()==0){
             return "";
         }
         String location = EntCoordSyncJob.getCoordinate(orderDTO.getReceiverAddress());
         Result res = calcuateCourier(location, courierScopeDtoList);
         if (!res.get("code").toString().equals("0")) {
-            return "";
+            // 百度地图不可用导致点选失败：确定性取收件区县配置的第一个快递员，
+            // 不依赖外网、结果可重复，保证末端派件一定有人可派（广州天河对应 9202）
+            String fallbackUserId = courierScopeDtoList.get(0).getUserId();
+            log.info("百度点选失败，按收件区县[{}]确定性匹配快递员[{}]", receiverCountyId, fallbackUserId);
+            return fallbackUserId;
         }
         return res.get("userId").toString();
     }
@@ -657,4 +771,35 @@ public class CargoController {
         return lng + "," + lat;
     }
 
-}
+
+
+    /**
+     * 在途异常上报（D-57 · 定案 T-4 · 2026-10-08 新增）
+     *
+     * <p>司机在运输途中上报车辆故障/货物损失/延误，<b>落库复用 pd-netty 的
+     * {@code pd_alarm_record}</b>——与 GPS 自动告警同表，按 alarmType 区分来源。</p>
+     *
+     * <p><b>入参遵循 D-46「类型 + 照片 + 备注」三要素</b>，由 pd-netty 侧统一校验；
+     * 无照片凭证的异常不予受理。</p>
+     *
+     * <p><b>上报人ID 由服务端从 token 取</b>（{@link RequestContext#getUserId()}），
+     * 不接受前端传他人 ID——否则可冒名上报。</p>
+     *
+     * @param dto 在途异常上报入参
+     * @return 落库后的告警记录（含 id 供前端追单）
+     */
+    @ApiOperation(value = "在途异常上报（车辆故障/货物损失/延误）")
+    @PostMapping("exception/report")
+    public Result reportException(@RequestBody DriverExceptionReportDTO dto) {
+        String driverId = RequestContext.getUserId();
+        if (dto == null) {
+            return Result.error(400, "上报内容不能为空");
+        }
+        // 服务端覆盖上报人：绝不相信前端传入的 reporterId（防冒名上报）
+        dto.setReporterId(driverId);
+        dto.setCourier(false);
+        Result result = driverExceptionReportFeign.report(dto);
+        log.info("司机在途异常上报: driverId={}, type={}, task={}", driverId, dto.getExceptionType(), dto.getTransportTaskId());
+        return result;
+    }
+} 
