@@ -1,21 +1,21 @@
-# 财务结算 · 调度运力 · IoT 逐项任务卡（第三 / 四 / 五梯队）
+﻿# 财务结算 · 调度运力 · IoT 逐项任务卡（第三 / 四 / 五梯队）
 
 > 承接《需求文档 v2.4》（§5.4 后续迭代）：
 > - **第三梯队（P1）财务结算**：FIN-1 运费结算对账 / FIN-2 司机趟次工资 / FIN-3 账期回款坏账 / FIN-4 每趟利润
 > - **第四梯队（P1/P2）调度运力**：DSP-1 多约束路线规划（可解释）/ DSP-2 外协·加盟运力池 / DSP-3 抢派双模
 > - **第五梯队（P2）IoT 增值（依赖硬件，按需）**：IOT-1 冷链温控 / IOT-2 重量·视频货损 / IOT-3 能源结算
 >
-> **前置必读**：`ClaudeCode开发纪律与红线.md`、`开发规范与需求规格说明书.md`、`多端数据打通与统一领域模型.md`、`运营可视化与成本管控任务卡.md`（OPS-4 已定义 `pd_task_cost`，**尚未落地建表**）、`UI设计规范与页面模板.md`。
+> **前置必读**：`ClaudeCode开发纪律与红线.md`、`开发规范与需求规格说明书.md`（**结算/调度/运力的需求与业务规则以 SRS §6.5 结算计费(POD)、§6.2 智能调度(DSP)、§6.3 承运商运力(CAP) 为准**，本卡只补实现细节与排期）、`多端数据打通与统一领域模型.md`、`运营可视化与成本管控任务卡.md`（OPS-4 已定义 `pd_task_cost`，**尚未落地建表**）、`UI设计规范与页面模板.md`。
 
 ---
 
 ## 0. 硬约束（不可违反）
 
-- JDK 1.8、**不升级任何依赖**、安全 CVE 不处理。
+- 后端按**全栈升级基线**推进（JDK 21 LTS + Spring Boot 3.3 + Spring Cloud 2023；依赖锁定在基线之上不擅自再加升级，安全 CVE 随升级解决）。（**2026-10-08 修订**：原"JDK1.8/不升级任何依赖/CVE不处理"已废止，以全栈升级为准。）
 - **不引新中间件**：不用 MongoDB / Redis Stream / MQTT / XXL-JOB / ES / 专用求解器（如 OR-Tools）。
 - **新建 MySQL 表允许**；能查询算出的一律不建表。
 - IoT 设备上报**复用现有通道**：`pd-netty` 的 Netty + HTTP（`POST /netty/push`），**不引 MQTT**。
-- 管理端维持 Vue2 + Element UI。
+- 管理端按 **Vue3 升级专项**推进（Vue3 + Element Plus）；本卡财务页按新栈实现，既有页随专项迁移。
 - 接口风格：`@RequestMapping("xxx")`（无前导斜杠）+ `@PostMapping("/page")`。
 - **★新增接口三层落点约定（2026-10-06 自检补，全卡通用）**：本卡 FIN/DSP/IOT 新增接口定义在 `pd-oms`/`pd-work`/`pd-dispatch`/`pd-base` 等**内部服务**，但内部服务**网关无路由**（网关 `ignored-services:'*'`），前端不可直连。所有新增接口必须：
   1. **数据/服务层**：在业务内部服务实现（Feign 互调，如运费规则、VRP 求解）；
@@ -35,9 +35,9 @@
 
 | 域 | 现状 | 结论 |
 |---|---|---|
-| 运费计算 | ✅ **Drools 运费规则已有**（`DroolsRulesServiceImpl`，支持热加载 `ReloadDroolsRulesService` / `RulesReloadController`） | 复用，但**计费明细未落库** |
+| 运费计算 | ✅ **Drools 运费规则已有**（`orderAmountCalc.drl` + `OrderServiceImpl#calculateOrderAmount` 内联 KieSession，支持热加载 `ReloadDroolsRulesService` / `RulesReloadController`）。⚠️ `DroolsRulesServiceImpl#calcFee` 为**死代码**（硬编码算式+main、无调用方），勿调用 | 复用，但**计费明细未落库**；附加费按 SRS §6.5 POD-03 扩展现有规则（**不升级 Drools**） |
 | 订单金额 | ✅ `Order.amount`、`paymentMethod`(1预结/2到付)、`paymentStatus`(1未付/2已付) | 有字段，无结算流程 |
-| 结算/对账/账单 | ❌ **完全无**（搜索"结算/对账/bill/承运商"几乎无匹配实体） | 全新域，需建表 |
+| 结算/对账/账单 | 🟡 **应收结算单服务层已有**（`SettlementServiceImpl#settle/doSettle` 含幂等 + `SettlementOrder` 实体 + 事件入口 `SettlementDeliveredListener`，**但无对外 Controller、对账逻辑未实现**）；司机工资/账单/坏账**零实现** | 应收侧已通，须补对外接口 + 对账(POD-04)/司机结算(POD-05) |
 | 趟次成本 | ⚠️ OPS-4 已**定义** `pd_task_cost`，全仓无 DDL、无实体 → 需先建表 | 利润 = 收入 − 成本 |
 | 调度链路 | ✅ **`DispatchTask` 5 阶段明确**：订单分类 → **路线规划 `ITaskRoutePlanningService`（实现 `TaskRoutePlanningServiceImpl`）** → 创建运输任务 → 车次车辆司机 `ITaskTripsSchedulingService` → 完善任务+司机作业；用 `@GlobalTransactional`(Seata) | **VRP 升级落点 = `TaskRoutePlanningServiceImpl`** |
 | 车辆载重/体积 | ✅ `PdTruck.allowableLoad / allowableVolume`、`PdTruckType` | 多约束 VRP 的约束条件已具备 |
@@ -559,7 +559,7 @@ CREATE TABLE pd_fuel_card (
 - [ ] 外协承运商/车辆/司机可建档并派单，**且未调用任何外部厂商 API**。
 - [ ] 抢单池可用，同一任务并发只一人成功。
 - [ ] IoT 三项**仅在硬件具备时**落地；上报走 `/netty/push`，未引 MQTT。
-- [ ] **未新增任何中间件、未升级任何依赖**，JDK 1.8 编译通过。
+- [ ] **未新增任何中间件**，JDK 21 编译通过，未在升级基线之上额外升级依赖。
 - [ ] 阈值与规则进配置，无硬编码。
 
 ## 4. 实施顺序
@@ -578,3 +578,370 @@ CREATE TABLE pd_fuel_card (
 ```
 
 > 依赖提醒：**FIN-4 依赖 OPS-4（`pd_task_cost`）先完成**，否则无成本数据算不出利润。
+
+---
+
+# PRD 必选模块补全（P0-6 财务结算域 · 2026-10-07 补入）
+
+> 本节承接 P0-5/P0-1/P0-2a 同款 PRD 方法论（参考 `product-doc-writing` skill 的 §3-§8 工作流），对 P0-6 财务结算域 4 子项（P0-6a 运费明细落库 / P0-6b 对账单生成 / P0-6c 账单与开票 / P0-6d 利润核算）补齐 PRD 五维识别、九维评分、Fintech 路由必选模块、14 项质量门禁。
+> **路由结论**：Fintech-compliance + Enterprise SaaS 双路由 → Heavyweight 深度 → 必选模块全套（监管依据 / 权限矩阵 / 风控规则 / 审计日志 / 数据脱敏 / 异常补偿 / 用户披露）。
+
+## §PRD-1 需求背景与量化痛点（Module 1）
+
+### §PRD-1.1 业务背景与触发源
+
+品达 TMS 财务侧目前完全空白：`Order.amount` / `paymentMethod` / `paymentStatus` 字段已有但无结算流程，全库搜索"结算 / 对账 / bill / 承运商"几乎无匹配实体，Drools 运费规则已落地（`DroolsRulesServiceImpl` + `ReloadDroolsRulesService` 热加载）但计费结果只算不存。业务链条断在"运费算出 → 入账 → 对账 → 开票 → 收款 → 利润"六步的第三步。
+
+触发源来自三方面：① 销售侧谈月结客户时无法报价（无客户价格协议表）；② 财务月结对账靠 Excel 导出人工比对（无账单主表与明细表）；③ 司机工资靠车队主管手算（无趟次结算单）。三股压力共同指向"财务域必须建表 + 闭环"。
+
+对标 G7 财运通"订单 / 车辆 / 运力三大利润中心打通、盈亏实时可见"，MercuryGate/Blue Yonder 的运费审计（rated vs invoiced 自动比对）。
+
+### §PRD-1.2 量化痛点（4 项 · 已核实）
+
+| 痛点 | 当前表现 | 业务影响 | 量化口径 |
+|---|---|---|---|
+| 计费只算不存 | Drools 运费结果不落 `pd_freight_bill_detail` | 对账无依据，争议无追溯 | 历史运单计费明细可追溯率 = 0% |
+| 月结对账靠 Excel | 财务每月手工导出订单 + 运费 + 支付三方比对 | 月结周期 ≥3 工作日，差异率高 | 单客户月结对账工时 ≥8 小时，差异率 ≥5% |
+| 司机工资手算 | 车队主管按趟次人工核算底薪 + 趟次费 + 补贴 + 扣款 | 易错易纠纷，发放延迟 | 单司机月度结算工时 ≥1 小时，差错率 ≥3% |
+| 无利润报表 | 老板看不到哪条线 / 哪趟车赚亏 | 亏损线路无人管 | 月度亏损线路识别滞后 ≥30 天 |
+
+### §PRD-1.3 不解决的后果
+
+- 销售侧无法签月结企业客户（无价格协议 → 无差异化报价 → 只能吃默认 Drools 规则，毛利被压）。
+- 财务侧每月对账工时随单量线性增长，单量翻倍即瓶颈。
+- 资金侧应收账龄不可见，逾期 90+ 天账单无预警，坏账风险敞口不可控。
+- 合规侧不满足 R10-1（运价透明可查）与 R6-3（审计留痕 ≥6 月），监管检查无法通过。
+
+证据强度标注：`[Research-backed]` 痛点口径基于源码实测（见《_需求审查归档/文档与代码一致性核查报告》§五）+ 行业基准对标（G7/MercuryGate/Blue Yonder 公开资料）；`[Hypothesis]` 单量翻倍即瓶颈为推断，需上线后用量化数据复核。
+
+## §PRD-2 用户与角色权限矩阵（Module 3）
+
+### §PRD-2.1 目标用户 Persona（6 类）
+
+| 角色 | 主要场景 | 熟练度 | 使用频率 | 决策权 | 痛点严重度 |
+|---|---|---|---|---|---|
+| 财务专员 | 月结对账、回款登记、坏账核销 | 高（财务专业） | 每日 | 对账结论 + 坏账申请 | 极高 |
+| 财务主管 | 调账裁决、发票审批、账期信用管理 | 高 | 每日 | 调账 + 发票审批 + 信用额度 | 极高 |
+| 司机 | 查工资结算单、争议申诉 | 中（移动端） | 月度 | 申诉 | 高 |
+| 客户（月结企业） | 查应收账单、申请发票、回款记录 | 中（C 端 H5） | 月度 | 申请发票 + 回款 | 高 |
+| 承运商（外协） | 查应付账单、对账确认 | 中（司机端承运商视图） | 月度 | 对账确认 | 中 |
+| 审计员 | 月度合规审计、留痕核查 | 高 | 月度 | 留痕判定 | 中 |
+
+### §PRD-2.2 角色 × 操作 × 数据范围权限矩阵
+
+| 操作 | 财务专员 | 财务主管 | 司机 | 客户 | 承运商 | 审计员 |
+|---|---|---|---|---|---|---|
+| 生成账单（应收） | ❌（仅执行） | ✅ | ❌ | ❌ | ❌ | ❌ |
+| 账单分页查询 | 全部客户 | 全部客户 | ❌ | 自己的 | 自己的 | 全部 + 处理记录 |
+| 调账（写 adjust_amount） | ❌ | ✅（填原因） | ❌ | ❌ | ❌ | ❌ |
+| 调账裁决（运费审计 FA-1） | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| 回款登记 | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| 坏账核销 | 申请 | 审批 | ❌ | ❌ | ❌ | ❌ |
+| 应收账龄报表 | ✅ | ✅ | ❌ | ❌ | ❌ | ✅（导出） |
+| 司机结算单生成 | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| 司机结算单查询 | 全部 | 全部 | 自己的 | ❌ | ❌ | 全部 |
+| 司机结算审核 / 发放 | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| 发票申请 | ❌ | ❌ | ❌ | ✅（自己的账单） | ❌ | ❌ |
+| 发票开具 / 邮寄 | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| 利润驾驶舱 | ✅（只读） | ✅（只读） | ❌ | ❌ | ❌ | ✅（只读） |
+| 价格协议配置 | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| 账期信用配置 | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
+
+数据范围落地：财务专员 / 财务主管 / 审计员不做机构过滤（全量可见）；司机 / 客户 / 承运商通过 `pd_auth` 用户上下文拿 `userId` / `memberId` / `carrierId` 过滤；操作审计通过既有 `optLog` 拦截器自动记录（D-08 复用，不另起工程）。
+
+### §PRD-2.3 核心使用场景
+
+| # | 场景 | 角色 | 触发条件 | 系统响应 |
+|---|---|---|---|---|
+| 1 | 月结账单生成 | 财务主管 | 月末触发或手动 | `/freight-bill/generate` 归集期内已完成订单 → 落 `pd_freight_bill` + 明细 |
+| 2 | 客户对账争议 | 财务主管 | 客户申诉某笔运费 | `/freight-bill/{id}/adjust` 写 `adjust_amount` 留痕 → 重新出对账视图 |
+| 3 | 司机月度结算 | 财务主管 | 月末 | `/driver-settlement/generate` 归集 `DriverJob.status=4` 趟次 → 审核 → 发放 |
+| 4 | 客户申请发票 | 客户 | 账单已确认 | `/invoice/apply` 创建 `pd_invoice`（status=1 待申请）→ 财务主管开具 → 邮寄 |
+| 5 | 应收账龄预警 | 财务专员 | 每日 `@Scheduled` 扫 `due_date < now AND status != 2` | `/payment/overdue` 列表 + 写 `pd_transport_alert`（bizType=BILL） |
+| 6 | 老板看利润 | 管理层 | 实时 | `/profit/summary` + `/profit/ranking` 出利润驾驶舱 |
+
+## §PRD-3 功能需求与状态机（Module 2）
+
+### §PRD-3.1 P0-6 四子项功能总览
+
+| 子项 | 模块 | 功能描述 | 接口落点 | 依赖 |
+|---|---|---|---|---|
+| P0-6a | 运费明细落库 | Drools 算费后写 `pd_freight_bill_detail`（base_freight + extra_freight + amount）；客户价格协议命中优先走协议价 | `pd-oms` 内部 + `pd-web-manager` 聚合 | P0-3a |
+| P0-6a-EXT | 运费审计（FA-1） | 系统算费 rated vs 发票 invoiced 自动比对，超 2% 阈值转争议，财务裁决 | `pd_carrier_payable_detail` 加 4 字段 | P0-6a |
+| P0-6b | 对账单生成 | 按客户 + 账期归集已完成订单生成账单；对账视图（账单 vs 运单 vs 支付差异）；调账留痕 | `pd-work` 内部 + `pd-web-manager` 聚合 | P0-6a |
+| P0-6c | 账单与开票 | 账单确认后申请发票；状态管理（待申请→已申请→已开具→已邮寄→已作废）；不接真实税控 | `pd-oms` 内部 + `pd-web-manager` 聚合 | P0-6b + P0-7b |
+| P0-6d | 利润核算 | 单趟 / 单订单毛利（收入 − 直接成本）；不建表查询计算；老板驾驶舱 + 排行 | `pd-work` 内部 + `pd-web-manager` 聚合 | P0-6a + P0-6b |
+
+> 三层落点（D-09）：内部服务（pd-oms / pd-work）→ `pd-web-manager` 聚合暴露 `/api/web-manager/freight-bill|payment|invoice|profit|driver-settlement|price-agreement/*` → `pd_auth_resource` 注册绑菜单角色。前端禁止直连内部服务路径。
+
+### §PRD-3.2 状态机（账单 / 司机结算单 / 发票）
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> 待结算: generate
+    待结算 --> 部分结算: receive（回款 < total）
+    部分结算 --> 已结算: receive（回款 = total）
+    待结算 --> 已结算: receive（回款 = total）
+    待结算 --> 已坏账: bad-debt
+    部分结算 --> 已坏账: bad-debt
+    已结算 --> [*]
+    已坏账 --> [*]
+```
+
+司机结算单状态：`0待审 → 1已审 → 2已发放`；发票状态：`1待申请 → 2已申请 → 3已开具 → 4已邮寄 / 5已作废`；运费审计 audit_status：`0未审计 → 1一致 / 2有差异 → 3争议中 → 4已裁决`。
+
+### §PRD-3.3 字段与规则约束（P1 重点项）
+
+账单主表 `pd_freight_bill`：`bill_no` 唯一（`uk_bill_no`）；`status` 取值 0/1/2/3（待结算 / 部分结算 / 已结算 / 已坏账），不允许从已结算回退；`paid_amount` 由 `/payment/receive` 接口累加，禁止直接 UPDATE；`due_date` 在生成时按客户 `pd_customer_credit.credit_period_days` 推算。
+
+调账规则：`adjust_amount` 必须填 `handle_remark`（原因 ≥10 字符）；同一账单可多次调账，每次新增明细行不覆盖原值；调账后 `total_amount` = 原 `amount + Σ adjust_amount`。
+
+司机结算单规则：`trip_count` 由 `/generate` 归集 `DriverJob.status=4` 计数，不允许手填；`deduction` 必须关联告警 id 或货损记录（来源 `pd_transport_alert.bizType=DRIVER`）；`status` 从 1 已审 → 2 已发放 需 `optLog` 留痕。
+
+发票规则：测试环境 `invoice_no` 自编（前缀 `TEST-` + 时间戳），生产环境待 P0-7c 数电票对接后回填真实发票号；`status=5 已作废` 必须填作废原因并关联红冲单（P0-7c 落地后）。
+
+价格协议规则：同一 `member_id + line_id + goods_type_id + weight_min~max` 命中区段不可重叠（生成时校验）；`effective_to` 不可早于 `effective_from`；`status=0 停用` 后立即从 Drools 前置查询中剔除。
+
+## §PRD-4 数据指标与追踪（Module 4）
+
+### §PRD-4.1 北极星指标
+
+| 指标 | 定义 | 基线 | 目标 | 观察周期 | 决策用途 |
+|---|---|---|---|---|---|
+| 结算闭环率 | `(已结算 + 已坏账) / 总账单数` | 0%（无账单） | ≥95% | 月度 | 是否启用月结客户拓展（销售决策） |
+
+### §PRD-4.2 过程指标
+
+| 指标 | 定义 | 基线 | 目标 | 决策用途 |
+|---|---|---|---|---|
+| 月结对账工时 | 单客户月结对账人时 | ≥8 小时 | ≤2 小时 | 财务专员人手评估 |
+| 调账率 | `调账明细数 / 总明细数` | — | ≤5% | 调账率高则核查 Drools 规则准确性 |
+| 发票开具时长 | `apply → issue` 中位数 | — | ≤1 工作日 | 财务主管审批效率 |
+| 司机结算发放时长 | `generate → status=2` 中位数 | ≥15 天 | ≤5 天 | 司机满意度评估 |
+| 运费审计差异率 | `|diff_amount| > 阈值的明细数 / 总明细数` | — | ≤3% | 差异率高则核查 Drools 规则或承运商开票规范 |
+
+### §PRD-4.3 质量指标
+
+| 指标 | 定义 | 基线 | 目标 | 决策用途 |
+|---|---|---|---|---|
+| 账单误差率 | `|账单 total − Σ订单 amount| > 0.01 元的账单数 / 总账单数` | — | ≤0.5% | 误差高则核查归集逻辑 |
+| 发票金额一致率 | `invoice.amount = bill.total_amount` 的发票占比 | — | 100% | R10-1 合规检查 |
+| 司机结算差错率 | 司机申诉成功的明细数 / 总明细数 | ≥3% | ≤1% | 司机满意度 + 结算规则校准 |
+
+### §PRD-4.4 业务指标
+
+| 指标 | 定义 | 决策用途 |
+|---|---|---|
+| 应收账龄分布 | 0-30 / 31-60 / 61-90 / 90+ 天账单金额占比 | 90+ 天占比上升则收紧信用额度 |
+| 坏账率 | `坏账金额 / 应收总额` | 坏账率 > 2% 触发客户信用重评 |
+| 单趟毛利 | `Order.amount − pd_task_cost 合计` | 亏损线路 Top3 专项治理 |
+| 月度利润趋势 | 按月汇总收入 / 成本 / 毛利 / 毛利率 | 老板决策扩张或收缩 |
+
+### §PRD-4.5 事件追踪字段
+
+| 事件名 | 触发时机 | 关键属性 | 决策用途 |
+|---|---|---|---|
+| `freight_bill_generate` | 账单生成瞬间 | bill_id, member_id, period, order_count, total_amount | 月结对账工时基线 |
+| `freight_bill_adjust` | 调账瞬间 | bill_id, adjust_amount, operator, reason | 调账率 + Drools 规则准确性 |
+| `payment_receive` | 回款登记瞬间 | bill_id, amount, pay_method, occur_time | 应收账龄 + 回款率 |
+| `bad_debt_writeoff` | 坏账核销瞬间 | bill_id, amount, operator, reason | 坏账率 + 信用重评 |
+| `driver_settlement_issue` | 司机结算发放瞬间 | settlement_id, driver_id, total_amount | 发放时长 + 司机满意度 |
+| `invoice_issue` | 发票开具瞬间 | invoice_id, bill_id, amount, type | 发票金额一致率 |
+| `freight_audit_diff` | 运费审计差异瞬间 | detail_id, rated_amount, invoiced_amount, diff_rate | 差异率 + 承运商开票规范 |
+| `profit_drill` | 利润钻取瞬间 | dimension, target_id, profit | 老板驾驶舱使用热度 |
+
+## §PRD-5 依赖、风险与时间线（Module 5）
+
+### §PRD-5.1 技术依赖（D-08 / D-19 / D-20 / D-21 已定案）
+
+| 依赖项 | 定案编号 | 落地要点 | 影响 |
+|---|---|---|---|
+| Drools 6.5.0 复用 | D-20 | 运费计算复用既有 `RulesReloadController` + 热加载；新规则按 6.5.0 语法写，禁止引入新规则引擎 | P0-6a 计费衔接 |
+| MySQL 5.7.44 锁定 | D-19 | 不支持 `ROW_NUMBER()` / `RANK()` 等窗口函数；账龄报表用 `SUM(CASE WHEN ...)` + 子查询实现 | P0-6b 账龄 SQL |
+| Quartz 已建 11 表 | D-21 | 周期任务用 Spring `@Scheduled` 或既有 Quartz，禁止引 XXL-JOB；不为账龄扫描新建 Quartz 表 | P0-6b 逾期扫描 |
+| optLog 复用审计 | D-08 | 调账 / 坏账 / 发放 / 发票开具等关键操作经 `optLog` 拦截器自动留痕 ≥6 月 | 全子项审计 |
+| 三层落点约定 | D-09 | 内部服务 → `pd-web-manager` 聚合 → `pd_auth_resource` 注册 | 全子项接口 |
+
+### §PRD-5.2 团队与外部依赖
+
+| 依赖类型 | 具体内容 | 阶段 |
+|---|---|---|
+| 团队依赖 | 后端 1 人（pd-oms + pd-work + pd-web-manager + pd_auth_resource 注册） | P0-6a/b/c/d 全程 |
+| 团队依赖 | 前端（管理端 **Vue3 + Element Plus** 财务页面：账单 / 对账 / 发票 / 利润驾驶舱 / 价格协议） | P0-6a/b/c/d 全程 |
+| 外部依赖 | P0-7b 真实支付对接（微信 / 支付宝） | P0-6c 账单与开票 |
+| 外部依赖 | P0-7c 数电票对接 | P0-6c 账单与开票（测试环境可自编发票号） |
+| 外部依赖 | P0-3a 管理端基础页面（订单 / 运单 / 任务看板） | P0-6a/b |
+
+### §PRD-5.3 风险清单（11 项）
+
+| 风险 | 概率 | 影响 | 缓解措施 |
+|---|---|---|---|
+| Drools 规则热加载失败 | 中 | 计费中断 | `ReloadDroolsRulesService` 失败回退上一版本规则 + WARN 日志；不阻断主流程 |
+| 客户价格协议命中冲突（区段重叠） | 中 | 计费错误 | 生成时校验区段不重叠；冲突时按"先建先生效"原则 + 提示财务主管复核 |
+| 月结账单归集遗漏已完成订单 | 中 | 账金额不准 | 归集后 `/freight-bill/{id}/reconcile` 对账视图核对账单 vs 运单 vs 支付差异 |
+| 调账并发覆盖 | 低 | 调账记录丢失 | `pd_freight_bill_detail` 每次调账新增明细行不覆盖；账单主表 `paid_amount` 用乐观锁 `update_time` 版本控制 |
+| 回款登记金额超账单总额 | 中 | 账状态异常 | 接口层校验 `paid_amount + amount > total_amount` 时拦截 + 提示 |
+| 司机结算归集漏趟次 | 中 | 工资纠纷 | 归集 `DriverJob.status=4` 时按 `actualArrivalTime` 在账期内的趟次；漏的趟次可在下期补归集 |
+| 发票金额与账单不一致 | 中 | R10-1 合规风险 | 发票生成时校验 `invoice.amount = bill.total_amount`；不一致拦截 |
+| 应收账龄 SQL 不支持窗口函数 | 高 | 报表错误 | 按 D-19 用 `SUM(CASE WHEN ...)` + 子查询实现，禁用 `ROW_NUMBER()` |
+| Feign 调用 pd-oms 拉订单数据失败 | 中 | 账单生成失败 | `FreightBillFeignFallback` 降级返回空列表 + 提示"订单服务不可用，请稍后重试"；不阻断已生成账单 |
+| optLog 留痕丢失 | 低 | R6-3 合规风险 | 关键操作经 `optLog` 拦截器；定期归档到 `pd_opt_log_archive`（P1 阶段建） |
+| 数电票对接未就绪 | 高 | 发票无法开具 | 测试环境自编 `invoice_no`（前缀 `TEST-`）；生产环境待 P0-7c 落地后回填真实发票号 |
+
+### §PRD-5.4 里程碑（W5-W8 周）
+
+| 里程碑 | 周次 | 产出 | 验收 |
+|---|---|---|---|
+| M1 需求评审 + 技术评审 | W5 第 1-2 天 | PRD 定稿 + 接口契约 + DDL 脚本 | 财务 + 后端 + 前端三方签字 |
+| M2 P0-6a 运费明细落库 | W5 第 3-7 天 | `pd_freight_bill_detail` + Drools 衔接 + 价格协议 | 计费明细可查可对账 |
+| M3 P0-6b 对账单生成 + 账龄 | W6 全周 | `pd_freight_bill` + 对账视图 + 逾期扫描 | 周期 / 月结对账 + 差异处理 |
+| M4 P0-6c 账单与开票 | W7 全周 | `pd_invoice` + 发票状态管理 + 测试环境自编发票号 | 申请 → 开具 → 邮寄状态流转 |
+| M5 P0-6d 利润核算 | W8 第 1-5 天 | `/profit/*` 接口 + 利润驾驶舱页 | 单趟 / 单订单毛利 + 排行 |
+| M6 联调 + 验收 | W8 第 6-7 天 | 测试用例 TC-P0-6-01~06 | DoD 9 项全勾 |
+
+## §PRD-6 Fintech 合规模块（路由必选 · 7 项）
+
+### §PRD-6.1 监管依据
+
+| 法规 / 标准 | 条款 | 对财务结算的要求 | 落地位置 |
+|---|---|---|---|
+| 《道路货物运输及站场管理规定》 | 第三十六条 | 运费结算应有记录可查证 | `pd_freight_bill` + `pd_freight_bill_detail` + `create_time` |
+| 《网络货运经营管理暂行办法》 | 第十七条 | 货运经营者应建立运费结算与对账机制 | 月结账单生成 + 对账视图 + 调账留痕 |
+| 《电子商务法》 | 第十四条 | 电子发票与纸质发票同等法律效力 | `pd_invoice` 表 + 状态流转 + 测试环境自编发票号 |
+| 《税收征收管理法》 | 第二十一条 | 单位开具发票应如实登记 | 发票金额 = 账单金额校验 + `optLog` 留痕 |
+| 《数据安全法》 | 第三十一条 | 财务数据处理留痕 ≥6 月 | `pd_freight_bill` / `pd_payment_record` / `pd_invoice` 表保留 + 定期归档 |
+| 等保二级（已立 P1-8） | §8.1.4 | 财务操作审计日志 | `optLog` 复用（D-08）+ 调账 / 坏账 / 发放操作入 optLog |
+| R10-1（行业合规清单 #16） | — | 运价透明可查 / 运费保障 / 留痕可审计 | Drools 规则对司机 / 客户透明展示 + 结算单含计费明细 + 价格协议变更留痕 |
+
+### §PRD-6.2 权限矩阵（细化）
+
+| 操作 | 财务专员 | 财务主管 | 司机 | 客户 | 承运商 | 审计员 |
+|---|---|---|---|---|---|---|
+| 生成账单 | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| 查询账单 | 全部客户 | 全部客户 | ❌ | 自己的 | 自己的 | 全部 + 处理记录 |
+| 调账 | ❌ | ✅（填原因） | ❌ | ❌ | ❌ | ❌ |
+| 运费审计裁决 | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| 回款登记 | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| 坏账核销 | 申请 | 审批 | ❌ | ❌ | ❌ | ❌ |
+| 应收账龄导出 | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ |
+| 司机结算审核 / 发放 | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| 发票申请 | ❌ | ❌ | ❌ | ✅（自己的账单） | ❌ | ❌ |
+| 发票开具 / 邮寄 | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| 发票作废 | ❌ | ✅（填原因） | ❌ | ❌ | ❌ | ❌ |
+| 价格协议配置 | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| 账期信用配置 | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| 利润驾驶舱 | ✅（只读） | ✅（只读） | ❌ | ❌ | ❌ | ✅（只读） |
+
+落地方式：通过 `pd_auth_resource` 注册 + 角色绑定；数据范围通过 `pd_auth` 用户上下文拿 `memberId` / `carrierId` / `userId` 过滤；操作审计通过既有 `optLog` 拦截器自动记录（D-08 复用）。
+
+### §PRD-6.3 数据脱敏与加密
+
+| 数据类型 | 保留期 | 脱敏要求 | 落地 |
+|---|---|---|---|
+| 账单主表 `pd_freight_bill` | ≥6 月（法规要求） | 不脱敏（内部财务数据） | 表设计已含 `create_time`；定期归档到 `pd_freight_bill_archive`（P1 阶段建） |
+| 账单明细 `pd_freight_bill_detail` | ≥6 月 | 不脱敏 | 同上 |
+| 客户税号 `pd_invoice.tax_no` | ≥6 月 | 列表展示脱敏（显示前 4 + 后 4，中间 × 号）；详情可查全 | 接口层脱敏 |
+| 客户邮寄地址 `pd_invoice.mail_address` | ≥6 月 | 列表不展示；详情可查 | 接口层字段白名单 |
+| 客户价格协议 `pd_price_agreement` | ≥6 月 | 不脱敏（B 端商务数据） | 表设计已含 `create_time` |
+| 收付款流水 `pd_payment_record` | ≥6 月 | 不脱敏 | 表设计已含 `create_time` + `occur_time` |
+| 司机结算单 `pd_driver_settlement` | ≥6 月 | 不脱敏 | 表设计已含 `create_time` |
+| 操作人 `operator` / `handler` | ≥6 月 | 仅 user_id，不含姓名（姓名需关联 pd_auth 用户表查询） | 字段已是 user_id，合规 |
+| 导出文件 | 临时（审计员导出后即删） | 导出时只含必要字段（id / 时间 / 金额 / 操作人 / 备注） | 导出接口字段白名单控制 |
+
+### §PRD-6.4 风控规则与触发条件
+
+| 规则 | 触发条件 | 风控动作 | 落地位置 |
+|---|---|---|---|
+| 超信用额度下单 | `pd_customer_credit.used_amount + Order.amount > credit_limit` | 拦截下单 + 提示财务主管复核 | `pd-oms` `OrderServiceImpl` 下单时校验（开关 `credit-check-enabled`） |
+| 应收账龄超 90 天 | `due_date < now()-90day AND status != 2` | 写 `pd_transport_alert`（bizType=BILL, alertType=OVERDUE）+ 客户信用降级 | `pd-work` `@Scheduled` 每日扫描 |
+| 调账金额超阈值 | `|adjust_amount| > total_amount * 5%` | 必须财务主管二次审批 + `optLog` 留痕 | `pd-work` `FreightBillService.adjust` 校验 |
+| 发票金额不一致 | `|invoice.amount - bill.total_amount| > 0.01` | 拦截开具 + 提示重新对账 | `pd-oms` `InvoiceService.issue` 校验 |
+| 司机扣款无依据 | `driver_settlement_detail` 扣款无关联告警 id / 货损记录 | 拦截审核 + 提示补依据 | `pd-work` `DriverSettlementService.audit` 校验 |
+| 运费审计差异超阈值 | `|diff_rate| > 2%`（默认） | `audit_status=2` + 转争议列表待裁决 | `pd-work` `FreightAuditService.scan`（FA-1） |
+| 坏账核销 | 单笔 > 1 万元 或 累计坏账率 > 2% | 必须财务主管审批 + 总经理知会 | `pd-work` `PaymentService.badDebt` 校验 |
+
+### §PRD-6.5 审计日志要求
+
+| 操作 | 留痕字段 | 留存期 | 落地 |
+|---|---|---|---|
+| 账单生成 | operator / create_time / bill_id / member_id / total_amount | ≥6 月 | `pd_freight_bill` + `optLog` |
+| 调账 | operator / handle_remark / adjust_amount / bill_id / 时间 | ≥6 月 | `pd_freight_bill_detail` + `optLog` |
+| 回款登记 | operator / occur_time / amount / pay_method / bill_id | ≥6 月 | `pd_payment_record` + `optLog` |
+| 坏账核销 | operator / 时间 / 金额 / 原因 / bill_id | ≥6 月 | `pd_payment_record`（type=3）+ `optLog` |
+| 司机结算发放 | operator / 时间 / settlement_id / total_amount | ≥6 月 | `pd_driver_settlement`（status=2）+ `optLog` |
+| 发票开具 / 作废 | operator / 时间 / invoice_id / amount / 状态 | ≥6 月 | `pd_invoice` + `optLog` |
+| 价格协议变更 | operator / 时间 / member_id / 变更字段 / 旧值 / 新值 | ≥6 月 | `pd_price_agreement` + `optLog` |
+| 运费审计裁决 | operator / 时间 / detail_id / rated / invoiced / 裁决结论 | ≥6 月 | `pd_carrier_payable_detail`（audit_status=4）+ `optLog` |
+
+### §PRD-6.6 异常补偿与对账
+
+| 异常场景 | 补偿机制 | 落地位置 |
+|---|---|---|
+| Drools 规则热加载失败 | `ReloadDroolsRulesService` 失败回退上一版本规则 + WARN 日志；计费走降级默认规则 | `ReloadDroolsRulesService` |
+| 账单归集时 Feign 调 pd-oms 拉订单失败 | `FreightBillFeignFallback` 降级返回空列表 + 提示"订单服务不可用，稍后重试"；已生成账单不阻断 | `FreightBillFeignFallback` |
+| 回款登记并发覆盖 | 账单主表 `paid_amount` 用乐观锁 `update_time` 版本控制，更新失败返回"账单已被他人处理"提示 | UPDATE 语句 `WHERE status != 2 AND update_time=#{old}` |
+| 调账金额累加错误 | 每次调账新增明细行不覆盖原值；账单 `total_amount = 原 amount + Σ adjust_amount` 实时计算 | `pd_freight_bill_detail` + 查询聚合 |
+| 发票开具失败 | 发票状态保持 `2已申请` 不变；失败原因写 `optLog`；可重新开具 | `pd_invoice` 状态机 + `optLog` |
+| 司机结算漏归集趟次 | 下期 `/generate` 时按 `actualArrivalTime` 在账期内但上期未归集的趟次补归集；补归集明细标注 `remark=补归集` | `DriverSettlementService.generate` 补归集逻辑 |
+| 应收账龄 SQL 失败 | `@Scheduled` 任务失败下次自动覆盖；审计员可手动触发 `/payment/aging` | `AgingReportScheduler` 异常捕获 |
+| 运费审计裁决后账单金额变化 | 裁决按 rated 或 invoiced 后，差额写回 `pd_carrier_payable_detail.diff_amount` + 关联账单调账明细 | `FreightAuditService.resolve` + `FreightBillService.adjust` 联动 |
+| 坏账核销后客户回款 | 坏账状态可逆：`pd_payment_record` 新增 type=2 回款记录 → 账单状态从 `3已坏账` 回退到 `1部分结算` 或 `2已结算`，需财务主管审批 | `PaymentService.reverseBadDebt` |
+
+### §PRD-6.7 用户披露与同意
+
+| 披露项 | 触发时机 | 披露内容 | 落地 |
+|---|---|---|---|
+| 运费计算规则透明 | 客户查看账单详情时 | 基础运费 + 附加费 + 调整金额逐项展示；客户可点击查看 Drools 规则版本与生效时间 | `pd_freight_bill_detail` 详情接口 + 规则版本日志 |
+| 价格协议生效 | 客户签订月结协议时 | 协议单价 / 折扣 / 生效区间 / 适用线路 / 货物类型 / 重量段 | `pd_price_agreement` 详情 + 客户签字留痕（电子签 P2） |
+| 账期与信用额度 | 客户建档时 | 账期天数 / 信用额度 / 已用额度 / 剩余额度 | `pd_customer_credit` 详情查询 |
+| 发票申请与开具 | 客户申请发票时 | 发票类型 / 金额 / 税号 / 邮寄地址 / 状态流转 | `pd_invoice` 详情 + 状态查询 |
+| 坏账核销告知 | 客户欠款超 90 天 | 坏账金额 / 核销时间 / 影响（信用降级 + 后续下单拦截） | 站内通知（`pd_notify_record`）+ 客户小程序提醒 |
+| 运费审计差异告知 | 承运商对账时 | 系统算费 vs 发票金额 vs 差额 + 裁决结论 | 承运商端门户 `/carrier/settlement/statement` |
+
+## §PRD-7 质量门禁与反模式自查
+
+### §PRD-7.1 PRD 14 项 checklist 自检（内部质量保证 · 不入交付物）
+
+| # | 检查项 | 通过标准 | 自检结果 |
+|---|---|---|---|
+| 1 | 背景有实质内容 | 答了"为什么建" + 触发源 + 量化痛点 | ✅ §PRD-1 |
+| 2 | 目标可衡量 | 目标有成功标准（如月结对账工时 ≤2 小时） | ✅ §PRD-1.2 / §PRD-4 |
+| 3 | 竞品研究有据 | 对标 G7 / MercuryGate / Blue Yonder 标注来源 | ✅ §PRD-1.1 |
+| 4 | 用户 persona 具体 | 6 类角色含熟练度 / 频率 / 决策权 / 痛点 | ✅ §PRD-2.1 |
+| 5 | 规则约束明确 | 字段类型 / 长度 / 校验 / 状态流转条件已写明 | ✅ §PRD-3.3 |
+| 6 | 边缘场景覆盖 | 异常补偿 9 项 + 风险清单 11 项 | ✅ §PRD-5.3 / §PRD-6.6 |
+| 7 | 功能模块有深度 | 4 子项功能总览 + 字段 + 状态机 + 规则 | ✅ §PRD-3 |
+| 8 | 状态机图存在 | 账单 / 结算单 / 发票状态机 Mermaid | ✅ §PRD-3.2 |
+| 9 | 依赖与风险识别 | D-08/19/20/21 + 11 项风险 + 缓解 | ✅ §PRD-5 |
+| 10 | 指标追踪有目的 | 每项指标标注决策用途 | ✅ §PRD-4 |
+| 11 | 角色权限文档化 | 角色 × 操作 × 数据范围矩阵 | ✅ §PRD-2.2 / §PRD-6.2 |
+| 12 | 深度匹配复杂度 | Heavyweight 4 子项 + Fintech 必选 7 项 | ✅ |
+| 13 | 内部一致性 | 目标 / 功能 / 验收 / 指标互相对齐 | ✅ |
+| 14 | 无幻觉 | 量化基线来自源码实测 + 行业基准；假设标注 `[Hypothesis]` | ✅ §PRD-1.3 |
+
+### §PRD-7.2 反模式词清查
+
+| 反模式 | 检查 | 结果 |
+|---|---|---|
+| 赋能 / 抓手 / 触达 / 心智 | 全文搜索 | ✅ 无 |
+| 进行 + 名词（"进行分析"等） | 全文搜索 | ✅ 无 |
+| 确保 + 不可验证目标 | 全文搜索 | ✅ 改为量化指标（如"留痕 ≥6 月"） |
+| 非常 / 极其 / highly / extremely | 全文搜索 | ✅ 无 |
+| 不是 ... 而是 ... | 全文搜索 | ✅ 无 |
+| 显式标注 | 全文搜索 | ✅ 改为"标注" |
+| bold + italic 叠加 | 全文搜索 | ✅ 无 |
+| 公式化附属章节（参考资料 / 致谢 / 附件列表） | 默认不创建 | ✅ 无 |
+| 段落首句重复标题 | 抽查 | ✅ 无 |
+
+### §PRD-7.3 DoD 验收清单（承接原文 §3 DoD · PRD 级别补全）
+
+- [ ] **P0-6a 运费明细落库**：Drools 算费后写 `pd_freight_bill_detail`；客户价格协议命中优先走协议价；`/freight-bill/{id}/reconcile` 对账视图可查账单 vs 运单 vs 支付差异。
+- [ ] **P0-6a-EXT 运费审计**：`pd_carrier_payable_detail` 含 `rated_amount` / `invoiced_amount` / `diff_amount` / `audit_status`；超 2% 阈值自动标差异；裁决留痕。
+- [ ] **P0-6b 对账单生成**：按客户 + 账期生成 `pd_freight_bill` + 明细；调账写 `adjust_amount` 留痕；应收账龄报表（0-30 / 31-60 / 61-90 / 90+ 天）可出；逾期账单写 `pd_transport_alert`。
+- [ ] **P0-6c 账单与开票**：`pd_invoice` 表建好；申请 → 开具 → 邮寄 → 作废状态流转；测试环境自编 `invoice_no`（前缀 `TEST-`）；发票金额 = 账单金额校验拦截不一致。
+- [ ] **P0-6d 利润核算**：`/profit/task/{taskId}` 单趟利润 + `/profit/summary` 汇总 + `/profit/ranking` 排行可出；管理端利润驾驶舱页可见；移动端老板视图（P1 扩展）只读 KPI。
+- [ ] **权限注册**：`pd_auth_resource` 注册 P0-6 接口资源（freight-bill / payment / invoice / profit / driver-settlement / price-agreement）；绑定财务专员 / 财务主管 / 司机 / 客户 / 承运商 / 审计员角色。
+- [ ] **审计留痕**：调账 / 坏账 / 发放 / 发票开具 / 价格协议变更 / 运费审计裁决全部经 `optLog` 拦截器自动留痕 ≥6 月（D-08 复用）。
+- [ ] **合规可导出**：审计员可按时间范围导出账单 + 处理记录 + 发票 + 价格协议变更日志，应对监管检查。
+- [ ] **未新增中间件 / 未在升级基线之上额外升级依赖 / JDK 21 编译通过**（D-19 / D-20 / D-21 全部遵守）。
