@@ -40,8 +40,21 @@ function handleError (error, reject) {
   reject(error)
 }
 
+function isBizError (data) {
+  if (!data || typeof data !== 'object') {
+    return false
+  }
+  // 鉴权/网关侧返回的是 R：带 isError / isSuccess 两个布尔
+  if (typeof data.isError === 'boolean') {
+    return data.isError
+  }
+  // 业务服务返回的是 pd-common 的 Result：HashMap，只有 code/msg，成功码 0（没有 isError，
+  // 之前只判 isError 会把 500/400 当成功，页面表现为"数据为空"而不是报错）
+  return typeof data.code === 'number' && data.code !== 0 && data.code !== 200
+}
+
 function handleSuccess (res, resolve) {
-  if (res.data.isError) {
+  if (isBizError(res.data)) {
     // 未登录
     if (res.data.code === 40001) {
       MessageBox.alert(res.data.msg, '提醒', {
@@ -84,6 +97,15 @@ const httpServer = (opts) => {
     httpDefaultOpts.params = {
       ...publicParams,
       ...(opts.data || {})
+    }
+  }
+
+  // 后端用 @RequestParam 收的参数（含 ids[] 这类数组）必须走查询串；
+  // POST/PUT 时 opts.data 会进 JSON body，绑不上，所以单独给一条 params 通道
+  if (opts.params) {
+    httpDefaultOpts.params = {
+      ...publicParams,
+      ...opts.params
     }
   }
 

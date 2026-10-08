@@ -22,7 +22,7 @@ const apiList = {
     url: `/authority/user`
   },
   reset: {
-    method: 'GET',
+    method: 'POST',
     url: `/authority/user/reset`
   },
   updatePassword: {
@@ -64,9 +64,12 @@ export default {
     })
   },
   reset (data) {
+    // 后端是 @PostMapping("/reset") + @RequestParam("ids[]")：方法必须是 POST，
+    // 参数名要带方括号且走查询串（调用方传的是 { ids: [...] }）
+    const ids = Array.isArray(data) ? data : (data && data.ids) || []
     return axiosApi({
       ...apiList.reset,
-      data
+      params: { 'ids[]': ids }
     })
   },
   avatar (data) {
