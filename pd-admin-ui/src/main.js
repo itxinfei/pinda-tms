@@ -13,6 +13,7 @@ import router from './router'
 import i18n from './lang' // internationalization
 import './icons' // icon
 import './utils/error-log' // error log
+import { installGlobalErrorHandler } from '@/utils/global-error-handler'
 import request from '@/utils/request'
 import { bindResize, unbindResize } from '@/utils/resize'
 
@@ -33,6 +34,9 @@ Plugins.map((plugin) => {
 Vue.use(Element, {
   i18n: (key, value) => i18n.t(key, value)
 })
+
+// 全局错误上抛：运行时报错在界面可见（不再静默空白）
+installGlobalErrorHandler()
 
 Vue.prototype.$post = request.post
 Vue.prototype.$get = request.get
