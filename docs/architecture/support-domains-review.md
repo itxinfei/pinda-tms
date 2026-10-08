@@ -52,6 +52,8 @@ Feign 契约侧我让子代理抽样核了 11 个（FleetFeign / TransportLineFe
 DriverFeign / GoodsTypeFeign / AgencyScopeFeign / CourierScopeFeign / AppCourierFeign / AppDriverFeign /
 WebManagerFeign），**路径与参数逐一对齐，契约层没有缺口**——这条对得上我的复核，写业务时不用担心接口签名漂移。
 
+| B-9 | **百度地图 AK 根本没注入**：代码用 `System.getProperty("baidu.map.ak", "")`，实测 `pd-oms` 容器 env 里 `baidu` 出现 0 次 → 地址转坐标恒失败 → `getDistance()` 提前返回、运费**根本没进入计价环节**。宿主出网是通的（`api.map.baidu.com` HTTP 200），属配置缺失不是网络问题 | `BaiduMapUtils.java:35`、`EntCoordSyncJob.java:29`；实测 `POST 172.21.0.6:8186/order/orderMsg` 返回 `"senderAddress":"sender error msg"` 且无 amount。缓解事实：`OrderController.java:77-81`（save）与 `:214-217`（reprice）都挡下这个分支，**不会产生 0 元订单**，只是单下不进去 | **P0** |
+
 ## 3. 费 → 收款 → 对账 与 通知/文件链路
 
 | # | 结论 | 证据 | 等级 |

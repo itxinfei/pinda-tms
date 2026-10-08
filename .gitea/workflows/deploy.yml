@@ -25,6 +25,25 @@ jobs:
           echo "本次构建 TAG=$TAG"
           echo "TAG=$TAG" >> "$GITHUB_ENV"
 
+      - name: 密钥入库守卫
+        # 这个仓库会推到公开的 Gitee，所以"密钥不进仓"必须是机器检查而不是口头约定。
+        # 已知欠账：两把历史 RSA 私钥（轮换手册见 docs/部署文档.md §2.11，正由
+        # PINDA_JWT_*_PATH 改成仓外注入）。白名单之外的任何 .key/.pem 直接构建失败。
+        run: |
+          set -e
+          allow="pd-authority/pd-apps/pd-auth/pd-auth-server/src/main/resources/client/pri.key
+          pd-authority/pd-tools/pd-tools-jwt/src/main/resources/pri.key"
+          found=$(git ls-files '*.key' '*.pem' '*.p12' '*.jks' | grep -vxF "$allow" || true)
+          if [ -n "$found" ]; then
+            echo "::error::以下密钥文件被 git 跟踪，本仓库是公开的，必须移出后再构建"
+            echo "$found" | sed 's/^/  /'
+            exit 1
+          fi
+          legacy=$(git ls-files '*.key' | wc -l)
+          [ "$legacy" = 0 ] \
+            && echo "  仓库已不跟踪任何私钥：干净" \
+            || echo "  ! 仍有 $legacy 把历史私钥在跟踪（公开可读，按部署文档 §2.11 轮换后删除）"
+
       - name: 校验 profile 与 Nacos dataId 配对
         # bootstrap-*.yml 用的是自指占位符（enabled: ${spring...enabled}），值必须由服务级
         # dataId 覆盖。profile 与 dataId 对不上时不是 404 而是启动期 IllegalStateException，
@@ -198,6 +217,14 @@ jobs:
       - name: 滚动部署
         run: |
           export TAG
+          # 宿主 /data/ci/deploy.env（0600，不入库）提供仓外注入项，例如 PINDA_JWT_PRI_KEY_PATH；
+          # 没有这个文件就按 compose 里的空默认值走，行为与今天完全一致。
+          if [ -f /ci/deploy.env ]; then
+            set -a; . /ci/deploy.env; set +a
+            echo "已载入 /ci/deploy.env（$(grep -cvE '^\s*(#|$)' /ci/deploy.env) 个变量）"
+          else
+            echo "无 /ci/deploy.env，使用 compose 内置默认值"
+          fi
           docker compose -f deploy/apps/docker-compose.app.yml up -d --remove-orphans
           echo "部署完成，当前运行容器："
           docker compose -f deploy/apps/docker-compose.app.yml ps

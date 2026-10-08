@@ -82,5 +82,25 @@ for c in $(docker ps --format '{{.Names}}' | grep '^pd-' | grep -v admin-ui | so
 done
 
 echo
+echo "=== 8. JWT 签名密钥是否已请出仓库（轮换状态） ==="
+# 背景：仓内 client/pri.key 是被 git 跟踪的真实 RSA 私钥，而仓库同时推到公开 Gitee。
+# 轮换手册见 docs/部署文档.md §2.11；这一节只回答"在线现在用的是哪把"。
+pri=$(docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' pd-auth-server 2>/dev/null | sed -n 's/^PINDA_JWT_PRI_KEY_PATH=//p')
+if [ -n "$pri" ]; then
+  target=${pri#file:}
+  if [ -s "$target" ]; then
+    echo "  已轮换：pd-auth-server 用仓外私钥 $pri"
+  else
+    printf "  ! 配置指向 %s 但文件不存在或为空（容器会回落 classpath 那把旧钥）\n" "$pri"
+    fail=1
+  fi
+else
+  echo "  未轮换：pd-auth-server 仍从镜像内 classpath 读私钥（部署文档 §2.11）"
+fi
+ls -d /data/pinda-jwt >/dev/null 2>&1 \
+  && echo "  宿主密钥目录: $(ls -l /data/pinda-jwt 2>/dev/null | tail -n +2 | wc -l) 个文件" \
+  || echo "  宿主密钥目录 /data/pinda-jwt 尚未创建（轮换时才需要）"
+
+echo
 [ "$fail" = 0 ] && echo "结论: 全部通过" || echo "结论: 有项目需要处理（见上面带 ! 或超出的行）"
 exit "$fail"
