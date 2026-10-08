@@ -1,0 +1,197 @@
+# 管理端 Vue3 升级专项 · 存量代码迁移实施规范
+
+> **文档版本**：v1.0 ｜ **日期**：2026-10-08 ｜ **状态**：本期新建，作为《开发规范与需求规格说明书》§2.2/§8 与《管理端 UI 规范》的**落地细则**
+> **读者**：AI 编码代理（Claude Code 等）、人工开发者
+> **前置权威文档**：《开发规范与需求规格说明书》（SRS）第 1 章红线 + 第 2.2 节 + 第 8 节；《管理端UI规范与页面模板.md》（新增页面样式约束）；《ClaudeCode开发纪律与红线.md》；**《全局定案与待确认项清单》§1.12 `D-32`（前端基座选型，决策 9A）**
+> **本文档边界**：**只管"现有 Vue2 存量代码的迁移"**——即把 `pd-admin-ui` 现有 ~110+ 个 `.vue` 从 Vue 2.6 + Element UI 2.12 + Vuex 3 + Webpack 4 迁到 **Vue 3.4 + Vite 5 + Element Plus 2 + Pinia 2 + Vue Router 4 + ECharts 5 + vue-i18n 9**。新增页面的**样式/模板/功能**分别由《管理端 UI 规范》《管理端业务页面开发任务卡》约束，本文不重复。
+> 📌 **基座已定案（`D-32`，2026-10-08 决策 9A）**：管理端工程基座取开源 **`vue3-element-admin`**（Gitee: youlaitech/vue3-element-admin，Vue3.4 + Vite 5 + TS + Element Plus + Pinia），移动三端配套 `uni-app`。**因此本文的 T0 不是"从零搭脚手架"，而是"以该基座为工程起点做覆写与契约对接"**；红线：**禁止从零设计 UI，必须套模板改业务页**。基座与本文的冲突处置见 §3 注记与 §5.4。
+> **核心立场**：业务优先、解决实际问题、不重写业务逻辑；迁移 = 换栈 + 适配，不是重做功能。
+
+---
+
+## 第 1 章 目标栈与工程基线（权威，禁止偏离）
+
+| 维度 | 现状（迁移前） | 目标（迁移后） | 约束 |
+|---|---|---|---|
+| **工程基座** | Vue CLI 自建壳、无统一模板 | **`vue3-element-admin` 基座**（`D-32`） | 目录结构/权限路由/组件库/代码生成器以基座为准，不另起炉灶 |
+| 框架 | Vue 2.6.10（Options API） | **Vue 3.4**（`<script setup>` 组合式 API） | 禁止保留 Options API 与组合式混写"夹花" |
+| 构建 | Vue CLI 3 / Webpack 4 | **Vite 5** | 解决 Node17+ 的 OpenSSL3 构建阻断；不再依赖 `NODE_OPTIONS=--openssl-legacy-provider` |
+| UI | Element UI 2.12 | **Element Plus 2.x** | 组件名一致，属性/事件按 §4 适配 |
+| 状态 | Vuex 3.1 | **Pinia 2** | 见 §5.3，禁止继续用 `this.$store` 新写法 |
+| 路由 | Vue Router 3.0 | **Vue Router 4** | 见 §5.4 |
+| 国际化 | vue-i18n 7.3 | **vue-i18n 9.x** | 见 §5.5 |
+| 图表 | ECharts 4.2 | **ECharts 5** | 见 §6 |
+| 样式 | node-sass 4 / sass 1.32（SCSS） | **dart-sass（sass）** | 见 §7；`node-sass` 已在 Node 18+ 装不上，必须换 |
+| 图标 | svg-sprite-loader | **Vite + vite-plugin-svg-icons 或 unplugin-icons** | 见 §7.3 |
+| i18n | — | vue-i18n 9 | 管理端现有国际化按 §5.5 迁移 |
+
+> ⚠️ **版本以 SRS §2.2 为准**。本表是 SRS §2.2 的迁移视角复述，冲突以 SRS 为准。
+
+---
+
+## 第 2 章 现有资产盘点（实测，迁移前必读）
+
+> 以下为 2026-10-08 对 `pd-admin-ui/src` 实测结果，是迁移清单（§3）的事实依据。
+
+| 资产 | 数量/情况 | 说明 |
+|---|---|---|
+| `.vue` 文件 | **110+** | 约 40+ 通用组件（`src/components`）+ 两业务域页面：`febs/`（若依旧模块：system/user/role/menu/dept/client/monitor…）+ `pinda/`（新模块：auth/user/base/sms/file/developer/ofpay/trace…） |
+| `filters` 使用 | **22 个文件** | Vue3 已**移除 filters**，必须改 `methods`/`computed`（见 §4.1 决策） |
+| 事件总线 | 0 | 未用 `$on/$off/$once` 全局总线（好） |
+| mixins | 11 个文件 | Vue3 保留 mixins 但建议迁组合式函数（`composables`），见 §5.1 |
+| 依赖中**无 Vue3 官方版**的库 | 4 个 | `@riophae/vue-treeselect`、`tui-editor`、`vue-count-to`、`vue-splitpane`（见 §6 替换决策） |
+| 其他需升版的库 | 若干 | `vuedraggable 2→4`、`echarts 4→5`、`driver.js`、`vue-i18n 7→9`、`vuex→Pinia` |
+
+**现有页面清单（关键，迁移顺序参考）**
+- 通用组件（先迁，被页面依赖）：`components/` 下 Breadcrumb / Hamburger / SvgIcon / Pagination / Screenfull / LangSelect / SizeSelect / ThemePicker / RightPanel / BackToTop / Sticky / PanThumb / Share / ImageCropper / JsonEditor / MarkdownEditor / Tinymce / UploadExcel / DragSelect / DndList / Kanban / Charts(Keyboard/LineMarker/MixChart) / pinda(imgUpload/fileUpload/CommonTree) 等。
+- 布局（先迁）：`layout/index.vue` + `layout/components/*`（Navbar/Sidebar/TagsView/AppMain/Settings）。
+- 业务页：`views/dashboard`、`views/error-page`、`views/login1`、`views/profile`、`views/icons`、`views/iframe`；`views/febs/**`（若依旧模块，约 20+ 页）；`views/pinda/**`（新模块，约 60+ 页）。
+- 鉴权/请求：`src/utils/request.js`（历史 OAuth2 `Authorization: bearer` + `refresh_token` 续期，详见《UI 规范》§3.1 与《红线》七条硬事实第 2 条）——**Vue3 专项内可现代化其鉴权层，非专项不改动**。
+
+---
+
+## 第 3 章 迁移顺序与分批策略
+
+> 原则：**先地基后业务、先组件后页面、先通用后模块**。每批迁移后必须 `npm run build` 通过 + 冒烟，再进下一批。
+
+| 批次 | 范围 | 内容 | 退出标准 |
+|---|---|---|---|
+| **T0 工程** | 基座就位（原"脚手架"） | **取 `vue3-element-admin`（`D-32`）作为工程起点**，在其上做覆写与对接：`vite.config.ts` 别名/代理改指向网关 `8760/api`、入口 `main.ts` 沿用基座、`element-variables.scss` 覆写主色 `#2B6CFF`、SCSS 全局注入、svg 图标插件按 §7.3 对齐；**不自建空白壳** | `npm run dev` 秒级启动；基座壳可跑且主色/网关指向正确 |
+| **T1 通用组件** | `src/components/*` | 逐个迁 Element Plus 适配 + `<script setup>`；重点：`SvgIcon`（图标）、`Pagination`（分页）、`MarkdownEditor`（tui-editor 替换）、`DragSelect`（treeselect 替换）、`DndList/Kanban`（vuedraggable 替换）、`Charts/*`（echarts5） | 组件在 Storybook/页面可渲染 |
+| **T2 布局** | `layout/*` | Sidebar/TagsView/Navbar/Settings 适配；动态路由 `filterAsyncRouter` 对接 `pd_auth_resource`（383 条） | 登录后菜单/标签页/面包屑正确 |
+| **T3 febs 旧模块** | `views/febs/**` | 若依风格 CRUD 页迁移（系统管理：user/role/menu/dept/client/monitor/systemlog/loginlog 等） | 页面可访问、CRUD 正常 |
+| **T4 pinda 新模块** | `views/pinda/**` | 业务页迁移（auth/user/base/sms/file/developer/ofpay/trace），含 22 个 filters 文件改造 | 业务功能与 Vue2 行为一致 |
+| **T5 收尾** | 全局 | filters 清零、mixins→composables（可选）、vuex→pinia 收口、`npm run build` 生产构建通过 | 全量 build 通过、端到端冒烟 |
+
+> 每批内**按文件逐迁**，禁止整模块一次性"改写"。`febs`（旧）与 `pinda`（新）分两批，避免相互干扰。
+
+> ⚠️ **`D-32` 基座与本文的冲突处置（3 条，T0 开工前必须逐条定清）**
+> 1. **后端契约优先于基座实现**：基座自带登录/鉴权/动态路由的示例实现，本项目一律 **不得**为迁就基座而改动既有跨端契约 —— JWT 头字段 `token`（非 `Authorization`）、登录 `POST /anno/login`、菜单由后端 `getRouter` 下发、`filterAsyncRouter` 映射 `@/views/${path}.vue`、网关放行取决于 `pd_auth_resource`（383 条）。基座相应代码**改造为对接既有后端**，方向不可颠倒。
+> 2. **菜单显示机制归属未定**：Vue2 侧当前走 `src/router/menu.js` 的 `staticMenu` **前端静态直出**、不按角色过滤（见《管理端业务页面开发任务卡》§〇 第 6 条），与本文 §5.4 的"后端 `getRouter` 动态下发"**并存且口径不同**。换基座时必须一次性定清"菜单显示由谁决定"，否则会重演"登录后可作业但侧边栏无入口"。**本条为待拍板项，尚未收口**。
+> 3. **本文 §2 资产盘点不含基座实测**：§2 是对 `pd-admin-ui/src` 的实测结果；`vue3-element-admin` 仓库的实际目录、依赖版本与自带组件**尚未克隆核对**。T0 开工前先克隆核对，再据实修正 §3 批次与《优先级总览》P0-3 的 60–90 人日估算（D-32 本身**不另加人日**，但估算有效性依赖本条核对结果）。
+
+---
+
+## 第 4 章 必须消除的 Vue2→Vue3 破坏性差异（迁移硬规则）
+
+### 4.1 `filters` 移除（22 个文件，强制）
+- **现状**：22 个 `.vue` 用了 `filters:`（多为状态/字典值格式化，`Index.vue` 类列表页集中）。
+- **规则**：Vue3 已移除 `filters`。**一律改为 `computed` 或 `methods`**，模板里 `{{ value | fmt }}` → `{{ fmt(value) }}`；或提取为 `src/utils/format.js` 纯函数 + 在 `setup` 中暴露。
+- **禁止**：继续写 `filters:`（编译即报错）；用全局 `Vue.filter` 注册（Vue3 无此 API）。
+- **字典/枚举格式化**：优先复用《数据字典与枚举口径》，**禁止硬编码数字**，用后端 code + 中文名。
+
+### 4.2 `v-model` 语法
+- `.sync` 修饰符移除：`visible.sync="x"` → `v-model:visible="x"`（el-dialog/el-drawer 等）。
+- 自定义组件 `v-model` 默认 prop 由 `value` 变 `modelValue`。
+
+### 4.3 插槽 `slot` / `slot-scope` → `v-slot`（`#`）
+- `slot="header"` → `#header`；`slot-scope="scope"` → `#default="scope"`。el-table 列插槽全面适配。
+
+### 4.4 生命周期
+- `beforeDestroy` → `beforeUnmount`；`destroyed` → `unmounted`。ECharts/地图实例 `beforeDestroy` 必须 `dispose` → 改 `beforeUnmount`。
+
+### 4.5 全局 API
+- `new Vue()` → `createApp()`；`Vue.prototype.$xxx` → `app.config.globalProperties.$xxx`（鉴权/字典等全局属性迁移）。
+- `Vue.config.productionTip` / `Vue.filter` 等移除。
+
+### 4.6 其他
+- `$children` / `$listeners`：`$listeners` 移除（并入 `$attrs`）；`$children` 移除（用 `ref`/`provide-inject`）。
+- `v-if` 与 `v-for` 同元素优先级反转（避免同元素混用）。
+- 事件：`$on/$off/$once` 实例方法移除（本项目未用全局总线，仅注意组件内；事件仍用 `emit/on`）。
+
+---
+
+## 第 5 章 状态 / 路由 / i18n 迁移硬约束
+
+### 5.1 组合式 API（强制 `<script setup>`）
+- 新增与迁移页面一律 `<script setup>` + `ref/reactive/computed/watch`；**禁止 Options API 与组合式混写**（SRS §2.2：专项内不允许"夹花"）。
+- `mixins`（11 文件）建议迁为 `src/composables/*.ts` 组合式函数；过渡期可保留 mixins（Vue3 兼容），但**新逻辑不得新建 mixins**。
+
+### 5.2 全局属性 / 工具
+- 原 `Vue.prototype.$xxx`（如 `$message`/`$confirm`/`$loading`）→ 在 Element Plus 下用 `ElMessage`/`ElMessageBox`/`ElLoading` 直接 import；或在 `main.ts` 挂 `globalProperties` 供模板用。
+
+### 5.3 Vuex → Pinia（强制）
+- 按 SRS §2.2 用 Pinia 替代 Vuex。**现有 store 模块**（user/permission/app/settings/tagsView/errorLog 等）迁为 `defineStore`；页面 `this.$store` 访问改 `useXxxStore()`。
+- 禁止在迁移中新增 Vuex 写法；跨模块状态（用户/权限/标签）用 Pinia store 划分。
+
+### 5.4 Vue Router 4
+- `new Router` → `createRouter` + `createWebHistory`；路由懒加载 `() => import()` 保留；`router.beforeEach` 守卫逻辑迁移；`router.addRoutes` 移除 → `router.addRoute`。
+- 动态路由对接后端菜单：`filterAsyncRouter` 映射 `@/views/${path}.vue`（见《UI 规范》§3.1）。
+- **`D-32` 基座侧的对应处理**：基座自带的静态路由表/权限守卫（其示例工程通常以前端路由 + 角色码过滤）**不能直接沿用**，须替换为上述"后端 `getRouter` 下发 + `filterAsyncRouter` 映射"的既有契约；改造点集中在路由与权限模块，业务页不受影响。菜单显示机制（动态下发 vs `staticMenu` 静态直出）的归一尚未拍板，见 §3 冲突处置第 2 条。
+
+### 5.5 vue-i18n 9
+- `new VueI18n` → `createI18n`；`locale` 访问改 `i18n.global.locale`；组件内 `$t` 仍可用但 Composition 下用 `useI18n()`。语化文案（zh/en）配置迁移，不丢现有翻译。
+
+---
+
+## 第 6 章 第三方库替换决策（无 Vue3 官方版的必须换）
+
+> **红线**：替换方案须经本规范决策，**禁止自作主张引入新库**或"顺手"引第二个同类库。下列为最终决策，执行即可。
+
+| 现有库（Vue2） | 现状 | **替换决策（落地）** | 受影响文件 |
+|---|---|---|---|
+| `@riophae/vue-treeselect`（0.0.38） | **无 Vue3 官方版** | 改用 **`@zanmato/vue3-treeselect`**（社区 Vue3 移植）或 `vue3-treeselect`；如长期风险高，降级为 **`el-tree-select`**（Element Plus 生态，零额外依赖，推荐） | `DragSelect/index.vue` 等 |
+| `tui-editor`（1.3.3，TOAST UI Editor） | 旧版，无 Vue3 包装 | 改用 **`@toast-ui/editor` v3** + 自封装 `MarkdownEditor/index.vue`（参考官方 Vue3 示例）；或 `md-editor-v3`（开箱 Vue3） | `components/MarkdownEditor/*`、`default-options.js` |
+| `vue-count-to`（^1.0.13） | 无 Vue3 官方版 | 自写轻量 `<CountTo>` 组件（基于 `requestAnimationFrame`，约 30 行），或 `vue3-count-to` | `views/dashboard` 等 |
+| `vue-splitpane`（1.0.4） | 无 Vue3 版 | 改用 **`splitpanes`**（`splitpanes` + `panes`，Vue3 原生支持） | 看板/大屏分栏页 |
+| `vuedraggable`（2.20） | 有 Vue3 版 | 升 **vuedraggable 4**（基于 SortableJS，Vue3 兼容） | `DndList`、`Kanban` |
+| `echarts`（4.2.1） | 升 5 | **echarts 5** + 按需引入；`vue-echarts` 可选；图表色板用《UI 规范》§2.3 八色 | `components/Charts/*`、`views/dashboard`、`pinda/trace` |
+| `driver.js`（0.9.5） | 有 Vue3 兼容版 | 升 `driver.js` 1.x（API 基本兼容） | 引导页 |
+| `vue-i18n`（7.3.2） | 升 9 | 见 §5.5 | 全局 |
+| `vuex`（3.1.0） | 升 Pinia | 见 §5.3 | 全局 |
+| `node-sass`（4.14.1） | 废弃 | 卸载，改用 **`sass`（dart-sass）**；`/deep/` → `:deep()` | 全局样式 |
+
+> ⚠️ **`el-tree-select` 优先于 vue3-treeselect**：减少一个外部依赖、规避社区库停更风险；仅当树形下拉无法满足（如异步懒加载节点）才用 `@zanmato/vue3-treeselect`。
+
+---
+
+## 第 7 章 构建 / 样式 / 图标迁移
+
+### 7.1 Vite 配置
+- `vue.config.js`（Webpack）→ `vite.config.ts`：`@vitejs/plugin-vue`、别名 `@`→`src`、SCSS 全局变量注入（`additionalData`）、`server.proxy` 指向网关 `8760/api`。
+- 环境变量：`.env` 体系（`VITE_` 前缀）替代 `process.env`；保留《红线》"密码不入库"。
+- 移除 `NODE_OPTIONS=--openssl-legacy-provider` 兜底（Vite 无此问题）。
+
+### 7.2 SCSS / 样式
+- `node-sass` → `sass`（dart-sass）；`/deep/`/`::v-deep` → `:deep()`。
+- **设计 Token 集中**：主色 `#2B6CFF` 在 `element-variables.scss` 覆写（见《UI 规范》§9）；页面禁止硬编码 hex/px（图表/地图浮层除外）。
+- 保留 `src/styles/` 现有 8 个样式文件（`variables.scss`/`element-variables.scss` 等），迁移时接入 `tokens.scss`（见《UI 规范》§2）。
+
+### 7.3 SVG 图标
+- `svg-sprite-loader` + `ScriptExtHtmlWebpackPlugin` → **`vite-plugin-svg-icons`**（或 `unplugin-icons`）；`SvgIcon/index.vue` 组件适配新插件 API；`icons/svg` 目录复用。
+
+### 7.4 测试
+- Jest + `@vue/test-utils 1` → **Vitest + @vue/test-utils 2**（Vue3 配套）；现有单测随组件迁移改写。
+
+---
+
+## 第 8 章 迁移禁止清单（AI 易犯，一律回退）
+
+- ❌ 保留 Options API 与 `<script setup>` 混写（夹花）。
+- ❌ 继续用 `filters:`、`.sync` 修饰符、`slot`/`slot-scope` 旧写法、全局 `Vue.filter`。
+- ❌ 引入除本规范 §6 决策之外的第二个同类库（UI/图表/地图/树形选择）。
+- ❌ 重写业务逻辑/状态机；迁移只换栈不重做功能。
+- ❌ 硬编码状态数字、硬编码色值（用《数据字典》+《UI 规范》Token）。
+- ❌ 裸 `fetch`/直连后端端口；必须走 `src/utils/request` 拦截器 + 网关。
+- ❌ 新增对外接口不注册 `pd_auth_resource`（网关必拒，阻断 C）。
+- ❌ 跨模块写业务（订单→pd-oms、调度→pd-dispatch…）。
+- ❌ 非「Vue3 升级专项」任务下随意改动 `pd-admin-ui` 既有文件（SRS §1.4 / 红线第 5 条）。
+- ❌ **从零设计 UI 或另起工程基座**（`D-32` 红线）：管理端必须以 `vue3-element-admin` 为基套模板改业务页，移动端以配套 `uni-app` 为基座；不得自建空白脚手架重造布局/权限/组件库。
+- ❌ **为迁就基座示例而改动既有跨端契约**（JWT 头字段 `token`、`POST /anno/login`、后端 `getRouter` 下发菜单、`pd_auth_resource` 网关放行）——改造方向只能是基座适配后端。
+
+---
+
+## 第 9 章 验收标准（迁移 DoD）
+
+1. **构建**：`npm run build`（Vite）生产构建通过；`npm run dev` 正常启动。
+2. **依赖**：`package.json` 无 `vue@2`/`element-ui`/`vuex`/`vue-i18n@7`/`node-sass`/`@riophae/vue-treeselect`/`tui-editor`/`vue-count-to`/`vue-splitpane`（§6 决策库已全部替换）。
+3. **语法**：全量 `grep "filters\s*:"` 在 `.vue` 中清零；无 `.sync`、无 `new Vue()`。
+4. **行为**：逐页与 Vue2 版本对比，CRUD/查询/表单/分页/菜单/鉴权行为一致。
+5. **样式**：主色 `#2B6CFF` 全端一致；三态（加载/空/错）齐全；无控制台样式报错。
+6. **契约**：新增/变更接口已同步《后端接口文档》《SRS》§5/§6；资源表已注册。
+7. **文档**：改动同步 `docs/`；本规范 §6 替换决策如有调整须回写。
+8. **基座（`D-32`）**：`pd-admin-ui` 工程可追溯到 `vue3-element-admin` 的克隆来源与版本号（在 `docs/` 或 `package.json` 注释中留痕）；未出现自建空白壳重造布局/权限/组件库的情形。
+
+---
+
+*本文档为「管理端 Vue3 升级专项」的存量迁移权威细则。与《SRS》《UI 规范》《红线》冲突时以《SRS》为准，修订须人工确认。*

@@ -1,0 +1,189 @@
+# 服务器升级执行命令清单（直接复制粘贴）
+
+> **服务器**：192.168.20.130
+> **前提**：本地 compose 文件已改好（deploy/middleware/docker-compose.infra.yml），需要先 push 到 Gitea，服务器 pull
+> **操作账号**：root
+
+---
+
+## 第 0 步：拉取最新 compose 文件
+
+```bash
+cd /data/deploy/middleware
+# 假设你把改好的 docker-compose.infra.yml push 到了 Gitea，服务器拉下来
+# 或者直接 scp 上传：
+# scp D:\MyCode\pinda-tms\deploy\middleware\docker-compose.infra.yml root@192.168.20.130:/data/deploy/middleware/
+```
+
+---
+
+## 第 1 步：全量备份（必做）
+
+```bash
+mkdir -p /data/backup/pre-upgrade-$(date +%Y%m%d)
+cd /data/backup/pre-upgrade-$(date +%Y%m%d)
+
+# MySQL 导出（输入密码，从 /data/deploy/middleware/.env 里拿）
+docker exec mysql57 mysqldump -uroot -p --all-databases --routines --triggers --events > mysql-all.sql
+
+# Nacos 配置导出
+curl -X GET "http://127.0.0.1:8848/nacos/v1/cs/configs?dataId=*&group=*&pageNo=1&pageSize=100" -o nacos-configs.json
+
+# 其他中间件数据打包
+tar czf redis-data.tar.gz /data/redis/
+tar czf zookeeper-data.tar.gz /data/zookeeper/
+tar czf kafka-data.tar.gz /data/kafka/
+tar czf rabbitmq-data.tar.gz /data/rabbitmq/
+tar czf nacos-data.tar.gz /data/nacos-data/
+
+# 记录当前镜像版本
+docker inspect mysql57 redis nacos zookeeper kafka rabbitmq --format '{{.Name}}: {{.Config.Image}}' > current-images.txt
+
+echo "✅ 备份完成，文件在 $(pwd)"
+ls -lh
+```
+
+---
+
+## 第 2 步：升级 Redis（最简单）
+
+```bash
+cd /data/deploy/middleware
+
+docker stop redis && docker rm redis
+docker compose -f docker-compose.infra.yml up -d redis
+
+# 等 10 秒
+sleep 10
+
+# 验证
+docker exec redis redis-cli ping
+# 应返回 PONG
+
+docker exec redis redis-cli info server | grep redis_version
+# 应显示 redis_version:7.x.x
+```
+
+---
+
+## 第 3 步：升级 Zookeeper
+
+```bash
+docker stop zookeeper && docker rm zookeeper
+docker compose -f docker-compose.infra.yml up -d zookeeper
+
+sleep 10
+
+docker exec zookeeper zkServer.sh status
+# 应显示 Mode: standalone
+```
+
+---
+
+## 第 4 步：升级 RabbitMQ
+
+```bash
+docker stop rabbitmq && docker rm rabbitmq
+docker compose -f docker-compose.infra.yml up -d rabbitmq
+
+sleep 15
+
+docker exec rabbitmq rabbitmq-diagnostics -q ping
+# 应返回 ping succeeded
+```
+
+---
+
+## 第 5 步：升级 Kafka
+
+```bash
+docker stop kafka && docker rm kafka
+docker compose -f docker-compose.infra.yml up -d kafka
+
+sleep 20
+
+docker exec kafka kafka-topics.sh --bootstrap-server localhost:9092 --list
+# 应列出现有 topic
+```
+
+---
+
+## 第 6 步：升级 Nacos（要导配置）
+
+```bash
+docker stop nacos && docker rm nacos
+docker compose -f docker-compose.infra.yml up -d nacos
+
+# 等 30 秒让 Nacos 2.x 启动
+sleep 30
+
+# 验证 Nacos 启动
+curl -sf http://127.0.0.1:8848/nacos/v1/ns/operator/metrics && echo "✅ Nacos 启动成功"
+
+# 手动导入配置：
+# 浏览器打开 http://192.168.20.130:8848/nacos
+# 登录 nacos/nacos
+# 配置管理 → 配置列表 → 导入配置 → 选 /data/backup/pre-upgrade-YYYYMMDD/nacos-configs.json
+# 导入后逐条核对 35 条配置
+```
+
+---
+
+## 第 7 步：升级 MySQL（最麻烦，最后做）
+
+```bash
+# 停 MySQL 5.7
+docker stop mysql57 && docker rm mysql57
+
+# 旧数据目录改名（不删，留着回滚）
+mv /data/mysql /data/mysql-5.7-backup
+
+# 启动 MySQL 8.0（空库）
+docker compose -f docker-compose.infra.yml up -d mysql8
+
+# 等 30 秒让 MySQL 8.0 初始化
+sleep 30
+
+# 导入数据
+cd /data/backup/pre-upgrade-$(date +%Y%m%d)
+docker exec -i mysql8 mysql -uroot -p < mysql-all.sql
+
+# 验证
+docker exec mysql8 mysql -uroot -p -e "show databases;"
+# 应看到所有旧库
+
+docker exec mysql8 mysql -uroot -p -e "use pd_auth; select count(*) from pd_auth_resource;"
+# 应返回 383（菜单资源表条数）
+```
+
+---
+
+## 第 8 步：全链路验证
+
+```bash
+# 所有容器状态
+docker ps --format "table {{.Names}}\t{{.Status}}"
+# 应看到 mysql8 / redis / nacos / zookeeper / kafka / rabbitmq 全部 Up (healthy)
+
+# Nacos 控制台
+# 浏览器打开 http://192.168.20.130:8848/nacos
+# 服务列表应看到 14 个微服务（如果微服务已重启）
+```
+
+---
+
+## 回滚方案（出问题时）
+
+```bash
+cd /data/deploy/middleware
+docker compose -f docker-compose.infra.yml down
+
+# MySQL 回滚
+mv /data/mysql /data/mysql-8.0-backup
+mv /data/mysql-5.7-backup /data/mysql
+
+# 其他中间件回滚：改 compose 镜像版本回旧版，数据目录不用动
+# （原文件备份在 docker-compose.infra.yml.bak）
+
+docker compose -f docker-compose.infra.yml up -d
+```
