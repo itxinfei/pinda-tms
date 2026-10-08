@@ -97,6 +97,12 @@ x-redis-env: &redis-env
   REDIS_HOST: 192.168.20.130
   REDIS_PORT: "6379"
 
+# 百度地图 AK：代码用 System.getProperty("baidu.map.ak") 读取（BaiduMapUtils:35 / EntCoordSyncJob:29），
+# 只能走 JVM 参数。用 JAVA_TOOL_OPTIONS 而不是 JAVA_OPTS，是为了不去覆写各服务已有的 JAVA_OPTS 锚点
+# （网关那种显式覆写最容易漏带堆外参数）。留空 = 今天的状态：地址解析必定失败。
+x-baidu-env: &baidu-env
+  JAVA_TOOL_OPTIONS: "-Dbaidu.map.ak=${BAIDU_MAP_AK:-}"
+
 services:
   # ---------- 网关与鉴权（profile=test） ----------
   pd-gateway:
@@ -114,6 +120,10 @@ services:
       # 注意：本服务显式写了 JAVA_OPTS，会整体覆盖 x-jvm-core 锚点，
       # 所以堆外与 OOM 参数必须在下面这一行重复一遍，否则锚点的加固对网关无效。
       JAVA_OPTS: "-Xms128m -Xmx256m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:MaxMetaspaceSize=256m -XX:MaxDirectMemorySize=256m -Xss512k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -Dcors.allowed.origins=http://192.168.20.130,http://192.168.20.130:8080,http://localhost:8080,http://localhost:3000"
+      # JWT 验签公钥的外部来源（详见 pd-auth-server 段注释与部署文档 §2.11）
+      PINDA_JWT_PUB_KEY_PATH: ${PINDA_JWT_PUB_KEY_PATH:-}
+    volumes:
+      - ${PINDA_JWT_HOST_DIR:-/data/pinda-jwt}:/data/pinda-jwt:ro
 
   pd-auth-server:
     <<: *app-edge
@@ -126,6 +136,20 @@ services:
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/9000' || exit 1"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
+      # JWT 签名密钥对的外部来源。
+      #
+      # 背景：仓内 pd-auth-server/src/main/resources/client/pri.key 与
+      # pd-tools-jwt/src/main/resources/pri.key 是被 git 跟踪的真实 RSA-2048 私钥，
+      # 而这个仓库同时推到公开的 Gitee——任何读到源码的人都能签发任意 userId 的合法
+      # token，网关的验签与吊销黑名单因此形同虚设。轮换的完整步骤在 docs/部署文档.md §2.11。
+      #
+      # 语义：留空等于"未设置"，RsaKeyHelper 会照旧回落 classpath，所以现在这套
+      # 配置不改变任何在线行为；把新密钥放到宿主 /data/pinda-jwt 并在
+      # /data/ci/deploy.env 里设好这两个变量，下次部署即切到仓外密钥。
+      PINDA_JWT_PRI_KEY_PATH: ${PINDA_JWT_PRI_KEY_PATH:-}
+      PINDA_JWT_PUB_KEY_PATH: ${PINDA_JWT_PUB_KEY_PATH:-}
+    volumes:
+      - ${PINDA_JWT_HOST_DIR:-/data/pinda-jwt}:/data/pinda-jwt:ro
 
   # ---------- 基础微服务 ----------
   pd-base:
@@ -150,7 +174,7 @@ services:
       <<: *hc-common
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8186' || exit 1"]
     environment:
-      <<: [*jvm-core, *nacos-env, *redis-env]
+      <<: [*jvm-core, *nacos-env, *redis-env, *baidu-env]
 
   pd-work:
     <<: *app-core
@@ -186,7 +210,7 @@ services:
       <<: *hc-common
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8190' || exit 1"]
     environment:
-      <<: [*jvm-core, *nacos-env, *redis-env]
+      <<: [*jvm-core, *nacos-env, *redis-env, *baidu-env]
 
   pd-aggregation:
     <<: *app-core
@@ -211,7 +235,7 @@ services:
       <<: *hc-common
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8192' || exit 1"]
     environment:
-      <<: [*jvm-core, *nacos-env, *redis-env]
+      <<: [*jvm-core, *nacos-env, *redis-env, *baidu-env]
 
   pd-druid:
     <<: *app-small
@@ -236,7 +260,7 @@ services:
       <<: *hc-common
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8161' || exit 1"]
     environment:
-      <<: [*jvm-small, *nacos-env, *redis-env]
+      <<: [*jvm-small, *nacos-env, *redis-env, *baidu-env]
 
   pd-web-driver:
     <<: *app-small
@@ -248,7 +272,7 @@ services:
       <<: *hc-common
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8162' || exit 1"]
     environment:
-      <<: [*jvm-small, *nacos-env, *redis-env]
+      <<: [*jvm-small, *nacos-env, *redis-env, *baidu-env]
 
   pd-web-courier:
     <<: *app-small
@@ -272,7 +296,7 @@ services:
       <<: *hc-common
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8164' || exit 1"]
     environment:
-      <<: [*jvm-small, *nacos-env, *redis-env]
+      <<: [*jvm-small, *nacos-env, *redis-env, *baidu-env]
 
   # ---------- 管理后台前端 ----------
   pd-admin-ui:
@@ -291,3 +315,4 @@ services:
       # 2026-10-06 修复: 原 http://192.168.20.130:8760 在 bridge 网络容器内访问宿主 eth0 IP 被防火墙拦(超时),
       # 改走 compose 同网络服务名 pd-gateway(容器间直连, 实测 200)
       DOCKER_REQUEST_DOMAIN_PREFIX: http://pd-gateway:8760
+
