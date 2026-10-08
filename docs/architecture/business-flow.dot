@@ -1,0 +1,84 @@
+// 品达TMS 端到端业务流（current-state，证据标注版）
+// 生成：flow-visualizer + graphviz；基线 ecd6725 + 192.168.20.130 实测（2026-10-08）
+// 读法：实线=代码路径已证实；虚线=推断/待验证；点线=应发生但没有实现；
+//       红色节点=断点；灰色=线上无数据（该环节从未真实走通）
+digraph tms_business_flow {
+  rankdir=TB;
+  nodesep=0.35; ranksep=0.75;
+  graph [fontname="Microsoft YaHei", labelloc=t, fontsize=15,
+         label="品达TMS 业务主干：下单→揽收→入库→调度→运输→派送→签收→轨迹/结算（红色为断点）"];
+  node  [fontname="Microsoft YaHei", fontsize=11, shape=box, style="rounded,filled", fillcolor="#f5f7fa"];
+  edge  [fontname="Microsoft YaHei", fontsize=10];
+
+  // ---------- 角色 ----------
+  customer [label="客户\n(pd-web-customer)", shape=ellipse, fillcolor="#e8f0fe"];
+  dispatcher [label="调度/网点操作员\n(pd-admin-ui)", shape=ellipse, fillcolor="#e8f0fe"];
+  courier [label="快递员\n(pd-web-courier)", shape=ellipse, fillcolor="#e8f0fe"];
+  driver [label="司机\n(pd-web-driver)", shape=ellipse, fillcolor="#e8f0fe"];
+
+  // ---------- 主干业务步骤 ----------
+  subgraph cluster_order { label="订单域 pd-oms (库 pd_oms)"; style=dashed; color="#9aa0a6";
+    create [label="下单\nstatus=23000/23002\nOrderServiceImpl:142-153"];
+    pay [label="支付确认\npayment_status 1→2\nOrderController:184-192"];
+  }
+  subgraph cluster_pickup { label="揽收入库（快递员驱动）"; style=dashed; color="#9aa0a6";
+    picked [label="取件\n23001\nCourierController:283-298\n@GlobalTransactional:278"];
+    inbound [label="网点入库\n23003\nCourierController:401\n无事务 ⚠"];
+  }
+  subgraph cluster_dispatch { label="调度域 pd-dispatch (库 pd_dispatch)"; style=dashed; color="#9aa0a6";
+    classify [label="订单分类→路线规划→建任务→车次派司机\nDispatchTask:33-47\n仅 Quartz 触发"];
+    toload [label="待装车 23004\nBusinessOperationServiceImpl:82"];
+  }
+  subgraph cluster_transit { label="运输域 pd-work / pd-web-driver (库 pd_work)"; style=dashed; color="#9aa0a6";
+    depart [label="发车→运输中 23005\nCargoController:519 ✅联动订单"];
+    exware [label="网点出库 23006\nCargoController:647"];
+    arrive [label="到达\nTransportTaskStatus 2→4\n跳过 3待确认 ⚠"];
+  }
+  subgraph cluster_delivery { label="派送签收（快递员驱动）"; style=dashed; color="#9aa0a6";
+    dispatching [label="派送中 23008\nCourierController:447\n（23007 待派送被跳过）⚠"];
+    signed [label="签收 23009 / 拒收 23010\nCourierController:504-505\n无事务 ⚠"];
+  }
+  subgraph cluster_trace { label="轨迹域 pd-netty / pd-druid（也写 pd_oms）"; style=dashed; color="#9aa0a6";
+    gpsin [label="HTTP /netty/push + TCP 8194\n→ Kafka tms_order_location\nNettyController:44 / NettyServerHandler:97"];
+    store [label="消费落库 pd_truck_location\n(列 report_time)\nGpsTraceConsumer:248,294 ✅实测200/200"];
+    alert [label="超速/停留/偏航告警\nGpsAlertService:55 仅 log.error\n无表 无接口 无页面 ⚠"];
+    druid [label="车辆位置查询(pd-druid)\nFROM tms_order_location\n表不存在 ⚠"];
+    archive [label="30天归档→删除\npd_truck_location_archive\n只写不读"];
+  }
+  subgraph cluster_finance { label="财务结算（半闭环）"; style=dashed; color="#9aa0a6";
+    settle [label="签收触发结算\nOrderServiceImpl:127-129\n→ pd_settlement_order 表缺失 ⚠\nREQUIRES_NEW 吞异常→静默不结算"];
+    bills [label="账单/账期/发票/承运商结算\n仅建表脚本或文档\n无实体无接口"];
+  }
+
+  dead [label="聚合层读影子副本\npd_aggregation.pd_order=0 行\npd_core_org=0 行（主库 15 行）\n→ 列表接口实测 counts=0 ⚠",
+        fillcolor="#fde8e8", shape=box];
+  seed [label="线上现状：3 单全停 status=1\n不在状态机键集内\n任何流转 return false（HTTP 200 + null）⚠",
+        fillcolor="#fce8e6", shape=note];
+  refund [label="取消：只改订单+取派任务\n运单不回滚、已付不退款\nMailingController:735-763 ⚠", fillcolor="#fde8e8"];
+  unkn [label="未知：设备真机上报是否已在发\nnetty TCP 8194 是否真在听\n（容器无 netstat，未证实）", shape=note, fillcolor="#eee", fontcolor="#606060"];
+
+  // ---------- 主干流转（实线=已证实） ----------
+  customer -> create [label="下单"];
+  create -> pay [label="到付/在线付", style=dashed];
+  customer -> picked [label="预约取件"];
+  pay -> picked [label="待取件→已取件"];
+  picked -> inbound [label="交件入网点"];
+  inbound -> classify [label="23003 被调度扫单\nBOS:264"];
+  classify -> toload [label="自动链内"];
+  toload -> depart [label="司机装车发车"];
+  depart -> exware -> arrive -> dispatching -> signed;
+  signed -> settle [label="应触发", color="#c5221f"];
+  signed -> druid [label="展示签收前位置?", style=dotted, color="#c5221f"];
+
+  // ---------- 异步旁路 ----------
+  gpsin -> store [label="Kafka 异步", color="#188038"];
+  store -> alert [label="边消费边检测"];
+  store -> archive [label="每 1h"];
+  store -> druid [label="应读 pd_truck_location\n实际读错表", color="#c5221f", style=dashed];
+  alert -> dispatcher [label="应通知（webhook 默认空）", style=dotted, color="#c5221f"];
+  settle -> bills [label="下游无人写无人读", style=dotted];
+  signed -> refund [label="若拒收/取消", style=dashed];
+  classify -> dead [label="列表读副本", color="#c5221f"];
+  seed -> create [label="种子数据≠状态机", style=dashed, color="#c5221f"];
+  unkn -> gpsin [style=dotted, color="#9aa0a6"];
+}
