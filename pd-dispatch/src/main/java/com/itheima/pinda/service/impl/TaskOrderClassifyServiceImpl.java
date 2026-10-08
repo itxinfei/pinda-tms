@@ -207,7 +207,9 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
             exceptionHappend("没有查询到区域数据");
         }
 
-        if(!order.getSenderCountyId().equals(area.getId())){
+        // order 侧的区域 id 是 String（列 varchar(20)），area.getId() 是 Long，
+        // 直接 equals 恒 false，会让每一单都被判成"区域不一致"而无法进分单
+        if (!StringUtils.equals(order.getSenderCountyId(), String.valueOf(area.getId()))) {
             exceptionHappend("发件地址区域id和根据坐标计算出的区域不一致");
         }
 
@@ -327,7 +329,8 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
             exceptionHappend("没有查询到区域数据");
         }
 
-        if(!order.getReceiverCountyId().equals(area.getId())){
+        // 同上：Area.id 是 Long、order 侧县 id 是 varchar，直接 equals 恒 false
+        if(!StringUtils.equals(order.getReceiverCountyId(), String.valueOf(area.getId()))){
             exceptionHappend("收货地址区域id和根据坐标计算出的区域不一致");
         }
 
