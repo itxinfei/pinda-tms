@@ -1,0 +1,50 @@
+// 数据归属与服务边界 current-state（证据：Nacos datasource 实测 + information_schema 实测 + mapper/Feign 代码）
+digraph data_ownership {
+  rankdir=TB; nodesep=0.4; ranksep=0.8;
+  graph [fontname="Microsoft YaHei", fontsize=15, labelloc=t,
+         label="服务 ↔ 库 ↔ 影子副本：红色=实测漂移/缺失，虚线=副本应同步但无机制"];
+  node [fontname="Microsoft YaHei", fontsize=11, style="rounded,filled", fillcolor="#f5f7fa"];
+  edge [fontname="Microsoft YaHei", fontsize=10];
+
+  // 服务
+  oms [label="pd-oms 订单"]; work [label="pd-work 运输作业"]; disp [label="pd-dispatch 调度"];
+  base [label="pd-base 主数据"]; user [label="pd-user 会员"]; auth [label="pd-auth-server 权限"];
+  agg [label="pd-aggregation 聚合读"]; netty [label="pd-netty 轨迹"]; druid [label="pd-druid 大屏/位置"];
+  webm [label="pd-web-manager"]; webc [label="pd-web-courier"]; webd [label="pd-web-driver"]; webu [label="pd-web-customer"];
+
+  // 库（红色对象为实测问题）
+  subgraph cluster_dbs { label="MySQL 192.168.20.130（实测 8 库）"; style=dashed; color="#9aa0a6";
+    dpdoms [label="pd_oms\npd_order(3行,status=1)\npd_truck_location / _archive", shape=cylinder];
+    dpmom [label="pd_oms ❌缺表\npd_settlement_order\npd_freight_detail\npd_payment_order", shape=cylinder, fillcolor="#fce8e6"];
+    dpwork [label="pd_work\npd_transport_order(3)\npd_task_pickup_dispatch(0)\npd_driver_job(0)", shape=cylinder];
+    dpdisp [label="pd_dispatch", shape=cylinder];
+    dpbase [label="pd_base", shape=cylinder];
+    dpuser [label="pd_users", shape=cylinder];
+    dpauth [label="pd_auth\npd_core_org(15)\npd_auth_user / 资源 383", shape=cylinder];
+    dpagg [label="pd_aggregation 影子副本\npd_order=0 ❌\npd_core_org=0 ❌\npd_area=44703", shape=cylinder, fillcolor="#fce8e6"];
+    dpleg [label="pinda_tms 遗留全量(65表)\n无服务连接\n含 pd_payment_order", shape=cylinder, fillcolor="#fef7e0"];
+  }
+
+  oms -> dpdoms [label="读写"];
+  work -> dpwork; disp -> dpdisp; base -> dpbase; user -> dpuser; auth -> dpauth;
+  netty -> dpdoms [label="写轨迹\n(轨迹归到订单库 ⚠)", color="#c5221f"];
+  druid -> dpdoms [label="查 tms_order_location ❌\n（那是 Kafka topic 名）", color="#c5221f"];
+  agg -> dpagg [label="JOIN 本地副本\nCourierMapper.xml:6-9\nWebManagerMapper.xml:32-35", color="#c5221f"];
+  oms -> dpdoms [dir=back, label=""];
+
+  // 副本应有的同步（无实现）
+  dpdoms -> dpagg [style=dotted, label="主数据→副本 无同步机制", color="#c5221f"];
+  dpauth -> dpagg [style=dotted, label="pd_core_org 无同步", color="#c5221f"];
+  dpdoms -> dpleg [style=dotted, label="历史导入残留", color="#9aa0a6"];
+
+  // Feign 写路径
+  webc -> oms [label="Feign 改订单状态\nCC:504 无事务 ⚠", color="#c5221f"];
+  webd -> work [label="Feign 发车/到达"];
+  webm -> agg [label="列表查询（读空副本→counts=0）", color="#c5221f"];
+  webu -> oms [label="下单/支付"];
+  webc -> base [label="TruckFeign（fallback 静默降级）", style=dashed];
+
+  // 事务边界
+  note1 [label="Seata 已铺：8 库均有 undo_log\n但 @GlobalTransactional 仅 5 处\n签收/交件/妥投三处裸写", shape=note, fillcolor="#fef7e0"];
+  note2 [label="pd_order 无 deleted / update_time / tenant\n全仓无 @TableLogic\n查询不按 org 隔离", shape=note, fillcolor="#fde8e8"];
+}

@@ -1,0 +1,41 @@
+// 订单状态机 current-state（枚举 23000-23011，证据：OrderStatus.java:13-71 / OrderServiceImpl.java:52-129）
+// 实线=有代码生产者且有校验；虚线=仅状态机声明但无生产者；红色=孤儿状态或断链
+digraph order_lifecycle {
+  rankdir=TB; nodesep=0.4; ranksep=0.7;
+  graph [fontname="Microsoft YaHei", fontsize=15, labelloc=t,
+         label="订单状态机：可达路径 vs 孤儿状态（红色=无生产者/无消费者）"];
+  node [fontname="Microsoft YaHei", fontsize=11, shape=ellipse, style=filled, fillcolor="#f5f7fa"];
+  edge [fontname="Microsoft YaHei", fontsize=10];
+
+  s0 [label="创建\n服务端固定\nOIS:142-153", shape=box, fillcolor="#e8f0fe"];
+  s23000 [label="23000 待取件\n生产者 OIS:149"];
+  s23002 [label="23002 网点自寄\n生产者 OIS:147\n⚠ 无揽收入口\n消费者仅状态机", fillcolor="#fce8e6"];
+  s23001 [label="23001 已取件\nCC:290 (GlobalTx)"];
+  s23003 [label="23003 网点入库\nCC:401 无事务 ⚠"];
+  s23004 [label="23004 待装车\nBOS:82 仅定时任务\n⚠ 无消费者"];
+  s23005 [label="23005 运输中\nCargoController:519/702"];
+  s23006 [label="23006 网点出库\nDC:647 / TTS:434"];
+  s23007 [label="23007 待派送\n❌ 无生产者\n（接件直接写 23008）", fillcolor="#fce8e6"];
+  s23008 [label="23008 派送中\nCC:447"];
+  s23009 [label="23009 已签收\nCC:504 → 触发结算", fillcolor="#e6f4ea"];
+  s23010 [label="23010 拒收\nCC:504\n⚠ 下游 MQ 回写全注释", fillcolor="#fce8e6"];
+  s23011 [label="23011 已取消\nMC:742\n⚠ 无锁无退款", fillcolor="#fce8e6"];
+  seed [label="线上种子数据 status=1\n(testdata.sql:84-90)\n❌ 不在任何键集\n→ 所有流转 return false", shape=note, fillcolor="#fde8e8"];
+  dup [label="流转图存两份\npd-oms 内联 map(OIS:52-86)\npd-work StateTransitionValidator:28\n靠人肉同步", shape=note, fillcolor="#fef7e0"];
+
+  s0 -> s23000 [label="pickupType=2 上门"];
+  s0 -> s23002 [label="pickupType=1 自寄"];
+  s23000 -> s23001 [label="揽收 ✅"];
+  s23001 -> s23003 [label="交件 ✅"];
+  s23003 -> s23004 [label="调度产出 ✅"];
+  s23004 -> s23005 [label="发车 ✅"];
+  s23005 -> s23006 [label="到达出库 ✅"];
+  s23006 -> s23008 [label="接件（跳过 23007）⚠", color="#c5221f"];
+  s23006 -> s23007 [style=dashed, label="状态机声明", color="#9aa0a6"];
+  s23007 -> s23008 [style=dashed, label="无实现", color="#9aa0a6"];
+  s23008 -> s23009 [label="签收 ✅ 但无事务"];
+  s23008 -> s23010 [label="拒收 ✅"];
+  s23000 -> s23011; s23001 -> s23011; s23003 -> s23011; s23005 -> s23011; s23008 -> s23011;
+  seed -> s23000 [style=dotted, label="应映射", color="#c5221f"];
+  dup -> s23003 [style=dotted, color="#9aa0a6"];
+}
