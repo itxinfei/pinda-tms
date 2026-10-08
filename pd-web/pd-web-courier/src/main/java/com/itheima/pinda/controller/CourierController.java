@@ -8,7 +8,9 @@ import com.itheima.pinda.authority.api.OrgApi;
 import com.itheima.pinda.authority.entity.common.Area;
 import com.itheima.pinda.authority.entity.core.Org;
 import com.itheima.pinda.common.context.RequestContext;
+import com.itheima.pinda.common.exception.PdException;
 import com.itheima.pinda.common.utils.IdCardUtils;
+import com.itheima.pinda.common.utils.OwnershipAssert;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.entity.Member;
@@ -24,6 +26,8 @@ import com.itheima.pinda.event.OrderConfirmedEvent;
 import com.itheima.pinda.event.OrderDeliveredEvent;
 import com.itheima.pinda.event.PickupCompletedEvent;
 import com.itheima.pinda.mq.EventPublisher;
+import com.itheima.pinda.DTO.ExceptionReportFeignDTO;
+import com.itheima.pinda.feign.ExceptionReportFeign;
 import com.itheima.pinda.feign.*;
 import com.itheima.pinda.feign.common.GoodsTypeFeign;
 import com.itheima.pinda.feign.courier.AppCourierFeign;
@@ -81,9 +85,10 @@ public class CourierController {
     private final AppCourierFeign appCourierFeign;
 
     private final EventPublisher eventPublisher;
+    private final ExceptionReportFeign exceptionReportFeign;
 
 
-    public CourierController(AppCourierFeign appCourierFeign, MemberFeign memberFeign, OrgApi orgApi, TransportTaskFeign transportTaskFeign, TransportOrderFeign transportOrderFeign, GoodsTypeFeign goodsTypeFeign, PickupDispatchTaskFeign pickupDispatchTaskFeign, OrderFeign orderFeign, CargoFeign cargoFeign, AreaApi areaApi, EventPublisher eventPublisher) {
+    public CourierController(AppCourierFeign appCourierFeign, MemberFeign memberFeign, OrgApi orgApi, TransportTaskFeign transportTaskFeign, TransportOrderFeign transportOrderFeign, GoodsTypeFeign goodsTypeFeign, PickupDispatchTaskFeign pickupDispatchTaskFeign, OrderFeign orderFeign, CargoFeign cargoFeign, AreaApi areaApi, EventPublisher eventPublisher, ExceptionReportFeign exceptionReportFeign) {
         this.appCourierFeign = appCourierFeign;
         this.memberFeign = memberFeign;
         this.pickupDispatchTaskFeign = pickupDispatchTaskFeign;
@@ -95,6 +100,7 @@ public class CourierController {
         this.transportTaskFeign = transportTaskFeign;
         this.orgApi = orgApi;
         this.eventPublisher = eventPublisher;
+        this.exceptionReportFeign = exceptionReportFeign;
     }
 
     @SneakyThrows
@@ -220,6 +226,11 @@ public class CourierController {
         if (pickupDispatchTaskDTO == null || StringUtils.isBlank(pickupDispatchTaskDTO.getOrderId())) {
             return Result.error("取派件任务不存在");
         }
+        // 归属校验：取派任务必须属于当前登录快递员，防止越权查看他人任务详情
+        Result deny = OwnershipAssert.checkEquals(pickupDispatchTaskDTO.getCourierId(), RequestContext.getUserId(), "无权查看他人任务");
+        if (deny != null) {
+            return deny;
+        }
         String orderId = pickupDispatchTaskDTO.getOrderId();
         OrderDTO orderDTO = orderFeign.findById(orderId);
         if (orderDTO == null) {
@@ -284,7 +295,11 @@ public class CourierController {
         if (null != pickupDispatchDetailDTO.getPaymentMethod()) {
             orderEditDTO.setPaymentMethod(pickupDispatchDetailDTO.getPaymentMethod());
         }
-        orderFeign.updateById(orderEditDTO.getId(), orderEditDTO);
+        OrderDTO orderUpdateResult = orderFeign.updateById(orderEditDTO.getId(), orderEditDTO);
+        if (orderUpdateResult == null) {
+            log.error("揽收失败：订单状态更新未生效 orderId={}", orderEditDTO.getId());
+            throw new PdException("订单状态更新失败", 500);
+        }
 
         List<OrderCargoDto> orderCargoDtos = cargoFeign.findAll(null, pickupDispatchDetailDTO.getOrderNumber());
         log.info("揽收-订单附属信息：{},{}", pickupDispatchDetailDTO.getOrderNumber(), orderCargoDtos);
@@ -305,11 +320,19 @@ public class CourierController {
         }
 
         log.info("揽收-修改物品附属信息:{},{}", orderCargoDto.getId(), orderCargoDto);
-        cargoFeign.update(orderCargoDto.getId(), orderCargoDto);
+        OrderCargoDto cargoUpdateResult = cargoFeign.update(orderCargoDto.getId(), orderCargoDto);
+        if (cargoUpdateResult == null) {
+            log.error("揽收失败：货物附属信息更新未生效 cargoId={}", orderCargoDto.getId());
+            throw new PdException("货物附属信息更新失败", 500);
+        }
         TaskPickupDispatchDTO taskPickupDispatchDTO = new TaskPickupDispatchDTO();
         taskPickupDispatchDTO.setStatus(PickupDispatchTaskStatus.CONFIRM.getCode());
         taskPickupDispatchDTO.setActualStartTime(LocalDateTime.now());
-        pickupDispatchTaskFeign.updateById(id, taskPickupDispatchDTO);
+        TaskPickupDispatchDTO taskUpdateResult = pickupDispatchTaskFeign.updateById(id, taskPickupDispatchDTO);
+        if (taskUpdateResult == null) {
+            log.error("揽收失败：取派件任务更新未生效 taskId={}", id);
+            throw new PdException("取派件任务更新失败", 500);
+        }
         log.info("更新取派件任务 ID:{},PARAMS:{}", id, taskPickupDispatchDTO);
 
         // 【P0优化】揽收时更新运单状态
@@ -324,14 +347,22 @@ public class CourierController {
             transportDTO.setOrderId(pickupDispatchDetailDTO.getOrderNumber());
             transportDTO.setStatus(TransportOrderStatus.CREATED.getCode());
             transportDTO.setSchedulingStatus(TransportOrderSchedulingStatus.TO_BE_SCHEDULED.getCode());
-            transportOrderFeign.save(transportDTO);
+            TransportOrderDTO savedTransportOrder = transportOrderFeign.save(transportDTO);
+            if (savedTransportOrder == null) {
+                log.error("揽收失败：运单创建未生效 orderId={}", pickupDispatchDetailDTO.getOrderNumber());
+                throw new PdException("运单创建失败", 500);
+            }
             log.info("创建新运单:{}", transportDTO);
         } else {
             // 正常情况：更新运单状态为"已装车"
             TransportOrderDTO transportOrderUpdate = new TransportOrderDTO();
             transportOrderUpdate.setId(transportOrderDTO.getId());
             transportOrderUpdate.setStatus(TransportOrderStatus.LOADED.getCode()); // 2-已装车
-            transportOrderFeign.updateById(transportOrderDTO.getId(), transportOrderUpdate);
+            TransportOrderDTO tranOrderUpdateResult = transportOrderFeign.updateById(transportOrderDTO.getId(), transportOrderUpdate);
+            if (tranOrderUpdateResult == null) {
+                log.error("揽收失败：运单状态更新未生效 transportOrderId={}", transportOrderDTO.getId());
+                throw new PdException("运单状态更新失败", 500);
+            }
             log.info("订单[{}]已揽收，运单[{}]状态更新为[已装车(2)]",
                 pickupDispatchDetailDTO.getOrderNumber(), transportOrderDTO.getId());
         }
@@ -372,15 +403,27 @@ public class CourierController {
         log.info(" 交件运单 ：{}", transportOrderDto);
         OrderDTO orderEditDTO = new OrderDTO();
         orderEditDTO.setStatus(OrderStatus.OUTLETS_WAREHOUSE.getCode());
-        orderFeign.updateById(transportOrderDto.getOrderId(), orderEditDTO);
+        OrderDTO orderUpdateResult = orderFeign.updateById(transportOrderDto.getOrderId(), orderEditDTO);
+        if (orderUpdateResult == null) {
+            log.error("交件失败：订单状态更新未生效 orderId={}", transportOrderDto.getOrderId());
+            return Result.error(500, "订单状态更新失败");
+        }
 
 
         TaskPickupDispatchDTO pickupDispatchTaskDto = pickupDispatchTaskFeign.findByOrderId(transportOrderDto.getOrderId(), PickupDispatchTaskType.PICKUP.getCode());
+        if (pickupDispatchTaskDto == null) {
+            log.error("交件失败：取件任务不存在 orderId={}", transportOrderDto.getOrderId());
+            return Result.error(400, "取件任务不存在");
+        }
         TaskPickupDispatchDTO pickupDispatchTaskDtoUpdate = new TaskPickupDispatchDTO();
         pickupDispatchTaskDtoUpdate.setStatus(PickupDispatchTaskStatus.COMPLETED.getCode());
         pickupDispatchTaskDtoUpdate.setActualEndTime(LocalDateTime.now());
         pickupDispatchTaskDtoUpdate.setConfirmTime(LocalDateTime.now());
-        pickupDispatchTaskFeign.updateById(pickupDispatchTaskDto.getId(), pickupDispatchTaskDtoUpdate);
+        TaskPickupDispatchDTO taskUpdateResult = pickupDispatchTaskFeign.updateById(pickupDispatchTaskDto.getId(), pickupDispatchTaskDtoUpdate);
+        if (taskUpdateResult == null) {
+            log.error("交件失败：取件任务更新未生效 taskId={}", pickupDispatchTaskDto.getId());
+            return Result.error(500, "取件任务更新失败");
+        }
         log.info("更新取派件任务 ID:{},PARAMS:{}", pickupDispatchTaskDto.getId(), pickupDispatchTaskDtoUpdate);
 
         return Result.ok();
@@ -401,15 +444,30 @@ public class CourierController {
         String orderId = transportOrderDto.getOrderId();
         log.info("接件 获取运单信息：{} ,{}", tranOrderId, transportOrderDto);
         OrderDTO orderDto = orderFeign.findById(orderId);
+        if (orderDto == null) {
+            return Result.error(400, "订单不存在");
+        }
         OrderDTO orderDTOUpdate = new OrderDTO();
         orderDTOUpdate.setStatus(OrderStatus.DISPATCHING.getCode());
-        orderFeign.updateById(orderDto.getId(), orderDTOUpdate);
+        OrderDTO orderUpdateResult = orderFeign.updateById(orderDto.getId(), orderDTOUpdate);
+        if (orderUpdateResult == null) {
+            log.error("接件失败：订单状态更新未生效 orderId={}", orderId);
+            return Result.error(500, "订单状态更新失败");
+        }
         log.info("接件 修改订单状态：{} ,{}", orderDto.getId(), orderDTOUpdate);
         TaskPickupDispatchDTO pickupDispatchTaskDto = pickupDispatchTaskFeign.findByOrderId(orderId, PickupDispatchTaskType.DISPATCH.getCode());
+        if (pickupDispatchTaskDto == null) {
+            log.error("接件失败：派件任务不存在 orderId={}", orderId);
+            return Result.error(400, "派件任务不存在");
+        }
         TaskPickupDispatchDTO pickupDispatchTaskDtoUpdate = new TaskPickupDispatchDTO();
         pickupDispatchTaskDtoUpdate.setStatus(PickupDispatchTaskStatus.CONFIRM.getCode());
         pickupDispatchTaskDtoUpdate.setActualStartTime(LocalDateTime.now());
-        pickupDispatchTaskFeign.updateById(pickupDispatchTaskDto.getId(), pickupDispatchTaskDtoUpdate);
+        TaskPickupDispatchDTO taskUpdateResult = pickupDispatchTaskFeign.updateById(pickupDispatchTaskDto.getId(), pickupDispatchTaskDtoUpdate);
+        if (taskUpdateResult == null) {
+            log.error("接件失败：派件任务更新未生效 taskId={}", pickupDispatchTaskDto.getId());
+            return Result.error(500, "派件任务更新失败");
+        }
         log.info("接件 修改派送任务状态：{} ,{}", pickupDispatchTaskDto.getId(), pickupDispatchTaskDtoUpdate);
         return Result.ok();
     }
@@ -432,7 +490,11 @@ public class CourierController {
         }
         TransportOrderDTO transportOrderDtoUpdate = new TransportOrderDTO();
         transportOrderDtoUpdate.setStatus(state ? TransportOrderStatus.RECEIVED.getCode() : TransportOrderStatus.REJECTED.getCode());
-        transportOrderFeign.updateById(transportOrderDto.getId(), transportOrderDtoUpdate);
+        TransportOrderDTO tranOrderUpdateResult = transportOrderFeign.updateById(transportOrderDto.getId(), transportOrderDtoUpdate);
+        if (tranOrderUpdateResult == null) {
+            log.error("妥投失败：运单状态更新未生效 transportOrderId={}", transportOrderDto.getId());
+            return Result.error(500, "运单状态更新失败");
+        }
         log.info("妥投 获取运单信息：{} ,{}", transportOrderDto.getId(), transportOrderDtoUpdate);
         String orderId = transportOrderDto.getOrderId();
         if (StringUtils.isBlank(orderId)) {
@@ -444,7 +506,11 @@ public class CourierController {
         }
         OrderDTO orderDTOUpdate = new OrderDTO();
         orderDTOUpdate.setStatus(state ? OrderStatus.RECEIVED.getCode() : OrderStatus.REJECTION.getCode());
-        orderFeign.updateById(orderDto.getId(), orderDTOUpdate);
+        OrderDTO orderUpdateResult = orderFeign.updateById(orderDto.getId(), orderDTOUpdate);
+        if (orderUpdateResult == null) {
+            log.error("妥投失败：订单状态更新未生效 orderId={}", orderId);
+            return Result.error(500, "订单状态更新失败");
+        }
         log.info("妥投 修改订单状态：{} ,{}", orderDto.getId(), orderDTOUpdate);
         TaskPickupDispatchDTO pickupDispatchTaskDto = pickupDispatchTaskFeign.findByOrderId(orderId, PickupDispatchTaskType.DISPATCH.getCode());
         if (ObjectUtils.isEmpty(pickupDispatchTaskDto)) {
@@ -455,7 +521,11 @@ public class CourierController {
         pickupDispatchTaskDtoUpdate.setSignStatus(state ? PickupDispatchTaskSignStatus.RECEIVED.getCode() : PickupDispatchTaskSignStatus.REJECTION.getCode());
         pickupDispatchTaskDtoUpdate.setActualEndTime(LocalDateTime.now());
         pickupDispatchTaskDtoUpdate.setConfirmTime(LocalDateTime.now());
-        pickupDispatchTaskFeign.updateById(pickupDispatchTaskDto.getId(), pickupDispatchTaskDtoUpdate);
+        TaskPickupDispatchDTO taskUpdateResult = pickupDispatchTaskFeign.updateById(pickupDispatchTaskDto.getId(), pickupDispatchTaskDtoUpdate);
+        if (taskUpdateResult == null) {
+            log.error("妥投失败：派件任务更新未生效 taskId={}", pickupDispatchTaskDto.getId());
+            return Result.error(500, "派件任务更新失败");
+        }
         log.info("妥投 修改派送任务状态：{} ,{}", pickupDispatchTaskDto.getId(), pickupDispatchTaskDtoUpdate);
 
         // 【P1优化】发布订单交付事件（异步处理）
@@ -479,6 +549,22 @@ public class CourierController {
         return Result.ok();
     }
 
+    /**
+     * @deprecated 旧版 GET 接口会在 GET 请求上执行写操作，可被直接构造链接触发，仅保留兼容；新前端请走 POST
+     */
+    @Deprecated
+    @SneakyThrows
+    @ApiOperation(value = "验证身份证号是否合法(旧GET接口，已废弃，请改用POST)")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "orderNumber", value = "订单号", required = true, example = ""),
+            @ApiImplicitParam(name = "code", value = "身份证号", required = true, example = "")
+    })
+    @ResponseBody
+    @GetMapping("verifyIdCard")
+    public Result verifyIdCardByGet(@RequestParam String orderNumber, @RequestParam String code) {
+        return doVerifyIdCard(orderNumber, code);
+    }
+
     @SneakyThrows
     @ApiOperation(value = "验证身份证号是否合法")
     @ApiImplicitParams({
@@ -486,10 +572,19 @@ public class CourierController {
             @ApiImplicitParam(name = "code", value = "身份证号", required = true, example = "")
     })
     @ResponseBody
-    @GetMapping("verifyIdCard")
+    @PostMapping("verifyIdCard")
     public Result verifyIdCard(@RequestParam String orderNumber, @RequestParam String code) {
+        return doVerifyIdCard(orderNumber, code);
+    }
+
+    /**
+     * 身份证号写入与合法性校验的实际实现。
+     * 归属校验：订单必须存在当前快递员负责的非取消取派任务。
+     * 身份证号仅允许首次写入，已有值则拒绝覆盖。
+     */
+    private Result doVerifyIdCard(String orderNumber, String code) {
         log.info("身份证号验证OrderId：{} Code:{} ", orderNumber, code);
-        if (code.length() > 18 || code.length() < 15) {
+        if (code == null || code.length() > 18 || code.length() < 15) {
             return Result.error(400, "身份证号不符合要求");
         }
         String regex = "\\d{15}(\\d{2}[0-9xX])?";
@@ -498,25 +593,71 @@ public class CourierController {
             return Result.error(400, "身份证号不符合要求");
         }
 
+        // 归属校验：按订单号查全部取派任务，当前快递员必须负责其中一个非取消任务
+        TaskPickupDispatchDTO taskQuery = new TaskPickupDispatchDTO();
+        taskQuery.setOrderId(orderNumber);
+        List<TaskPickupDispatchDTO> orderTasks = pickupDispatchTaskFeign.findAll(taskQuery);
+        String currentUserId = RequestContext.getUserId();
+        String taskOwner = null;
+        if (orderTasks != null) {
+            for (TaskPickupDispatchDTO task : orderTasks) {
+                if (PickupDispatchTaskStatus.CANCELLED.getCode().equals(task.getStatus())) {
+                    continue;
+                }
+                if (currentUserId != null && currentUserId.equals(task.getCourierId())) {
+                    // 命中当前用户负责的任务，直接确定归属
+                    taskOwner = currentUserId;
+                    break;
+                }
+                if (taskOwner == null) {
+                    taskOwner = task.getCourierId();
+                }
+            }
+        }
+        Result deny = OwnershipAssert.checkEquals(taskOwner, currentUserId, "无权操作该订单");
+        if (deny != null) {
+            return deny;
+        }
+
         OrderDTO order = orderFeign.findById(orderNumber);
+        if (order == null || StringUtils.isBlank(order.getMemberId())) {
+            return Result.error(400, "订单不存在");
+        }
         String memberId = order.getMemberId();
+        // 身份证号仅允许首次写入：已有非空值则拒绝覆盖，防止冒用他人工号篡改
+        Member existingMember = memberFeign.detail(memberId);
+        if (existingMember != null && StringUtils.isNotBlank(existingMember.getIdCardNo())) {
+            log.warn("身份证号已存在，拒绝重复写入 memberId={}", memberId);
+            return Result.error(400, "身份证号已存在，不允许重复写入");
+        }
         log.info("身份证号验证MemberId：{} ", memberId);
         Member member = new Member();
         member.setId(memberId);
         member.setIdCardNo(code);
         member.setIdCardNoVerify(MemberIdCardVerifyStatus.NONE.getCode());
-        memberFeign.update(memberId, member);
+        Result updateResult = memberFeign.update(memberId, member);
+        if (updateResult == null || !"0".equals(String.valueOf(updateResult.get("code")))) {
+            log.error("身份证号写入失败 memberId={}, result={}", memberId, updateResult);
+            return Result.error(500, "身份证号写入失败");
+        }
         log.info("更新身份证号：{}", member);
         String checkResult = IdCardUtils.IdentityCardVerification(code);
         if (StringUtils.isNotBlank(checkResult)) {
             member.setIdCardNoVerify(MemberIdCardVerifyStatus.FAIL.getCode());
-            memberFeign.update(memberId, member);
+            Result failUpdateResult = memberFeign.update(memberId, member);
+            if (failUpdateResult == null || !"0".equals(String.valueOf(failUpdateResult.get("code")))) {
+                log.error("身份证校验状态(FAIL)更新失败 memberId={}, result={}", memberId, failUpdateResult);
+            }
             log.info("更新身份证号 FAIL：{}", member);
             return Result.error(400, checkResult);
         }
         // 验证通过 写入客户端
         member.setIdCardNoVerify(MemberIdCardVerifyStatus.SUCCESS.getCode());
-        memberFeign.update(memberId, member);
+        Result successUpdateResult = memberFeign.update(memberId, member);
+        if (successUpdateResult == null || !"0".equals(String.valueOf(successUpdateResult.get("code")))) {
+            log.error("身份证校验状态(SUCCESS)更新失败 memberId={}, result={}", memberId, successUpdateResult);
+            return Result.error(500, "身份证校验状态更新失败");
+        }
         log.info("更新身份证号 SUCCESS：{}", member);
         return Result.ok();
     }
@@ -532,12 +673,26 @@ public class CourierController {
         try {
             TaskPickupDispatchDTO pickupDispatchTaskDTO = pickupDispatchTaskFeign.findById(id);
             log.info("路由信息 TaskPickupDispatchDTO：{}", pickupDispatchTaskDTO);
+            if (pickupDispatchTaskDTO == null) {
+                return Result.error(404, "取派件任务不存在");
+            }
+            // 归属校验：取派任务必须属于当前登录快递员，防止越权拉取他人订单路由
+            Result deny = OwnershipAssert.checkEquals(pickupDispatchTaskDTO.getCourierId(), RequestContext.getUserId(), "无权查看他人任务路由");
+            if (deny != null) {
+                return deny;
+            }
             String orderId = pickupDispatchTaskDTO.getOrderId();
 
             TransportOrderDTO transportOrderDTO = transportOrderFeign.findByOrderId(orderId);
-            log.info("路由信息 TransportOrderDTO：{}", pickupDispatchTaskDTO);
+            log.info("路由信息 TransportOrderDTO：{}", transportOrderDTO);
+            if (transportOrderDTO == null) {
+                return Result.error(404, "运单不存在");
+            }
 
             List<TaskTransportDTO> transportTaskDTOs = transportTaskFeign.findAllByOrderIdOrTaskId(transportOrderDTO.getId(), null);
+            if (transportTaskDTOs == null) {
+                transportTaskDTOs = new ArrayList<>();
+            }
 
             Set<String> agencySet = new HashSet<>();
             agencySet.addAll(transportTaskDTOs.stream().map(item -> item.getStartAgencyId()).collect(Collectors.toSet()));
@@ -574,8 +729,9 @@ public class CourierController {
             });
             return Result.ok().put("data", routeArray);
         } catch (Exception e) {
-            log.warn("路由查询异常", e);
-            return Result.ok().put("data", new ArrayList<>());
+            // 不再吞异常返回空数组（前端会误判为"无路由"），明确返回 4xx 让前端感知失败
+            log.error("路由查询失败 id={}", id, e);
+            return Result.error(400, "路由信息查询失败");
         }
     }
 
@@ -619,6 +775,36 @@ public class CourierController {
         log.info("计算预估总价：{}", entity);
         OrderDTO orderAddDto = buildOrderAndPrice(entity);
         return Result.ok().put("amount", orderAddDto.getAmount());
+    }
+
+    /**
+     * 配送环节异常上报（D-41 · 定案 T-3 · 2026-10-08 新增）
+     *
+     * <p>快递员在App 上主动上报破损/拒收/地址错误，<b>落库复用 pd-netty 的
+     * {@code pd_alarm_record}</b>——与 GPS 自动告警同表，按 alarmType 区分来源。</p>
+     *
+     * <p><b>入参遵循 D-46「类型 + 照片 + 备注」三要素</b>，由 pd-netty 侧统一校验；
+     * 无照片凭证的异常不予受理。</p>
+     *
+     * <p><b>上报人ID 由服务端从 token 取</b>（{@link RequestContext#getUserId()}），
+     * 不接受前端传他人 ID——否则可冒名上报。</p>
+     *
+     * @param dto 异常上报入参
+     * @return 落库后的告警记录（含 id 供前端追单）
+     */
+    @ApiOperation(value = "异常上报（破损/拒收/地址错误）")
+    @PostMapping("exception/report")
+    public Result reportException(@RequestBody ExceptionReportFeignDTO dto) {
+        String courierId = RequestContext.getUserId();
+        if (dto == null) {
+            return Result.error(400, "上报内容不能为空");
+        }
+        // 服务端覆盖上报人：绝不相信前端传入的 reporterId（防冒名上报）
+        dto.setReporterId(courierId);
+        dto.setCourier(true);
+        Result result = exceptionReportFeign.report(dto);
+        log.info("快递员异常上报: courierId={}, type={}", courierId, dto.getExceptionType());
+        return result;
     }
 
 }
