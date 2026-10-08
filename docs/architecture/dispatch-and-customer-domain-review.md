@@ -58,7 +58,9 @@
 - **实测补强**：子代理把"重试任务可能重复触发"写成条件式，实测它在**每 10 分钟稳定抛异常**
   （12:50/13:00/13:10/13:20 四条 ERROR），原因比它猜的更靠前——表压根不存在。建表后 13:30 那一拍无报错。
 
-| C-11 | **Feign 契约与响应封装对不上**（比 C-1 更底层的一条）：`AddressBookFeign.detail` 与 `MemberFeign.detail` 声明的返回类型是实体 `AddressBook` / `Member`，而服务端这两个方法返回的是 `Result`（`{code,msg,data}`）。全仓**没有任何自定义 Feign Decoder**（grep `implements Decoder\|JSONDecoder` 命中 0），Spring Boot 默认 ObjectMapper 又忽略未知字段 → 调用方拿到的是一个**每个字段都是 null 的实体对象**，且不是 null，所以 `if (addressBook == null)` 这种判空根本挡不住 | `pd-service-api/pd-service-user-api/.../AddressBookFeign.java:58-59` vs `pd-user/.../AddressBookController.java:64-72`；`MemberFeign.java:58-59` vs `MemberController.java:47-48`；同目录其余 6 个方法都正确返回 `Result`，只有这两个用实体 | **P0** |
+| C-11 | **Feign 契约与响应封装对不上**（比 C-1 更底层的一条）：`AddressBookFeign.detail` 与 `MemberFeign.detail` 声明的返回类型是实体 `AddressBook` / `Member`，而服务端这两个方法返回的是 `Result`（`{code,msg,data}`）。全仓**没有任何自定义 Feign Decoder**（grep `implements Decoder\|JSONDecoder` 命中 0），同目录其余 6 个 Feign 方法都正确返回 `Result`，只有这两个用实体。契约错位是代码级确定的；具体表现取决于运行期 ObjectMapper 的 `FAIL_ON_UNKNOWN_PROPERTIES`（Spring Boot 默认关闭 → 调用方拿到字段全空但非 null 的对象，`if (x == null)` 挡不住；若被打开则解码直接抛异常）——**这一条的运行期表现我没测到**：探测时 pd-user 正被这次部署重建（Nacos 实例暂时 `hosts: []`），故不下结论 | `AddressBookFeign.java:58-59` vs `pd-user/AddressBookController.java:64-72`；`MemberFeign.java:58-59` vs `MemberController.java:47-48` | **P0** |
+
+C-11 的调用面（逐个 grep 过，不是猜的）：`memberFeign.detail` 有 **3 个真实调用方**——`CourierController.java:272`（取派件时取会员）、`:624`（身份证关联）、`MemberServiceImpl.java:28`（客户端 profile）；`addressBookFeign.detail` 有 3 处（地址详情 + 下单取寄/收地址）。
 | C-12 | 由 C-11 连出来的下游：`pd-web-customer` 的地址详情与下单取址都走这两个 Feign，因此 `provinceId/cityId/countyId`、收件人姓名手机详址实际全是 null 进订单；而 `MemberServiceImpl` 走的是 `Map` + 手工 `user.get("data")` 解包，所以它没事——**同一个工程里两种解包约定并存**，改哪个都容易漏 | `pd-web-customer/AddressBookController.java:156-165`、`MailingController.java:105,109`；对照 `MemberServiceImpl.java:32-36` | **P1** |
 
 说明我在 C-3 加的 401/403 会表现成什么：因为 C-11 已经存在，越权被拒时客户端拿到的仍然是"字段全空的地址"而不是错误提示——**这是 C-11 的既有缺陷，不是我这次改动引入的**。修好 C-11（两个 Feign 方法改成返回 `Result` 并在调用方解包）之后，403 才会以清晰报错的形式浮到界面上。这两条最好由正在改 `MailingController` 的人一起收，否则同一个文件会冲突两次。
@@ -78,3 +80,15 @@ C-3/C-4/C-5 的 pd-user 地址簿部分（提交 `92f624a`）。
 - 告警建表脚本 `docs/sql/告警记录_建表.sql` 写的是 `USE pd_netty`，但线上没有 `pd_netty` 库、
   而 pd-netty 的 datasource 实测是 `pd_oms` → **这个脚本执行会失败或把表建到没人连的地方**。
   该脚本是他 agent 今天的未跟踪文件，我不改内容，只把错位报出来。
+
+### 部署后在线验收（2026-10-08 13:38–13:44，deployTag=419334a）
+
+| 项 | 实测结果 |
+| --- | --- |
+| 服务状态 | 15/15 healthy，`RestartCount=0`（是重建不是崩溃循环），中间件 6/6，网桥检查正常，内存 8896M/15946M |
+| 注入是否落地 | pd-oms 容器 env 有 `JAVA_TOOL_OPTIONS=-Dbaidu.map.ak=`；pd-auth-server 有 2 个 `PINDA_JWT_*`、pd-gateway 有 1 个；`/data/pinda-jwt -> /data/pinda-jwt` 挂载已生效 |
+| B-3 运价规则 | pd-oms 本次重启的**启动期**日志出现 `SELECT ... FROM rule WHERE (rule_key = ?)` + `KieModule was added`（13:41:31）→ 规则不再依赖手工 reload，冷启动就带着运价 |
+| C-2 伪造回调 | `POST /pay/callback/wechat` 只带 `out_trade_no` → `{"msg":"支付回调处理失败","code":500}`，日志 `[支付] 回调验签失败: channel=wechat`。要说清楚：今天的拒绝来自 `isConfigured()` 那道闸（未配商户参数），我补的是**配了商户参数之后**那道原本会敞开的闸 |
+| A-5 菜单越权 | 直连 auth 无身份头时，`/menu/router?userId=1` 与不带参数返回一致（`data:[]`）→ 查询参数已不起作用 |
+| deploy-check 第 8 节 | 已装到 `/usr/local/bin`；输出"未轮换：pd-auth-server 仍从镜像内 classpath 读私钥"，全篇"结论: 全部通过"（未轮换属提示级，不判失败） |
+| S-1 缺表 | 建表前后对照：12:50/13:00/13:10/13:20 每 10 分钟一条 `定时重试执行异常` → 13:30 那一拍起无报错，近 4 分钟 `doesn't exist` 计数 0 |
