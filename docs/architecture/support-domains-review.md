@@ -120,3 +120,44 @@ WebManagerFeign），**路径与参数逐一对齐，契约层没有缺口**—�
 ## 7. 图
 
 - `support-domains-risk-map.dot`：四域风险关系图（rankdir=TB，风险节点用菱形，未证实关系用虚线）。
+
+## 8. 代码引用的表 vs 线上真实表（全量对账，2026-10-08）
+
+对 8 个有独立数据源的服务，把它们实体上的 `@TableName` 与线上 `information_schema`
+（实测 163 张表）逐一对齐。服务→库的映射取自各自 prod dataId 的 jdbc url 实测：
+`pd-oms/pd-druid/pd-netty→pd_oms`、`pd-work→pd_work`、`pd-base→pd_base`、
+`pd-user→pd_users`、`pd-dispatch→pd_dispatch`、`pd-aggregation→pd_aggregation`。
+
+| 缺失的表 | 谁的代码在用它 | 仓库里有 DDL 吗 | 严重度与后果 |
+| --- | --- | --- | --- |
+| `pd_work.pd_status_transition_history` | `StatusTransitionHistory.java:24` + Mapper + ServiceImpl，`TaskTransportServiceImpl:259,303` 发车/到达/派送都调它 | 原本没有；本轮补 `docs/sql/状态流转历史_建表.sql` | **P1**：`StatusTransitionHistoryServiceImpl:53-55` 的 catch 只记 error 并 return false，调用方不看返回值 → 业务不失败，但**状态流转审计一条都落不下来**，合规留证是空的（已建表，13 列与实体对齐） |
+| `pd_oms.pd_payment_order` | `PaymentOrder`（pd-oms 支付单） | 有，但脚本 `docs/sql/pd_payment_order_建表.sql` 是他 agent 今天的**未跟踪文件** | **P0**：pd-oms 连的是 pd_oms，而这张表只存在于历史副本 `pinda_tms` → 创建支付单必然报 table doesn't exist。**归属：他们正在做，我不重复建** |
+| `pd_oms.pd_settlement_order`、`pd_oms.pd_freight_detail` | `SettlementOrder` / 运费明细 | 同上，`docs/sql/财务结算域_建表.sql`（未跟踪，今天新增） | **P1**：即主报告"静默不结算"的另一半。归属同上 |
+| `pd_oms.pd_alarm_record` | `AlarmRecord` + `GpsAlertService` + `AlarmController`（pd-netty） | 有脚本 `docs/sql/告警记录_建表.sql`（未跟踪），**但它 `USE pd_netty`** | **P1 + 一处配置错位**：pd-netty 的 datasource 实测是 `pd_oms`，而线上根本没有 `pd_netty` 库 → 这个脚本执行会直接失败，或把表建到没人连的地方。需要他们把脚本目标库改成 pd_oms（或同步改 pd-netty 的数据源），我没动 |
+| `pd_dispatch.pd_schedule_exception_order` | 调度异常重试任务 | 有，且已跟踪（`docs/sql/pd_schedule_exception_order_建表.sql`） | **P1**：脚本进了仓库却没执行过 → `ScheduleExceptionRetryTask` 一跑就报错。属"落地漏了一步"，不是缺设计 |
+
+另外两条对账时发现的事实：
+
+- **`tms_order_location` 在任何库里都不存在**（163 张表全量比对）。而 `pd-druid` 的
+  `DruidServiceImpl` 有 6 处 SQL 打它（`:46,64,80,92,119,131`），且 pd-druid 的 datasource 是
+  `pd_oms`。实测直接调 `POST http://172.21.0.7:8193/apache-druid/query/select`，
+  服务日志立刻出现 `Table 'pd_oms.tms_order_location' doesn't exist` —— 这个"报表服务"从上线起就一条都查不出来。
+  它不能简单改名成 `pd_truck_location`：SQL 里还取了 `name/phone/licensePlate`，那些字段在车辆/司机表上，
+  需要决定是改建视图还是改 SQL，属业务口径，留给你拍板。
+- `pd-aggregation` 与 `pd-druid` 的实体上 `@TableName` 命中数为 0，说明这两个服务的表全部写在
+  SQL/XML 里 —— 这类"代码里找不到的表名"正是对账最容易漏的部分。
+
+## 9. 本轮已修复与验证台账
+
+| 项 | 改动 | 验证方式与结果 |
+| --- | --- | --- |
+| C-2 支付回调可伪造 | `PayController` 接 rawBody+签名头，`WechatPayChannel` 缺签名一律拒绝 | 本地 `mvn -o -pl pd-oms -am test`：PayChannelTest 5 条 + PayServiceImplTest 6 条 + 新测试 4 条全绿；在线伪造探针待部署后跑 |
+| C-4 退款谎报 | 两处桩 `return true` 改 `return false`（MockPayChannel 保持可用） | 同上测试全绿；`PayServiceImpl.refund` 的失败分支不写状态，账不会被污染 |
+| A-5 菜单越权 | `/menu/router`、`/menu/my` 去掉 userId 查询参数 | 前端确认无人调用（router/index.js 用静态菜单，Login.js 只声明未使用）；在线探针待部署后跑 |
+| D-5 日志存明文口令 | `SysLogAspect.desensitize()` + 6 条单测 | `mvn -o -pl pd-tools-log -am test`：Tests run 6, Failures 0 |
+| B-2 区域 id 恒 false | 两处改 `StringUtils.equals(..., String.valueOf(id))` | 编译通过；能否真正分单还需一条真实订单（`receiver_county_id` 存的到底是主键还是 adcode 未证实） |
+| B-3 运价规则 0 行 | 种子 SQL + 生成器 + `OrderAmountCalcRuleTest` | 线上 `pd_oms.rule` 现为 1 行（content 3923 字节），`:8186/rules/reload` 返回 ok，日志 `KieModule was added`；4 条价格断言（20/44/29/35）本地全绿 |
+| D-2/D-4 前端契约 | `isBizError()` 按 code 判错；reset 改 POST + `ids[]` | `npx eslint` 0 问题；`vue-cli-service build --mode docker` 构建通过 |
+| A-1 私钥出仓（机制） | compose 注入 `PINDA_JWT_*_PATH`、CI 入库守卫、deploy-check 第 8 节、§2.11 手册 | `docker compose config` 校验通过；守卫在本地正反两次试跑（当前状态通过并提示 2 把历史私钥；临时塞入假私钥被正确拦下）。**首次推送我把公钥也误判成违规，流水线停在第 3 步，已修** |
+| B-9 百度 AK 缺失 | `x-baidu-env` 锚点接 6 个服务的 `JAVA_TOOL_OPTIONS` | compose 渲染实测 `-Dbaidu.map.ak=`（与今天等价，不改行为）；实际启用需要你填 AK |
+| 新增：审计历史表 | `docs/sql/状态流转历史_建表.sql` 并应用到 pd_work | 自检 `information_schema` 返回 13 列 |
