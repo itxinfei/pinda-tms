@@ -26,20 +26,24 @@ jobs:
           echo "TAG=$TAG" >> "$GITHUB_ENV"
 
       - name: 密钥入库守卫
-        # 这个仓库会推到公开的 Gitee，所以"密钥不进仓"必须是机器检查而不是口头约定。
+        # 这个仓库会推到公开的 Gitee，所以"私钥不进仓"必须是机器检查而不是口头约定。
+        # 只拦私钥材料：pub.key / public*.pem 按设计就该公开，不算违规
+        # （首版没排除公钥，三条 pub.key 被判红，构建停在打包前）。
         # 已知欠账：两把历史 RSA 私钥（轮换手册见 docs/部署文档.md §2.11，正由
-        # PINDA_JWT_*_PATH 改成仓外注入）。白名单之外的任何 .key/.pem 直接构建失败。
+        # PINDA_JWT_*_PATH 改成仓外注入）。白名单之外的任何私钥直接构建失败；
+        # 等历史私钥删掉、白名单清空，这里就变成"零私钥"硬约束。
         run: |
           set -e
+          pubre='(^|/)(pub|public)[^/]*\.(key|pem)$'
           allow="pd-authority/pd-apps/pd-auth/pd-auth-server/src/main/resources/client/pri.key
           pd-authority/pd-tools/pd-tools-jwt/src/main/resources/pri.key"
-          found=$(git ls-files '*.key' '*.pem' '*.p12' '*.jks' | grep -vxF "$allow" || true)
+          found=$(git ls-files '*.key' '*.pem' '*.p12' '*.jks' | grep -vE "$pubre" | grep -vxF "$allow" || true)
           if [ -n "$found" ]; then
-            echo "::error::以下密钥文件被 git 跟踪，本仓库是公开的，必须移出后再构建"
+            echo "::error::以下私钥文件被 git 跟踪，本仓库是公开的，必须移出后再构建"
             echo "$found" | sed 's/^/  /'
             exit 1
           fi
-          legacy=$(git ls-files '*.key' | wc -l)
+          legacy=$(git ls-files '*.key' '*.pem' | grep -vE "$pubre" | wc -l)
           [ "$legacy" = 0 ] \
             && echo "  仓库已不跟踪任何私钥：干净" \
             || echo "  ! 仍有 $legacy 把历史私钥在跟踪（公开可读，按部署文档 §2.11 轮换后删除）"
