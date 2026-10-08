@@ -160,8 +160,10 @@ public class AlipayPayChannel implements PayChannel {
     @Override
     public boolean refund(String orderId, String payNo, BigDecimal amount) {
         if (!isConfigured()) {
-            log.info("[支付宝] 未配置商户参数，模拟退款成功: payNo={}", payNo);
-            return true;
+            // 这里以前返回 true，上层会把支付单和订单一起置成 REFUNDED——账上显示"已退"，
+            // 客户其实一分没收到。桩实现必须如实返回失败。
+            log.warn("[支付宝] 未配置商户参数，退款未发起: payNo={}", payNo);
+            return false;
         }
         try {
             TreeMap<String, String> params = new TreeMap<>();
@@ -180,8 +182,10 @@ public class AlipayPayChannel implements PayChannel {
             String signContent = buildSignContent(params);
             params.put("sign", PayCryptoUtils.rsaSha256Sign(privateKey, signContent));
             log.info("[支付宝] 申请退款: payNo={}, amount={}, 已生成签名请求", payNo, amount);
-            // 生产环境通过网关 POST 上述参数并解析 alipay_trade_refund_response.code
-            return true;
+            // 参数拼好、签也签了，但没有向网关 POST，也没有解析 alipay_trade_refund_response.code，
+            // 所以这里绝不能算成功——否则 REFUNDED 状态是凭空写出来的。
+            log.warn("[支付宝] 退款请求尚未真正投递（缺少网关调用与响应解析），按失败处理: payNo={}", payNo);
+            return false;
         } catch (Exception e) {
             log.error("[支付宝] 退款失败: payNo={}", payNo, e);
             return false;

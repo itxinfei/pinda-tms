@@ -30,6 +30,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.regex.Pattern;
 
 /**
  * 操作日志使用spring event异步入库
@@ -61,6 +62,21 @@ public class SysLogAspect {
             return new OptLogDTO();
         }
         return sysLog;
+    }
+
+    /**
+     * 入参里可能带口令、手机号、证件号，而这份 JSON 会进 pd_opt_log 长期留存，
+     * 所以落库前一律按字段名打码（"修改密码"这类接口尤其不能存原文）。
+     */
+    private static final Pattern SENSITIVE_FIELD = Pattern.compile(
+            "(\"[\\w_]*(?:password|passwd|pwd|token|secret|credential|mobile|phone|tel|idcard|id_card|cert_no|bank_card)[\\w_]*\"\\s*:\\s*)(?:\"[^\"]*\"|[^,}\\]]+)",
+            Pattern.CASE_INSENSITIVE);
+
+    static String desensitize(String json) {
+        if (json == null || json.isEmpty()) {
+            return json;
+        }
+        return SENSITIVE_FIELD.matcher(json).replaceAll("$1\"***\"");
     }
 
     @Before(value = "sysLogAspect()")
@@ -108,7 +124,7 @@ public class SysLogAspect {
                     log.warn("解析参数异常", ex);
                 }
             }
-            sysLog.setParams(getText(strArgs));
+            sysLog.setParams(getText(desensitize(strArgs)));
 
             if (request != null) {
                 sysLog.setRequestIp(ServletUtil.getClientIP(request));
