@@ -126,18 +126,15 @@ public class MenuController extends BaseController {
     /**
      * 查询用户可用的所有资源
      *
-     * @param group  菜单分组
-     * @param userId 指定用户id
+     * @param group 菜单分组
      */
-    @ApiImplicitParams({@ApiImplicitParam(name = "group", value = "菜单组", dataType = "string", paramType = "query"), @ApiImplicitParam(name = "userId", value = "用户id", dataType = "long", paramType = "query"),})
+    @ApiImplicitParams({@ApiImplicitParam(name = "group", value = "菜单组", dataType = "string", paramType = "query")})
     @ApiOperation(value = "查询用户可用的所有菜单", notes = "查询用户可用的所有菜单")
     @GetMapping
     @Deprecated
-    public R<List<MenuTreeDTO>> myMenus(@RequestParam(value = "group", required = false) String group, @RequestParam(value = "userId", required = false) String userId) {
-        // 2026-10-06 同 myRouter：恢复从上下文取 userId（userId 为 String，用 isBlank 判断）
-        if (StrUtil.isBlank(userId)) {
-            userId = String.valueOf(getUserId());
-        }
+    public R<List<MenuTreeDTO>> myMenus(@RequestParam(value = "group", required = false) String group) {
+        // 2026-10-08 与 myRouter 同步：不再接受 userId 查询参数，身份取自网关注入的头/上下文
+        String userId = String.valueOf(getUserId());
         List<Menu> list = menuService.findVisibleMenu(group, userId);
         List<MenuTreeDTO> treeList = dozer.mapList(list, MenuTreeDTO.class);
 
@@ -171,23 +168,20 @@ public class MenuController extends BaseController {
     /**
      * 查询用户可用的所有菜单路由树
      *
-     * @param group
-     * @param userId
+     * @param group 菜单组
      */
-    @ApiImplicitParams({@ApiImplicitParam(name = "group", value = "菜单组", dataType = "string", paramType = "query"), @ApiImplicitParam(name = "userId", value = "用户id", dataType = "long", paramType = "query"),})
+    @ApiImplicitParams({@ApiImplicitParam(name = "group", value = "菜单组", dataType = "string", paramType = "query")})
     @ApiOperation(value = "查询用户可用的所有菜单路由树", notes = "查询用户可用的所有菜单路由树")
     @GetMapping("/router")
-    public R<List<VueRouter>> myRouter(@RequestParam(value = "group", required = false) String group, @RequestParam(value = "userId", required = false) String userId, HttpServletRequest request) {
+    public R<List<VueRouter>> myRouter(@RequestParam(value = "group", required = false) String group, HttpServletRequest request) {
         log.info("查询用户可用的所有菜单路由树");
         // 2026-10-06 修复：原代码取 userId 的逻辑被整段注释，导致前端不传 userId 时
         // 一直以 null 查询（缓存 key 变成 "user_menu:null"），进而查不到任何菜单、登录后菜单为空。
-        // 说明：网关 TokenContextFilter 会向下游注入 userid 头，此处优先从请求头直接取
+        // 2026-10-08 去掉 userId 查询参数：身份只能来自网关注入的 userid 头，
+        // 否则任何登录用户都能带 ?userId=1 读到别人的菜单（暴露未授权功能入口）。
         //（ContextHandlerInterceptor 依赖 springfox 的 PropertySourcedRequestMappingHandlerMapping,
-        // 实测部分容器环境未注册到 ThreadLocal, 导致 getUserId() 返回 0 查询空）。
-        // 注意：userId 是 String，不能用 "<= 0" 判断（会抛 NumberFormatException），须用 isBlank。
-        if (StrUtil.isBlank(userId)) {
-            userId = request.getHeader(BaseContextConstants.JWT_KEY_USER_ID);
-        }
+        // 实测部分容器环境未注册到 ThreadLocal, 导致 getUserId() 返回 0 查询空。）
+        String userId = request.getHeader(BaseContextConstants.JWT_KEY_USER_ID);
         if (StrUtil.isBlank(userId)) {
             userId = String.valueOf(getUserId());
         }

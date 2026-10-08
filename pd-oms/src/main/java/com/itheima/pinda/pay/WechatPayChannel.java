@@ -130,21 +130,25 @@ public class WechatPayChannel implements PayChannel {
             log.warn("[微信支付] 未配置商户参数，拒绝回调验签（fail-closed）");
             return false;
         }
-        // APIv3 回调：优先使用微信签名头验签（timestamp/nonce/signature/rawBody）
+        // APIv3 回调：用微信平台公钥对 timestamp+nonce+原文 做 RSA-SHA256 验签
         String wechatpaySignature = params.get("wechatpay_signature");
         String timestamp = params.get("wechatpay_timestamp");
         String nonce = params.get("wechatpay_nonce");
         String rawBody = params.get("rawBody");
-        if (wechatpaySignature != null && timestamp != null && nonce != null && rawBody != null
-                && platformPublicKey != null && !platformPublicKey.trim().isEmpty()) {
-            String message = timestamp + "\n" + nonce + "\n" + rawBody + "\n";
-            boolean verified = PayCryptoUtils.rsaSha256Verify(platformPublicKey, message, wechatpaySignature);
-            if (!verified) {
-                log.warn("[微信支付] 回调签名校验失败");
-                return false;
-            }
+        if (wechatpaySignature == null || timestamp == null || nonce == null || rawBody == null) {
+            // 这里以前会退到"out_trade_no 非空即通过"，等于任何人都能伪造一条支付成功回调
+            log.warn("[微信支付] 缺少 APIv3 签名头（signature/timestamp/nonce/rawBody），拒绝回调");
+            return false;
         }
-        // 参数完整性兜底校验
+        if (platformPublicKey == null || platformPublicKey.trim().isEmpty()) {
+            log.warn("[微信支付] 未配置平台公钥 pay.wechat.platform-public-key，无法验签，拒绝回调");
+            return false;
+        }
+        String message = timestamp + "\n" + nonce + "\n" + rawBody + "\n";
+        if (!PayCryptoUtils.rsaSha256Verify(platformPublicKey, message, wechatpaySignature)) {
+            log.warn("[微信支付] 回调签名校验失败");
+            return false;
+        }
         return params.get("out_trade_no") != null;
     }
 
@@ -185,8 +189,9 @@ public class WechatPayChannel implements PayChannel {
     @Override
     public boolean refund(String orderId, String payNo, BigDecimal amount) {
         if (!isConfigured()) {
-            log.info("[微信支付] 未配置商户参数，模拟退款成功: payNo={}", payNo);
-            return true;
+            // 同上：返回 true 会让 PayServiceImpl 把支付单与订单写成 REFUNDED，凭空造一笔已退的账
+            log.warn("[微信支付] 未配置商户参数，退款未发起: payNo={}", payNo);
+            return false;
         }
         try {
             String path = "/v3/refund/domestic/refunds";
