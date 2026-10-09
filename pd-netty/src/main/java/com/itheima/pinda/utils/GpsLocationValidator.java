@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
  * GPS 上报数据校验工具
  *
  * <p>统一 HTTP（{@code NettyController}）与 TCP（{@code NettyServerHandler}）两个入口的
- * 校验口径，非法数据一律不进 Kafka：
+ * 校验口径，非法数据一律不进 RabbitMQ：
  * <ul>
  *   <li>经纬度必须是合法数字（拒绝 NaN / Infinity / 科学计数法以外的脏字符串）；</li>
  *   <li>经度范围 [-180,180]，纬度范围 [-90,90]；</li>

@@ -4,11 +4,11 @@
 #
 # 逐个服务执行，每步之间可独立验证：
 #   sudo bash migrate-data.sh status      # 只看现状，不动任何东西
-#   sudo bash migrate-data.sh zookeeper
-#   sudo docker compose -f ../middleware/docker-compose.infra.yml up -d zookeeper
+#   sudo bash migrate-data.sh rabbitmq
+#   sudo docker compose -f ../middleware/docker-compose.infra.yml up -d rabbitmq
 #
-# zookeeper/kafka/rabbitmq 原本完全没有挂载卷，nacos 只挂了 logs，
-# 因此这四个必须复制；redis/mysql57 的数据已经在 /data 上，只需删旧容器让 compose 重建。
+# rabbitmq 原本完全没有挂载卷，nacos 只挂了 logs，
+# 因此这两个必须复制；redis/mysql57 的数据已经在 /data 上，只需删旧容器让 compose 重建。
 set -euo pipefail
 
 COMPOSE=$(dirname "$(readlink -f "$0")")/docker-compose.infra.yml
@@ -16,8 +16,6 @@ COMPOSE=$(dirname "$(readlink -f "$0")")/docker-compose.infra.yml
 # 每个服务一组 "容器内路径|宿主路径|属主uid"
 pairs_of() {
   case "$1" in
-    zookeeper) printf '%s\n' "/data|/data/zookeeper/data|1000" "/datalog|/data/zookeeper/datalog|1000";;
-    kafka)    printf '%s\n' "/bitnami/kafka|/data/kafka|1001";;
     rabbitmq) printf '%s\n' "/var/lib/rabbitmq|/data/rabbitmq|999";;
     nacos)    printf '%s\n' "/home/nacos/data|/data/nacos-data|0";;
     redis|mysql57) printf '\n';;
@@ -27,7 +25,7 @@ pairs_of() {
 
 status() {
   echo "=== 容器编排来源（project 为空即仍是裸 docker run）==="
-  for c in zookeeper kafka rabbitmq redis mysql57 nacos; do
+  for c in rabbitmq redis mysql57 nacos; do
     docker inspect -f "{{.Name}} image={{.Config.Image}} restart={{.HostConfig.RestartPolicy.Name}}" "$c" 2>/dev/null \
       || { echo "$c  不存在"; continue; }
     # 带点的 label key 必须用 index 取，{{.Config.Labels.com.docker.compose.project}} 解析不出会恒返回 <no value>
@@ -35,7 +33,7 @@ status() {
   done
   echo
   echo "=== 宿主 /data 现状 ==="
-  for d in /data/mysql /data/redis /data/nacos /data/nacos-data /data/zookeeper /data/kafka /data/rabbitmq; do
+  for d in /data/mysql /data/redis /data/nacos /data/nacos-data /data/rabbitmq; do
     [ -e "$d" ] && printf '%s  %s\n' "$(du -sh "$d" 2>/dev/null | cut -f1)" "$d" || echo "不存在  $d"
   done
 }
@@ -81,6 +79,6 @@ migrate() {
 
 case "${1:-}" in
   status) status;;
-  zookeeper|kafka|rabbitmq|nacos|redis|mysql57) migrate "$1";;
-  *) echo "用法: sudo bash $0 status|zookeeper|kafka|rabbitmq|nacos|redis|mysql57"; exit 1;;
+  rabbitmq|nacos|redis|mysql57) migrate "$1";;
+  *) echo "用法: sudo bash $0 status|rabbitmq|nacos|redis|mysql57"; exit 1;;
 esac

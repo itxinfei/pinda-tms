@@ -1,12 +1,12 @@
 # ============================================
-# 品达TMS 中间件编排：MySQL / Redis / Nacos / Zookeeper / Kafka / RabbitMQ
+# 品达TMS 中间件编排：MySQL / Redis / Nacos / RabbitMQ
 #
 # 本文件按 192.168.20.130 上**实际运行**的容器参数还原（docker inspect），
 # 此前这些容器由零散 docker run 创建、仓库中无可复现编排，且 docs/部署文档.md 的
-# 镜像选择已与实际漂移（zookeeper/kafka 镜像、seata 运行方式均不一致）。
+# 镜像选择已与实际漂移（seata 运行方式与实际不一致）。
 #
 # 首次启用必须先迁移数据，否则容器内已有状态会随重建丢失：
-#   zookeeper/kafka/rabbitmq 原本没有任何挂载卷，nacos 只挂了 logs、
+#   rabbitmq 原本没有任何挂载卷，nacos 只挂了 logs、
 #   内嵌 Derby 配置库留在容器可写层。见本目录 migrate-data.sh。
 #
 # 启动（迁移完成后）：
@@ -112,67 +112,6 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://127.0.0.1:8848/nacos/v1/ns/operator/metrics || exit 1"]
       interval: 20s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
-
-  zookeeper:
-    image: zookeeper:3.9
-    container_name: zookeeper
-    restart: unless-stopped
-    <<: *ulimits
-    ports:
-      - "2181:2181"
-    volumes:
-      - /data/zookeeper/data:/data
-      - /data/zookeeper/datalog:/datalog
-    environment:
-      ZOO_STANDALONE_ENABLED: "true"
-      ZOO_TICK_TIME: 2000
-      ZOO_INIT_LIMIT: 5
-      ZOO_SYNC_LIMIT: 2
-      ZOO_MAX_CLIENT_CNXNS: 60
-      # PURGEINTERVAL 语义是“每 N 个快照触发一次清理”，0 = 永不清理。
-      # 实机原值为 0，已导致 /datalog 累积 193M 事务日志只增不删。
-      ZOO_AUTOPURGE_PURGEINTERVAL: 1
-      ZOO_AUTOPURGE_SNAPRETAINCOUNT: 3
-      ZOO_ADMINSERVER_ENABLED: "true"
-    command: ["zkServer.sh", "start-foreground"]
-    mem_limit: 768m
-    mem_reservation: 128m
-    oom_score_adj: -500
-    healthcheck:
-      test: ["CMD-SHELL", "nc -z 127.0.0.1 2181 || exit 1"]
-      interval: 20s
-      timeout: 5s
-      retries: 5
-
-  kafka:
-    image: bitnami/kafka:3.7
-    container_name: kafka
-    restart: unless-stopped
-    <<: *ulimits
-    ports:
-      - "9092:9092"
-    volumes:
-      - /data/kafka:/bitnami/kafka
-    environment:
-      KAFKA_CFG_ZOOKEEPER_CONNECT: 192.168.20.130:2181
-      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092
-      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://192.168.20.130:9092
-      ALLOW_PLAINTEXT_LISTENER: "yes"
-      # bitnami 默认堆 1024m，配上 1g 容器上限会在堆写满时触发 cgroup OOM；
-      # 当前实测 RSS 407M，512m 足够。
-      KAFKA_HEAP_OPTS: "-Xms256m -Xmx512m"
-    command: ["/opt/bitnami/scripts/kafka/run.sh"]
-    mem_limit: 1g
-    mem_reservation: 256m
-    oom_score_adj: -500
-    depends_on:
-      - zookeeper
-    healthcheck:
-      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/9092' || exit 1"]
-      interval: 30s
       timeout: 10s
       retries: 5
       start_period: 60s

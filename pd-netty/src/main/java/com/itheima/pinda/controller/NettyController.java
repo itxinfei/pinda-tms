@@ -28,7 +28,7 @@ public class NettyController {
     private RabbitSender rabbitSender;
 
     /**
-     * 将车辆定位信息发送到kafka队列（P0-4 北斗字段最小改造 · D-13）
+     * 将车辆定位信息发送到 RabbitMQ（P0-4 北斗字段最小改造 · D-13）
      *
      * <p>校验与兜底逻辑：
      * <ul>
@@ -37,7 +37,7 @@ public class NettyController {
      *   <li>来源 source 缺失时默认 MOBILE（HTTP 入口默认移动端推送）</li>
      *   <li>来源不合法时拒绝上报（400）</li>
      * </ul>
-     * 消费端 GpsTraceConsumer 会再做一次兜底，防御上游漏传。
+     * 消费端 RabbitGpsTraceConsumer 会再做一次兜底，防御上游漏传。
      */
     @PostMapping("/push")
     public Result push(@RequestBody LocationEntity locationEntity){

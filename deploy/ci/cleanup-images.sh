@@ -7,8 +7,8 @@
 #
 # 安全边界（重要）：
 #   - 只动 pinda/pd-* 这一批应用镜像，绝不碰基础镜像与中间件镜像
-#     （运行时基础镜像 pinda/jre8-fontconfig:*、mysql/redis/nacos/kafka/
-#      zookeeper/rabbitmq/gitea/*、ci/pinda-ci、eclipse-temurin 等，这些是
+#     （运行时基础镜像 pinda/jre8-fontconfig:*、mysql/redis/nacos/
+#      rabbitmq/gitea/*、ci/pinda-ci、eclipse-temurin 等，这些是
 #      有意长期保留的）。注意：基础镜像名是 pinda/jre8-fontconfig，不以
 #      pinda/pd- 开头，本脚本的仓库过滤(grep '^pinda/pd-')天然不会选中它；
 #      若以后放宽该过滤，必须同时显式排除 pinda/jre8-fontconfig，否则下次

@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 /**
  * GPS轨迹明细记录（持久化到 MySQL pd_truck_location 表）
  *
- * <p>由 {@link GpsTraceConsumer} 将 Kafka 中的轨迹数据落库，
+ * <p>由 {@link RabbitGpsTraceConsumer} 将 RabbitMQ 中的轨迹数据落库，
  * 字段与上报的 {@link LocationEntity} 一一对应，补充入库时间。</p>
  */
 @Data
