@@ -59,7 +59,7 @@ free -m | awk 'NR==2{printf "  内存: 用 %sM / 共 %sM，可用 %sM\n", $3, $2
 
 echo
 echo "=== 6. 鉴权链路冒烟（nginx -> 网关 -> auth-server -> redis） ==="
-code=$(curl -s -o /dev/null -w '%{http_code}' -m 8 http://127.0.0.1:8080/api/authority/anno/captcha)
+code=$(curl -s -o /dev/null -w '%{http_code}' -m 8 http://127.0.0.1:8081/prod-api/authority/anno/captcha)
 echo "  验证码接口: HTTP $code"
 [ "$code" = "200" ] || fail=1
 

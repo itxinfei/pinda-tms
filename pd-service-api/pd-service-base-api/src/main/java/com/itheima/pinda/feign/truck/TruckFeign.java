@@ -8,6 +8,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 import springfox.documentation.annotations.ApiIgnore;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @FeignClient(value = "pd-base", fallback = TruckFeignFallback.class, path = "/base/truck")
@@ -84,4 +85,27 @@ public interface TruckFeign {
      */
     @PutMapping("/{id}/disable")
     Result disable(@PathVariable(name = "id") String id);
+
+    /**
+     * 更新车辆在线状态与心跳时间（P0-4 北斗字段最小改造 · D-13）
+     *
+     * <p>由 pd-netty GpsTraceConsumer 收到 GPS 上报后调用：
+     * online_status=1 并刷新 last_heartbeat_time。</p>
+     *
+     * @param deviceGpsId GPS 设备 id
+     * @param heartbeatTime 心跳时间
+     * @return 更新结果
+     */
+    @PutMapping("/heartbeat")
+    Result updateHeartbeat(@RequestParam(name = "deviceGpsId") String deviceGpsId,
+                           @RequestParam(name = "heartbeatTime") LocalDateTime heartbeatTime);
+
+    /**
+     * 批量将心跳超时车辆置为离线（P0-4 北斗字段最小改造 · D-13）
+     *
+     * @param threshold 心跳超时阈值
+     * @return 更新结果（data 字段返回受影响行数）
+     */
+    @PutMapping("/heartbeat/mark-offline")
+    Result markOffline(@RequestParam(name = "threshold") LocalDateTime threshold);
 }

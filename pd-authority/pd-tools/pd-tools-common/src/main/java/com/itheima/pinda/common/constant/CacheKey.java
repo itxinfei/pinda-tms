@@ -121,6 +121,34 @@ public interface CacheKey {
     String RESOURCE_NEED_TO_CHECK = "resource_need_to_check";
 
     /**
+     * token 吊销黑名单（登出）
+     * 完整key: token_blacklist:{token的SHA-256摘要} -> str
+     * TTL = token 剩余有效期，到期自动清理，命中即按未登录处理
+     */
+    String TOKEN_BLACKLIST = "token_blacklist";
+
+    /**
+     * 用户级吊销黑名单（禁用用户）
+     * 完整key: token_blacklist_user:{userId} -> str
+     * 命中则该用户所有存量 token 立即失效，无需逐个定位 token
+     */
+    String TOKEN_BLACKLIST_USER = "token_blacklist_user";
+
+    /**
+     * 登录失败计数（撞库防护）
+     * 完整key: login_fail:{account}:{ip} -> Integer
+     * 连续失败达到阈值即锁定，每次失败刷新 TTL，登录成功立即清零
+     */
+    String LOGIN_FAIL = "login_fail";
+
+    /**
+     * 验证码失败计数
+     * 完整key: captcha_fail:{验证码key} -> Integer
+     * 同一验证码失败达到上限即作废，防止经 /anno/check 穷举
+     */
+    String CAPTCHA_FAIL = "captcha_fail";
+
+    /**
      * 构建key
      *
      * @param args

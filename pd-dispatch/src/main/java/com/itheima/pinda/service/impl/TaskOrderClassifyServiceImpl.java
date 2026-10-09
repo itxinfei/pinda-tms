@@ -187,6 +187,13 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
         //调用百度地图工具类，根据地址获取对应的经纬度坐标
         String location = EntCoordSyncJob.getCoordinate(address);
         if(StringUtils.isBlank(location)){
+            // 百度地图不可用（未配置AK/外网不通）：按发件区县确定性匹配覆盖网点，
+            // 不依赖外网、结果可重复，保证内网调度链路不被地图服务中断
+            String fallbackAgencyId = resolveAgencyByCountyId(order.getSenderCountyId());
+            if(StringUtils.isNotBlank(fallbackAgencyId)){
+                log.info("百度地图不可用，按发件区县[{}]确定性匹配起始网点[{}]", order.getSenderCountyId(), fallbackAgencyId);
+                return fallbackAgencyId;
+            }
             exceptionHappend("发件人地址不正确");
         }
 
@@ -295,6 +302,23 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
     }
 
     /**
+     * 确定性兜底：按区县id查询覆盖该区域的网点（不依赖百度地图）。
+     * 取该区县下配置的第一个网点，供百度地图不可用时使用。
+     * @param countyId 区县id
+     * @return 网点id，无配置时返回 null
+     */
+    private String resolveAgencyByCountyId(String countyId){
+        if(StringUtils.isBlank(countyId)){
+            return null;
+        }
+        List<AgencyScopeDto> agencyScopes = agencyScopeFeign.findAllAgencyScope(countyId, null, null, null);
+        if(agencyScopes == null || agencyScopes.isEmpty()){
+            return null;
+        }
+        return agencyScopes.get(0).getAgencyId();
+    }
+
+    /**
      * 获取目的地网点id
      * @param order
      * @return
@@ -309,6 +333,13 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
         //调用百度地图工具类，根据地址获取对应的经纬度坐标
         String location = EntCoordSyncJob.getCoordinate(address);
         if(StringUtils.isBlank(location)){
+            // 百度地图不可用（未配置AK/外网不通）：按收件区县确定性匹配覆盖网点，
+            // 不依赖外网、结果可重复，保证内网调度链路不被地图服务中断
+            String fallbackAgencyId = resolveAgencyByCountyId(order.getReceiverCountyId());
+            if(StringUtils.isNotBlank(fallbackAgencyId)){
+                log.info("百度地图不可用，按收件区县[{}]确定性匹配目的网点[{}]", order.getReceiverCountyId(), fallbackAgencyId);
+                return fallbackAgencyId;
+            }
             exceptionHappend("收件人地址不正确");
         }
 

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.time.LocalDateTime;
+import java.util.Date;
 
 import com.itheima.pinda.context.BaseContextConstants;
 import com.itheima.pinda.exception.BizException;
@@ -76,6 +77,28 @@ public class JwtHelper {
         Long orgId = NumberHelper.longValueOf0(strOrgId);
         Long departmentId = NumberHelper.longValueOf0(strDepartmentId);
         return new JwtUserInfo(userId, account, name, orgId, departmentId);
+    }
+
+    /**
+     * 获取 token 的剩余有效秒数（用于登出时把黑名单 TTL 精确对齐到 token 的 exp）
+     *
+     * @param token      token
+     * @param pubKeyPath 公钥路径
+     * @return 剩余秒数；token 已过期或无法解析时返回 0（无需再登记黑名单）
+     */
+    public static long getRemainingSeconds(String token, String pubKeyPath) {
+        try {
+            Jws<Claims> claimsJws = parserToken(token, pubKeyPath);
+            Date expiration = claimsJws.getBody().getExpiration();
+            if (expiration == null) {
+                return 0L;
+            }
+            long remain = (expiration.getTime() - System.currentTimeMillis()) / 1000L;
+            return remain > 0 ? remain : 0L;
+        } catch (Exception e) {
+            // token 已过期或非法，本身已不可用，登出无需再写入黑名单
+            return 0L;
+        }
     }
 
 

@@ -3,6 +3,7 @@ package com.itheima.pinda.service.impl;
 import com.itheima.pinda.DTO.*;
 import com.itheima.pinda.DTO.transportline.TransportLineDto;
 import com.itheima.pinda.DTO.transportline.TransportTripsDto;
+import com.itheima.pinda.common.exception.PdException;
 import com.itheima.pinda.common.utils.DateUtils;
 import com.itheima.pinda.entity.CacheLineDetailEntity;
 import com.itheima.pinda.enums.OrderStatus;
@@ -101,14 +102,38 @@ public class BusinessOperationServiceImpl implements IBusinessOperationService {
             taskTranSportDto.setLoadingStatus(TransportTaskLoadingStatus.HALF.getCode());
             taskTranSportDto.setTransportOrderIds(transportOrderIds);
             taskTranSportDto = transportTaskFeign.save(taskTranSportDto);
+            if (taskTranSportDto == null || taskTranSportDto.getId() == null) {
+                log.error("运输任务创建失败: line={}, start={}, end={}",
+                        cacheLineDetail.getTransportLineId(),
+                        cacheLineDetail.getStartAgencyId(), cacheLineDetail.getEndAgencyId());
+                throw new PdException("运输任务创建失败，请稍后重试");
+            }
 
             log.info("创建运输任务: {}", taskTranSportDto);
+
+            // 调度成功：回写关联运单为"已调度"（此前主链路不回写，运单永远停在待调度）
+            markTransportOrdersScheduled(transportOrderIds);
 
             // 线路管理运输任务 并返回
             result.put(cacheLineDetail.getTransportLineId(), taskTranSportDto);
 
         });
         return result;
+    }
+
+    /**
+     * 调度成功后批量回写运单 schedulingStatus=已调度。
+     */
+    private void markTransportOrdersScheduled(List<String> transportOrderIds) {
+        if (transportOrderIds == null || transportOrderIds.isEmpty()) {
+            return;
+        }
+        for (String transportOrderId : transportOrderIds) {
+            TransportOrderDTO update = new TransportOrderDTO();
+            update.setId(transportOrderId);
+            update.setSchedulingStatus(TransportOrderSchedulingStatus.SCHEDULED.getCode());
+            transportOrderFeign.updateById(transportOrderId, update);
+        }
     }
 
     @Override
@@ -151,8 +176,13 @@ public class BusinessOperationServiceImpl implements IBusinessOperationService {
             driverJobDto.setTaskTransportId(taskTransportDTO.getId());
             driverJobDto.setPlanDepartureTime(DateUtils.getUTCTime(departureDate));
             driverJobDto.setPlanArrivalTime(DateUtils.getUTCTime(arrivalTime));
-            driverJobFeign.save(driverJobDto);
-            log.info("创建司机任务:{}", driverJobDto);
+            DriverJobDTO savedDriverJob = driverJobFeign.save(driverJobDto);
+            if (savedDriverJob == null || savedDriverJob.getId() == null) {
+                log.error("司机作业单创建失败: taskId={}, driverId={}",
+                        taskTransportDTO.getId(), driverJobDto.getDriverId());
+                throw new PdException("司机作业单创建失败，请稍后重试");
+            }
+            log.info("创建司机任务:{}", savedDriverJob);
             // 更新运输任务信息
             TaskTransportDTO taskTransportDTOUpdate = new TaskTransportDTO();
             taskTransportDTOUpdate.setTransportOrderIds(taskTransportDTO.getTransportOrderIds());

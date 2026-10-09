@@ -3,7 +3,7 @@
 # 内含：JDK8 + Maven3.6 + Docker CLI + Compose v2 + Node14
 #   - Maven     ：一次构建全部后端 fat jar
 #   - Docker CLI：通过挂载的 /var/run/docker.sock 操作宿主机 Docker 构建/部署
-#   - Node14    ：构建 pd-admin-ui（node-sass 4.x 仅兼容 node <=14）
+#   - Node14    ：历史遗留（老 React 后台已下线，前端改由各 Dockerfile 内的 node:22 构建）
 # 采用静态二进制安装，避免各 Linux 发行版 apt 源差异带来的构建失败。
 # ============================================
 FROM maven:3.6.3-jdk-8

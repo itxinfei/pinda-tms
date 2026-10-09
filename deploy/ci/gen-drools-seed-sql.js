@@ -34,6 +34,14 @@ const sql = `-- 运价规则种子：把仓库里的 Drools 规则灌进 pd_oms.
 --   curl -X POST http://<pd-oms 实例>:8186/rules/reload
 -- 只灌 pd_oms：pd-oms 的 datasource 实测就是 pd_oms（Nacos pd-oms-prod.yml:14），
 -- pinda_tms 里的同名 rule 表是历史副本，不喂代码。
+--
+-- ⚠️ 重构/删码提示（2026-10-09）：本 content 里三条续重规则调用
+--   new DroolsRulesServiceImpl().calcFee(addressRule)（.drl 第 33/50/67 行）。该调用
+--   写在 then 块内、被编译进规则字节码，Java 侧 grep 查不到引用，曾被多份文档误判为
+--   "死代码可清理"——删掉该类全站算价即挂。重写计费时必须保持语义等价：
+--   超出首重部分 setScale(0, ROUND_DOWN) 向下截断（不足 1kg 舍去），返回 String。
+--   口径与算例的唯一真源：docs/需求文档/52-旧代码独占知识固化_计费事件与异常上报契约.md §1
+--   （旧代码删除后，本 SQL 与《52》§1 共同构成运价规则的幸存副本）。
 
 USE pd_oms;
 

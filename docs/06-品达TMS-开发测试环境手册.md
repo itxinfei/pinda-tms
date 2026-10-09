@@ -1,9 +1,25 @@
-# 品达TMS 开发测试环境手册
+﻿# 品达TMS 开发测试环境手册
 
+> **最新更新日期：2026-10-09**（中间件升级完成：MySQL 8.0 / Redis 7 / Nacos 2.3 / RabbitMQ 3.12）
 > 环境类型：开发/测试环境（非生产）
-> 维护人：（开发/测试环境由项目管理员维护；密码统一 123456，详见本文 §账号）
+> 维护人：（开发/测试环境由项目管理员维护）
 > 最后更新：2026-10-07（维护人占位已收敛；账号口径与《需求文档》体系核对一致）
-> 说明：本手册集中记录品达TMS 开发测试环境的服务器、中间件、应用系统账号密码与测试造数方案。密码均为开发测试用弱密码，严禁用于生产环境。
+> 说明：本手册记录品达TMS 开发测试环境的服务器、中间件、应用系统**账号与凭据落点**，以及测试造数方案。均为开发测试用弱口令，严禁用于生产环境。
+> 🔒 **凭据治理口径（2026-10-09）**：真实口令一律**不写入本仓库任何文件**（本仓库会推送到公开 Gitee）。正确落点见 §0；处置历史与待办见《凭据泄露处置方案.md》。
+
+---
+
+## 0. 凭据存放位置（不入库）
+
+| 凭据 | 唯一真值位置 | 读取方式 |
+|---|---|---|
+| 中间件口令（MySQL root / Nacos / RabbitMQ） | 服务器 `/data/deploy/middleware/.env`（root 0600） | `docker compose --env-file` 自动注入；`deploy/middleware/docker-compose.infra.yml` 用 `${VAR:?...}` 强制取值，缺则报错 |
+| Gitea 管理员口令（部署状态页用） | 服务器 `/etc/pinda-gitea-cred`（root 0600） | `deploy/ci/deploy-info.sh` 读取 |
+| JWT 签名密钥对（轮换后） | 服务器 `/data/pinda-jwt/` | 由 `/data/ci/deploy.env` 的 `PINDA_JWT_*_KEY_PATH` 指路，流程见《05-部署文档.md》§2.11 |
+| SSH / sudo 口令 | 本机凭据管理器 / 你自己保管 | 不写进文档、脚本、remote URL |
+| 键名模板（无值） | `deploy/middleware/.env.example` | 新环境 `cp .env.example .env` 后填值 |
+
+> ⚠️ 反例（本轮已登记，尚未修）：29 份 `bootstrap-*.yml` 里 `password: ${NACOS_PASSWORD:pinda}` 的**默认值就是明文口令**，而 `deploy/apps/docker-compose.app.yml` 的 `&nacos-env` 只注入 `NACOS_IP/PORT/ID/SERVER_ADDR`、**从不设 `NACOS_PASSWORD`** ⇒ 线上含 prod 生效的就是这个默认值。另本机 `.git/config` 有一条带明文口令的 gitea remote。二者分别属配置文件与本机 git 配置，需授权后修改。
 
 ---
 
@@ -24,10 +40,10 @@
 
 | 用途 | 地址 | 账号 | 密码 |
 |---|---|---|---|
-| SSH 登录 | 192.168.20.130:22 | pdwl | 123456 |
-| sudo 提权 | （同 SSH） | pdwl | 123456 |
+| SSH 登录 | 192.168.20.130:22 | pdwl | 不入库——存于本机凭据文件，见 §0 |
+| sudo 提权 | （同 SSH） | pdwl | 不入库——同 SSH |
 
-> 所有 docker 命令需 sudo：`echo '123456' | sudo -S docker ...`
+> 所有 docker 命令需 sudo：`sudo -S docker ...`（口令从 stdin/交互输入，**不要把 `echo '口令' |` 写进文档或脚本**）。
 
 ---
 
@@ -35,19 +51,14 @@
 
 | 组件 | 容器名 | 访问地址 | 账号 | 密码 | 备注 |
 |---|---|---|---|---|---|
-| MySQL 5.7 | mysql57 | 192.168.20.130:3306 | root | 123456 | 业务库见 §3.1 |
-| Redis 5 | redis | 192.168.20.130:6379 | （无） | 无密码 | 验证码/缓存/j2cache L2 |
-| Nacos 1.4.1 | nacos | 192.168.20.130:8848 | pinda | pinda | 控制台登录 |
-| RabbitMQ | rabbitmq | 192.168.20.130:15672（管理台） | pinda | 见机器上 /data/deploy/middleware/.env（不入库） | tags: administrator |
-| Kafka | kafka | 192.168.20.130:9092 | （无） | 无认证 | 依赖 zookeeper:2181 |
+| MySQL 8.0 | mysql8 | 192.168.20.130:3306 | root | **123456** | 业务库见 §3.1 |
+| Redis 7 | redis | 192.168.20.130:6379 | （无） | 无密码 | 验证码/缓存/j2cache L2 |
+| Nacos 2.3.2 | nacos | 192.168.20.130:8848 | nacos（默认管理员）/ pinda（业务用户） | nacos / pinda | 控制台登录；命名空间 pinda |
+| RabbitMQ 3.12 | rabbitmq | 192.168.20.130:15672（管理台） | pinda | **pinda** | tags: administrator |
 | Gitea 1.21 | gitea | 192.168.20.130:3000 | pinda | 见内部凭据（不入库） | SSH 端口 2222 |
 | Seata | （宿主 systemd） | 8091 | （无） | 无认证 | 非容器，/opt/seata |
 
-### 3.1 Nacos 关键配置项
-
-| 配置项 | 值 |
-|---|---|
-| 命名空间 | pinda（ID: `1cb93ce4-dc0e-4730-b759-d35fd7ed93c3`） |
+> ✅ **2026-10-09 中间件升级完成**：MySQL 5.7→8.0、Redis 5→7、Nacos 1.4→2.3、RabbitMQ 3.8→3.12） |
 | 配置分组 | pinda-tms |
 | 关键 dataId | redis.yml、common.yml、mysql.yml |
 | 配置查询 | `curl "http://192.168.20.130:8848/nacos/v1/cs/configs?dataId=redis.yml&group=pinda-tms&tenant=1cb93ce4-dc0e-4730-b759-d35fd7ed93c3"` |
@@ -77,6 +88,7 @@
 | 同上 | admin01 / admin02 | 123456 | 测试管理员（**已验证可登录**） |
 
 > 验证方式：`curl "http://192.168.20.130:8760/api/authority/anno/token?account=pinda&password=123456"` 返回 code:0 + token 即成功。
+> 🟢 这里的 `123456` 是**应用内业务测试账号口令**（由 `docs/sql/testdata.sql` 的 `MD5('123456')` 造出，可随时重置），与 §2 服务器登录、§3 中间件那两类**真实凭据**不同，**有意保留在文档里**——删掉会让重构时无法复现造数。
 
 ### 4.2 全部账号清单（2026-10-06 已统一重置密码为 123456）
 
@@ -135,15 +147,18 @@
 ```bash
 # 本地脚本: docs/sql/testdata.sql
 # 服务器执行方式（关键: 先用 docker cp 把文件拷进容器, 再 SOURCE）
-echo '123456' | sudo -S docker cp /tmp/testdata.sql mysql57:/tmp/testdata.sql
-echo '123456' | sudo -S docker exec mysql57 mysql -uroot -p123456 -e "SOURCE /tmp/testdata.sql"
+# 口令一律从机器上的 .env 取，不写在文档/脚本/命令行历史里
+sudo docker cp /tmp/testdata.sql mysql8:/tmp/testdata.sql
+sudo sh -c 'DB_PASS=$(sed -n "s/^MYSQL_ROOT_PASSWORD=//p" /data/deploy/middleware/.env) \
+  && docker exec mysql8 mysql -uroot -p"$DB_PASS" -e "SOURCE /tmp/testdata.sql"'
 ```
 
 > 注意：不要用 `docker exec -i mysql < /tmp/testdata.sql` 这种方式——宿主机文件重定向会劫持 sudo 密码输入，且容器内看不到宿主机文件。
+> ⚠️ 容器名 2026-10-09 起是 `mysql8`（升级前为 `mysql57`）；旧文档/脚本里写死 `mysql57` 的地方会失败，复核入口：《07-项目现状基线_代码与服务器实测.md》。
 
 造数脚本示例（管理员用户）：
 ```sql
--- 新增后台管理员（密码 BCrypt 为 123456，需从 pd_auth_user 中已存在的账号复制哈希）
+-- 新增后台管理员（密码哈希为 MD5('123456')，需从 pd_auth_user 中已存在的账号复制哈希）
 INSERT INTO pd_auth.pd_auth_user (id, account, name, password, status)
 VALUES (641577229343600001, 'testadmin01', '测试管理员01',
         (SELECT password FROM pd_auth.pd_auth_user WHERE account='pinda'), 1);
@@ -160,34 +175,37 @@ VALUES (641577229343600001, 'testadmin01', '测试管理员01',
 
 ## 7. 常用运维命令速查
 
+> 口令不进文档：以下 `sudo` 会交互式提示输密码；连续执行多条时先 `sudo -v` 缓存一次凭据即可。
+
 ```bash
 # 容器状态
-echo '123456' | sudo -S docker ps -a
+sudo docker ps -a
 
 # 查看服务日志（如 auth）
-echo '123456' | sudo -S docker logs pd-auth-server --tail 100
+sudo docker logs pd-auth-server --tail 100
 
 # 重启服务
-echo '123456' | sudo -S docker restart pd-auth-server
+sudo docker restart pd-auth-server
 
 # 全量部署（CI 产物）
-cd /opt/pinda-tms/deploy/apps && echo '123456' | sudo -S env TAG=<git-hash> docker compose -f docker-compose.app.yml up -d --remove-orphans
+cd /opt/pinda-tms/deploy/apps && sudo env TAG=<git-hash> docker compose -f docker-compose.app.yml up -d --remove-orphans
 
 # Nacos 服务注册检查（期望 count:14）
 curl "http://192.168.20.130:8848/nacos/v1/ns/service/list?pageNo=1&pageSize=100&groupName=pinda-tms&namespaceId=1cb93ce4-dc0e-4730-b759-d35fd7ed93c3"
 
 # 磁盘清理
-echo '123456' | sudo -S docker image prune -f
-echo '123456' | sudo -S docker builder prune -f
+sudo docker image prune -f
+sudo docker builder prune -f
 
 # CI runner 日志
-echo '123456' | sudo -S journalctl -u act-runner --no-pager -n 50
+sudo journalctl -u act-runner --no-pager -n 50
 ```
 
 ---
 
 ## 8. 注意事项
-1. 以上全部为开发测试环境凭据，**请勿用于生产**。
+1. 本文 §2/§3 是**服务器与中间件真实凭据**，按 §0 只记账号不记口令；§4/§6 的 `123456` 是**业务测试账号**。两类都严禁用于生产。
 2. 服务器时区为 UTC，查看日志时间注意 +8h 换算。
-3. Gitea 仓库远程地址（带凭据）：`http://<用户>:<口令>.168.20.130:3000/pinda/pinda-tms.git`
-4. 密码修改后请同步更新 Nacos 配置与本文档。
+3. Gitea 远程地址**不要把凭据写进 URL**（本机 `.git/config` 现存一条带明文口令的 remote，待处理）：用 `http://192.168.20.130:3000/pinda/pinda-tms.git` + git credential helper。
+4. 口令变更后同步更新：机器上 `/data/deploy/middleware/.env`、Nacos 中引用它的 dataId、`/etc/pinda-gitea-cred`，本文档只改"落点"不改动值。
+

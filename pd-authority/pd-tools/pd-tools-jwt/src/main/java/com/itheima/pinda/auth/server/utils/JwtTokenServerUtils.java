@@ -53,5 +53,16 @@ public class JwtTokenServerUtils {
         return JwtHelper.getJwtFromToken(token, userTokenInfo.getPubKey());
     }
 
+    /**
+     * 获取 token 剩余有效秒数（登出设置黑名单 TTL 用）
+     *
+     * @param token token
+     * @return 剩余秒数；过期或非法返回 0
+     */
+    public long getRemainingSeconds(String token) {
+        AuthServerProperties.TokenInfo userTokenInfo = authServerProperties.getUser();
+        return JwtHelper.getRemainingSeconds(token, userTokenInfo.getPubKey());
+    }
+
 
 }

@@ -2,6 +2,7 @@ package com.itheima.pinda.DTO.truck;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 import lombok.Data;
 
@@ -51,4 +52,14 @@ public class TruckDto implements Serializable {
      * 状态 0：禁用 1：正常
      */
     private Integer status;
+
+    /**
+     * 在线状态（P0-4 北斗字段最小改造 · D-13）：0-离线 1-在线
+     */
+    private Integer onlineStatus;
+
+    /**
+     * 最后心跳时间（P0-4 北斗字段最小改造 · D-13）
+     */
+    private LocalDateTime lastHeartbeatTime;
 }

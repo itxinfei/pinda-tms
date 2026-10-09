@@ -3,6 +3,7 @@ package com.itheima.pinda.authority.controller.auth;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.itheima.pinda.authority.biz.service.auth.RoleService;
 import com.itheima.pinda.authority.biz.service.auth.UserService;
+import com.itheima.pinda.authority.biz.service.auth.impl.AuthManager;
 import com.itheima.pinda.authority.biz.service.core.OrgService;
 import com.itheima.pinda.authority.biz.service.core.StationService;
 import com.itheima.pinda.authority.dto.auth.*;
@@ -62,6 +63,8 @@ public class UserController extends BaseController {
     private StationService stationService;
     @Autowired
     private DozerUtils dozer;
+    @Autowired
+    private AuthManager authManager;
 
     /**
      * 分页查询用户
@@ -203,6 +206,16 @@ public class UserController extends BaseController {
     public R<User> update(@RequestBody @Validated(SuperEntity.Update.class) UserUpdateDTO data) {
         User user = dozer.map(data, User.class);
         userService.updateUser(user);
+        // 仅当本次显式变更了启用状态时处理存量 token 吊销/解除：
+        // 禁用 -> 登记用户级吊销，其所有在途 token 立即被网关拒绝；
+        // 启用 -> 解除吊销登记。其他字段更新不受影响。
+        if (user.getStatus() != null) {
+            if (Boolean.FALSE.equals(user.getStatus())) {
+                authManager.revokeUser(user.getId());
+            } else {
+                authManager.allowUser(user.getId());
+            }
+        }
         return success(user);
     }
 
@@ -241,6 +254,10 @@ public class UserController extends BaseController {
     @SysLog("删除用户")
     public R<Boolean> delete(@RequestParam("ids[]") List<Long> ids) {
         userService.remove(ids);
+        // 物理删除用户后，同样登记用户级吊销，避免其存量 token 在 TTL 内继续可用
+        if (ids != null) {
+            ids.forEach(authManager::revokeUser);
+        }
         return success(true);
     }
 

@@ -18,9 +18,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * GPS轨迹查询接口
@@ -85,6 +87,36 @@ public class GpsTraceController {
         wrapper.last("limit 1");
         LocationRecord record = locationRecordService.getOne(wrapper);
         return Result.ok().put("data", record);
+    }
+
+    /**
+     * 按运输任务ID批量查询轨迹（供客户小程序"我的订单→轨迹"使用）。
+     *
+     * <p>一个订单可能跨多个运输任务区段，现有 replay 只按车辆 id、page 只支持单个任务，
+     * 均不满足；本方法用 transport_task_id IN(...) 一次取回，按任务、上报时间升序。</p>
+     *
+     * @param taskIds 运输任务ID列表，去空去重后最多 50 个
+     * @return 轨迹点列表（可能为空，但不会报错）
+     */
+    @ApiOperation("按运输任务批量查轨迹")
+    @GetMapping("/byTasks")
+    public Result byTasks(@RequestParam("taskIds") List<String> taskIds) {
+        List<String> ids = taskIds == null ? Collections.emptyList() : taskIds.stream()
+                .filter(StringUtils::isNotBlank)
+                .distinct()
+                .collect(Collectors.toList());
+        if (ids.isEmpty()) {
+            return Result.error(400, "taskIds不能为空");
+        }
+        if (ids.size() > 50) {
+            return Result.error(400, "单次最多查询50个运输任务");
+        }
+        LambdaQueryWrapper<LocationRecord> wrapper = new LambdaQueryWrapper<>();
+        wrapper.in(LocationRecord::getTransportTaskId, ids);
+        wrapper.orderByAsc(LocationRecord::getTransportTaskId);
+        wrapper.orderByAsc(LocationRecord::getCurrentTime);
+        List<LocationRecord> records = locationRecordService.list(wrapper);
+        return Result.ok().put("data", records);
     }
 
     /**

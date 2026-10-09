@@ -13,11 +13,13 @@ import java.util.List;
 public class ResourceApiFallback implements ResourceApi {
     @Override
     public R<List> list() {
-        return null;
+        // 鉴权服务不可用时返回超时错误态（禁止返回 null，否则 AccessFilter 直接 NPE）
+        return R.timeout();
     }
 
     @Override
     public R<List<Resource>> visible(ResourceQueryDTO resource) {
-        return null;
+        // 同上，错误态交由 AccessFilter fail-closed 处理，不返回 null
+        return R.timeout();
     }
 }

@@ -1,4 +1,4 @@
-# 支撑域体检报告：认证授权 / 主数据 / 计费支付 / 前端契约与公共层
+﻿# 支撑域体检报告：认证授权 / 主数据 / 计费支付 / 前端契约与公共层
 
 配套《business-flow-understanding.md》（那份管主干业务流，这份管主干底下的四块地基）。
 
@@ -20,7 +20,7 @@
 **四类身份其实只有一套。** 全仓唯一签发点是 `AuthManager.login` → RS256（`JwtHelper.java:119`），
 claims 只有 `userId/account/name/orgId/stationId`（`AuthManager.java:92`）。司机、快递员、客户复用
 `pd_auth_user` 与同一个 JWT，**没有身份类型字段**；`/anno/loginMobile` 在需求文档里仍标"待新增"
-（`docs/需求文档/全局定案与待确认项清单.md:48`）。
+（`docs/需求文档/03-全局定案与待确认项清单.md:48`）。
 
 | # | 结论 | 证据 | 等级 |
 | --- | --- | --- | --- |
@@ -161,3 +161,4 @@ WebManagerFeign），**路径与参数逐一对齐，契约层没有缺口**—�
 | A-1 私钥出仓（机制） | compose 注入 `PINDA_JWT_*_PATH`、CI 入库守卫、deploy-check 第 8 节、§2.11 手册 | `docker compose config` 校验通过；守卫在本地正反两次试跑（当前状态通过并提示 2 把历史私钥；临时塞入假私钥被正确拦下）。**首次推送我把公钥也误判成违规，流水线停在第 3 步，已修** |
 | B-9 百度 AK 缺失 | `x-baidu-env` 锚点接 6 个服务的 `JAVA_TOOL_OPTIONS` | compose 渲染实测 `-Dbaidu.map.ak=`（与今天等价，不改行为）；实际启用需要你填 AK |
 | 新增：审计历史表 | `docs/sql/状态流转历史_建表.sql` 并应用到 pd_work | 自检 `information_schema` 返回 13 列 |
+

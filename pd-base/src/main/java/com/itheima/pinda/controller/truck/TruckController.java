@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -163,5 +164,45 @@ public class TruckController {
         // 此处完成基础状态(存在性/重复禁用)校验
         truckService.disableById(id);
         return Result.ok();
+    }
+
+    /**
+     * 更新车辆在线状态与心跳时间（P0-4 心跳键错配修复）
+     *
+     * <p>由 pd-netty GpsTraceConsumer 收到 GPS 上报后调用：
+     * ① 收到 type=truck 的 GPS 上报 → online_status=1 + last_heartbeat_time=服务端now()
+     * ② pd-netty 每 60s 扫描心跳超时（>5min 无上报）的车辆置 online_status=0</p>
+     *
+     * <p>注意：HTTP 查询参数名保留为 {@code deviceGpsId} 以兼容 pd-service-base-api 中
+     * 既有的 TruckFeign 接口（本次不允许修改 pd-service-api），但其值的语义是
+     * <b>车辆主键 id</b>，不是 GPS 设备号。</p>
+     *
+     * @param deviceGpsId 车辆主键 id（参数名仅为兼容保留）
+     * @param heartbeatTime 心跳时间（ISO 格式，由 pd-netty 服务端生成）
+     * @return 更新结果
+     */
+    @PutMapping("/heartbeat")
+    public Result updateHeartbeat(@RequestParam(name = "deviceGpsId") String deviceGpsId,
+                                  @RequestParam(name = "heartbeatTime")
+                                  @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME)
+                                  LocalDateTime heartbeatTime) {
+        boolean ok = truckService.updateHeartbeat(deviceGpsId, heartbeatTime);
+        return ok ? Result.ok() : Result.error(400, "车辆不存在或已禁用");
+    }
+
+    /**
+     * 批量将心跳超时车辆置为离线
+     *
+     * <p>由 pd-netty @Scheduled 定时任务调用。</p>
+     *
+     * @param threshold 心跳超时阈值（ISO 格式）
+     * @return 受影响行数
+     */
+    @PutMapping("/heartbeat/mark-offline")
+    public Result markOffline(@RequestParam(name = "threshold")
+                              @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME)
+                              LocalDateTime threshold) {
+        int affected = truckService.markOfflineByHeartbeat(threshold);
+        return Result.ok().put("data", affected);
     }
 }

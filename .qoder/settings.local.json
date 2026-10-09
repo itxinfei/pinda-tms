@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd \"D:/MyCode/pinda-tms\" && find . -maxdepth 3 -type d \\\\\\( -name node_modules -o -name .git -o -name target -o -name dist \\\\\\) -prune -o -type f \\\\\\( -iname \"*.md\" -o -iname \"*.markdown\" -o -iname \"*.docx\" -o -iname \"*.xlsx\" \\\\\\) -print | head -100)"
+    ]
+  }
+}

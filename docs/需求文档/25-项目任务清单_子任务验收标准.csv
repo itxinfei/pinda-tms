@@ -38,7 +38,7 @@ T-013,T-013-2,闭环看板前端展示(途经点+司机作业),看板数据正�
 T-014,T-014-1,Quartz调度任务联调(5阶段按序触发),调度按配置触发，阶段顺序正确无漏触发,后端组,S2,P1
 T-014,T-014-2,调度结果写入运输任务,调度产出正确关联运输任务状态,后端组,S2,P1
 T-015,T-015-1,uni.request拦截器+JWT注入+401清空重登,请求自动带token；401自动清token跳登录,前端组(uni-app),S2,P1
-T-015,T-015-2,Pinia状态+地图适配(BD-09→GCJ-02),跨页状态共享；坐标转换正确无偏移,前端组(uni-app),S2,P1
+T-015,T-015-2,Pinia状态+地图适配(WGS84→GCJ-02),跨页状态共享；坐标转换正确无偏移,前端组(uni-app),S2,P1
 T-016,T-016-1,后端 POST /member/wxlogin 端点实现,返回token+userId；与鉴权服务打通,前端组+后端组,S2,P1
 T-016,T-016-2,前端微信登录页联调(R6-2显式授权),授权后可登录；未授权不静默采集,前端组+后端组,S2,P1
 T-017,T-017-1,MailingSaveDTO 下单接口联调,下单成功且校验通过；Drools运费试算一致,前端组,S2-S3,P1
@@ -81,11 +81,11 @@ T-047,T-047-1,在途监控+调度一张图(真实地图引入),地图组件引�
 T-048,T-048-1,"车辆/司机档案CRUD(41接口, R3-1新能源字段)",档案完整；新能源字段可维护,前端组(管理端)+后端组,S3-S4,P1
 T-049,T-049-1,统一告警中心 OPS-0(前端先行mock),告警列表/分级展示；后端就绪可切换,前端组(管理端),S3-S4,P2
 T-050,T-050-1,"支付闭环(去mock/禁裸fetch, 网关暴露pd-oms/pay)",真实支付链路打通；统一拦截器请求,前端组(管理端)+后端组,S3-S4,P2
-T-051,T-051-1,建 pd_transport_alert 表 + 告警写入服务,3 张新表(pd_transport_alert 等)建好；状态机/时效事件可触发告警写入,后端组,S3-S4,P1
-T-051,T-051-2,管理端告警中心页(列表/筛选/处理回写),管理端可查未处理告警；处理状态回写并留痕,后端组,S3-S4,P1
-T-051,T-051-3,告警分级 + 通知(短信/站内),按等级路由通知；通知记录可查,后端组,S3-S4,P1
-T-051,T-051-4,pd-web-manager 新建 AlarmController 暴露 /alarm/* (已定案落点),管理端经网关 /api/web-manager/alarm/page|{id}|handle|count 可正常调用(非404/非500)；聚合层仅参数透传+Result封装，业务逻辑留 pd-work,后端组,S3-S4,P1
-T-051,T-051-5,告警接口注册进 pd_auth_resource 并绑菜单角色,5 个 /api/web-manager/alarm/* 接口注册进资源表并绑定角色；未注册时网关判未知请求拒绝(阻断C)，注册后放行,后端组,S3-S4,P1
+T-051,T-051-1,告警落库表与写入服务（⚠️2026-10-09按代码事实订正：拟建的 pd_transport_alert 已作废、从未创建；现存 pd_oms.pd_alarm_record 11字段已建、GpsAlertService 同进程写入已实现）,存量核验：表存在且 status 仅 0/1 两态、GpsTraceConsumer 三类告警能落库。剩余开发仅补齐《20》§2.2 其余 7 类告警写入；同一 transportTaskId+alarmType 未处理态不得重复插入,后端组,S3-S4,P1
+T-051,T-051-2,管理端告警中心页（列表现状：pd-admin-ui 无任何 alarm 页面或 API 封装；后端仅 pd-netty 三接口）,页面走网关 GET /api/netty-service/alarm 读 items/total；处理按钮调 PUT /api/netty-service/alarm/{id}/handle（无 body、幂等 0→1）；禁止写 /api/web-manager/alarm 前缀,前端组,S3-S4,P1
+T-051,T-051-3,告警分级 + 通知(短信/站内),⚠️pd_alarm_record 无 level 字段、分派/认领字段亦不存在；本项须先走变更评审定字段再开工。通知链路走 RabbitMQ,后端组,S3-S4,P1
+T-051,T-051-4,（作废）pd-web-manager 新建 AlarmController 暴露 /alarm/* —— 原"已定案落点"与代码事实相反,⛔本任务随《20》§2.3 落点决策一并作废：pd-web-manager 与 pd-work 均无 alarm/alert 代码（grep -ri alert pd-work/src 零命中）。现存实现已在 pd-netty；若仍要建聚合层须按 D-05 走变更评审、不得默认开工,后端组,—,已作废
+T-051,T-051-5,告警接口注册进 pd_auth_resource 并绑菜单角色（数量口径归一）,待注册的真实端点为 3 条（GET /api/netty-service/alarm、PUT /api/netty-service/alarm/{id}/handle、POST /api/netty-service/alarm/report）而非旧文的 4/5/7 条。验收：未注册时网关 AccessFilter 判未知请求拒绝（阻断C）、注册并绑角色后放行、资源改动后重启网关（j2cache L1 缓存）,后端组,S3-S4,P1
 T-052,T-052-1,时效规则配置(各节点时限),节点时限可配置；默认规则入库,后端组,S3-S4,P2
 T-052,T-052-2,超时检测任务 + 预警生成,定时扫描；超时自动生成预警/告警,后端组,S3-S4,P2
 T-053,T-053-1,ETA 计算服务(里程/路况/历史),给定运输任务返回预计到达时间,后端组,S4,P2

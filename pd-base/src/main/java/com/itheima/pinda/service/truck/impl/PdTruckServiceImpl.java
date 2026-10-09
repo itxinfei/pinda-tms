@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.apache.commons.lang.StringUtils;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -106,6 +107,29 @@ public class PdTruckServiceImpl extends ServiceImpl<PdTruckMapper, PdTruck> impl
         pdTruck.setId(id);
         pdTruck.setStatus(Constant.DATA_DISABLE_STATUS);
         baseMapper.updateById(pdTruck);
+    }
+
+    /**
+     * 更新车辆在线状态与心跳时间（参数为车辆主键 id）
+     */
+    @Override
+    public boolean updateHeartbeat(String truckId, LocalDateTime heartbeatTime) {
+        if (StringUtils.isEmpty(truckId) || heartbeatTime == null) {
+            return false;
+        }
+        int affected = baseMapper.updateHeartbeat(truckId, heartbeatTime);
+        return affected > 0;
+    }
+
+    /**
+     * 批量将心跳超时车辆置为离线（P0-4 北斗字段最小改造 · D-13）
+     */
+    @Override
+    public int markOfflineByHeartbeat(LocalDateTime threshold) {
+        if (threshold == null) {
+            return 0;
+        }
+        return baseMapper.markOfflineByHeartbeat(threshold);
     }
 
 }

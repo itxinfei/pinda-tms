@@ -5,12 +5,16 @@ import com.itheima.pinda.auth.client.properties.AuthClientProperties;
 import com.itheima.pinda.auth.client.utils.JwtTokenClientUtils;
 import com.itheima.pinda.auth.utils.JwtUserInfo;
 import com.itheima.pinda.base.R;
+import com.itheima.pinda.common.constant.CacheKey;
 import com.itheima.pinda.context.BaseContextConstants;
 import com.itheima.pinda.exception.BizException;
+import com.itheima.pinda.exception.code.ExceptionCode;
 import com.itheima.pinda.utils.StrHelper;
 import com.itheima.pinda.utils.StrPool;
 import com.netflix.zuul.context.RequestContext;
 import lombok.extern.slf4j.Slf4j;
+import net.oschina.j2cache.CacheChannel;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.netflix.zuul.filters.Route;
 import org.springframework.cloud.netflix.zuul.filters.support.FilterConstants;
@@ -32,6 +36,8 @@ public class TokenContextFilter extends BaseFilter {
     private AuthClientProperties authClientProperties;
     @Autowired
     private JwtTokenClientUtils jwtTokenClientUtils;
+    @Autowired
+    private CacheChannel cacheChannel;
 
     @Override
     public String filterType() {
@@ -90,6 +96,17 @@ public class TokenContextFilter extends BaseFilter {
 
         //3, 将信息放入header
         if (userInfo != null) {
+            // 吊销校验（在转发前拦截）：
+            //  a. token 级黑名单：用户登出时登记（key=token的SHA-256）
+            //  b. 用户级黑名单：用户被禁用时登记（key=userId），命中则其存量 token 立即失效
+            String tokenDigest = DigestUtils.sha256Hex(userToken);
+            if (cacheChannel.exists(CacheKey.TOKEN_BLACKLIST, tokenDigest)
+                    || cacheChannel.exists(CacheKey.TOKEN_BLACKLIST_USER, String.valueOf(userInfo.getUserId()))) {
+                log.warn("token 已被吊销，按未登录处理: userId={}", userInfo.getUserId());
+                errorResponse(ExceptionCode.JWT_TOKEN_EXPIRED.getMsg(), ExceptionCode.JWT_TOKEN_EXPIRED.getCode(), 200);
+                return null;
+            }
+
             addHeader(ctx, BaseContextConstants.JWT_KEY_ACCOUNT, userInfo.getAccount());
             addHeader(ctx, BaseContextConstants.JWT_KEY_USER_ID, userInfo.getUserId());
             addHeader(ctx, BaseContextConstants.JWT_KEY_NAME, userInfo.getName());

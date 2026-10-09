@@ -32,6 +32,11 @@ services:
       - GITEA__server__SSH_PORT=2222
       # 关闭自助注册，避免未经授权的账号
       - GITEA__service__DISABLE_REGISTRATION=true
+    # 显式接入健康的自定义网络 pd-net，不再依赖默认 bridge(docker0)。
+    # 背景：docker0 曾丢失 172.17.0.1/16，宿主到 172.17.0.2 被误路由到物理网关，
+    # 而发布端口 DNAT 又指向该不可达地址，导致 Gitea Web/git http 整体断链。
+    networks:
+      - pd-net
 
   act_runner:
     image: gitea/act_runner:latest
@@ -61,3 +66,9 @@ services:
       fi;
       act_runner daemon --config /config.yaml
       "
+
+# gitea 固定接入 pd-net（宿主机已存在：docker network create pd-net，网段 172.19.0.0/16）。
+# act_runner 实际以宿主机原生进程运行（非本 compose 启动），故不在此声明网络。
+networks:
+  pd-net:
+    external: true

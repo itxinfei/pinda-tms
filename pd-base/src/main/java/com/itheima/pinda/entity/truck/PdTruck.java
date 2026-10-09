@@ -2,6 +2,7 @@ package com.itheima.pinda.entity.truck;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -70,4 +71,17 @@ public class PdTruck implements Serializable {
      * 状态 0：禁用 1：正常
      */
     private Integer status;
+
+    /**
+     * 在线状态（P0-4 北斗字段最小改造 · D-13）
+     * <p>0-离线 1-在线。由 pd-netty GpsTraceConsumer 收到 GPS 上报时置 1，
+     * 由 @Scheduled 定时任务（每 60s 扫描）将心跳超时（>5min 无上报）的车辆置 0。</p>
+     */
+    private Integer onlineStatus;
+
+    /**
+     * 最后心跳时间（P0-4 北斗字段最小改造 · D-13）
+     * <p>最近一次 GPS 上报时间，用于在线状态判定与设备故障排查。</p>
+     */
+    private LocalDateTime lastHeartbeatTime;
 }

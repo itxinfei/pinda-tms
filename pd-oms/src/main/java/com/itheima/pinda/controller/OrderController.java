@@ -148,10 +148,10 @@ public class OrderController {
         orderDTO.setCreateTime(null);
         Order order = new Order();
         BeanUtils.copyProperties(orderDTO, order);
-        // 状态流转校验失败时返回 null，由 Feign 调用方感知（与 TransportOrder 行为一致）
+        // 状态流转校验失败时显式抛错（不再返回 null 让调用方误判成功）
         if (!orderService.updateById(order)) {
             log.warn("[订单] 更新失败（可能状态流转不合法或订单不存在）: id={}, status={}", id, orderDTO.getStatus());
-            return null;
+            throw new PdException("订单更新失败：状态流转不合法或订单不存在");
         }
         return orderDTO;
     }

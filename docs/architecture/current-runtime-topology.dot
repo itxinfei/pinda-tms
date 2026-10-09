@@ -1,0 +1,116 @@
+// 品达TMS 当前运行时拓扑 + 信任边界（技术栈与系统架构体检配图）
+// 维护：本图与 tech-stack-and-system-architecture-review.md 的编号（T-x/S-x）一一对应，改文必改图。
+// 读法：实线=代码/配置双证；虚线=推断或本次未取证；红=边界违规；黄=归属漂移；灰=未开工。
+// 取证：HEAD 代码 + deploy/*.yml；未连服务器，故中间件运行时版本画为 unknown。
+digraph current_runtime_topology {
+  rankdir=TB;
+  nodesep=0.30;
+  ranksep=0.60;
+  fontname="Microsoft YaHei";
+  labelloc=t;
+  label="品达TMS 当前运行时拓扑（2026-10-09 HEAD 实测）\n14个JVM + 7库同1个MySQL实例 + 2前端容器 @ 单机15G\n实线=双证  虚线=推断/未取证  红=边界违规  黄=归属漂移  灰=未开工";
+  compound=true;
+
+  node [fontname="Microsoft YaHei", fontsize=10];
+  edge [fontname="Microsoft YaHei", fontsize=9];
+
+  // ---------- 外部访问者 ----------
+  user [label="内网用户 / 任意能连 192.168.20.130 的人", shape=egg, style=filled, fillcolor="#eeeeee"];
+
+  // ---------- 宿主机边界 ----------
+  subgraph cluster_host {
+    label="宿主 192.168.20.130（Docker Compose，非K8s；15G RAM，load≈15属CI构建期）\nrestart=unless-stopped，数据卷全 bind（重启不丢）";
+    style=rounded; color="#666666"; fontsize=11;
+
+    // ----- 前端 -----
+    subgraph cluster_fe {
+      label="前端容器"; style=rounded; color="#999999";
+      fe_old  [label="pd-admin-ui :8080\nVue2.6 运行中（120 .vue）", shape=box, style=filled, fillcolor="#fff2cc"];
+      fe_new  [label="pd-admin-ui-vue3\nVue3.5 基座就位（144 .vue）\n未部署", shape=box, style="filled,dashed", fillcolor="#dff0d8"];
+      mobile  [label="pd-mobile 三端\nuni-app 仅2个.vue ≈未开工", shape=box, style="filled,dashed", fillcolor="#eeeeee"];
+    }
+
+    // ----- 接入层 -----
+    subgraph cluster_access {
+      label="接入层（同一 Maven 链的两条 parent 之外：gateway 属 pd-authority 链）"; style=rounded; color="#b00000";
+      gw [label="pd-gateway :8760/api\n🔴 现状 Zuul 1.x（非Gateway）\n5个自写Filter", shape=box, style=filled, fillcolor="#ffd9d9"];
+      auth [label="pd-auth-server :9000\nShiro1.4+JWT\n⚠️ 唯一依赖 Hystrix 的模块", shape=box, style=filled, fillcolor="#fff2cc"];
+      webm [label="pd-web-manager :8161", shape=box];
+      webd [label="pd-web-driver :8162", shape=box];
+      webc [label="pd-web-courier :8163\n⚠️ 缺 AttachmentClient(S-1)→B-21", shape=box, style=filled, fillcolor="#ffe3e3"];
+      webu [label="pd-web-customer :8164", shape=box];
+    }
+
+    // ----- 业务服务层 -----
+    subgraph cluster_biz {
+      label="业务服务层（Nacos 注册，group=pinda-tms，实测14个）"; style=rounded; color="#336699";
+      oms  [label="pd-oms :8186\n订单/状态机/Drools计价", shape=box];
+      work [label="pd-work :8187\n运单/作业", shape=box];
+      base [label="pd-base :8185\n主数据", shape=box];
+      disp [label="pd-dispatch :8190\nQuartz5阶段+DFS\nisClustered=true ✓", shape=box];
+      usr  [label="pd-user :8189", shape=box];
+      net  [label="pd-netty :8192(+8194 TCP)\nNetty+RabbitMQ轨迹", shape=box, style=filled, fillcolor="#fff2cc"];
+      agg  [label="pd-aggregation :8191\n15个文件/独立服务\n只读12张副本表(S-2)", shape=box, style=filled, fillcolor="#ffe3e3"];
+      drd  [label="pd-druid :8193\n9个文件/独立服务\n查不存在的表→B-05(S-1)", shape=box, style=filled, fillcolor="#ffe3e3"];
+    }
+
+    // ----- 数据层 -----
+    subgraph cluster_data {
+      label="数据层（⚠️ 7库全在同一个 MySQL 实例：分库=命名隔离，不是数据隔离）"; style=rounded; color="#b00000";
+      mysql [label="MySQL（版本 unknown：compose写8.0 / 07实测记5.7.44）\n6+1 逻辑库 pd_oms|pd_work|pd_base|pd_dispatch|pd_users|pd_aggregation + pd_auth", shape=cylinder, style="filled,dashed", fillcolor="#e8e8ff"];
+      redis  [label="Redis（unknown 5 或 7）\n验证码 + J2Cache L2", shape=cylinder, style="filled,dashed", fillcolor="#e8e8ff"];
+      rmq    [label="RabbitMQ 消息总线（轨迹+调度事件）", shape=cylinder, style=filled, fillcolor="#e8e8ff"];
+      nacos  [label="Nacos（unknown 1.4.1/2.3.2）\n注册+配置：路由/数据源/hystrix开关都在这里面，仓内无", shape=cylinder, style="filled,dashed", fillcolor="#fff2cc"];
+      legacy [label="pinda_tms 遗留65表\n无服务连接，同名对象易误查→B-16", shape=cylinder, style=filled, fillcolor="#eeeeee"];
+      seata  [label="Seata TC\n🔴 仅依赖未启用（0 配置）\nundo_log 8库齐、@GlobalTransactional 仅5处(S-5)", shape=box, style="filled,dashed", fillcolor="#eeeeee"];
+    }
+  }
+
+  // ---------- 调用与归属 ----------
+  user -> fe_old [label="HTTP :8080"];
+  user -> gw     [label="HTTP :8760/api 设计路径"];
+  user -> webd   [style=dashed, penwidth=2.0, color="#b00000", label="🔴 S-4 端口已发布(-p)\n伪造 userid:1 即绕过鉴权→B-19"];
+  user -> agg    [style=dashed, color="#b00000", label="同 :8191"];
+  user -> drd    [style=dashed, color="#b00000", label="同 :8193"];
+
+  fe_old -> gw [label="nginx 反代 /api"];
+  gw -> auth [label="鉴权 /anno/**放行"];
+  gw -> webm [label="路由"];
+  gw -> webd [label="路由"];
+  gw -> webc [label="路由"];
+  gw -> webu [label="路由"];
+  gw -> agg  [label="路由"];
+  gw -> drd  [label="路由"];
+
+  webm -> oms  [label="Feign"];
+  webm -> work [label="Feign"];
+  webm -> disp [label="Feign"];
+  webd -> work [label="Feign"];
+  webc -> work [label="Feign"];
+  webc -> auth [style=dashed, color="#b00000", label="🔴 AttachmentClient→pd-file-server 未部署(B-21)"];
+  webu -> oms  [label="Feign"];
+  oms -> work [label="Feign"];
+  disp -> oms [label="Feign"];
+  disp -> base [label="Feign"];
+  auth -> gw  [style=dashed, color="#b00000", label="🔴 fail-open 修复仅在工作区，HEAD 仍跳过鉴权(G-7/B-18)"];
+
+  agg  -> mysql [color="#b00000", label="🔴 S-2 读本库12张影子副本，无写入方→B-04 counts=0"];
+  oms  -> mysql [label="pd_oms"];
+  work -> mysql [label="pd_work"];
+  base -> mysql [label="pd_base"];
+  disp -> mysql [label="pd_dispatch"];
+  usr  -> mysql [label="pd_users"];
+  auth -> mysql [label="pd_auth"];
+  net  -> mysql [color="#cc9900", label="🟡 S-2 轨迹写进 pd_oms（订单库承载3域）"];
+  drd  -> mysql [color="#cc9900", label="🟡 也连 pd_oms"];
+  net  -> rmq   [label="发送轨迹"];
+  net  -> base  [style=dashed, label="HTTP 回写心跳"];
+  work -> rmq   [style=dashed, label="调度事件（消费端入口已注释→B-08）"];
+  auth -> redis [label="J2Cache L1/L2"];
+  gw   -> redis [label="鉴权资源缓存"];
+  oms  -> seata [style=dashed, label="未生效"];
+
+  mysql -> legacy [style=dashed, color="#999999", label="同名对象并存（风险，非数据流）"];
+  nacos -> gw  [style=dashed, label="路由/开关（本次未取证）"];
+  nacos -> oms [style=dashed, label="数据源等配置"];
+}

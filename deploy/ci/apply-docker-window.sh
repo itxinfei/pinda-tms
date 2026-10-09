@@ -86,8 +86,8 @@ bash /usr/local/bin/pinda-bridge-fix.sh
 echo "=== 4) 核对 ==="
 docker info 2>/dev/null | grep -A3 -i "default ulimits" | head -4
 echo "  运行容器数: $(docker ps -q | wc -l) / 期望 22"
-echo "  前端 8080: $(timeout 8 curl -s -o /dev/null -w '%{http_code}' -m 7 http://127.0.0.1:8080/)"
+echo "  前端 8081: $(timeout 8 curl -s -o /dev/null -w '%{http_code}' -m 7 http://127.0.0.1:8081/)"
 echo "  Gitea 3000: $(timeout 8 curl -s -o /dev/null -w '%{http_code}' -m 7 http://127.0.0.1:3000/api/healthz)"
-echo "  验证码: $(timeout 8 curl -s -o /dev/null -w '%{http_code}' -m 7 http://127.0.0.1:8080/api/authority/anno/captcha)"
+echo "  验证码: $(timeout 8 curl -s -o /dev/null -w '%{http_code}' -m 7 http://127.0.0.1:8081/prod-api/authority/anno/captcha)"
 echo
 echo "回滚: cp -a $TARGET.bak-<时间戳> $TARGET && systemctl restart docker"

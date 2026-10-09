@@ -1,0 +1,16 @@
+{
+	"pages": [
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationBarTitleText": "品达物流"
+			}
+		}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "white",
+		"navigationBarTitleText": "品达物流",
+		"navigationBarBackgroundColor": "#2B6CFF",
+		"backgroundColor": "#F5F7FA"
+	}
+}
