@@ -1,0 +1,96 @@
+# ============================================
+# 品达TMS 后端自动构建与部署（Gitea Actions）
+#
+# 当前迁移阶段（2026-10-09）：只有 pd-auth 迁到 JDK21 + Spring Boot 3.3，
+# 所以本流水线只「打包 pd-auth -> 构建 pd-auth-server 镜像 -> 滚动这一个容器」。
+# ⚠️ 旧模块（pd-oms/pd-base/...）仍是 javax + Spring Boot 2.2，不能进全 reactor 构建；
+#    每迁完一个模块，就在下面 4 处清单中同步追加（MOD / 镜像 / compose / 端口）。
+#
+# 前置条件（服务器侧，2026-10-09 已就绪）：
+#   - ci/pinda-ci:latest     = JDK21 + Maven3.9 + Docker CLI + Compose v2
+#   - /data/ci/maven-settings.xml = RDC 仓库凭据（挂载为 /ci，只读）
+#   - /data/ci/apps.env      = 密钥（NACOS_USERNAME/PASSWORD/REDIS_PASSWORD，0600）
+#   - pinda/jre21-fontconfig:1    = 运行时基础镜像
+# ============================================
+name: deploy-backend
+
+on:
+  push:
+    branches: [master]
+    # 只在「当前已迁移模块」或构建相关路径变化时触发
+    paths:
+      - 'pd-auth/**'
+      - 'pom.xml'
+      - 'deploy/apps/Dockerfile'
+      - '.gitea/workflows/deploy-backend.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        # 不用 actions/checkout（避免从 GitHub 下载），直接 clone 内网 Gitea
+        run: |
+          rm -rf ./* ./.??*
+          git clone --depth 50 -b "${GITHUB_REF_NAME:-master}" \
+            "http://192.168.20.130:3000/pinda/pinda-tms.git" .
+
+      - name: 计算镜像 TAG（git 短提交号）
+        run: |
+          TAG=$(echo "${GITHUB_SHA}" | cut -c1-7)
+          echo "本次构建 TAG=$TAG"
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+
+      - name: Maven 打包 pd-auth（JDK21，跳过测试）
+        # -pl pd-auth：只构建 pd-auth，不碰旧模块；父 pom 由 reactor 自动提供
+        run: |
+          mvn -B -pl pd-auth package -Dmaven.test.skip=true -s /ci/maven-settings.xml
+        timeout-minutes: 20
+
+      - name: 准备镜像构建上下文（只放一个 jar，上下文 ~80MB）
+        run: |
+          set -e
+          JAR=$(find pd-auth/target -maxdepth 1 -type f -name '*.jar' \
+            ! -name '*sources*' ! -name '*javadoc*' ! -name '*.original' | head -1)
+          if [ -z "$JAR" ]; then
+            echo "::error::未找到 pd-auth 的 fat jar"
+            exit 1
+          fi
+          mkdir -p .ctx/pd-auth-server
+          ln -f "$JAR" .ctx/pd-auth-server/app.jar
+          echo ">> pd-auth-server <- $(basename "$JAR") ($(du -h "$JAR" | cut -f1))"
+
+      - name: 构建 pd-auth-server 镜像
+        run: |
+          docker build -f deploy/apps/Dockerfile \
+            -t "pinda/pd-auth-server:${TAG}" .ctx/pd-auth-server
+          docker images "pinda/pd-auth-server:${TAG}"
+
+      - name: 滚动部署 pd-auth-server（不碰其他容器）
+        run: |
+          export TAG
+          # 显式只列这一个服务、不加 --remove-orphans：其他容器原样不动
+          docker compose --env-file /ci/apps.env -f deploy/apps/docker-compose.app.yml up -d pd-auth-server
+          docker compose -f deploy/apps/docker-compose.app.yml ps pd-auth-server
+
+      - name: 部署后健康检查（9000 端口，最长 3 分钟）
+        run: |
+          ok=0
+          for i in $(seq 1 36); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' -m 3 "http://127.0.0.1:9000/")
+            # 服务已起：401（需登录）/404（无根路径处理器）都算端口就绪
+            if [ "$code" = "200" ] || [ "$code" = "401" ] || [ "$code" = "404" ]; then
+              ok=1
+              break
+            fi
+            sleep 5
+          done
+          echo "端口 9000 -> $(curl -s -o /dev/null -w '%{http_code}' -m 3 http://127.0.0.1:9000/)"
+          [ "$ok" = "1" ] || { echo "::error::pd-auth-server 9000 端口未就绪"; exit 1; }
+
+      - name: 清理悬空镜像
+        if: always()
+        run: |
+          # 只删无 tag 的悬空层（不带 -a），不影响在用镜像
+          docker image prune -f
