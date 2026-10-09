@@ -21,7 +21,7 @@ done
 
 echo
 echo "=== 2. 中间件是否健康 ==="
-for c in mysql57 redis nacos zookeeper kafka rabbitmq; do
+for c in mysql57 redis nacos rabbitmq; do
   printf "%-12s %s\n" "$c" "$(docker inspect -f '{{.State.Status}} {{if .State.Health}}{{.State.Health.Status}}{{end}}' "$c" 2>/dev/null || echo 不存在)"
 done
 

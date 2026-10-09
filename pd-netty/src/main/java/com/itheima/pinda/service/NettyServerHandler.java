@@ -25,7 +25,7 @@ import java.util.Objects;
  * <ul>
  *   <li>报文以换行符 {@code \n} 分隔，pipeline 中 LineBasedFrameDecoder 已完成拆包/粘包处理，
  *       StringDecoder 已将整行解码为 String（换行符已被剥除），本类不再处理 ByteBuf 边界；</li>
- *   <li>必填字段与经纬度校验与 HTTP 入口一致，非法报文回复 ERR 行且不进 Kafka；</li>
+ *   <li>必填字段与经纬度校验与 HTTP 入口一致，非法报文回复 ERR 行且不进 RabbitMQ；</li>
  *   <li>通过 {@link ChannelGroup} 统一管理活跃连接，并限制最大连接数；</li>
  *   <li>读空闲超时（120s 无数据）主动关闭僵死连接。</li>
  * </ul>
@@ -107,7 +107,7 @@ public class NettyServerHandler extends ChannelInboundHandlerAdapter {
      * 后续接 JT/T 808 北斗终端时，按协议解析后改为 source=JT808 + coordSystem=CGCS2000。</p>
      *
      * @param body 已按行切分的报文原文
-     * @return 校验通过后可直接发 Kafka 的 JSON 字符串；非法返回 null
+     * @return 校验通过后可直接发 RabbitMQ 的 JSON 字符串；非法返回 null
      */
     private String parseMessage(String body) {
         if (body == null || body.trim().isEmpty()) {

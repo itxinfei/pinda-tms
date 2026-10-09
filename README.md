@@ -22,7 +22,6 @@
   <img src="docs/badges/druid.svg" alt="Apache Druid"/>
   <img src="docs/badges/baidu-map.svg" alt="百度地图"/>
   <img src="docs/badges/netty.svg" alt="Netty"/>
-  <img src="docs/badges/kafka.svg" alt="Kafka"/>
   <img src="docs/badges/vue.svg" alt="Vue"/>
   <img src="docs/badges/uniapp.svg" alt="uni-app"/>
   <img src="docs/badges/shiro-jwt.svg" alt="Shiro/JWT"/>

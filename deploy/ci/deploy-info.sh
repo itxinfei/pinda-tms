@@ -49,7 +49,7 @@ svc_json="[${svc_json%,}]"
 
 # ---------- 中间件 ----------
 mid_rows=""; mid_ok=0; mid_all=0
-for c in mysql57 redis nacos zookeeper kafka rabbitmq; do
+for c in mysql57 redis nacos rabbitmq; do
   st=$(docker inspect -f '{{.State.Status}} {{if .State.Health}}{{.State.Health.Status}}{{end}}' "$c" 2>/dev/null || echo 缺失)
   mid_all=$((mid_all+1)); case "$st" in *healthy*) mid_ok=$((mid_ok+1));; esac
   mid_rows+="<tr><td>$c</td><td>$st</td></tr>"

@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * 用于操作RabbitMQ（替代原KafkaSender）
+ * 用于操作 RabbitMQ
  * 所有业务事件 + 轨迹数据都走RabbitMQ
  */
 @Slf4j

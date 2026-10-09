@@ -35,7 +35,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * GPS轨迹数据RabbitMQ消费端（替代原Kafka版本）
+ * GPS轨迹数据 RabbitMQ 消费端
  *
  * 处理逻辑:
  * 1. 接收GPS位置数据

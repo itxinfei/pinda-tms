@@ -5,7 +5,7 @@
 #   TAG=1a2b3c4 docker compose -f deploy/apps/docker-compose.app.yml up -d --remove-orphans
 #
 # 说明：
-#   - 微服务通过宿主机 IP 192.168.20.130 访问 MySQL/Redis/Nacos/Kafka/RabbitMQ；
+#   - 微服务通过宿主机 IP 192.168.20.130 访问 MySQL/Redis/Nacos/RabbitMQ；
 #   - 各服务沿用自身 bootstrap 中写定的 active profile，Nacos dataId 与之对应；
 #   - gateway / auth-server 的 Nacos 地址与命名空间由 NACOS_* 环境变量注入。
 #
