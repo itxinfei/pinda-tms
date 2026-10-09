@@ -35,7 +35,7 @@
 
 | 域 | 现状 | 结论 |
 |---|---|---|
-| 运费计算 | ✅ **Drools 运费规则已有**（`orderAmountCalc.drl` + `OrderServiceImpl#calculateOrderAmount` 内联 KieSession，支持热加载 `ReloadDroolsRulesService` / `RulesReloadController`）。⚠️ `DroolsRulesServiceImpl#calcFee` 为**死代码**（硬编码算式+main、无调用方），勿调用 | 复用，但**计费明细未落库**；附加费按 SRS §6.5 POD-03 扩展现有规则（**不升级 Drools**） |
+| 运费计算 | ✅ **Drools 运费规则已有**（`orderAmountCalc.drl` + `OrderServiceImpl#calculateAmount`（`:239`，注意方法名不是 `calculateOrderAmount`）内联 KieSession，支持热加载 `ReloadDroolsRulesService` / `RulesReloadController`）。🔴 **订正 2026-10-09**：原判"`DroolsRulesServiceImpl#calcFee` 是死代码（无调用方）"**有误**——它被 `.drl` 的 `then` 块调用（`orderAmountCalc.drl:33/50/67`），Java 侧 grep 看不到该引用；**禁止清理**。唯一死代码是其 `main`（`DroolsRulesServiceImpl.java:34-42`）。算价口径逐条见《52》§1 | 复用，但**计费明细未落库**；附加费按 SRS §6.5 POD-03 扩展现有规则（**不升级 Drools**） |
 | 订单金额 | ✅ `Order.amount`、`paymentMethod`(1预结/2到付)、`paymentStatus`(1未付/2已付) | 有字段，无结算流程 |
 | 结算/对账/账单 | 🟡 **应收结算单服务层已有**（`SettlementServiceImpl#settle/doSettle` 含幂等 + `SettlementOrder` 实体 + 事件入口 `SettlementDeliveredListener`，**但无对外 Controller、对账逻辑未实现**）；司机工资/账单/坏账**零实现** | 应收侧已通，须补对外接口 + 对账(POD-04)/司机结算(POD-05) |
 | 趟次成本 | ⚠️ OPS-4 已**定义** `pd_task_cost`，全仓无 DDL、无实体 → 需先建表 | 利润 = 收入 − 成本 |
@@ -274,7 +274,7 @@ CREATE TABLE pd_payment_record (
 | GET | `/payment/overdue` | 逾期账单列表（触发预警） |
 
 ### 要点
-- 逾期预警：每天 `@Scheduled` 扫 `due_date < now 且 status != 2` 的账单 → 写告警（`pd_transport_alert` 扩 `bizType=BILL`）或站内通知。
+- 逾期预警：每天 `@Scheduled` 扫 `due_date < now 且 status != 2` 的账单 → 写告警（`pd_alarm_record` 扩 `bizType=BILL`）或站内通知。
 - **超信用额度时拦截下单**（可选，配置开关）。
 
 ## FIN-4 每趟 / 每单利润（"老板看数"）
@@ -419,7 +419,7 @@ CREATE TABLE pd_carrier_driver (
 
 > **解决**：外协车"谁准时率高、谁货损多、谁异常多"无量化，靠感觉；KPI 考核给派单决策与结算（续约/淘汰）数据支撑。
 
-- **指标**（纯统计查询，零表改动）：准时率（任务实际到达 vs 计划到达）、货损率（异常货损件数/总件数）、异常率（`pd_transport_alert` 按承运商聚合）、月完成趟次。
+- **指标**（纯统计查询，零表改动）：准时率（任务实际到达 vs 计划到达）、货损率（异常货损件数/总件数）、异常率（`pd_alarm_record` 按承运商聚合）、月完成趟次。
 - **接口**（归 DSP-2 `@RequestMapping("carrier")` 扩展，P1）：`GET /carrier/{id}/kpi`（单承运商考核卡）、`GET /carrier/kpi/list`（承运商考核对比表，支持按月筛选）。
 - **落点**：管理端承运商管理页加"考核"入口；考核结果仅展示，不做自动封禁（避免误伤，红线保留人工判定）。
 - **DoD**：指标口径可解释（在接口文档注明计算公式）；可按月/承运商筛选；不建新表。
@@ -489,7 +489,7 @@ CREATE TABLE pd_iot_temperature (
   KEY idx_truck_time (truck_id, device_time)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='冷链温控记录';
 ```
-- 阈值配置进 yml（如 2~6℃），超阈值 → 告警类型 `TEMP_ABNORMAL`（写入 `pd_transport_alert`，复用 OPS-0 告警中心）。
+- 阈值配置进 yml（如 2~6℃），超阈值 → 告警类型 `TEMP_ABNORMAL`（写入 `pd_alarm_record`，复用 OPS-0 告警中心）。
 - 接口：`POST /iot/temperature/report`（上报）、`GET /iot/temperature/task/{taskId}`（曲线 + 超标点）。
 - 前端：温度曲线图（管理端 ECharts）+ 司机端超标提醒。
 
@@ -657,7 +657,7 @@ CREATE TABLE pd_fuel_card (
 | 2 | 客户对账争议 | 财务主管 | 客户申诉某笔运费 | `/freight-bill/{id}/adjust` 写 `adjust_amount` 留痕 → 重新出对账视图 |
 | 3 | 司机月度结算 | 财务主管 | 月末 | `/driver-settlement/generate` 归集 `DriverJob.status=4` 趟次 → 审核 → 发放 |
 | 4 | 客户申请发票 | 客户 | 账单已确认 | `/invoice/apply` 创建 `pd_invoice`（status=1 待申请）→ 财务主管开具 → 邮寄 |
-| 5 | 应收账龄预警 | 财务专员 | 每日 `@Scheduled` 扫 `due_date < now AND status != 2` | `/payment/overdue` 列表 + 写 `pd_transport_alert`（bizType=BILL） |
+| 5 | 应收账龄预警 | 财务专员 | 每日 `@Scheduled` 扫 `due_date < now AND status != 2` | `/payment/overdue` 列表 + 写 `pd_alarm_record`（bizType=BILL） |
 | 6 | 老板看利润 | 管理层 | 实时 | `/profit/summary` + `/profit/ranking` 出利润驾驶舱 |
 
 ## §PRD-3 功能需求与状态机（Module 2）
@@ -697,7 +697,7 @@ stateDiagram-v2
 
 调账规则：`adjust_amount` 必须填 `handle_remark`（原因 ≥10 字符）；同一账单可多次调账，每次新增明细行不覆盖原值；调账后 `total_amount` = 原 `amount + Σ adjust_amount`。
 
-司机结算单规则：`trip_count` 由 `/generate` 归集 `DriverJob.status=4` 计数，不允许手填；`deduction` 必须关联告警 id 或货损记录（来源 `pd_transport_alert.bizType=DRIVER`）；`status` 从 1 已审 → 2 已发放 需 `optLog` 留痕。
+司机结算单规则：`trip_count` 由 `/generate` 归集 `DriverJob.status=4` 计数，不允许手填；`deduction` 必须关联告警 id 或货损记录（来源 `pd_alarm_record.bizType=DRIVER`）；`status` 从 1 已审 → 2 已发放 需 `optLog` 留痕。
 
 发票规则：测试环境 `invoice_no` 自编（前缀 `TEST-` + 时间戳），生产环境待 P0-7c 数电票对接后回填真实发票号；`status=5 已作废` 必须填作废原因并关联红冲单（P0-7c 落地后）。
 
@@ -758,7 +758,7 @@ stateDiagram-v2
 | 依赖项 | 定案编号 | 落地要点 | 影响 |
 |---|---|---|---|
 | Drools 6.5.0 复用 | D-20 | 运费计算复用既有 `RulesReloadController` + 热加载；新规则按 6.5.0 语法写，禁止引入新规则引擎 | P0-6a 计费衔接 |
-| MySQL 5.7.44 锁定 | D-19 | 不支持 `ROW_NUMBER()` / `RANK()` 等窗口函数；账龄报表用 `SUM(CASE WHEN ...)` + 子查询实现 | P0-6b 账龄 SQL |
+| MySQL 目标 8.0（现网过渡为 5.7.44） | D-19（2026-10-09 修订） | 阶段 1 W2 升级 8.0 后账龄可用 `ROW_NUMBER()`/`RANK()` 窗口函数；升级未完成前在 5.7.44 上以 `SUM(CASE WHEN ...)` + 子查询兜底，两版本均须能跑 | P0-6b 账龄 SQL |
 | Quartz 已建 11 表 | D-21 | 周期任务用 Spring `@Scheduled` 或既有 Quartz，禁止引 XXL-JOB；不为账龄扫描新建 Quartz 表 | P0-6b 逾期扫描 |
 | optLog 复用审计 | D-08 | 调账 / 坏账 / 发放 / 发票开具等关键操作经 `optLog` 拦截器自动留痕 ≥6 月 | 全子项审计 |
 | 三层落点约定 | D-09 | 内部服务 → `pd-web-manager` 聚合 → `pd_auth_resource` 注册 | 全子项接口 |
@@ -784,7 +784,7 @@ stateDiagram-v2
 | 回款登记金额超账单总额 | 中 | 账状态异常 | 接口层校验 `paid_amount + amount > total_amount` 时拦截 + 提示 |
 | 司机结算归集漏趟次 | 中 | 工资纠纷 | 归集 `DriverJob.status=4` 时按 `actualArrivalTime` 在账期内的趟次；漏的趟次可在下期补归集 |
 | 发票金额与账单不一致 | 中 | R10-1 合规风险 | 发票生成时校验 `invoice.amount = bill.total_amount`；不一致拦截 |
-| 应收账龄 SQL 不支持窗口函数 | 高 | 报表错误 | 按 D-19 用 `SUM(CASE WHEN ...)` + 子查询实现，禁用 `ROW_NUMBER()` |
+| 账龄 SQL 的 MySQL 版本兼容 | 中 | 升级 8.0 前后任一版本报表出错 | 优先用窗口函数写、并保留 `SUM(CASE WHEN ...)` + 子查询的 5.7 兜底写法；升级前禁用窗口函数、升级后切换（D-19） |
 | Feign 调用 pd-oms 拉订单数据失败 | 中 | 账单生成失败 | `FreightBillFeignFallback` 降级返回空列表 + 提示"订单服务不可用，请稍后重试"；不阻断已生成账单 |
 | optLog 留痕丢失 | 低 | R6-3 合规风险 | 关键操作经 `optLog` 拦截器；定期归档到 `pd_opt_log_archive`（P1 阶段建） |
 | 数电票对接未就绪 | 高 | 发票无法开具 | 测试环境自编 `invoice_no`（前缀 `TEST-`）；生产环境待 P0-7c 落地后回填真实发票号 |
@@ -854,7 +854,7 @@ stateDiagram-v2
 | 规则 | 触发条件 | 风控动作 | 落地位置 |
 |---|---|---|---|
 | 超信用额度下单 | `pd_customer_credit.used_amount + Order.amount > credit_limit` | 拦截下单 + 提示财务主管复核 | `pd-oms` `OrderServiceImpl` 下单时校验（开关 `credit-check-enabled`） |
-| 应收账龄超 90 天 | `due_date < now()-90day AND status != 2` | 写 `pd_transport_alert`（bizType=BILL, alertType=OVERDUE）+ 客户信用降级 | `pd-work` `@Scheduled` 每日扫描 |
+| 应收账龄超 90 天 | `due_date < now()-90day AND status != 2` | 写 `pd_alarm_record`（bizType=BILL, alertType=OVERDUE）+ 客户信用降级 | `pd-work` `@Scheduled` 每日扫描 |
 | 调账金额超阈值 | `|adjust_amount| > total_amount * 5%` | 必须财务主管二次审批 + `optLog` 留痕 | `pd-work` `FreightBillService.adjust` 校验 |
 | 发票金额不一致 | `|invoice.amount - bill.total_amount| > 0.01` | 拦截开具 + 提示重新对账 | `pd-oms` `InvoiceService.issue` 校验 |
 | 司机扣款无依据 | `driver_settlement_detail` 扣款无关联告警 id / 货损记录 | 拦截审核 + 提示补依据 | `pd-work` `DriverSettlementService.audit` 校验 |
@@ -938,7 +938,7 @@ stateDiagram-v2
 
 - [ ] **P0-6a 运费明细落库**：Drools 算费后写 `pd_freight_bill_detail`；客户价格协议命中优先走协议价；`/freight-bill/{id}/reconcile` 对账视图可查账单 vs 运单 vs 支付差异。
 - [ ] **P0-6a-EXT 运费审计**：`pd_carrier_payable_detail` 含 `rated_amount` / `invoiced_amount` / `diff_amount` / `audit_status`；超 2% 阈值自动标差异；裁决留痕。
-- [ ] **P0-6b 对账单生成**：按客户 + 账期生成 `pd_freight_bill` + 明细；调账写 `adjust_amount` 留痕；应收账龄报表（0-30 / 31-60 / 61-90 / 90+ 天）可出；逾期账单写 `pd_transport_alert`。
+- [ ] **P0-6b 对账单生成**：按客户 + 账期生成 `pd_freight_bill` + 明细；调账写 `adjust_amount` 留痕；应收账龄报表（0-30 / 31-60 / 61-90 / 90+ 天）可出；逾期账单写 `pd_alarm_record`。
 - [ ] **P0-6c 账单与开票**：`pd_invoice` 表建好；申请 → 开具 → 邮寄 → 作废状态流转；测试环境自编 `invoice_no`（前缀 `TEST-`）；发票金额 = 账单金额校验拦截不一致。
 - [ ] **P0-6d 利润核算**：`/profit/task/{taskId}` 单趟利润 + `/profit/summary` 汇总 + `/profit/ranking` 排行可出；管理端利润驾驶舱页可见；移动端老板视图（P1 扩展）只读 KPI。
 - [ ] **权限注册**：`pd_auth_resource` 注册 P0-6 接口资源（freight-bill / payment / invoice / profit / driver-settlement / price-agreement）；绑定财务专员 / 财务主管 / 司机 / 客户 / 承运商 / 审计员角色。
