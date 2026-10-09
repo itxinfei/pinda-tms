@@ -6,17 +6,15 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.2.5.RELEASE</version>
-        <relativePath/> <!-- lookup parent from repository -->
+        <version>3.3.5</version>
+        <relativePath/>
     </parent>
 
-    <!--品达物流-->
     <groupId>com.itheima</groupId>
-    <artifactId>pinda-tms-java</artifactId>
+    <artifactId>pinda-tms</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <!--聚合下面的子模块-->
     <modules>
         <module>pd-common</module>
         <module>pd-base</module>
@@ -29,33 +27,41 @@
         <module>pd-aggregation</module>
         <module>pd-druid</module>
         <module>pd-netty</module>
-        <module>pd-authority</module>
+        <module>pd-gateway</module>
+        <module>pd-auth</module>
     </modules>
 
     <properties>
-        <java.version>1.8</java.version>
+        <!-- 编译目标：JDK 21（SRS §2.1 锁定基线） -->
+        <java.version>21</java.version>
         <!-- Spring Cloud 版本信息 -->
-        <spring-cloud.version>Hoxton.SR3</spring-cloud.version>
-        <spring-boot.version>2.2.5.RELEASE</spring-boot.version>
+        <spring-cloud.version>2023.0.3</spring-cloud.version>
+        <spring-cloud-alibaba.version>2023.0.1.3</spring-cloud-alibaba.version>
+        <!-- 鉴权：Sa-Token（本次拍板，替代 Shiro） -->
+        <sa-token.version>1.46.0</sa-token.version>
+        <!-- MyBatis-Plus -->
+        <mybatis-plus.version>3.5.17</mybatis-plus.version>
+        <!-- 算术/图形验证码（登录） -->
+        <easy-captcha.version>1.6.2</easy-captcha.version>
+
+        <!-- ↓↓↓ 以下为旧业务模块 pom 仍在引用的历史版本变量，仅用于让全聚合模型可读、
+             reactor 能以 -pl 方式单独构建新模块；旧模块不下载、不编译。
+             随旧模块逐个迁到新栈时同步删除，禁止新代码引用。 ↓↓↓ -->
         <swagger.version>2.9.2</swagger.version>
-        <spring-cloud-alibaba-version>2.2.1.RELEASE</spring-cloud-alibaba-version>
-        <druid.version>1.1.22</druid.version>
-        <java.version>1.8</java.version>
         <shiro.version>1.4.0</shiro.version>
-        <commons.lang.version>2.6</commons.lang.version>
-        <commons.io.version>2.5</commons.io.version>
-        <lombok.version>1.18.4</lombok.version>
-        <commons.io.version>2.5</commons.io.version>
-        <http-core.version>4.4.9</http-core.version>
-        <httpclient.version>4.5.11</httpclient.version>
-        <mybatis-spring-boot-starter.version>2.1.0</mybatis-spring-boot-starter.version>
-        <mybatis-plus.version>3.3.0</mybatis-plus.version>
+        <druid.version>1.1.22</druid.version>
         <drools.version>6.5.0.Final</drools.version>
+        <httpclient.version>4.5.11</httpclient.version>
+        <http-core.version>4.4.9</http-core.version>
+        <commons.io.version>2.5</commons.io.version>
+        <mybatis-spring-boot-starter.version>2.1.0</mybatis-spring-boot-starter.version>
+        <!-- 旧模块用的是带横杠的变量名，勿与上方点号属性混淆 -->
+        <spring-cloud-alibaba-version>2.2.1.RELEASE</spring-cloud-alibaba-version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
-            <!-- Spring Cloud begin-->
+            <!-- Spring Cloud begin -->
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-dependencies</artifactId>
@@ -63,21 +69,70 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            <!-- Spring Cloud end-->
+            <!-- Spring Cloud end -->
+            <!-- Spring Cloud Alibaba（Nacos 注册/配置、Seata） -->
             <dependency>
-                <groupId>io.springfox</groupId>
-                <artifactId>springfox-swagger2</artifactId>
-                <version>${swagger.version}</version>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-alibaba-dependencies</artifactId>
+                <version>${spring-cloud-alibaba.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
+
+            <!-- Sa-Token（Servlet / WebMVC） -->
             <dependency>
-                <groupId>io.springfox</groupId>
-                <artifactId>springfox-swagger-ui</artifactId>
-                <version>${swagger.version}</version>
+                <groupId>cn.dev33</groupId>
+                <artifactId>sa-token-spring-boot3-starter</artifactId>
+                <version>${sa-token.version}</version>
+            </dependency>
+            <!-- Sa-Token（响应式 / 网关 WebFlux） -->
+            <dependency>
+                <groupId>cn.dev33</groupId>
+                <artifactId>sa-token-reactor-spring-boot3-starter</artifactId>
+                <version>${sa-token.version}</version>
+            </dependency>
+            <!-- Sa-Token 会话/踢人 Redis 持久化（jackson 序列化） -->
+            <dependency>
+                <groupId>cn.dev33</groupId>
+                <artifactId>sa-token-redis-jackson</artifactId>
+                <version>${sa-token.version}</version>
+            </dependency>
+
+            <!-- MyBatis-Plus（Spring Boot 3 专用 starter） -->
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+                <version>${mybatis-plus.version}</version>
+            </dependency>
+            <!-- MyBatis-Plus 多租户/分页插件所需 JSqlParser -->
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-jsqlparser</artifactId>
+                <version>${mybatis-plus.version}</version>
+            </dependency>
+
+            <!-- 验证码（com.wf.captcha.*） -->
+            <dependency>
+                <groupId>com.github.whvcse</groupId>
+                <artifactId>easy-captcha</artifactId>
+                <version>${easy-captcha.version}</version>
+            </dependency>
+
+            <!-- ↓↓↓ 旧业务模块的历史坐标版本托管，仅让聚合模型可读，随旧模块迁移删除 ↓↓↓ -->
+            <dependency>
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-java</artifactId>
+                <version>8.0.33</version>
             </dependency>
             <dependency>
                 <groupId>io.seata</groupId>
                 <artifactId>seata-spring-boot-starter</artifactId>
                 <version>1.2.0</version>
+            </dependency>
+            <dependency>
+                <groupId>io.springfox</groupId>
+                <artifactId>springfox-swagger2</artifactId>
+                <version>${swagger.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

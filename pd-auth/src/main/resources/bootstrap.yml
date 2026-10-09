@@ -1,0 +1,8 @@
+# ============================================================
+# 本文件已废弃，请勿在此添加配置。
+#
+# Spring Cloud 2023 默认不加载 bootstrap.yml（需额外引入
+# spring-cloud-starter-bootstrap 兼容桥）。本项目采用官方新标准：
+# server.port、Nacos discovery/config 等配置统一写在 application.yml，
+# 远程配置通过 spring.config.import 方式接入。
+# ============================================================
