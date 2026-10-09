@@ -1,0 +1,78 @@
+server:
+  port: 9000
+
+spring:
+  application:
+    name: pd-auth
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  # Spring Cloud 2023 标准接入方式（取代旧 bootstrap.yml）；optional 表示远程配置缺失不阻断启动
+  config:
+    import:
+      - optional:nacos:pd-auth.yaml
+  cloud:
+    nacos:
+      # 服务注册
+      discovery:
+        server-addr: ${NACOS_ADDR:192.168.20.130:8848}
+        namespace: 1cb93ce4-dc0e-4730-b759-d35fd7ed93c3
+        group: pinda-tms
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:123456}
+      # 配置中心
+      config:
+        server-addr: ${NACOS_ADDR:192.168.20.130:8848}
+        namespace: 1cb93ce4-dc0e-4730-b759-d35fd7ed93c3
+        group: pinda-tms
+        file-extension: yaml
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:123456}
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST:192.168.20.130}:${MYSQL_PORT:3306}/pd_auth?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  # Redis（Sa-Token 会话持久化 + 验证码 + 登录失败计数）
+  data:
+    redis:
+      host: ${REDIS_HOST:192.168.20.130}
+      port: ${REDIS_PORT:6379}
+      database: ${REDIS_DATABASE:0}
+      password: ${REDIS_PASSWORD:123456}
+
+# Sa-Token 配置
+sa-token:
+  # token 头字段（全端统一，兼容旧契约）
+  token-name: token
+  # 有效期 7200 秒
+  timeout: 7200
+  # 临时活跃有效期，-1 不限制
+  active-timeout: -1
+  # 允许同一账号多地登录
+  is-concurrent: true
+  # 多地登录时不共用一个 token
+  is-share: false
+  token-style: uuid
+  is-log: false
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      id-type: ASSIGN_ID
+
+# 业务参数（禁止硬编码到 Java 代码）
+pinda:
+  captcha:
+    # 验证码有效期（秒）
+    ttl: 120
+    width: 115
+    height: 42
+    # 同一验证码最大输错次数
+    max-fail: 5
+  login:
+    # 登录失败多少次后锁定
+    max-fail: 5
+    # 锁定时长（秒）
+    lock-seconds: 1800
