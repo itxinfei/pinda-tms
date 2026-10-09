@@ -7,6 +7,7 @@ import com.itheima.pinda.feign.truck.TruckFeign;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 
@@ -63,5 +64,17 @@ public class TruckFeignFallback implements TruckFeign {
     public Result disable(String id) {
         log.warn("远程调用 pd-base 失败: disable({}), 返回失败结果", id);
         return Result.error("服务降级，disable执行失败");
+    }
+
+    @Override
+    public Result updateHeartbeat(String deviceGpsId, LocalDateTime heartbeatTime) {
+        log.warn("远程调用 pd-base 失败: updateHeartbeat(deviceGpsId={}, heartbeatTime={}), 返回失败结果", deviceGpsId, heartbeatTime);
+        return Result.error("服务降级，updateHeartbeat执行失败");
+    }
+
+    @Override
+    public Result markOffline(LocalDateTime threshold) {
+        log.warn("远程调用 pd-base 失败: markOffline(threshold={}), 返回失败结果", threshold);
+        return Result.error("服务降级，markOffline执行失败");
     }
 }

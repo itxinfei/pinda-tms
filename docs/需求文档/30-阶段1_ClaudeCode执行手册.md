@@ -1,4 +1,4 @@
-# 阶段 1 · Claude Code 批量执行手册
+﻿# 阶段 1 · Claude Code 批量执行手册
 
 > **用途**：把阶段 1（技术栈现代化）拆成 N 个原子任务，每个任务是一段可直接粘贴给 Claude Code 的完整 prompt。
 > **项目根**：`D:\MyCode\pinda-tms`
@@ -296,81 +296,9 @@
 
 ---
 
-## 二、W2：中间件升级 + 前端管理端（8 个任务）
+## 二、W2：前端管理端（4 个任务）
 
-### T-011：MySQL 5.7 → 8.0
-
-**粘贴 prompt**：
-```
-任务：把中间件 MySQL 从 5.7 升到 8.0。
-
-操作：
-1. 读 D:\MyCode\pinda-tms\deploy\middleware\docker-compose.infra.yml
-2. 找 mysql 服务，镜像从 mysql:5.7 改成 mysql:8.0
-3. 检查 MySQL Connector/J 版本（根 pom 里），改成 8.0.x
-4. MySQL 8.0 的认证插件变了（caching_sha2_password），检查 application.yml 里的数据库连接串，确保 url 带 useSSL=false&allowPublicKeyRetrieval=true
-
-验收：
-- docker-compose.infra.yml 里 mysql 镜像 = mysql:8.0
-- pom 里 mysql-connector-java 版本 = 8.0.x
-```
-
----
-
-### T-012：Redis 5 → 7
-
-**粘贴 prompt**：
-```
-任务：把中间件 Redis 从 5 升到 7。
-
-操作：
-1. 读 docker-compose.infra.yml，找 redis 服务
-2. 镜像从 redis:5 改成 redis:7
-3. Spring Data Redis 客户端在 Spring Boot 3.3 下默认兼容 Redis 7，不用改代码
-
-验收：
-- redis 镜像 = redis:7
-```
-
----
-
-### T-013：Nacos 1.4 → 2.x
-
-**粘贴 prompt**：
-```
-任务：把中间件 Nacos 从 1.4.1 升到 2.x。
-
-操作：
-1. 读 docker-compose.infra.yml，找 nacos 服务
-2. 镜像从 nacos/nacos-server:1.4.1 改成 nacos/nacos-server:v2.3.2（或最新 2.x）
-3. 检查 Spring Cloud Alibaba Nacos 客户端版本（T-002 已对齐 2023.0.x），对应 Nacos 2.x
-4. Nacos 2.x 新增 gRPC 端口 9848，检查 docker-compose 端口映射，确保 8848 + 9848 + 9849 都暴露
-
-验收：
-- nacos 镜像 = v2.3.x
-- docker-compose 端口映射包含 9848
-```
-
----
-
-### T-014：Kafka 2.6 → 3.x + RabbitMQ 3.8 → 3.12
-
-**粘贴 prompt**：
-```
-任务：升级 Kafka 和 RabbitMQ 中间件。
-
-操作：
-1. 读 docker-compose.infra.yml
-2. Kafka（bitnami）镜像从 2.6 改成 3.7
-3. RabbitMQ 镜像从 3.8-management 改成 3.12-management
-4. 检查 Kafka Client 和 RabbitMQ Client 版本（Spring Boot 3.3 默认管理的版本应该兼容）
-
-验收：
-- kafka 镜像 = 3.x
-- rabbitmq 镜像 = 3.12-management
-```
-
----
+> 中间件升级（MySQL 8.0 / Redis 7 / Nacos 2.3 / RabbitMQ 3.12）已于 2026-10-09 完成，无对应执行任务；现网版本、容器名、`.env` 落点与 dataId 见《31》《26》§1。⚠️ 消息总线为 RabbitMQ 单总线（《03》BA-09），Kafka/Zookeeper 已移除；勿按旧文档把 RabbitMQ 当待移除组件清理——订单事件 4 个 `@RabbitListener`（`pd-dispatch/OrderEventMQListener` 3 个 + `pd-oms/SettlementDeliveredListener` 1 个）正在跑短信与应收结算单（权威口径见《26》§1.1）。
 
 ### T-015：管理端 Vite + Vue3 + Element Plus 工程搭建
 
@@ -487,7 +415,6 @@
 任务：验证技术栈升级后全链路可跑通。
 
 操作：
-1. docker compose 启动所有中间件（MySQL / Redis / Nacos / Kafka / RabbitMQ / Seata）
 2. mvn compile 全模块编译
 3. 逐个启动 14 个微服务（或 docker compose up 启动所有）
 4. 启动管理端前端（npm run dev）
@@ -553,7 +480,6 @@
    - 项目标题 + 一句话描述（开源物流运输管理系统）
    - badge（license: Apache 2.0 / Spring Boot 3.x / Vue 3.x / PRs welcome）
    - 项目截图（管理端首页 / 订单列表 / 调度地图 / 轨迹回放）——先用占位图，后续替换
-   - 技术栈列表（后端 JDK21+SpringBoot3+MyBatisPlus+... 前端 Vue3+Vite+ElementPlus+... 中间件 MySQL8+Redis7+Nacos2+Kafka3+...）
    - 快速开始（docker compose up 一键启动，30 秒跑通）
    - 功能列表（订单/调度/在途监控/POD签收/财务结算）
    - 在线 Demo（留占位地址）
@@ -610,3 +536,4 @@ T-019（全链路冒烟）→ T-020（CI/CD）→ T-021~T-023（开源基础设�
 - [ ] 走通 登录→下单→调度→轨迹→签收 端到端冒烟
 - [ ] Gitee/GitHub 仓库可公开（README/LICENSE 就绪）
 - [ ] 新机器 clone 后 docker compose up 30 分钟跑通
+

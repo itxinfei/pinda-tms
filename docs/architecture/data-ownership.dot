@@ -28,7 +28,7 @@ digraph data_ownership {
   oms -> dpdoms [label="读写"];
   work -> dpwork; disp -> dpdisp; base -> dpbase; user -> dpuser; auth -> dpauth;
   netty -> dpdoms [label="写轨迹\n(轨迹归到订单库 ⚠)", color="#c5221f"];
-  druid -> dpdoms [label="查 tms_order_location ❌\n（那是 Kafka topic 名）", color="#c5221f"];
+  druid -> dpdoms [label="查 tms_order_location ❌\n（那是 RabbitMQ queue 名）", color="#c5221f"];
   agg -> dpagg [label="JOIN 本地副本\nCourierMapper.xml:6-9\nWebManagerMapper.xml:32-35", color="#c5221f"];
   oms -> dpdoms [dir=back, label=""];
 

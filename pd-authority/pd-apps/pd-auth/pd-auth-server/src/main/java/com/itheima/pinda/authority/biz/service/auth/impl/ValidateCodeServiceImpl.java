@@ -30,6 +30,11 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class ValidateCodeServiceImpl implements ValidateCodeService {
 
+    /** 同一验证码允许的最大错误次数，达到即作废该验证码 */
+    private static final int MAX_CAPTCHA_FAIL = 5;
+    /** 验证码失败计数保留时长（秒），不短于验证码有效期即可 */
+    private static final long CAPTCHA_FAIL_TTL = 300L;
+
     @Autowired
     private CacheChannel cache;
 
@@ -47,6 +52,8 @@ public class ValidateCodeServiceImpl implements ValidateCodeService {
         Captcha captcha = new ArithmeticCaptcha(115, 42);
         captcha.setCharType(2);
 
+        // 同一 key 重新生成验证码时，清零旧的失败计数
+        cache.evict(CacheKey.CAPTCHA_FAIL, key);
         cache.set(CacheKey.CAPTCHA, key, StringUtils.lowerCase(captcha.text()));
         captcha.out(response.getOutputStream());
     }
@@ -60,15 +67,46 @@ public class ValidateCodeServiceImpl implements ValidateCodeService {
         //根据key从缓存中获取验证码
         CacheObject cacheObject = cache.get(CacheKey.CAPTCHA, key);
         if (cacheObject.getValue() == null) {
+            // 验证码已过期或已被作废，一并清理失败计数
+            cache.evict(CacheKey.CAPTCHA_FAIL, key);
             throw BizException.validFail("验证码已过期");
         }
+
         //比对验证码
-        if (!StringUtils.equalsIgnoreCase(value, String.valueOf(cacheObject.getValue()))) {
-            throw BizException.validFail("验证码不正确");
+        if (StringUtils.equalsIgnoreCase(value, String.valueOf(cacheObject.getValue()))) {
+            //验证通过：立即失效验证码，并清零失败计数（一次性使用）
+            cache.evict(CacheKey.CAPTCHA, key);
+            cache.evict(CacheKey.CAPTCHA_FAIL, key);
+            return true;
         }
-        //验证通过，立即从缓存中删除验证码
-        cache.evict(CacheKey.CAPTCHA, key);
-        return true;
+
+        // 验证失败：失败计数 +1，达到上限立即作废该验证码，防止经 /anno/check 穷举
+        int failCount = readInt(cache.get(CacheKey.CAPTCHA_FAIL, key)) + 1;
+        if (failCount >= MAX_CAPTCHA_FAIL) {
+            cache.evict(CacheKey.CAPTCHA, key);
+            cache.evict(CacheKey.CAPTCHA_FAIL, key);
+            throw BizException.validFail("验证码错误次数过多，请重新获取验证码");
+        }
+        cache.set(CacheKey.CAPTCHA_FAIL, key, failCount, CAPTCHA_FAIL_TTL);
+        throw BizException.validFail("验证码不正确");
+    }
+
+    /**
+     * 安全读取缓存中的整数计数
+     */
+    private int readInt(CacheObject cacheObject) {
+        Object value = cacheObject == null ? null : cacheObject.getValue();
+        if (value == null) {
+            return 0;
+        }
+        if (value instanceof Number) {
+            return ((Number) value).intValue();
+        }
+        try {
+            return Integer.parseInt(String.valueOf(value));
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 
     private Captcha createCaptcha(String type) {

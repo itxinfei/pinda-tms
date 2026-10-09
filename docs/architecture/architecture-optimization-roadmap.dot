@@ -1,0 +1,96 @@
+// 品达TMS 架构优化路线图（先后依赖，不是甘特）
+// 维护：与 tech-stack-and-system-architecture-review.md §3/§4/§5 的编号一一对应，改文必改图。
+// 读法：菱形=结构问题/未知，矩形=动作，圆角=外部前提；实线=必须先行，虚线=收益推断或待证前置。
+// 颜色：红=P0（升级前/期内）橙=P1（升级后立刻）灰=P2（功能稳定后）蓝=升级周计划既有阶段。
+digraph architecture_optimization_roadmap {
+  rankdir=TB;
+  nodesep=0.32;
+  ranksep=0.62;
+  fontname="Microsoft YaHei";
+  labelloc=t;
+  label="品达TMS 架构优化顺序 2026-10-09\n核心逻辑：先让升级能被验证（R-1）与边界收口（S-4），再定归属（S-2/S-3），最后才动拓扑（S-1）\n红=P0  橙=P1  灰=P2  蓝=《29》周计划既有阶段  虚线=待证/收益推断";
+  compound=true;
+
+  node [fontname="Microsoft YaHei", fontsize=10];
+  edge [fontname="Microsoft YaHei", fontsize=9];
+
+  // ---------- 外部前提 ----------
+  phase0 [label="《29》阶段0\n合并双 parent 链基线", shape=box, style=rounded, fillcolor="#dbe7ff", color="#336699"];
+  w1     [label="《29》W1\nSB3.3 + jakarta + 网关重写 + Drools8", shape=box, style=rounded, fillcolor="#dbe7ff", color="#336699"];
+  green  [label="mvn compile 在 JDK21 全模块通过\n14服务可启动", shape=box, style=rounded, fillcolor="#dff0d8", color="#2e7d32"];
+
+  // ---------- P0 ----------
+  R1 [label="R-1 零回归网\n876文件/18测试\n接入层与pd-base/pd-user 测试=0", shape=diamond, style=filled, fillcolor="#ffd9d9", color="#b00000"];
+  R1a [label="补运费试算 输入/金额矩阵\n（旧栈上跑，产出升级前基线）", shape=box, style=filled, fillcolor="#ffd9d9"];
+  R1b [label="补网关鉴权矩阵\n已注册/未注册/降级 三态期望值", shape=box, style=filled, fillcolor="#ffd9d9"];
+  R1c [label="rule表0行→算费返回null\n先修规则数据，否则基线为空", shape=diamond, style="filled,dashed", fillcolor="#fff2cc"];
+
+  S4 [label="S-4 信任边界画错\n14端口全发布到宿主\n下游只信 userid 头", shape=diamond, style=filled, fillcolor="#ffd9d9", color="#b00000"];
+  S4a [label="compose 业务/BFF 改 expose\n只网关+前端发布宿主", shape=box, style=filled, fillcolor="#ffd9d9"];
+  S4b [label="网关降级统一 fail-closed\n（工作区已有未提交版本）", shape=box, style=filled, fillcolor="#ffd9d9"];
+  S4c [label="断源测试：停 auth-server\n调需鉴权接口须 401/503", shape=box, style="filled,dashed", fillcolor="#ffd9d9"];
+
+  T3 [label="T-3 未知：feign.hystrix.enabled\n是否存在于 Nacos", shape=diamond, style="filled,dashed", fillcolor="#fff2cc"];
+  T3a [label="导出 pinda-tms group 全部 dataId\n→ 定性 B-17 是假成功还是抛异常", shape=box, style=filled, fillcolor="#ffd9d9"];
+  T3b [label="查清前不动 10 个 return null 的 Fallback", shape=box, style="filled,dashed", fillcolor="#eeeeee"];
+
+  T2 [label="T-2 《08》漏列的第二个\nNetflix 硬阻断：Hystrix", shape=diamond, style=filled, fillcolor="#ffd9d9", color="#b00000"];
+  T2a [label="《08》《29》依赖清单补：\nCircuitBreaker+Resilience4j 或删依赖", shape=box, style=filled, fillcolor="#ffd9d9"];
+
+  G1 [label="G-1..G-7 文档口径互斥\n07写死不升级/47已升级完成\n优先级三档/误诊缺advice", shape=diamond, style=filled, fillcolor="#ffd9d9", color="#b00000"];
+  G1a [label="以《32》为唯一优先级源\n口径归一（需授权后执行）", shape=box, style=filled, fillcolor="#ffd9d9"];
+
+  // ---------- P1 ----------
+  S2 [label="S-2 数据归属是假的\n7库同1实例/12张无人写的副本\nnetty+druid 寄养 pd_oms", shape=diamond, style=filled, fillcolor="#ffe3b3", color="#cc6600"];
+  S2a [label="每个共享对象定归属：owner读 or Feign\n禁止第三态；pinda_tms 改名归档", shape=box, style=filled, fillcolor="#ffe3b3"];
+
+  S3 [label="S-3 公共层双轨\npd-common 与 pd-tools-common\n同根包 com.itheima.pinda.common\n（当前无重复类=风险敞口）", shape=diamond, style=filled, fillcolor="#ffe3b3", color="#cc6600"];
+  S3a [label="advice/返回体/枚举/包名 收敛为一份\n与阶段0 同期做", shape=box, style=filled, fillcolor="#ffe3b3"];
+
+  S5 [label="S-5 一致性策略缺决策\n@GlobalTransactional 仅5处\n转发中心77写/0事务", shape=diamond, style=filled, fillcolor="#ffe3b3", color="#cc6600"];
+  S5a [label="链路分级表：强一致（签收/费用/资金/状态）\nvs 最终一致+对账（轨迹/心跳/通知）", shape=box, style=filled, fillcolor="#ffe3b3"];
+  S5b [label="据此补事务注解\n（undo_log 已就位，成本低）", shape=box, style="filled,dashed", fillcolor="#ffe3b3"];
+  S5c [label="IdWorker(1,1) 硬编码×2\n机器位固定→扩实例撞号", shape=diamond, style=filled, fillcolor="#ffe3b3"];
+
+  // ---------- P2 ----------
+  S1 [label="S-1 粒度拆错地方\npd-druid 9文件独立服务\npd-aggregation 15文件+独立库\nBFF 4份复制无共享模块", shape=diamond, style=filled, fillcolor="#eeeeee", color="#666666"];
+  S1a [label="BFF 4→1（按端前缀分路由）\n省约3个JVM ≈0.5–0.7G 内存", shape=box, style="filled,dashed", fillcolor="#eeeeee"];
+  S1b [label="pd-druid 并入 pd-oms 或删除", shape=box, style="filled,dashed", fillcolor="#eeeeee"];
+  S1c [label="pd-aggregation 去留", shape=box, style="filled,dashed", fillcolor="#eeeeee"];
+  OBS [label="可观测性 / 主从 / 多实例 / 灰度回滚\n按《32》D4=D5=D1= P0 口径推进", shape=box, style=filled, fillcolor="#eeeeee", color="#666666"];
+
+  // ---------- 禁止项 ----------
+  NO [label="不做：Sa-Token/Easy Rules/Sentinel/ES/K8s\n不做：7库物理拆分\n理由：撞《01》§5 红线 + 单实例下收益为零", shape=box, style="filled,dashed", fillcolor="#f5f5f5", color="#999999"];
+
+  // ---------- 依赖边 ----------
+  R1 -> R1a;
+  R1 -> R1b;
+  R1c -> R1a [style=dashed, color="#cc9900", label="前置"];
+  R1a -> w1 [penwidth=2.0, color="#b00000", label="必须先于升级（否则 R2 算错钱无从比对）"];
+  R1b -> w1 [penwidth=2.0, color="#b00000", label="必须先于网关 Filter 重写（R3）"];
+  T2 -> T2a -> w1;
+  phase0 -> w1 [color="#336699", label="版本基线统一"];
+  S3 -> S3a;
+  S3a -> phase0 [style=dashed, color="#336699", label="顺带同期做"];
+  G1 -> G1a;
+
+  S4 -> S4a;
+  S4 -> S4b;
+  S4a -> S4c [style=dashed];
+  S4b -> S4c [style=dashed];
+  S4 -> w1 [style=dashed, color="#666666", label="独立于升级，可并行"];
+
+  T3 -> T3a -> T3b [style=dashed];
+  T3a -> S5a [style=dashed, label="B-17 定性结果影响分级"];
+
+  w1 -> green [color="#336699"];
+  green -> S2a [penwidth=2.0, color="#cc6600", label="升级落地后才动数据层"];
+  S2a -> S1c [penwidth=2.0, color="#666666", label="归属定了才谈合并"];
+  green -> S1a;
+  green -> S1b;
+  S5a -> S5b;
+  S5 -> S5a;
+  S5c -> OBS [color="#666666", label="多实例前置"];
+  S1a -> OBS [style=dashed, label="腾出的内存给可观测性"];
+  green -> NO [style=dashed, color="#999999", label="禁止同期夹带"];
+}

@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.itheima.pinda.entity.truck.PdTruck;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -69,4 +70,24 @@ public interface IPdTruckService extends IService<PdTruck> {
      * @param id
      */
     void disableById(String id);
+
+    /**
+     * 更新车辆在线状态与心跳时间（P0-4 心跳键错配修复）
+     *
+     * <p>由 pd-netty 收到 GPS 上报后调用：
+     * online_status=1 并刷新 last_heartbeat_time。参数语义为车辆主键 id。</p>
+     *
+     * @param truckId 车辆主键 id（上报 businessId）
+     * @param heartbeatTime 心跳时间（pd-netty 服务端时间）
+     * @return 是否更新成功
+     */
+    boolean updateHeartbeat(String truckId, LocalDateTime heartbeatTime);
+
+    /**
+     * 批量将心跳超时车辆置为离线（P0-4 北斗字段最小改造 · D-13）
+     *
+     * @param threshold 心跳超时阈值
+     * @return 受影响行数
+     */
+    int markOfflineByHeartbeat(LocalDateTime threshold);
 }

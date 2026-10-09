@@ -1,4 +1,4 @@
-# 品达TMS 业务流程体检报告（订单 → 运单 → 调度 → 作业 → 签收 → 轨迹 → 结算）
+﻿# 品达TMS 业务流程体检报告（订单 → 运单 → 调度 → 作业 → 签收 → 轨迹 → 结算）
 
 产出方式：`architecture-visualization:explore` 路由到 `flow-visualizer`（主干流程与状态机）+ `system-modeler`（服务边界与数据归属），图源用 `graphviz` DOT。
 证据基线：本机仓库 `D:\MyCode\pinda-tms` @ `ecd6725` + 内网实测机 `192.168.20.130` 的 MySQL/Nacos 运行时读取（2026-10-08）。
@@ -64,9 +64,7 @@ if (allowedTransitions == null || !allowedTransitions.contains(newStatus)) {
 
 | # | 现象 | 证据 | 判定 |
 | --- | --- | --- | --- |
-| 3.1 | 上报入口其实齐（HTTP `POST /netty/push` + TCP `NettyServer` 8194），**生产端不缺** | `pd-netty/.../controller/NettyController.java:44,73`；`config/NettyServer.java:73`、`service/NettyServerHandler.java:97` → `KafkaSender.java:30` | 已证实（修正"生产端缺失"的猜测） |
 | 3.2 | 消费→落库→归档链路本身是通的 | `listener/GpsTraceConsumer.java:248,294,296`；归档 `LocationRecordServiceImpl.java:55,57` 每 1h 清 30 天前 | 已证实；今天 200 条压测 200 条落库、0 丢弃 |
-| 3.3 | **`pd-druid` 把 Kafka topic 当表查** | `pd-druid/.../DruidServiceImpl.java:45,63,80` `FROM tms_order_location`，列名还写 `currentTime`（真实列已改 `report_time`）；实测该表在任何库都不存在 | 车辆位置/大屏接口必坏（推断：500 或空数据） |
 | 3.4 | 告警只进日志，不可追溯 | `service/GpsAlertService.java:55` 仅 `log.error`；webhook 取值 `bootstrap-dev.yml:57` = `${GPS_ALERT_WEBHOOK_URL:}` 默认为空；全仓无告警表/接口/页面 | 今天压测触发 89 条超速告警，全部只落日志 |
 | 3.5 | 签收→结算有代码，但**表不在它连的库里** | `OrderServiceImpl.java:127-129` 签收即 `settlementService.settle(...)`；`SettlementServiceImpl.java:58` `REQUIRES_NEW` 写 `pd_settlement_order`+`pd_freight_detail`；实测 `pd_oms` 无这两张表（只在遗留 `pinda_tms` 有 `pd_payment_order`） | 结算必失败，且被 `REQUIRES_NEW`+吞异常设计成"不影响签收" → **静默不结算** |
 | 3.6 | 结算只写不读 | 全仓无 Settlement/FreightDetail 的 Controller；账单/账期/发票/承运商仅在建表脚本或文档里 | 财务域是"半闭环 + 空壳" |
@@ -145,3 +143,4 @@ if (allowedTransitions == null || !allowedTransitions.contains(newStatus)) {
 - `order-lifecycle.dot`：订单状态机（可流转边、孤儿状态、种子值落点）
 - `data-ownership.dot`：服务 ↔ 库 ↔ 影子副本 ↔ 缺失表
 - `flow-risks-and-gaps.md`：断点清单（严重度/证据/验证方式，可当回归清单用）
+

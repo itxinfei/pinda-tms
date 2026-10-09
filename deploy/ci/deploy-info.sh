@@ -12,7 +12,7 @@ OUT_DIR=${OUT_DIR:-/var/www/deployinfo}
 DEPLOY_TAG=${TAG:-${1:-}}
 # 没显式给 TAG 时，用运行中容器实际在用的镜像 tag 当"当前部署版本"
 if [ -z "$DEPLOY_TAG" ]; then
-  for c in pd-gateway pd-oms pd-admin-ui; do
+  for c in pd-gateway pd-oms pd-admin-h5; do
     t=$(docker inspect -f '{{.Config.Image}}' "$c" 2>/dev/null | awk -F: '{print $2}')
     [ -n "$t" ] && { DEPLOY_TAG="$t"; break; }
   done

@@ -1,4 +1,4 @@
-# 业务流程断点与风险清单（可当回归清单用）
+﻿# 业务流程断点与风险清单（可当回归清单用）
 
 严重度：**P0 = 业务走不通/数据错**；**P1 = 会静默失败或半写**；**P2 = 可观测性/可维护性**。
 "验证"列是给下一次回归的具体动作，不做完不许标完成。
@@ -9,7 +9,6 @@
 | B-02 | P0 | 状态流转失败被吞成"成功" | `OrderController.java:152-155` 返回 `null`，HTTP 仍 200 | 前端/Feign 调用方以为改成功，数据实际没动 | 拿脏状态单调 `PUT /oms/order/{id}`，断言应返回业务错误码 |
 | B-03 | P0 | 签收触发的结算写入目标库无表 | `OrderServiceImpl.java:127-129`→`SettlementServiceImpl.java:58`；建表脚本 `docs/sql/财务结算域_建表.sql:26,44`；实测 `pd_oms` 无 `pd_settlement_order`/`pd_freight_detail` | 签收"成功"但永远不产生结算单，财务对账无源 | 建表后签收一单，查 `pd_settlement_order` 是否落行 |
 | B-04 | P0 | 聚合层读影子副本，副本为空 | `CourierMapper.xml:6-9`、`WebManagerMapper.xml:32-35`；实测 `pd_aggregation.pd_order=0`（`pd_oms.pd_order=3`）、`pd_core_org=0`（`pd_auth=15`）；网关实测 `business-hall/courier/page → counts:0` | 管理端/网点列表"莫名空数据"，被误判成权限或前端问题 | 副本同步或改走 Feign 后，比对同一接口行数与主库一致 |
-| B-05 | P0 | `pd-druid` 把 Kafka topic 当表查且列名过期 | `DruidServiceImpl.java:31,45,63,80`（`FROM tms_order_location`、`currentTime`）；实测该表在任何库都不存在，真实列为 `pd_oms.pd_truck_location.report_time` | 车辆位置/大屏接口必然 500 或空 | 改查 `pd_truck_location` 后调接口，应返回刚灌入的轨迹点 |
 | B-06 | P1 | 签收/拒收多实体裸写无事务 | `CourierController.java:505`（订单+取派+运单三写）；对照 `@GlobalTransactional` 仅 5 处；`warehousing:392`、`handover:433`、`delivered:479` 同样裸写 | 中途失败即半写：订单已签收但任务未闭环 | 加事务后人为注入一次失败（改错 Feign 地址），断言三表要么全改要么全不改 |
 | B-07 | P1 | 取消不回滚运单、已付不退款 | `MailingController.java:735-763`（仅订单+取派任务）；退款只有人工入口 `PayController.java:98-104` | 取消后运单仍待调度、资金挂账 | 造一条已付单取消，查运单状态与 `pd_payment_order` 流水 |
 | B-08 | P1 | 调度只能靠 Quartz，事件触发入口被注释 | `DispatchTask.java:33`、`ScheduleJob:60`；`OrderEventListener.java:85`、`OrderEventMQListener.java:108` 注释 | 无按需调度；批次间隔决定业务时效，客户催单无法即时响应 | 决定保留哪种：留 cron 则文档写明周期；要即时则恢复事件触发并验证入队即调度 |
@@ -57,3 +56,4 @@
 - **实测补强**：`pd_oms.rule` 与 `pinda_tms.rule` **各 0 行**（`rule_key='tms'` 查不到），配合 `OrderServiceImpl.java:257-262` → 当前运费计算返回 null，不是"运价口径不统一"这么轻。
 - **实测补强**：三库 `pd_area` 各 44703 行，把 `导入区划四级_可重复执行.sql:47` 的 `TRUNCATE`（而 `:52` 回填是注释）从"脚本危险"抬成"一次误执行清掉 134109 行"。
 - **改级**：`pd-file-server` 在注册中心实测不存在（14 个服务，无此项）且三端 `AttachmentClient` 无 fallback → 附件/POD 上传是运行时必抛，P2 → P1。
+

@@ -39,7 +39,7 @@ digraph tms_business_flow {
     signed [label="签收 23009 / 拒收 23010\nCourierController:504-505\n无事务 ⚠"];
   }
   subgraph cluster_trace { label="轨迹域 pd-netty / pd-druid（也写 pd_oms）"; style=dashed; color="#9aa0a6";
-    gpsin [label="HTTP /netty/push + TCP 8194\n→ Kafka tms_order_location\nNettyController:44 / NettyServerHandler:97"];
+    gpsin [label="HTTP /netty/push + TCP 8194\n→ RabbitMQ tms_order_location\nNettyController:44 / NettyServerHandler:97"];
     store [label="消费落库 pd_truck_location\n(列 report_time)\nGpsTraceConsumer:248,294 ✅实测200/200"];
     alert [label="超速/停留/偏航告警\nGpsAlertService:55 仅 log.error\n无表 无接口 无页面 ⚠"];
     druid [label="车辆位置查询(pd-druid)\nFROM tms_order_location\n表不存在 ⚠"];
@@ -71,7 +71,7 @@ digraph tms_business_flow {
   signed -> druid [label="展示签收前位置?", style=dotted, color="#c5221f"];
 
   // ---------- 异步旁路 ----------
-  gpsin -> store [label="Kafka 异步", color="#188038"];
+  gpsin -> store [label="RabbitMQ 异步", color="#188038"];
   store -> alert [label="边消费边检测"];
   store -> archive [label="每 1h"];
   store -> druid [label="应读 pd_truck_location\n实际读错表", color="#c5221f", style=dashed];

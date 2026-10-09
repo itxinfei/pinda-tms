@@ -1,0 +1,58 @@
+# ============================================
+# 品达TMS 新版后台管理系统（Vue3 + Vite + Element Plus）
+#
+# 构建上下文 = 仓库根目录（需要 pd-admin-ui-vue3/ 下的源码与 pnpm-lock.yaml）：
+#   docker build -f deploy/apps/Dockerfile.admin-ui-vue3 \
+#     -t pinda/pd-admin-h5:<tag> .
+#
+# 为什么必须是多阶段：
+#   node-sass / vite / typescript 这些构建链有几百 MB，最终镜像只需要 dist 静态产物。
+#   分阶段后运行层只有 nginx + 产物，镜像约 60MB（老版单阶段连 node_modules 一起带，约 175MB）。
+#
+# 为什么 Node 22：
+#   pd-admin-ui-vue3/package.json 的 engines 明确要求 node ^20.19.0 || >=22.12.0，
+#   且 CI 旧作业镜像固定 Node 14（为老 React 后台的 node-sass 4.x 兼容）。
+#   新版用的是 sass(dart-sass) + Vite 8，Node 14 跑不起来，必须换。
+#
+# pnpm：项目 preinstall 里是 npx only-allow pnpm，仓库根有 pnpm-lock.yaml，
+#   用 npm ci 会破坏 lockfile 校验，故统一走 pnpm。
+# ============================================
+
+# ---------- 构建阶段 ----------
+FROM node:22-alpine AS builder
+
+# pnpm 用国内镜像源：默认源在内网经常超时（实测 npm install 需重试三次才过）
+RUN npm config set registry https://registry.npmmirror.com \
+ && npm install -g pnpm@9 --registry=https://registry.npmmirror.com
+
+WORKDIR /build
+
+# 先只拷依赖清单做安装，充分利用镜像层缓存：
+# 只要 package.json / pnpm-lock.yaml 没变，改业务代码重建时这层直接命中，不用重装依赖
+COPY pd-admin-ui-vue3/package.json pd-admin-ui-vue3/pnpm-lock.yaml ./
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile
+
+# 再拷源码并构建
+COPY pd-admin-ui-vue3/ ./
+
+# 只做构建，不跑 vue-tsc 类型检查：
+# CI 拉全量代码时偶发类型报错会直接卡死发布（且 vite build 本身不做类型检查），
+# 类型检查交给 lint 流水线，不阻塞镜像产出
+RUN pnpm run build-only \
+ && test -f dist/index.html \
+ || (echo "=== 构建失败，dist 内容如下 ===" && ls -la dist 2>/dev/null; echo "=== 源码目录 ==="; ls -la; exit 1)
+
+# ---------- 运行阶段 ----------
+FROM nginx:1.27-alpine
+
+# 容器内 nginx 配置由 envsubst 渲染（复用老版 nginx.template 的成熟写法）
+COPY deploy/apps/nginx/admin-h5.conf /etc/nginx/templates/default.conf.template
+
+# 环境变量占位符，nginx 官方镜像的 docker-entrypoint 会自动替换
+ENV NGINX_HOST=192.168.20.130 \
+    DOCKER_REQUEST_DOMAIN_PREFIX=http://pd-gateway:8760
+
+EXPOSE 80
+
+# 构建期不声明 HEALTHCHECK，改由 compose 的 healthcheck 统一管理（与老版 compose 一致）

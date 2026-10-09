@@ -29,9 +29,16 @@ rows = []
 matched = 0
 
 # 读库里已有的 area_code（用 mysql 导出）
+# 口令不写进脚本：由环境变量 MYSQL_PWD 提供（mysql 客户端原生识别该变量）
+#   Git Bash:  export MYSQL_PWD="$(sed -n 's/^MYSQL_ROOT_PASSWORD=//p' /path/to/.env)"
+#   PowerShell: $env:MYSQL_PWD = "<root口令>"
+import os
+DB_HOST = os.environ.get("PD_DB_HOST", "192.168.20.130")
+if not os.environ.get("MYSQL_PWD"):
+    sys.exit("缺少环境变量 MYSQL_PWD（MySQL root 口令）；请在机器上的 .env 里取，不要写进本脚本")
 MYSQL = r"C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql"
 sql = "SELECT id, area_code, level FROM pd_auth.pd_area ORDER BY id"
-out = subprocess.run([MYSQL, "-h", "192.168.20.130", "-uroot", "-p123456",
+out = subprocess.run([MYSQL, "-h", DB_HOST, "-uroot",
                       "-N", "-B", "--default-character-set=utf8", "-e", sql],
                      capture_output=True, text=True, encoding="utf-8")
 

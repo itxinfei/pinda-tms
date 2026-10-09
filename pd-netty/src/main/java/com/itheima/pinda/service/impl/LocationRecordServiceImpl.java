@@ -91,6 +91,9 @@ public class LocationRecordServiceImpl extends ServiceImpl<LocationRecordMapper,
             archive.setTransportTaskId(record.getTransportTaskId());
             archive.setCreateTime(record.getCreateTime());
             archive.setArchiveTime(archiveTime);
+            // 修复归档丢字段：coordSystem/source 必须随主表记录一起归档，保证历史轨迹口径可追溯
+            archive.setCoordSystem(record.getCoordSystem());
+            archive.setSource(record.getSource());
             archiveList.add(archive);
         }
         try {

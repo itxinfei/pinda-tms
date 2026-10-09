@@ -65,8 +65,7 @@ Thumbs.db
 *.jar
 !gradle/wrapper/gradle-wrapper.jar
 
-# 文档/讲义/资源（大文件，非代码）
-docs/讲义/
+# 文档/资源（大文件，非代码）
 docs/项目需要的jar/
 docs/superpowers/
 docs/zipkin-server-*.jar
@@ -74,3 +73,7 @@ docs/settings.xml
 
 # 推送说明（本地备忘，非项目代码，不入库）
 PUSH_GUIDE.md
+
+# 老 React 版后台管理系统（2026-10-09 下线，已停用并取消 git 跟踪）
+# 代码保留在本地供查阅，需要时 git init 即可恢复；node_modules/dist 本就被上面规则忽略
+pd-admin-ui/

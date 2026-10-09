@@ -21,9 +21,9 @@ x-ulimits: &ulimits
       hard: 65535
 
 services:
-  mysql57:
-    image: mysql:5.7
-    container_name: mysql57
+  mysql8:
+    image: mysql:8.0
+    container_name: mysql8
     restart: unless-stopped
     <<: *ulimits
     ports:
@@ -55,7 +55,7 @@ services:
       start_period: 40s
 
   redis:
-    image: redis:5
+    image: redis:7
     container_name: redis
     restart: unless-stopped
     <<: *ulimits
@@ -83,12 +83,14 @@ services:
       retries: 3
 
   nacos:
-    image: nacos/nacos-server:1.4.1
+    image: nacos/nacos-server:v2.3.2
     container_name: nacos
     restart: unless-stopped
     <<: *ulimits
     ports:
       - "8848:8848"
+      - "9848:9848"
+      - "9849:9849"
     volumes:
       - /data/nacos:/home/nacos/logs
       # 原本只有 logs 被挂出，35 条微服务配置存在容器可写层的内嵌 Derby 里，
@@ -115,7 +117,7 @@ services:
       start_period: 60s
 
   zookeeper:
-    image: zookeeper:3.5
+    image: zookeeper:3.9
     container_name: zookeeper
     restart: unless-stopped
     <<: *ulimits
@@ -146,7 +148,7 @@ services:
       retries: 5
 
   kafka:
-    image: bitnami/kafka:2.6.0
+    image: bitnami/kafka:3.7
     container_name: kafka
     restart: unless-stopped
     <<: *ulimits
@@ -176,7 +178,7 @@ services:
       start_period: 60s
 
   rabbitmq:
-    image: rabbitmq:3.8-management
+    image: rabbitmq:3.12-management
     container_name: rabbitmq
     # Beam 的节点名由 hostname 推导(rabbit@<hostname>)。钉死它，重建后节点名才稳定。
     hostname: rabbitmq
@@ -193,9 +195,8 @@ services:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:?缺少 .env 里的 RABBITMQ_DEFAULT_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:?缺少 .env 里的 RABBITMQ_DEFAULT_PASS}
       RABBITMQ_LOGS: "-"
-      # 不设的话 Beam 按宿主机 15G 的一半(约 7.7G)算高水位，节点会一路涨到
-      # 把整机内存挤爆；这里按容器上限的 80% 显式固定。
-      RABBITMQ_VM_MEMORY_HIGH_WATERMARK: 800M
+    # RabbitMQ 3.12 废弃了 RABBITMQ_VM_MEMORY_HIGH_WATERMARK 环境变量，
+    # 改用 command 里的配置参数设置内存高水位
     # 注意：现有 mnesia 目录名是 rabbit@<旧容器ID>，钉住 hostname 后新节点名为
     # rabbit@rabbitmq，会另起一份空库；旧目录原样留在 /data/rabbitmq/mnesia 下不删，
     # 需要接回时按官方 node_name 改名流程处理即可。当前 5 个队列消息数均为 0，

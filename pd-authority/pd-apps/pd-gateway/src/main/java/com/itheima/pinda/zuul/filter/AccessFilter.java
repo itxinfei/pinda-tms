@@ -70,20 +70,26 @@ public class AccessFilter extends BaseFilter {
         CacheObject resourceNeed2AuthObject = cacheChannel.get(CacheKey.RESOURCE, CacheKey.RESOURCE_NEED_TO_CHECK);
         List<String> resourceNeed2Auth = (List<String>) resourceNeed2AuthObject.getValue();
         if (resourceNeed2Auth == null) {
-            resourceNeed2Auth = resourceApi.list().getData();
-            if (resourceNeed2Auth != null) {
-                cacheChannel.set(CacheKey.RESOURCE, CacheKey.RESOURCE_NEED_TO_CHECK, resourceNeed2Auth);
-            }
-        }
-        if (resourceNeed2Auth != null) {
-            long count = resourceNeed2Auth.stream().filter((String r) -> {
-                return permission.startsWith(r);
-            }).count();
-            if (count == 0) {
-                //未知请求
+            // 缓存未命中，远程拉取全量受保护资源
+            R<List> resourceResult = resourceApi.list();
+            // fail-closed：结果为空、调用失败或无数据时一律拒绝，禁止在鉴权服务故障时跳过资源检查
+            if (resourceResult == null || Boolean.TRUE.equals(resourceResult.getIsError())
+                    || resourceResult.getData() == null) {
+                log.error("鉴权资源列表获取失败，fail-closed 拒绝访问 {}（result={}）", permission, resourceResult);
                 errorResponse(ExceptionCode.UNAUTHORIZED.getMsg(), ExceptionCode.UNAUTHORIZED.getCode(), 200);
                 return null;
             }
+            resourceNeed2Auth = resourceResult.getData();
+            cacheChannel.set(CacheKey.RESOURCE, CacheKey.RESOURCE_NEED_TO_CHECK, resourceNeed2Auth);
+        }
+        long count = resourceNeed2Auth.stream().filter((String r) -> {
+            // 加边界匹配，避免父路径前缀碰撞误授权（如 /ord 误放行 /order）
+            return pathMatch(permission, r);
+        }).count();
+        if (count == 0) {
+            //未知请求
+            errorResponse(ExceptionCode.UNAUTHORIZED.getMsg(), ExceptionCode.UNAUTHORIZED.getCode(), 200);
+            return null;
         }
 
         String userId = requestContext.getZuulRequestHeaders().get(BaseContextConstants.JWT_KEY_USER_ID);
@@ -100,7 +106,7 @@ public class AccessFilter extends BaseFilter {
             resourceQueryDTO.setUserId(new Long(userId));
             //通过Feign调用服务，查询当前用户拥有的权限
             R<List<Resource>> result = resourceApi.visible(resourceQueryDTO);
-            if (result.getData() != null) {
+            if (result != null && result.getData() != null) {
                 List<Resource> userResourceList = result.getData();
                 userResource = userResourceList.stream().map((Resource r) -> {
                     return r.getMethod() + r.getUrl();
@@ -116,7 +122,8 @@ public class AccessFilter extends BaseFilter {
         }
 
         long count = userResource.stream().filter((String r) -> {
-            return permission.startsWith(r);
+            // 加边界匹配，避免父路径前缀碰撞误授权
+            return pathMatch(permission, r);
         }).count();
 
         if (count > 0) {
@@ -127,5 +134,14 @@ public class AccessFilter extends BaseFilter {
             errorResponse(ExceptionCode.UNAUTHORIZED.getMsg(), ExceptionCode.UNAUTHORIZED.getCode(), 200);
         }
         return null;
+    }
+
+    /**
+     * 资源路径边界匹配：精确相等，或为其直接/多级子路径。
+     * 用 r + "/" 作为前缀，避免注册父路径 /ord 时误放行字面相近的 /order，
+     * 同时保留「路径变量接口注册为父路径」（如 GET /order-manager/order 匹配 /order-manager/order/123）。
+     */
+    private static boolean pathMatch(String permission, String resource) {
+        return permission.equals(resource) || permission.startsWith(resource + "/");
     }
 }

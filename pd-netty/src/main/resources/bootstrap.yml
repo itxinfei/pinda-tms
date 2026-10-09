@@ -13,3 +13,13 @@ spring:
       active: prod
   main:
     allow-bean-definition-overriding: true
+  # RabbitMQ 配置
+  rabbitmq:
+    host: 192.168.20.130
+    port: 5672
+    username: pinda
+    password: pinda
+    virtual-host: /
+    listener:
+      simple:
+        acknowledge-mode: manual

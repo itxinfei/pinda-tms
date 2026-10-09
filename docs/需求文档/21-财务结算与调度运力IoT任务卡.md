@@ -612,7 +612,7 @@ CREATE TABLE pd_fuel_card (
 - 资金侧应收账龄不可见，逾期 90+ 天账单无预警，坏账风险敞口不可控。
 - 合规侧不满足 R10-1（运价透明可查）与 R6-3（审计留痕 ≥6 月），监管检查无法通过。
 
-证据强度标注：`[Research-backed]` 痛点口径基于源码实测（见《_需求审查归档/文档与代码一致性核查报告》§五）+ 行业基准对标（G7/MercuryGate/Blue Yonder 公开资料）；`[Hypothesis]` 单量翻倍即瓶颈为推断，需上线后用量化数据复核。
+证据强度标注：`[Research-backed]` 痛点口径基于源码实测 + 行业基准对标（G7/MercuryGate/Blue Yonder 公开资料）；`[Hypothesis]` 单量翻倍即瓶颈为推断，需上线后用量化数据复核。
 
 ## §PRD-2 用户与角色权限矩阵（Module 3）
 
@@ -719,13 +719,13 @@ stateDiagram-v2
 | 调账率 | `调账明细数 / 总明细数` | — | ≤5% | 调账率高则核查 Drools 规则准确性 |
 | 发票开具时长 | `apply → issue` 中位数 | — | ≤1 工作日 | 财务主管审批效率 |
 | 司机结算发放时长 | `generate → status=2` 中位数 | ≥15 天 | ≤5 天 | 司机满意度评估 |
-| 运费审计差异率 | `|diff_amount| > 阈值的明细数 / 总明细数` | — | ≤3% | 差异率高则核查 Drools 规则或承运商开票规范 |
+| 运费审计差异率 | `abs(diff_amount) > 阈值` 的明细数 / 总明细数 | — | ≤3% | 差异率高则核查 Drools 规则或承运商开票规范 |
 
 ### §PRD-4.3 质量指标
 
 | 指标 | 定义 | 基线 | 目标 | 决策用途 |
 |---|---|---|---|---|
-| 账单误差率 | `|账单 total − Σ订单 amount| > 0.01 元的账单数 / 总账单数` | — | ≤0.5% | 误差高则核查归集逻辑 |
+| 账单误差率 | `abs(账单 total − Σ订单 amount) > 0.01 元` 的账单数 / 总账单数 | — | ≤0.5% | 误差高则核查归集逻辑 |
 | 发票金额一致率 | `invoice.amount = bill.total_amount` 的发票占比 | — | 100% | R10-1 合规检查 |
 | 司机结算差错率 | 司机申诉成功的明细数 / 总明细数 | ≥3% | ≤1% | 司机满意度 + 结算规则校准 |
 
@@ -855,10 +855,10 @@ stateDiagram-v2
 |---|---|---|---|
 | 超信用额度下单 | `pd_customer_credit.used_amount + Order.amount > credit_limit` | 拦截下单 + 提示财务主管复核 | `pd-oms` `OrderServiceImpl` 下单时校验（开关 `credit-check-enabled`） |
 | 应收账龄超 90 天 | `due_date < now()-90day AND status != 2` | 写 `pd_alarm_record`（bizType=BILL, alertType=OVERDUE）+ 客户信用降级 | `pd-work` `@Scheduled` 每日扫描 |
-| 调账金额超阈值 | `|adjust_amount| > total_amount * 5%` | 必须财务主管二次审批 + `optLog` 留痕 | `pd-work` `FreightBillService.adjust` 校验 |
-| 发票金额不一致 | `|invoice.amount - bill.total_amount| > 0.01` | 拦截开具 + 提示重新对账 | `pd-oms` `InvoiceService.issue` 校验 |
+| 调账金额超阈值 | `abs(adjust_amount) > total_amount * 5%` | 必须财务主管二次审批 + `optLog` 留痕 | `pd-work` `FreightBillService.adjust` 校验 |
+| 发票金额不一致 | `abs(invoice.amount - bill.total_amount) > 0.01` | 拦截开具 + 提示重新对账 | `pd-oms` `InvoiceService.issue` 校验 |
 | 司机扣款无依据 | `driver_settlement_detail` 扣款无关联告警 id / 货损记录 | 拦截审核 + 提示补依据 | `pd-work` `DriverSettlementService.audit` 校验 |
-| 运费审计差异超阈值 | `|diff_rate| > 2%`（默认） | `audit_status=2` + 转争议列表待裁决 | `pd-work` `FreightAuditService.scan`（FA-1） |
+| 运费审计差异超阈值 | `abs(diff_rate) > 2%`（默认） | `audit_status=2` + 转争议列表待裁决 | `pd-work` `FreightAuditService.scan`（FA-1） |
 | 坏账核销 | 单笔 > 1 万元 或 累计坏账率 > 2% | 必须财务主管审批 + 总经理知会 | `pd-work` `PaymentService.badDebt` 校验 |
 
 ### §PRD-6.5 审计日志要求
@@ -945,3 +945,4 @@ stateDiagram-v2
 - [ ] **审计留痕**：调账 / 坏账 / 发放 / 发票开具 / 价格协议变更 / 运费审计裁决全部经 `optLog` 拦截器自动留痕 ≥6 月（D-08 复用）。
 - [ ] **合规可导出**：审计员可按时间范围导出账单 + 处理记录 + 发票 + 价格协议变更日志，应对监管检查。
 - [ ] **未新增中间件 / 未在升级基线之上额外升级依赖 / JDK 21 编译通过**（D-19 / D-20 / D-21 全部遵守）。
+

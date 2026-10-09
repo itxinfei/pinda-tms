@@ -16,6 +16,7 @@ import com.itheima.pinda.enums.OrderPickupType;
 import com.itheima.pinda.enums.OrderStatus;
 import com.itheima.pinda.mapper.OrderMapper;
 import com.itheima.pinda.service.IOrderService;
+import com.itheima.pinda.service.SettlementService;
 import org.apache.commons.lang.StringUtils;
 import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieSession;
@@ -119,8 +120,18 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
             }
         }
 
-        return super.updateById(order);
+        boolean updated = super.updateById(order);
+
+        // 签收成功后触发结算：签收的 Feign 回写必经此处，是不依赖 MQ 配置的同步触发点，
+        // 与交付事件 MQ 监听双触发；settle 为 REQUIRES_NEW 独立事务且幂等，不影响签收结果
+        if (updated && OrderStatus.RECEIVED.getCode().equals(newStatus)) {
+            settlementService.settle(order.getId(), null);
+        }
+        return updated;
     }
+
+    @Autowired
+    private SettlementService settlementService;
 
     @Autowired
     private CustomIdGenerator idGenerator;

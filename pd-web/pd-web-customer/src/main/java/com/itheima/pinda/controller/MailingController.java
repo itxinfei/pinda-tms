@@ -16,6 +16,7 @@ import com.itheima.pinda.base.R;
 import com.itheima.pinda.common.context.RequestContext;
 import com.itheima.pinda.common.utils.DateUtils;
 import com.itheima.pinda.common.utils.EntCoordSyncJob;
+import com.itheima.pinda.common.utils.OwnershipAssert;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.util.Rx;
@@ -212,6 +213,10 @@ public class MailingController {
         OrderCargoDto cargoDto = buildOrderCargo(entity);
         orderDTO.setOrderCargoDto(cargoDto);
         orderDTO = orderFeign.save(orderDTO);
+        if (orderDTO == null || orderDTO.getId() == null) {
+            log.error("[下单] 订单保存失败：orderFeign.save 返回空");
+            return Result.error("订单创建失败，请稍后重试");
+        }
         //保存订单位置信息
         OrderLocationDto orderLocationDto = new OrderLocationDto();
         orderLocationDto.setOrderId(orderDTO.getId());
@@ -297,7 +302,8 @@ public class MailingController {
         String location = EntCoordSyncJob.getCoordinate(address);
         log.info("订单收货地址和坐标-->" + address + "--" + location);
         if (StringUtils.isBlank(location)) {
-            return Result.error("下单时收货地址不能为空");
+            // 收货侧百度地图不可用：按收货行政区域确定性分配网点
+            return resolveAgencyByArea(orderDTO.getReceiverCountyId());
         }
         //根据坐标获取区域检查区域是否正常
         Map map = EntCoordSyncJob.getLocationByPosition(location);
@@ -370,7 +376,11 @@ public class MailingController {
 
         Result res = calcuateCourier(location, courierScopeDtoList);
         if (!res.get("code").toString().equals("0")) {
-            return res;
+            // 点选未命中（兜底坐标等场景）：确定性取该区域第一个快递员
+            log.warn("快递员点选未命中，按区域确定性分配: areaId={}", orderDTO.getSenderCountyId());
+            Result fallback = Result.ok();
+            fallback.put("userId", courierScopeDtoList.get(0).getUserId());
+            return fallback;
         }
         Result result = new Result();
         result.put("userId", res.get("userId").toString());
@@ -420,7 +430,8 @@ public class MailingController {
         String location = EntCoordSyncJob.getCoordinate(address);
         log.info("订单发货地址和坐标-->" + address + "--" + location);
         if (StringUtils.isBlank(location)) {
-            return Result.error("下单时发货地址不能为空");
+            // 百度地图不可用（AK未配置或外网不通）：按行政区域确定性分配网点
+            return resolveAgencyByArea(orderDTO.getSenderCountyId());
         }
         //根据坐标获取区域检查区域是否正常
         Map map = EntCoordSyncJob.getLocationByPosition(location);
@@ -454,6 +465,61 @@ public class MailingController {
         result.put("agencyId", res.get("agencyId").toString());
         result.put("location", location);
         return result;
+    }
+
+    /**
+     * 确定性兜底分配网点：百度地图不可用时，直接按行政区域查机构业务范围，
+     * 取覆盖该区域的第一个网点；坐标用范围包围盒中心，供后续快递员点选与落库。
+     */
+    private Result resolveAgencyByArea(String areaId) {
+        log.warn("百度地图不可用，按行政区域[{}]确定性分配网点", areaId);
+        List<AgencyScopeDto> agencyScopes = agencyScopeFeign.findAllAgencyScope(areaId, null, null, null);
+        if (agencyScopes == null || agencyScopes.isEmpty()) {
+            return Result.error("根据区域无法从机构范围获取网点信息列表");
+        }
+        AgencyScopeDto scope = agencyScopes.get(0);
+        String center = polygonCenter(scope.getMutiPoints());
+        Result result = Result.ok();
+        result.put("agencyId", scope.getAgencyId());
+        result.put("location", center == null ? "" : center);
+        return result;
+    }
+
+    /**
+     * 计算范围多边形包围盒中心（lng,lat），作为地图不可用时的代表坐标。
+     */
+    private String polygonCenter(List<List<Map>> mutiPoints) {
+        if (mutiPoints == null || mutiPoints.isEmpty()) {
+            return null;
+        }
+        double minLon = Double.MAX_VALUE, maxLon = -Double.MAX_VALUE;
+        double minLat = Double.MAX_VALUE, maxLat = -Double.MAX_VALUE;
+        boolean any = false;
+        for (List<Map> ring : mutiPoints) {
+            if (ring == null) {
+                continue;
+            }
+            for (Map point : ring) {
+                if (point == null) {
+                    continue;
+                }
+                try {
+                    double lon = Double.parseDouble(String.valueOf(point.get("lng")));
+                    double lat = Double.parseDouble(String.valueOf(point.get("lat")));
+                    minLon = Math.min(minLon, lon);
+                    maxLon = Math.max(maxLon, lon);
+                    minLat = Math.min(minLat, lat);
+                    maxLat = Math.max(maxLat, lat);
+                    any = true;
+                } catch (NumberFormatException ignore) {
+                    // 跳过非坐标点
+                }
+            }
+        }
+        if (!any) {
+            return null;
+        }
+        return (minLon + maxLon) / 2 + "," + (minLat + maxLat) / 2;
     }
 
     @SneakyThrows
@@ -536,6 +602,14 @@ public class MailingController {
 
         OrderDTO order = orderFeign.findById(id);
         log.info("原订单 id:{} result：{}", id, order);
+        if (order == null) {
+            return Result.error(400, "订单不存在");
+        }
+        // 归属校验（deny-by-default）：只允许订单归属人修改，防止越权改他人订单
+        if (order.getMemberId() == null || !userId.equals(String.valueOf(order.getMemberId()))) {
+            log.warn("[订单] 越权改单被拒绝: id={}, userId={}, orderMemberId={}", id, userId, order.getMemberId());
+            return Result.error(403, "无权操作他人订单");
+        }
         String oldSenderCountId = order.getSenderCountyId();
         String oldSendAdress = order.getSenderAddress();
         // 获取地址详细信息
@@ -736,6 +810,17 @@ public class MailingController {
         // 增加分布式锁，防止用户在揽收时取消订单，造成脏数据
         try {
             log.info("加锁成功：{}", id);
+            // 归属校验（deny-by-default）：只允许订单归属人取消，防止越权取消他人订单
+            String userId = RequestContext.getUserId();
+            OrderDTO existing = orderFeign.findById(id);
+            if (existing == null) {
+                return Result.error(400, "订单不存在");
+            }
+            if (userId == null || existing.getMemberId() == null
+                    || !userId.equals(String.valueOf(existing.getMemberId()))) {
+                log.warn("[订单] 越权取消被拒绝: id={}, userId={}, orderMemberId={}", id, userId, existing.getMemberId());
+                return Result.error(403, "无权操作他人订单");
+            }
             // 获取地址详细信息
             OrderDTO orderDTO = new OrderDTO();
             orderDTO.setStatus(OrderStatus.CANCELLED.getCode());
@@ -856,7 +941,8 @@ public class MailingController {
             List<CustomerOrderDTO> newItem = items.stream().map(item -> {
                 CustomerOrderDTO customerOrderDto = new CustomerOrderDTO(item, areaMap, cargoMap, transportOrderMap, taskPickupDispatchPullMap, taskPickupDispatchPushMap);
                 String id = customerOrderDto.getId();
-                List<RouteDTO> routeList = (List<RouteDTO>) route(id).get("data");
+                // 列表数据已按 memberId/收件手机号过滤，直接调用内部组装，避免被路由入口的归属校验误拦
+                List<RouteDTO> routeList = (List<RouteDTO>) doRoute(id).get("data");
                 if (!CollectionUtils.isEmpty(routeList)) {
                     customerOrderDto.setRouteDTO(routeList.get(0));
                 } else {
@@ -899,6 +985,14 @@ public class MailingController {
         String userId = RequestContext.getUserId();
         //订单信息
         OrderDTO orderDTO = orderFeign.findById(id);
+        if (orderDTO == null) {
+            return Result.error(400, "订单不存在");
+        }
+        // 归属校验：订单必须属于当前登录用户，防止越权查看他人订单明细
+        Result deny = OwnershipAssert.checkEquals(orderDTO.getMemberId(), userId, "无权查看他人订单");
+        if (deny != null) {
+            return deny;
+        }
         builder.id(orderDTO.getId());
         builder.status(orderDTO.getStatus());
         //快递员信息
@@ -961,6 +1055,26 @@ public class MailingController {
     @ApiOperation("路由")
     @GetMapping("route")
     public Result route(String id) {
+        //订单信息
+        OrderDTO orderDTO = orderFeign.findById(id);
+        if (orderDTO == null) {
+            return Result.error(400, "订单不存在");
+        }
+        // 归属校验：订单必须属于当前登录用户，防止越权拉取他人订单路由
+        Result deny = OwnershipAssert.checkEquals(orderDTO.getMemberId(), RequestContext.getUserId(), "无权查看他人订单");
+        if (deny != null) {
+            return deny;
+        }
+        return doRoute(id);
+    }
+
+    /**
+     * 路由数据组装（内部方法，不再重复归属校验）。
+     * 调用方只有两处：公开接口 {@link #route}（已做归属校验）；
+     * 本类 {@link #page}（数据已按"我寄的/我收的"条件过滤，确定属于当前用户）。
+     */
+    @SneakyThrows
+    private Result doRoute(String id) {
         List<RouteDTO> result = new ArrayList<>();
         //订单信息
         OrderDTO orderDTO = orderFeign.findById(id);

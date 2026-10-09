@@ -1,0 +1,99 @@
+import type { RouteRecordRaw } from "vue-router";
+import NProgress from "@/plugins/nprogress";
+import router from "@/router";
+import { usePermissionStore, useUserStore } from "@/stores";
+import { useTenantStoreHook } from "@/stores/tenant";
+import { isTenantEnabled } from "@/utils/tenant";
+
+/**
+ * 路由守卫
+ *
+ * 处理登录验证、动态路由生成、404 检测、页面标题与进度条
+ */
+export function setupPermissionGuard() {
+  // 白名单支持前缀匹配：/f 命中所有公开表单分享页 /f/:formKey
+  const whiteList = ["/login", "/f"];
+
+  router.beforeEach(async (to, _from) => {
+    NProgress.start();
+
+    try {
+      const isLoggedIn = useUserStore().isLoggedIn();
+
+      // 未登录处理
+      if (!isLoggedIn) {
+        const isWhiteListed = whiteList.some(
+          (path) => to.path === path || to.path.startsWith(`${path}/`)
+        );
+        if (isWhiteListed) {
+          return;
+        }
+        NProgress.done();
+        return `/login?redirect=${encodeURIComponent(to.fullPath)}`;
+      }
+
+      // 已登录访问登录页，重定向到首页
+      if (to.path === "/login") {
+        return { path: "/" };
+      }
+
+      const permissionStore = usePermissionStore();
+      const userStore = useUserStore();
+
+      // 动态路由生成
+      if (!permissionStore.isRouteGenerated) {
+        // 临时方案：先 mock 用户信息和动态路由，后面再对接品达接口
+        if (!userStore.userInfo?.roles?.length) {
+          userStore.userInfo = {
+            nickname: "pinda",
+            avatar: "",
+            roles: ["ADMIN"],
+            perms: ["*"],
+          } as any;
+        }
+
+        // 临时方案：先不生成动态路由，用静态路由
+        permissionStore.isRouteGenerated = true;
+
+        return { ...to, replace: true };
+      }
+
+      // 路由 404 检查
+      if (to.matched.length === 0) {
+        // 从登录页跳转且目标路径无效，回退首页（避免不同用户权限不同导致的 404）
+        if (_from.path === "/login") {
+          return { path: "/", replace: true };
+        }
+        return "/404";
+      }
+
+      // 动态标题
+      const title = (to.params.title as string) || (to.query.title as string);
+      if (title) {
+        to.meta.title = title;
+      }
+    } catch (error) {
+      console.error("Route guard error:", error);
+      await useUserStore().resetAllState();
+      NProgress.done();
+      return "/login";
+    }
+  });
+
+  router.afterEach(() => {
+    NProgress.done();
+  });
+}
+
+/**
+ * 初始化多租户上下文，未启用或失败时静默跳过
+ */
+async function initTenantContext(): Promise<void> {
+  if (!isTenantEnabled()) return;
+
+  try {
+    await useTenantStoreHook().loadTenant();
+  } catch {
+    // 静默失败，不影响主流程
+  }
+}

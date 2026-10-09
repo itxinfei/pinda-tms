@@ -1,5 +1,5 @@
 # ============================================
-# 品达TMS 应用编排：14 个 Spring Boot 微服务 + pd-admin-ui 前端
+# 品达TMS 应用编排：14 个 Spring Boot 微服务 + 前端（新版 Vue3 后台 + uniapp H5）
 #
 # 部署（镜像 tag 由环境变量 TAG 注入，TAG 一般取 git 短提交号）：
 #   TAG=1a2b3c4 docker compose -f deploy/apps/docker-compose.app.yml up -d --remove-orphans
@@ -116,10 +116,11 @@ services:
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8760' || exit 1"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
-      # CORS 白名单: 覆盖默认(localhost), 允许局域网前端 80/8080 端口访问(无端口=80页面)
+      # CORS 白名单: 覆盖默认(localhost), 允许局域网前端端口访问(无端口=80页面)
+      # 8081=新版Vue3后台, 8082=uniapp H5, 8083/8084=预留另两个app
       # 注意：本服务显式写了 JAVA_OPTS，会整体覆盖 x-jvm-core 锚点，
       # 所以堆外与 OOM 参数必须在下面这一行重复一遍，否则锚点的加固对网关无效。
-      JAVA_OPTS: "-Xms128m -Xmx256m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:MaxMetaspaceSize=256m -XX:MaxDirectMemorySize=256m -Xss512k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -Dcors.allowed.origins=http://192.168.20.130,http://192.168.20.130:8080,http://localhost:8080,http://localhost:3000"
+      JAVA_OPTS: "-Xms128m -Xmx256m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:MaxMetaspaceSize=256m -XX:MaxDirectMemorySize=256m -Xss512k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -Dcors.allowed.origins=http://192.168.20.130,http://192.168.20.130:8080,http://192.168.20.130:8081,http://192.168.20.130:8082,http://192.168.20.130:8083,http://192.168.20.130:8084,http://localhost:8080,http://localhost:3000"
       # JWT 验签公钥的外部来源（详见 pd-auth-server 段注释与部署文档 §2.11）
       PINDA_JWT_PUB_KEY_PATH: ${PINDA_JWT_PUB_KEY_PATH:-}
     volumes:
@@ -298,21 +299,87 @@ services:
     environment:
       <<: [*jvm-small, *nacos-env, *redis-env, *baidu-env]
 
-  # ---------- 管理后台前端 ----------
-  pd-admin-ui:
+  # ============================================================
+  #  4 端前端（容器名按业务角色命名，端口自 2026-10-09 起固定，不再变动）
+  # ============================================================
+  #  端            容器名           端口   对应后端聚合层        状态
+  #  后台管理      pd-admin-h5      8081   pd-web-manager:8161   Vue3 已就位
+  #  司机端        pd-driver-h5     8082   pd-web-driver:8162    uniapp 已就位
+  #  快递员端      pd-courier-h5    8083   pd-web-courier:8163   占位，待代码
+  #  客户小程序    pd-customer-h5   8084   pd-web-customer:8164  占位，待代码
+  #
+  #  业务角色取自 docs/03-功能规划与需求说明.md 的「三端移动应用」：
+  #  司机端 / 快递员端 / 客户小程序，加后台管理共 4 端。
+  # ============================================================
+
+  # ---------- 后台管理（Vue3 + Vite） ----------
+  # 替代老 React 版后台（2026-10-09 下线：容器停用、镜像删除、git 取消跟踪，代码仅存本地）。
+  # 端口 8081：老后台曾占用 8080，下线后不沿用，避免与历史书签/监控混淆。
+  pd-admin-h5:
     <<: *app-static
-    image: pinda/pd-admin-ui:${PD_ADMIN_UI_TAG:-${TAG:-latest}}
-    container_name: pd-admin-ui
+    image: pinda/pd-admin-h5:${PD_ADMIN_H5_TAG:-${TAG:-latest}}
+    container_name: pd-admin-h5
     restart: unless-stopped
-    ports: ["8080:80"]
+    ports: ["8081:80"]
     healthcheck:
       <<: *hc-common
-      # 容器内监听 80，宿主机才是 8080
+      # 容器内监听 80，宿主机才是 8081
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/80' || exit 1"]
+    environment:
+      # server_name，容器间/内网访问用
+      NGINX_HOST: 192.168.20.130
+      # nginx 将 /prod-api 反代到网关。
+      # 走 compose 同网络服务名 pd-gateway（容器间直连），不用宿主 eth0 IP
+      # ——容器内访问宿主 bridge IP会被防火墙拦（实测超时）。
+      DOCKER_REQUEST_DOMAIN_PREFIX: http://pd-gateway:8760
+
+  # ---------- 司机端（uniapp H5，8082） ----------
+  # 只有 H5 产物走 nginx 托管；微信小程序与 App 打包产物不走这里。
+  pd-driver-h5:
+    <<: *app-static
+    image: pinda/pd-driver-h5:${PD_DRIVER_H5_TAG:-${TAG:-latest}}
+    container_name: pd-driver-h5
+    restart: unless-stopped
+    ports: ["8082:80"]
+    healthcheck:
+      <<: *hc-common
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/80' || exit 1"]
     environment:
       NGINX_HOST: 192.168.20.130
-      # nginx 将 /api 反代到网关
-      # 2026-10-06 修复: 原 http://192.168.20.130:8760 在 bridge 网络容器内访问宿主 eth0 IP 被防火墙拦(超时),
-      # 改走 compose 同网络服务名 pd-gateway(容器间直连, 实测 200)
+      DOCKER_REQUEST_DOMAIN_PREFIX: http://pd-gateway:8760
+
+  # ---------- 快递员端（uniapp H5，8083，占位待代码） ----------
+  # 代码尚未提供，先用占位镜像把端口和网络占住，避免将来代码就位时撞端口。
+  # 代码就位后替换方式（端口保持不变，只换 image）：
+  #   docker build -f deploy/apps/Dockerfile.mobile-h5 \
+  #     --build-arg APP_PATH=<uniapp项目目录> --build-arg BUILD_CMD=build:h5 \
+  #     --build-arg DIST_SUBDIR=build/h5 -t pinda/pd-courier-h5:<tag> .
+  # 判定"该端已就位"：docker ps 里 8083 对应的镜像不再是 pinda/placeholder
+  pd-courier-h5:
+    <<: *app-static
+    image: pinda/pd-courier-h5:${PD_COURIER_H5_TAG:-${TAG:-latest}}
+    container_name: pd-courier-h5
+    restart: unless-stopped
+    ports: ["8083:80"]
+    healthcheck:
+      <<: *hc-common
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/80' || exit 1"]
+    environment:
+      NGINX_HOST: 192.168.20.130
+      DOCKER_REQUEST_DOMAIN_PREFIX: http://pd-gateway:8760
+
+  # ---------- 客户小程序（uniapp H5，8084，占位待代码） ----------
+  # 同上，代码就位后只换 image。
+  pd-customer-h5:
+    <<: *app-static
+    image: pinda/pd-customer-h5:${PD_CUSTOMER_H5_TAG:-${TAG:-latest}}
+    container_name: pd-customer-h5
+    restart: unless-stopped
+    ports: ["8084:80"]
+    healthcheck:
+      <<: *hc-common
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/80' || exit 1"]
+    environment:
+      NGINX_HOST: 192.168.20.130
       DOCKER_REQUEST_DOMAIN_PREFIX: http://pd-gateway:8760
 
