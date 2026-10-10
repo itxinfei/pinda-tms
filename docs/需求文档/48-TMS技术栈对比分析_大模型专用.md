@@ -57,7 +57,7 @@
 
 | 层级 | 技术选型 | 版本 |
 |---|---|---|
-| **后端** | JDK + Spring Boot + Spring Cloud | JDK 21 + Spring Boot 3.3 + Spring Cloud 2023 |
+| **后端** | JDK + Spring Boot + Spring Cloud | JDK 21 + Spring Boot 3.5 + Spring Cloud 2025.0（2026-10-10 修订） |
 | **网关** | Spring Cloud Gateway | WebFlux 响应式 |
 | **ORM** | MyBatis Plus | 3.5.x |
 | **规则引擎** | Drools | 8.x |
@@ -110,7 +110,7 @@
 
 ### 5.1 保持现状即可（我们已经很好了）
 
-- ✅ JDK 21 + Spring Boot 3.3（最新）
+- ✅ JDK 21 + Spring Boot 3.5（当前 LTS 维护线）
 - ✅ Vue3 + Vite + Element Plus（最新）
 - ✅ 微服务架构 + 拆分两项目（清晰）
 - ✅ uni-app 跨端统一（方便）

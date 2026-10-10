@@ -6,11 +6,11 @@
 ---
 
 ## 0. 总纲
-业务优先、解决实际问题、不做花架子。**全栈技术栈按《阶段1 技术栈现代化周计划》升级（JDK 21 LTS + Spring Boot 3.3 + Spring Cloud 2023 + Gateway 网关）**，任何偏离须经人工确认，不得自作主张。
+业务优先、解决实际问题、不做花架子。**全栈技术栈按《阶段1 技术栈现代化周计划》升级（JDK 21 LTS + Spring Boot 3.5 + Spring Cloud 2025.0 + Gateway 网关；2026-10-10 修订：由 SB3.3/Cloud2023 上调，见 SRS §2.1）**，任何偏离须经人工确认，不得自作主张。
 
 ## 1. 宪法级红线（违反即不合格）
-1. **JDK 固定 21 LTS**（Eclipse Temurin），后端按 Spring Boot 3.3 / Spring Cloud 2023 迁移，`javax.*`→`jakarta.*`。
-2. **后端依赖按全栈升级迁移**：Spring Boot 2.2.5→3.3、Spring Cloud→2023、Alibaba→2023，MyBatis Plus/Druid/Shiro/Drools/Lombok 同步升级至兼容版本；FastJSON 1.x 替换为 FastJSON2 或 Jackson（消除 CVE）。迁移范围与排期以《阶段1 技术栈现代化周计划》为准。
+1. **JDK 固定 21 LTS**（Eclipse Temurin），后端按 Spring Boot 3.5 / Spring Cloud 2025.0 迁移，`javax.*`→`jakarta.*`。
+2. **后端依赖按全栈升级迁移**：Spring Boot 2.2.5→3.5、Spring Cloud→2025.0、Alibaba→2025.0.0.0，MyBatis Plus/Druid/Shiro/Drools/Lombok 同步升级至兼容版本；FastJSON 1.x 替换为 FastJSON2 或 Jackson（消除 CVE）。迁移范围与排期以《阶段1 技术栈现代化周计划》为准。
 3. **安全 CVE 随升级一并解决**：FastJSON 1.x→2.x、Shiro 升级至安全版本等随全栈升级（第2条）自然消除；升级后若仍有未覆盖的高危 CVE，须登记并评估。
 4. **不引入新中间件**（MongoDB/HBase/Spark/Hive/ES/RocketMQ/XXL-JOB/Sentinel/SkyWalking 等是用户路线图，不是缺失 bug，禁止"顺手"补齐）。
 5. **不随意重写/不重构** 既有文件（含 `pd-admin-ui`），除非任务明确要求；**「管理端 Vue3 升级专项」任务下允许改动 `pd-admin-ui` 源码与结构**（目标栈 Vue3+Vite+Element Plus+Pinia，见《开发规范》§2.2）。

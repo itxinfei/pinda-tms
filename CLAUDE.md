@@ -21,7 +21,7 @@
 中文（简体）交互；代码注释中文优先。
 
 ## 2. 技术栈定调（全栈升级为准，2026-10 决议）
-- **后端**：JDK 1.8 + Spring Boot 2.2.5 → **JDK 21 LTS + Spring Boot 3.3 + Spring Cloud 2023 + Alibaba 2023**（jakarta.*）。版本清单以《阶段1 技术栈现代化周计划》/ SRS §2.1 为准。
+- **后端**：JDK 1.8 + Spring Boot 2.2.5 → **JDK 21 LTS + Spring Boot 3.5 + Spring Cloud 2025.0 + Alibaba 2025.0.0.0**（jakarta.*；2026-10-10 修订：由 SB3.3/Cloud2023 上调，经人工确认，理由见 SRS §2.1）。版本清单以《阶段1 技术栈现代化周计划》/ SRS §2.1 为准。
 - **管理端 `pd-admin-ui`**：Vue 2.6 → **Vue 3.4 + Vite 5 + Element Plus 2 + Pinia 2 + Vue Router 4 + ECharts 5**（见《管理端Vue3升级专项实施规范》，~110+ Vue2 页面分批迁移）。
 - **移动端**：uni-app（Vue3/Vite）+ uview-plus（新建，三端分包）。
 - 当前阶段：阶段 1 技术栈现代化进行中（详见周计划）。

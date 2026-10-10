@@ -87,3 +87,86 @@ VALUES
    '企业管理员',
    '$2a$10$kChsqIGdVmTJiCHDJv/Iau0RcdB76cW.b4gWga4Pf0QvGoGhvQKES',
    0, NOW());
+
+-- ----------------------------
+-- 组织（树形，租户私有）
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `pd_core_org` (
+  `id`              bigint(20)   NOT NULL COMMENT 'ID',
+  `tenant_id`       bigint(20)   NOT NULL COMMENT '租户ID',
+  `name`            varchar(255) NOT NULL DEFAULT '' COMMENT '名称',
+  `abbreviation`    varchar(255)          DEFAULT '' COMMENT '简称',
+  `parent_id`       bigint(20)            DEFAULT '0' COMMENT '父ID，根为0',
+  `org_type`        tinyint(1)            DEFAULT NULL COMMENT '部门类型 1分公司 2一级转运中心 3二级转运中心 4网点',
+  `province_id`     bigint(20)            DEFAULT NULL COMMENT '省',
+  `city_id`         bigint(20)            DEFAULT NULL COMMENT '市',
+  `county_id`       bigint(20)            DEFAULT NULL COMMENT '区',
+  `address`         varchar(255)          DEFAULT NULL COMMENT '地址',
+  `contract_number` varchar(20)           DEFAULT NULL COMMENT '联系电话',
+  `manager_id`      bigint(20)            DEFAULT NULL COMMENT '负责人ID',
+  `tree_path`       varchar(255)          DEFAULT ',' COMMENT '树路径，逗号包裹祖先',
+  `sort_value`      int(11)               DEFAULT '1' COMMENT '排序',
+  `status`          bit(1)                DEFAULT b'1' COMMENT '状态',
+  `describe_`       varchar(255)          DEFAULT '' COMMENT '描述',
+  `latitude`        varchar(255)          DEFAULT NULL COMMENT '纬度',
+  `longitude`       varchar(255)          DEFAULT NULL COMMENT '经度',
+  `business_hours`  varchar(255)          DEFAULT NULL COMMENT '营业时间',
+  `create_time`     datetime              DEFAULT NULL,
+  `create_user`     bigint(20)            DEFAULT NULL,
+  `update_time`     datetime              DEFAULT NULL,
+  `update_user`     bigint(20)            DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_tenant_parent` (`tenant_id`, `parent_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='组织';
+
+-- ----------------------------
+-- 岗位（租户私有）
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `pd_core_station` (
+  `id`          bigint(20)   NOT NULL COMMENT 'ID',
+  `tenant_id`   bigint(20)   NOT NULL COMMENT '租户ID',
+  `name`        varchar(255) NOT NULL DEFAULT '' COMMENT '名称',
+  `org_id`      bigint(20)            DEFAULT '0' COMMENT '组织ID #pd_core_org',
+  `status`      bit(1)                DEFAULT b'1' COMMENT '状态',
+  `describe_`   varchar(255)          DEFAULT '' COMMENT '描述',
+  `create_time` datetime              DEFAULT NULL,
+  `create_user` bigint(20)            DEFAULT NULL,
+  `update_time` datetime              DEFAULT NULL,
+  `update_user` bigint(20)            DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_tenant_org` (`tenant_id`, `org_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='岗位';
+
+-- ----------------------------
+-- 行政区划（国家标准，全局共享；全国数据另行导入，本脚本只建表）
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `pd_area` (
+  `id`          int(11)      NOT NULL COMMENT '行政ID（国标区划码）',
+  `parent_id`   int(11)               DEFAULT NULL COMMENT '父级行政',
+  `name`        varchar(255)          DEFAULT NULL COMMENT '行政名称',
+  `area_code`   varchar(255)          DEFAULT NULL,
+  `city_code`   varchar(255)          DEFAULT NULL,
+  `merger_name` varchar(255)          DEFAULT NULL,
+  `short_name`  varchar(255)          DEFAULT NULL,
+  `zip_code`    varchar(255)          DEFAULT NULL,
+  `level`       tinyint(2)            DEFAULT '0' COMMENT '等级 0省 1市 2县 3镇 4乡村',
+  `lng`         varchar(255)          DEFAULT NULL,
+  `lat`         varchar(255)          DEFAULT NULL,
+  `pinyin`      varchar(255)          DEFAULT NULL,
+  `first`       varchar(50)           DEFAULT '0' COMMENT '首字母',
+  `update_time` datetime              DEFAULT NULL,
+  `update_user` bigint(20)            DEFAULT NULL,
+  `create_time` datetime              DEFAULT NULL,
+  `create_user` bigint(20)            DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='行政区划';
+
+-- ----------------------------
+-- 种子：两个租户的根组织
+-- ----------------------------
+INSERT INTO `pd_core_org`
+  (`id`, `tenant_id`, `name`, `parent_id`, `org_type`, `tree_path`, `sort_value`,
+   `status`, `create_user`, `create_time`)
+VALUES
+  (1, 1, '平台运营总部',   0, 1, ',', 1, b'1', 0, NOW()),
+  (2, 2, '品达物流总公司', 0, 1, ',', 1, b'1', 0, NOW());
