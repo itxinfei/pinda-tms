@@ -46,6 +46,9 @@ RUN pnpm run build-only \
 # ---------- 运行阶段 ----------
 FROM nginx:1.27-alpine
 
+# 复制构建产物（2026-10-10 修复：此前版本漏掉 COPY dist，新镜像只剩 nginx 默认欢迎页）
+COPY --from=builder /build/dist /usr/share/nginx/html/
+
 # 容器内 nginx 配置由 envsubst 渲染（复用老版 nginx.template 的成熟写法）
 COPY deploy/apps/nginx/admin-h5.conf /etc/nginx/templates/default.conf.template
 

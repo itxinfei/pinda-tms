@@ -41,6 +41,13 @@ deploy_one() {
   fi
   echo ">> [$sub] 滚动更新容器 ..."
   export PD_ADMIN_H5_TAG="$TAG" PD_DRIVER_H5_TAG="$TAG" PD_COURIER_H5_TAG="$TAG" PD_CUSTOMER_H5_TAG="$TAG"
+  # 容器归属检查：compose 文件声明 name: pinda-apps；历史手动 docker run 的容器无归属，
+  # 会让 compose 报容器名冲突。非 pinda-apps 归属的目标容器先删除，改由 compose 接管。
+  proj=$(docker inspect -f '{{index .Config.Labels "com.docker.compose.project"}}' "$img" 2>/dev/null || echo "")
+  if [ "$proj" != "pinda-apps" ]; then
+    echo ">> [$sub] 旧容器 $img 非 pinda-apps 管理（proj='$proj'），先删除由 compose 接管"
+    docker rm -f "$img" 2>/dev/null || true
+  fi
   docker compose --env-file "$APPS_ENV" -f "$COMPOSE" up -d "$img"
   # 等健康（最多 60s）
   for i in $(seq 1 12); do
