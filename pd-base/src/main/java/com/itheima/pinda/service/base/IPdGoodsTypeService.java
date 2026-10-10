@@ -9,35 +9,25 @@ import java.util.List;
 /**
  * 货物类型操作接口
  */
-public interface IPdGoodsTypeService extends IService<PdGoodsType>{
-    /**
-     * 保存货物类型
-     * @param pdGoodsType
-     * @return
-     */
-    public PdGoodsType saveGoodsType(PdGoodsType pdGoodsType);
+public interface IPdGoodsTypeService extends IService<PdGoodsType> {
 
     /**
-     * 查询所有货物类型
-     * @return
+     * 保存货物类型
      */
-    public List<PdGoodsType> findAll();
+    PdGoodsType saveGoodsType(PdGoodsType pdGoodsType);
+
+    /**
+     * 查询所有启用的货物类型
+     */
+    List<PdGoodsType> findAll();
 
     /**
      * 分页查询货物类型
-     * @param page
-     * @param pageSize
-     * @param name
-     * @param truckTypeId
-     * @param truckTypeName
-     * @return
      */
-    public IPage<PdGoodsType> findByPage(Integer page, Integer pageSize,String name,String truckTypeId,String truckTypeName);
+    IPage<PdGoodsType> findByPage(Integer page, Integer pageSize, String name, Long truckTypeId, String truckTypeName);
 
     /**
-     * 查询货物类型列表
-     * @param ids
-     * @return
+     * 按id列表查询货物类型
      */
-    public List<PdGoodsType> findAll(List<String> ids);
+    List<PdGoodsType> findAll(List<Long> ids);
 }

@@ -1,51 +1,47 @@
 package com.itheima.pinda.entity.agency;
 
-import java.io.Serializable;
-
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 /**
- * <p>
- * 车队表
- * </p>
- *
- * @author itcast
- * @since 2019-12-20
+ * 车队
  */
 @Data
-@TableName("pd_fleet")
-public class PdFleet implements Serializable {
+@TableName("base_fleet")
+public class PdFleet {
 
-    private static final long serialVersionUID = 1L;
-    /**
-     * id
-     */
-    @TableId(value = "id", type = IdType.INPUT)
-    private String id;
-    /**
-     * 车队名称
-     */
+    @TableId(type = IdType.ASSIGN_ID)
+    private Long id;
+
+    /** 租户ID */
+    private Long tenantId;
+
+    /** 车队名称 */
     private String name;
 
-    /**
-     * 车队编号
-     */
+    /** 车队编号 */
     private String fleetNumber;
 
-    /**
-     * 所属机构
-     */
-    private String agencyId;
+    /** 所属组织ID */
+    private Long orgId;
 
-    /**
-     * 负责人
-     */
+    /** 负责人 */
     private String manager;
-    /**
-     * 状态 0：禁用 1：正常
-     */
+
+    /** 1正常 0禁用 */
     private Integer status;
+
+    private Long createBy;
+    private LocalDateTime createTime;
+    private Long updateBy;
+    private LocalDateTime updateTime;
+
+    /** 逻辑删除：0 未删 1 已删 */
+    @TableLogic
+    private Integer deleted;
 }

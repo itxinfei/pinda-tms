@@ -1,40 +1,29 @@
 package com.itheima.pinda.entity.user;
 
 import com.baomidou.mybatisplus.annotation.IdType;
-import java.io.Serializable;
-
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 /**
- * <p>
- * 快递员业务范围表
- * </p>
- *
- * @author itcast
- * @since 2019-12-20
+ * 快递员作业范围（电子围栏）
  */
 @Data
-@TableName("pd_courier_scop")
-public class PdCourierScope implements Serializable {
+@TableName("base_courier_scope")
+public class PdCourierScope {
 
-    private static final long serialVersionUID = 1L;
-    /**
-     * id
-     */
-    @TableId(type = IdType.INPUT)
-    private String id;
-    /**
-     * 用户id
-     */
-    private String userId;
-    /**
-     * 行政区域id
-     */
-    private String areaId;
-    /**
-     * 多边形经纬度坐标集合
-     */
-    private String mutiPoints;
+    @TableId(type = IdType.ASSIGN_ID)
+    private Long id;
+
+    /** 租户ID */
+    private Long tenantId;
+
+    /** 快递员账号 sys_user.id */
+    private Long courierId;
+
+    /** 行政区划 dict_area.id */
+    private Integer areaId;
+
+    /** 围栏多边形点串（JSON） */
+    private String polygonPoints;
 }

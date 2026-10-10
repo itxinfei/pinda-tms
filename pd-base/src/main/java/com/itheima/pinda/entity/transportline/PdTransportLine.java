@@ -1,77 +1,63 @@
 package com.itheima.pinda.entity.transportline;
 
-import java.math.BigDecimal;
-import java.io.Serializable;
-
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
 /**
- * <p>
- * 线路表
- * </p>
- *
- * @author itcast
- * @since 2019-12-20
+ * 业务线路
  */
 @Data
-@TableName("pd_transport_line")
-public class PdTransportLine implements Serializable {
+@TableName("base_transport_line")
+public class PdTransportLine {
 
-    private static final long serialVersionUID = 1L;
-    /**
-     * id
-     */
-    @TableId(value = "id", type = IdType.INPUT)
-    private String id;
-    /**
-     * 线路名称
-     */
+    @TableId(type = IdType.ASSIGN_ID)
+    private Long id;
+
+    /** 租户ID */
+    private Long tenantId;
+
+    /** 线路名称 */
     private String name;
 
-    /**
-     * 线路编号
-     */
+    /** 线路编号 */
     private String lineNumber;
 
-    /**
-     * 所属机构
-     */
-    private String agencyId;
-    /**
-     * 线路类型
-     */
-    private String transportLineTypeId;
+    /** 所属组织ID */
+    private Long orgId;
 
-    /**
-     * 起始地机构id
-     */
-    private String startAgencyId;
+    /** 线路类型ID */
+    private Long transportLineTypeId;
 
-    /**
-     * 目的地机构id
-     */
-    private String endAgencyId;
+    /** 起始机构ID */
+    private Long startOrgId;
 
-    /**
-     * 距离
-     */
+    /** 目的机构ID */
+    private Long endOrgId;
+
+    /** 距离(km) */
     private BigDecimal distance;
 
-    /**
-     * 成本
-     */
+    /** 成本(元) */
     private BigDecimal cost;
 
-    /**
-     * 预计时间
-     */
-    private BigDecimal estimatedTime;
+    /** 预计时间(分钟) */
+    private Integer estimatedTime;
 
-    /**
-     * 状态 0：禁用 1：正常
-     */
+    /** 1正常 0禁用 */
     private Integer status;
+
+    private Long createBy;
+    private LocalDateTime createTime;
+    private Long updateBy;
+    private LocalDateTime updateTime;
+
+    /** 逻辑删除：0 未删 1 已删 */
+    @TableLogic
+    private Integer deleted;
 }

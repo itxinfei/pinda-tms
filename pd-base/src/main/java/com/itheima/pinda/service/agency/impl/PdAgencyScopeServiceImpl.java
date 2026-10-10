@@ -2,68 +2,57 @@ package com.itheima.pinda.service.agency.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
-import com.itheima.pinda.common.CustomIdGenerator;
 import com.itheima.pinda.entity.agency.PdAgencyScope;
-import com.itheima.pinda.mapper.agency.PdAgencyScopMapper;
+import com.itheima.pinda.mapper.agency.PdAgencyScopeMapper;
 import com.itheima.pinda.service.agency.IPdAgencyScopeService;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 /**
- * <p>
- * 机构业务范围表 服务实现类
- * </p>
- *
- * @author itcast
- * @since 2019-12-20
+ * 机构作业范围 服务实现类
  */
 @Service
-public class PdAgencyScopeServiceImpl extends ServiceImpl<PdAgencyScopMapper, PdAgencyScope> implements IPdAgencyScopeService {
-    @Autowired
-    private CustomIdGenerator idGenerator;
-
+public class PdAgencyScopeServiceImpl extends ServiceImpl<PdAgencyScopeMapper, PdAgencyScope>
+        implements IPdAgencyScopeService {
 
     @Override
     public void batchSave(List<PdAgencyScope> scopeList) {
-        scopeList.forEach(scope -> scope.setId(idGenerator.nextId(scope) + ""));
         saveBatch(scopeList);
     }
 
     @Override
-    public void delete(String areaId, String agencyId) {
-        LambdaQueryWrapper<PdAgencyScope> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+    public void delete(Integer areaId, Long orgId) {
+        LambdaQueryWrapper<PdAgencyScope> wrapper = new LambdaQueryWrapper<>();
         boolean canExecute = false;
-        if (StringUtils.isNotEmpty(areaId)) {
-            lambdaQueryWrapper.eq(PdAgencyScope::getAreaId, areaId);
+        if (areaId != null) {
+            wrapper.eq(PdAgencyScope::getAreaId, areaId);
             canExecute = true;
         }
-        if (StringUtils.isNotEmpty(agencyId)) {
-            lambdaQueryWrapper.eq(PdAgencyScope::getAgencyId, agencyId);
+        if (orgId != null) {
+            wrapper.eq(PdAgencyScope::getOrgId, orgId);
             canExecute = true;
         }
         if (canExecute) {
-            baseMapper.delete(lambdaQueryWrapper);
+            baseMapper.delete(wrapper);
         }
     }
 
     @Override
-    public List<PdAgencyScope> findAll(String areaId, String agencyId, List<String> agencyIds, List<String> areaIds) {
-        LambdaQueryWrapper<PdAgencyScope> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        if (StringUtils.isNotEmpty(areaId)) {
-            lambdaQueryWrapper.eq(PdAgencyScope::getAreaId, areaId);
+    public List<PdAgencyScope> findAll(Integer areaId, Long orgId, List<Long> orgIds, List<Integer> areaIds) {
+        LambdaQueryWrapper<PdAgencyScope> wrapper = new LambdaQueryWrapper<>();
+        if (areaId != null) {
+            wrapper.eq(PdAgencyScope::getAreaId, areaId);
         }
-        if (StringUtils.isNotEmpty(agencyId)) {
-            lambdaQueryWrapper.eq(PdAgencyScope::getAgencyId, agencyId);
+        if (orgId != null) {
+            wrapper.eq(PdAgencyScope::getOrgId, orgId);
         }
-        if (agencyIds != null && agencyIds.size() > 0) {
-            lambdaQueryWrapper.in(PdAgencyScope::getAgencyId, agencyIds);
+        if (orgIds != null && !orgIds.isEmpty()) {
+            wrapper.in(PdAgencyScope::getOrgId, orgIds);
         }
-        if (areaIds != null && areaIds.size() > 0) {
-            lambdaQueryWrapper.in(PdAgencyScope::getAreaId, areaIds);
+        if (areaIds != null && !areaIds.isEmpty()) {
+            wrapper.in(PdAgencyScope::getAreaId, areaIds);
         }
-        return baseMapper.selectList(lambdaQueryWrapper);
+        return baseMapper.selectList(wrapper);
     }
 }

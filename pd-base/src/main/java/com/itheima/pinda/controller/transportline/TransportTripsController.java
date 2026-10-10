@@ -1,9 +1,9 @@
 package com.itheima.pinda.controller.transportline;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import com.itheima.pinda.common.utils.Result;
+import com.itheima.pinda.controller.support.IdConverter;
 import com.itheima.pinda.DTO.transportline.TransportTripsTruckDriverDto;
 import com.itheima.pinda.entity.transportline.PdTransportTrips;
 import com.itheima.pinda.entity.transportline.PdTransportTripsTruckDriver;
@@ -11,10 +11,9 @@ import com.itheima.pinda.service.transportline.IPdTransportTripsService;
 import com.itheima.pinda.DTO.transportline.TransportTripsDto;
 
 import com.itheima.pinda.service.transportline.IPdTransportTripsTruckDriverService;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-
-import org.springframework.beans.BeanUtils;
 
 /**
  * TransportTripsController
@@ -37,9 +36,9 @@ public class TransportTripsController {
     public TransportTripsDto save(@RequestBody TransportTripsDto dto) {
         PdTransportTrips pdTransportTrips = new PdTransportTrips();
         BeanUtils.copyProperties(dto, pdTransportTrips);
+        pdTransportTrips.setTransportLineId(IdConverter.toLong(dto.getTransportLineId()));
         pdTransportTrips = transportTripsService.saveTransportTrips(pdTransportTrips);
-        BeanUtils.copyProperties(pdTransportTrips, dto);
-        return dto;
+        return toDto(pdTransportTrips);
     }
 
     /**
@@ -49,14 +48,13 @@ public class TransportTripsController {
      * @return 车次信息
      */
     @GetMapping("/{id}")
-    public TransportTripsDto fineById(@PathVariable(name = "id") String id) {
-        PdTransportTrips pdTransportTrips = transportTripsService.getById(id);
-        TransportTripsDto dto = new TransportTripsDto();
+    public TransportTripsDto findById(@PathVariable(name = "id") String id) {
+        PdTransportTrips pdTransportTrips = transportTripsService.getById(IdConverter.toLong(id));
         if (pdTransportTrips != null) {
-            BeanUtils.copyProperties(pdTransportTrips, dto);
-        }else{
-            dto.setId(id);
+            return toDto(pdTransportTrips);
         }
+        TransportTripsDto dto = new TransportTripsDto();
+        dto.setId(id);
         return dto;
     }
 
@@ -68,12 +66,11 @@ public class TransportTripsController {
      * @return 车次列表
      */
     @GetMapping("")
-    public List<TransportTripsDto> findAll(@RequestParam(name = "transportLineId", required = false) String transportLineId, @RequestParam(name = "ids", required = false) List<String> ids) {
-        return transportTripsService.findAll(transportLineId, ids).stream().map(pdTransportTrips -> {
-            TransportTripsDto dto = new TransportTripsDto();
-            BeanUtils.copyProperties(pdTransportTrips, dto);
-            return dto;
-        }).collect(Collectors.toList());
+    public List<TransportTripsDto> findAll(@RequestParam(name = "transportLineId", required = false) String transportLineId,
+                                           @RequestParam(name = "ids", required = false) List<String> ids) {
+        return transportTripsService.findAll(IdConverter.toLong(transportLineId), IdConverter.toLongList(ids)).stream()
+                .map(this::toDto)
+                .toList();
     }
 
     /**
@@ -85,10 +82,12 @@ public class TransportTripsController {
      */
     @PutMapping("/{id}")
     public TransportTripsDto update(@PathVariable(name = "id") String id, @RequestBody TransportTripsDto dto) {
-        dto.setId(id);
         PdTransportTrips pdTransportTrips = new PdTransportTrips();
         BeanUtils.copyProperties(dto, pdTransportTrips);
+        pdTransportTrips.setId(IdConverter.toLong(id));
+        pdTransportTrips.setTransportLineId(IdConverter.toLong(dto.getTransportLineId()));
         transportTripsService.updateById(pdTransportTrips);
+        dto.setId(id);
         return dto;
     }
 
@@ -100,7 +99,7 @@ public class TransportTripsController {
      */
     @PutMapping("/{id}/disable")
     public Result disable(@PathVariable(name = "id") String id) {
-        transportTripsService.disable(id);
+        transportTripsService.disable(IdConverter.toLong(id));
         return Result.ok();
     }
 
@@ -111,13 +110,17 @@ public class TransportTripsController {
      * @return 返回信息
      */
     @PostMapping("{id}/truckDriver")
-    public Result batchSaveTruckDriver(@PathVariable("id") String transportTripsId, @RequestBody List<TransportTripsTruckDriverDto> dtoList) {
-        transportTripsTruckDriverService.batchSave(transportTripsId, dtoList.stream().map(dto -> {
-            dto.setTransportTripsId(transportTripsId);
-            PdTransportTripsTruckDriver truckTransportTripsTruckDriver = new PdTransportTripsTruckDriver();
-            BeanUtils.copyProperties(dto, truckTransportTripsTruckDriver);
-            return truckTransportTripsTruckDriver;
-        }).collect(Collectors.toList()));
+    public Result batchSaveTruckDriver(@PathVariable("id") String transportTripsId,
+                                       @RequestBody List<TransportTripsTruckDriverDto> dtoList) {
+        Long tripsId = IdConverter.toLong(transportTripsId);
+        transportTripsTruckDriverService.batchSave(tripsId, dtoList.stream().map(dto -> {
+            PdTransportTripsTruckDriver relation = new PdTransportTripsTruckDriver();
+            BeanUtils.copyProperties(dto, relation);
+            relation.setTripsId(tripsId);
+            relation.setTruckId(IdConverter.toLong(dto.getTruckId()));
+            relation.setDriverId(IdConverter.toLong(dto.getUserId()));
+            return relation;
+        }).toList());
         return Result.ok();
     }
 
@@ -130,11 +133,30 @@ public class TransportTripsController {
      * @return 车次与车辆和司机关联关系列表
      */
     @GetMapping("/truckDriver")
-    public List<TransportTripsTruckDriverDto> findAllTruckDriverTransportTrips(@RequestParam(name = "transportTripsId", required = false) String transportTripsId, @RequestParam(name = "truckId", required = false) String truckId, @RequestParam(name = "userId", required = false) String userId) {
-        return transportTripsTruckDriverService.findAll(transportTripsId, truckId, userId).stream().map(pdTransportTripsTruck -> {
+    public List<TransportTripsTruckDriverDto> findAllTruckDriverTransportTrips(
+            @RequestParam(name = "transportTripsId", required = false) String transportTripsId,
+            @RequestParam(name = "truckId", required = false) String truckId,
+            @RequestParam(name = "userId", required = false) String userId) {
+        return transportTripsTruckDriverService.findAll(IdConverter.toLong(transportTripsId),
+                IdConverter.toLong(truckId), IdConverter.toLong(userId)).stream().map(relation -> {
             TransportTripsTruckDriverDto dto = new TransportTripsTruckDriverDto();
-            BeanUtils.copyProperties(pdTransportTripsTruck, dto);
+            BeanUtils.copyProperties(relation, dto);
+            dto.setId(IdConverter.toStr(relation.getId()));
+            dto.setTransportTripsId(IdConverter.toStr(relation.getTripsId()));
+            dto.setTruckId(IdConverter.toStr(relation.getTruckId()));
+            dto.setUserId(IdConverter.toStr(relation.getDriverId()));
             return dto;
-        }).collect(Collectors.toList());
+        }).toList();
+    }
+
+    /**
+     * 实体 → DTO：id/线路id 转回 String
+     */
+    private TransportTripsDto toDto(PdTransportTrips entity) {
+        TransportTripsDto dto = new TransportTripsDto();
+        BeanUtils.copyProperties(entity, dto);
+        dto.setId(IdConverter.toStr(entity.getId()));
+        dto.setTransportLineId(IdConverter.toStr(entity.getTransportLineId()));
+        return dto;
     }
 }

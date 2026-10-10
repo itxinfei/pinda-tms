@@ -13,6 +13,6 @@ import org.apache.ibatis.annotations.Mapper;
  * @since 2019-12-20
  */
 @Mapper
-public interface PdCourierScopMapper extends BaseMapper<PdCourierScope> {
+public interface PdCourierScopeMapper extends BaseMapper<PdCourierScope> {
 
 }

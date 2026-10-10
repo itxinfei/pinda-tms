@@ -12,9 +12,9 @@ import java.util.List;
  * 货物类型Mapper接口
  */
 @Mapper
-public interface PdGoodsTypeMapper extends BaseMapper<PdGoodsType>{
+public interface PdGoodsTypeMapper extends BaseMapper<PdGoodsType> {
     List<PdGoodsType> findByPage(Page<PdGoodsType> page,
-                                 @Param("name")String name,
-                                 @Param("truckTypeId")String truckTypeId,
-                                 @Param("truckTypeName")String truckTypeName);
+                                 @Param("name") String name,
+                                 @Param("truckTypeId") Long truckTypeId,
+                                 @Param("truckTypeName") String truckTypeName);
 }

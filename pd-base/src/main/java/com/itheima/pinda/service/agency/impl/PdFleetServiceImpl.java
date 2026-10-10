@@ -1,79 +1,67 @@
 package com.itheima.pinda.service.agency.impl;
 
-import java.util.List;
-
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
-import com.itheima.pinda.common.CustomIdGenerator;
 import com.itheima.pinda.common.utils.Constant;
-import com.itheima.pinda.mapper.agency.PdFleetMapper;
 import com.itheima.pinda.entity.agency.PdFleet;
+import com.itheima.pinda.mapper.agency.PdFleetMapper;
 import com.itheima.pinda.service.agency.IPdFleetService;
-
-import org.springframework.beans.factory.annotation.Autowired;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
-import org.apache.commons.lang.StringUtils;
+
+import java.util.List;
 
 /**
- * <p>
- * 车队表 服务实现类
- * </p>
- *
- * @author itcast
- * @since 2019-12-20
+ * 车队 服务实现类
  */
 @Service
 public class PdFleetServiceImpl extends ServiceImpl<PdFleetMapper, PdFleet> implements IPdFleetService {
-    @Autowired
-    private CustomIdGenerator idGenerator;
 
     @Override
     public PdFleet saveFleet(PdFleet fleet) {
-        fleet.setId(idGenerator.nextId(fleet) + "");
         baseMapper.insert(fleet);
         return fleet;
     }
 
     @Override
     public IPage<PdFleet> findByPage(Integer page, Integer pageSize, String name, String fleetNumber, String manager) {
-        Page<PdFleet> iPage = new Page(page, pageSize);
-        LambdaQueryWrapper<PdFleet> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+        Page<PdFleet> iPage = new Page<>(page, pageSize);
+        LambdaQueryWrapper<PdFleet> wrapper = new LambdaQueryWrapper<>();
         if (StringUtils.isNotEmpty(name)) {
-            lambdaQueryWrapper.like(PdFleet::getName, name);
+            wrapper.like(PdFleet::getName, name);
         }
         if (StringUtils.isNotEmpty(fleetNumber)) {
-            lambdaQueryWrapper.like(PdFleet::getFleetNumber, fleetNumber);
+            wrapper.like(PdFleet::getFleetNumber, fleetNumber);
         }
         if (StringUtils.isNotEmpty(manager)) {
-            lambdaQueryWrapper.eq(PdFleet::getManager, manager);
+            wrapper.eq(PdFleet::getManager, manager);
         }
-        lambdaQueryWrapper.eq(PdFleet::getStatus, Constant.DATA_DEFAULT_STATUS);
-        lambdaQueryWrapper.orderBy(true, true, PdFleet::getId);
-        return baseMapper.selectPage(iPage, lambdaQueryWrapper);
+        wrapper.eq(PdFleet::getStatus, Constant.DATA_DEFAULT_STATUS);
+        wrapper.orderBy(true, true, PdFleet::getId);
+        return baseMapper.selectPage(iPage, wrapper);
     }
 
     @Override
-    public List<PdFleet> findAll(List<String> ids, String agencyId) {
-        LambdaQueryWrapper<PdFleet> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        if (ids != null && ids.size() > 0) {
-            lambdaQueryWrapper.in(PdFleet::getId, ids);
+    public List<PdFleet> findAll(List<Long> ids, Long orgId) {
+        LambdaQueryWrapper<PdFleet> wrapper = new LambdaQueryWrapper<>();
+        if (ids != null && !ids.isEmpty()) {
+            wrapper.in(PdFleet::getId, ids);
         }
-        if (StringUtils.isNotEmpty(agencyId)) {
-            lambdaQueryWrapper.eq(PdFleet::getAgencyId, agencyId);
+        if (orgId != null) {
+            wrapper.eq(PdFleet::getOrgId, orgId);
         }
-        lambdaQueryWrapper.orderBy(true, true, PdFleet::getId);
-        lambdaQueryWrapper.eq(PdFleet::getStatus, Constant.DATA_DEFAULT_STATUS);
-        return baseMapper.selectList(lambdaQueryWrapper);
+        wrapper.eq(PdFleet::getStatus, Constant.DATA_DEFAULT_STATUS);
+        wrapper.orderBy(true, true, PdFleet::getId);
+        return baseMapper.selectList(wrapper);
     }
 
     @Override
-    public void disableById(String id) {
+    public void disableById(Long id) {
         PdFleet fleet = new PdFleet();
         fleet.setId(id);
         fleet.setStatus(Constant.DATA_DISABLE_STATUS);
         baseMapper.updateById(fleet);
     }
-
 }

@@ -2,13 +2,10 @@ package com.itheima.pinda.service.transportline.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
-import com.itheima.pinda.common.CustomIdGenerator;
 import com.itheima.pinda.entity.transportline.PdTransportTripsTruckDriver;
 import com.itheima.pinda.mapper.transportline.PdTransportTripsTruckDriverMapper;
 import com.itheima.pinda.service.transportline.IPdTransportTripsTruckDriverService;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,46 +13,36 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
- * <p>
- * 车次与车辆关联信息表 服务实现类
- * </p>
- *
- * @author itcast
- * @since 2019-12-20
+ * 车次-车辆-司机 关联 服务实现类
  */
 @Service
-public class PdTransportTripsTruckDriverServiceImpl extends ServiceImpl<PdTransportTripsTruckDriverMapper, PdTransportTripsTruckDriver>
+public class PdTransportTripsTruckDriverServiceImpl
+        extends ServiceImpl<PdTransportTripsTruckDriverMapper, PdTransportTripsTruckDriver>
         implements IPdTransportTripsTruckDriverService {
-    @Autowired
-    private CustomIdGenerator idGenerator;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void batchSave(String truckTransportTripsId, List<PdTransportTripsTruckDriver> truckTransportTripsTruckDriverList) {
-        LambdaQueryWrapper<PdTransportTripsTruckDriver> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.eq(PdTransportTripsTruckDriver::getTransportTripsId, truckTransportTripsId);
-        //查出操作前关系列表
-        List<PdTransportTripsTruckDriver> transportTripsTruckDriverList = baseMapper.selectList(lambdaQueryWrapper);
-        Map<String, PdTransportTripsTruckDriver> sourceTruckKeyMap = new HashMap<>();
-        for (PdTransportTripsTruckDriver pdTransportTripsTruckDriver:transportTripsTruckDriverList){
-            sourceTruckKeyMap.put(pdTransportTripsTruckDriver.getTransportTripsId() + "_" + pdTransportTripsTruckDriver.getTruckId(),pdTransportTripsTruckDriver);
+    public void batchSave(Long tripsId, List<PdTransportTripsTruckDriver> sourceList) {
+        LambdaQueryWrapper<PdTransportTripsTruckDriver> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(PdTransportTripsTruckDriver::getTripsId, tripsId);
+        // 查出操作前关系列表
+        List<PdTransportTripsTruckDriver> existingList = baseMapper.selectList(wrapper);
+        Map<String, PdTransportTripsTruckDriver> sourceKeyMap = new HashMap<>();
+        for (PdTransportTripsTruckDriver existing : existingList) {
+            sourceKeyMap.put(existing.getTripsId() + "_" + existing.getTruckId(), existing);
         }
-        //清除关系
-        baseMapper.delete(lambdaQueryWrapper);
+        // 清除旧关系
+        baseMapper.delete(wrapper);
         List<PdTransportTripsTruckDriver> saveList = new ArrayList<>();
-        //遍历传入数据
-        truckTransportTripsTruckDriverList.forEach(pdTransportTripsTruckDriver -> {
+        sourceList.forEach(source -> {
             PdTransportTripsTruckDriver saveData = new PdTransportTripsTruckDriver();
-            BeanUtils.copyProperties(pdTransportTripsTruckDriver, saveData);
-            saveData.setId(idGenerator.nextId(saveData) + "");
-            if (sourceTruckKeyMap.containsKey(pdTransportTripsTruckDriver.getTransportTripsId() + "_" + pdTransportTripsTruckDriver.getTruckId())) {
-                PdTransportTripsTruckDriver source = sourceTruckKeyMap.get(pdTransportTripsTruckDriver.getTransportTripsId() + "_" + pdTransportTripsTruckDriver.getTruckId());
-                if (saveData.getUserId() == null) {
-                    saveData.setUserId(source.getUserId());
-                }
+            BeanUtils.copyProperties(source, saveData);
+            String key = source.getTripsId() + "_" + source.getTruckId();
+            PdTransportTripsTruckDriver old = sourceKeyMap.get(key);
+            if (old != null && saveData.getDriverId() == null) {
+                saveData.setDriverId(old.getDriverId());
             }
             saveList.add(saveData);
         });
@@ -63,17 +50,17 @@ public class PdTransportTripsTruckDriverServiceImpl extends ServiceImpl<PdTransp
     }
 
     @Override
-    public List<PdTransportTripsTruckDriver> findAll(String transportTripsId, String truckId, String userId) {
-        LambdaQueryWrapper<PdTransportTripsTruckDriver> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        if (StringUtils.isNotEmpty(transportTripsId)) {
-            lambdaQueryWrapper.eq(PdTransportTripsTruckDriver::getTransportTripsId, transportTripsId);
+    public List<PdTransportTripsTruckDriver> findAll(Long tripsId, Long truckId, Long driverId) {
+        LambdaQueryWrapper<PdTransportTripsTruckDriver> wrapper = new LambdaQueryWrapper<>();
+        if (tripsId != null) {
+            wrapper.eq(PdTransportTripsTruckDriver::getTripsId, tripsId);
         }
-        if (StringUtils.isNotEmpty(truckId)) {
-            lambdaQueryWrapper.eq(PdTransportTripsTruckDriver::getTruckId, truckId);
+        if (truckId != null) {
+            wrapper.eq(PdTransportTripsTruckDriver::getTruckId, truckId);
         }
-        if (StringUtils.isNotEmpty(userId)) {
-            lambdaQueryWrapper.eq(PdTransportTripsTruckDriver::getUserId, userId);
+        if (driverId != null) {
+            wrapper.eq(PdTransportTripsTruckDriver::getDriverId, driverId);
         }
-        return baseMapper.selectList(lambdaQueryWrapper);
+        return baseMapper.selectList(wrapper);
     }
 }

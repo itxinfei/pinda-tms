@@ -1,13 +1,12 @@
 package com.itheima.pinda.controller.transportline;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
+import com.itheima.pinda.controller.support.IdConverter;
 import com.itheima.pinda.entity.transportline.PdTransportLine;
 import com.itheima.pinda.entity.transportline.PdTransportLineType;
 import com.itheima.pinda.service.transportline.IPdTransportLineService;
@@ -50,8 +49,7 @@ public class TransportLineTypeController {
         PdTransportLineType pdTransportLineType = new PdTransportLineType();
         BeanUtils.copyProperties(dto, pdTransportLineType);
         pdTransportLineType = transportLineTypeService.saveTransportLineType(pdTransportLineType);
-        BeanUtils.copyProperties(pdTransportLineType, dto);
-        return dto;
+        return toDto(pdTransportLineType);
     }
 
     /**
@@ -61,11 +59,12 @@ public class TransportLineTypeController {
      * @return 线路类型详情
      */
     @GetMapping("/{id}")
-    public TransportLineTypeDto fineById(@PathVariable(name = "id") String id) {
-        PdTransportLineType pdTransportLineType = transportLineTypeService.getById(id);
-        TransportLineTypeDto dto = new TransportLineTypeDto();
-        BeanUtils.copyProperties(pdTransportLineType, dto);
-        return dto;
+    public TransportLineTypeDto findById(@PathVariable(name = "id") String id) {
+        PdTransportLineType pdTransportLineType = transportLineTypeService.getById(IdConverter.toLong(id));
+        if (pdTransportLineType == null) {
+            return new TransportLineTypeDto();
+        }
+        return toDto(pdTransportLineType);
     }
 
     /**
@@ -84,13 +83,10 @@ public class TransportLineTypeController {
                                                          @RequestParam(name = "typeNumber", required = false) String typeNumber,
                                                          @RequestParam(name = "name", required = false) String name,
                                                          @RequestParam(name = "agencyType", required = false) Integer agencyType) {
-        IPage<PdTransportLineType> transportLineTypePage = transportLineTypeService.findByPage(page, pageSize, typeNumber, name, agencyType);
+        IPage<PdTransportLineType> transportLineTypePage = transportLineTypeService.findByPage(page, pageSize,
+                typeNumber, name, agencyType);
         List<TransportLineTypeDto> dtoList = new ArrayList<>();
-        transportLineTypePage.getRecords().forEach(pdTransportLineType -> {
-            TransportLineTypeDto dto = new TransportLineTypeDto();
-            BeanUtils.copyProperties(pdTransportLineType, dto);
-            dtoList.add(dto);
-        });
+        transportLineTypePage.getRecords().forEach(pdTransportLineType -> dtoList.add(toDto(pdTransportLineType)));
         return PageResponse.<TransportLineTypeDto>builder().items(dtoList).pagesize(pageSize).page(page)
                 .counts(transportLineTypePage.getTotal()).pages(transportLineTypePage.getPages()).build();
     }
@@ -103,11 +99,9 @@ public class TransportLineTypeController {
      */
     @GetMapping("")
     public List<TransportLineTypeDto> findAll(@RequestParam(name = "ids", required = false) List<String> ids) {
-        return transportLineTypeService.findAll(ids).stream().map(pdTransportLineType -> {
-            TransportLineTypeDto dto = new TransportLineTypeDto();
-            BeanUtils.copyProperties(pdTransportLineType, dto);
-            return dto;
-        }).collect(Collectors.toList());
+        return transportLineTypeService.findAll(IdConverter.toLongList(ids)).stream()
+                .map(this::toDto)
+                .toList();
     }
 
     /**
@@ -119,11 +113,11 @@ public class TransportLineTypeController {
      */
     @PutMapping("/{id}")
     public TransportLineTypeDto update(@PathVariable(name = "id") String id, @RequestBody TransportLineTypeDto dto) {
-        dto.setId(id);
         PdTransportLineType pdTransportLineType = new PdTransportLineType();
         BeanUtils.copyProperties(dto, pdTransportLineType);
-        pdTransportLineType.setLastUpdateTime(LocalDateTime.now());
+        pdTransportLineType.setId(IdConverter.toLong(id));
         transportLineTypeService.updateById(pdTransportLineType);
+        dto.setId(id);
         return dto;
     }
 
@@ -135,13 +129,24 @@ public class TransportLineTypeController {
      */
     @PutMapping("/{id}/disable")
     public Result disable(@PathVariable(name = "id") String id) {
+        Long typeId = IdConverter.toLong(id);
         // 关联校验：存在引用该类型的线路时禁止删除
-        IPage<PdTransportLine> linePage = transportLineService.findByPage(1, 1, null, null, id);
+        IPage<PdTransportLine> linePage = transportLineService.findByPage(1, 1, null, null, typeId);
         if (linePage != null && linePage.getTotal() > 0) {
             log.warn("[线路类型] 存在 {} 条关联线路，禁止删除: typeId={}", linePage.getTotal(), id);
             return Result.error(400, "该线路类型下存在关联线路，无法删除");
         }
-        transportLineTypeService.disableById(id);
+        transportLineTypeService.disableById(typeId);
         return Result.ok();
+    }
+
+    /**
+     * 实体 → DTO：id 转回 String（DTO 中 lastUpdateTime/updater 在新表已移除，保持为 null）
+     */
+    private TransportLineTypeDto toDto(PdTransportLineType entity) {
+        TransportLineTypeDto dto = new TransportLineTypeDto();
+        BeanUtils.copyProperties(entity, dto);
+        dto.setId(IdConverter.toStr(entity.getId()));
+        return dto;
     }
 }

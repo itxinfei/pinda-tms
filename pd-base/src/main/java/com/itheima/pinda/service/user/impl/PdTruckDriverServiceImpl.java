@@ -4,89 +4,76 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
-import com.itheima.pinda.common.CustomIdGenerator;
-import com.itheima.pinda.mapper.user.PdTruckDriverMapper;
 import com.itheima.pinda.entity.user.PdTruckDriver;
+import com.itheima.pinda.mapper.user.PdTruckDriverMapper;
 import com.itheima.pinda.service.user.IPdTruckDriverService;
-
-import org.apache.commons.lang.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * <p>
- * 司机表 服务实现类
- * </p>
- *
- * @author itcast
- * @since 2019-12-20
+ * 司机 服务实现类
  */
 @Service
 public class PdTruckDriverServiceImpl extends ServiceImpl<PdTruckDriverMapper, PdTruckDriver>
         implements IPdTruckDriverService {
-    @Autowired
-    private CustomIdGenerator idGenerator;
 
     @Override
     public PdTruckDriver saveTruckDriver(PdTruckDriver pdTruckDriver) {
-        PdTruckDriver driver = baseMapper.selectOne(new LambdaQueryWrapper<PdTruckDriver>().eq(PdTruckDriver::getUserId, pdTruckDriver.getUserId()));
-        if (driver == null) {
-            pdTruckDriver.setId(idGenerator.nextId(pdTruckDriver) + "");
-        } else {
-            pdTruckDriver.setId(driver.getId());
+        PdTruckDriver existing = baseMapper.selectOne(new LambdaQueryWrapper<PdTruckDriver>()
+                .eq(PdTruckDriver::getUserId, pdTruckDriver.getUserId()));
+        if (existing != null) {
+            pdTruckDriver.setId(existing.getId());
         }
         saveOrUpdate(pdTruckDriver);
         return pdTruckDriver;
     }
 
     @Override
-    public List<PdTruckDriver> findAll(List<String> userIds, String fleetId) {
-        boolean hasUserIds = userIds != null && userIds.size() > 0;
-        boolean hasFleetId = StringUtils.isNotEmpty(fleetId);
-        if (!hasUserIds && !hasFleetId) {
+    public List<PdTruckDriver> findAll(List<Long> userIds, Long fleetId) {
+        boolean hasUserIds = userIds != null && !userIds.isEmpty();
+        if (!hasUserIds && fleetId == null) {
             return new ArrayList<>();
         }
-        LambdaQueryWrapper<PdTruckDriver> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+        LambdaQueryWrapper<PdTruckDriver> wrapper = new LambdaQueryWrapper<>();
         if (hasUserIds) {
-            lambdaQueryWrapper.in(PdTruckDriver::getUserId, userIds);
+            wrapper.in(PdTruckDriver::getUserId, userIds);
         }
-        if (hasFleetId) {
-            lambdaQueryWrapper.eq(PdTruckDriver::getFleetId, fleetId);
+        if (fleetId != null) {
+            wrapper.eq(PdTruckDriver::getFleetId, fleetId);
         }
-        lambdaQueryWrapper.orderBy(true, false, PdTruckDriver::getId);
-        return baseMapper.selectList(lambdaQueryWrapper);
+        wrapper.orderBy(true, false, PdTruckDriver::getId);
+        return baseMapper.selectList(wrapper);
     }
 
     @Override
-    public PdTruckDriver findOne(String userId) {
-        if (!StringUtils.isNotEmpty(userId)) {
+    public PdTruckDriver findOne(Long userId) {
+        if (userId == null) {
             return null;
         }
-        LambdaQueryWrapper<PdTruckDriver> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.eq(PdTruckDriver::getUserId, userId);
-        return getOne(lambdaQueryWrapper);
+        return getOne(new LambdaQueryWrapper<PdTruckDriver>()
+                .eq(PdTruckDriver::getUserId, userId));
     }
 
     @Override
-    public Integer count(String fleetId) {
-        LambdaQueryWrapper<PdTruckDriver> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        if (StringUtils.isNotEmpty(fleetId)) {
-            lambdaQueryWrapper.eq(PdTruckDriver::getFleetId, fleetId);
+    public Integer count(Long fleetId) {
+        LambdaQueryWrapper<PdTruckDriver> wrapper = new LambdaQueryWrapper<>();
+        if (fleetId != null) {
+            wrapper.eq(PdTruckDriver::getFleetId, fleetId);
         }
-        return Math.toIntExact(count(lambdaQueryWrapper));
+        return Math.toIntExact(count(wrapper));
     }
 
     @Override
-    public IPage<PdTruckDriver> findByPage(Integer page, Integer pageSize, String fleetId) {
-        Page<PdTruckDriver> iPage = new Page(page, pageSize);
-        LambdaQueryWrapper<PdTruckDriver> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        if (StringUtils.isNotEmpty(fleetId)) {
-            lambdaQueryWrapper.eq(PdTruckDriver::getFleetId, fleetId);
+    public IPage<PdTruckDriver> findByPage(Integer page, Integer pageSize, Long fleetId) {
+        Page<PdTruckDriver> iPage = new Page<>(page, pageSize);
+        LambdaQueryWrapper<PdTruckDriver> wrapper = new LambdaQueryWrapper<>();
+        if (fleetId != null) {
+            wrapper.eq(PdTruckDriver::getFleetId, fleetId);
         }
-        lambdaQueryWrapper.orderBy(true, false, PdTruckDriver::getId);
-        return baseMapper.selectPage(iPage, lambdaQueryWrapper);
+        wrapper.orderBy(true, false, PdTruckDriver::getId);
+        return baseMapper.selectPage(iPage, wrapper);
     }
 }

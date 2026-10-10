@@ -1,63 +1,53 @@
 package com.itheima.pinda.entity.truck;
 
-import java.math.BigDecimal;
-import java.io.Serializable;
-
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 /**
- * <p>
- * 车辆类型表
- * </p>
- *
- * @author itcast
- * @since 2019-12-20
+ * 车辆类型
  */
 @Data
-@TableName("pd_truck_type")
-public class PdTruckType implements Serializable {
+@TableName("base_truck_type")
+public class PdTruckType {
 
-    private static final long serialVersionUID = 1L;
-    /**
-     * id
-     */
-    @TableId(value = "id", type = IdType.INPUT)
-    private String id;
-    /**
-     * 车辆类型名称
-     */
+    @TableId(type = IdType.ASSIGN_ID)
+    private Long id;
+
+    /** 租户ID */
+    private Long tenantId;
+
+    /** 车辆类型名称 */
     private String name;
 
-    /**
-     * 准载重量
-     */
+    /** 准载重量(kg) */
     private BigDecimal allowableLoad;
 
-    /**
-     * 准载体积
-     */
+    /** 准载体积(m³) */
     private BigDecimal allowableVolume;
 
-    /**
-     * 长
-     */
+    /** 长(m) */
     private BigDecimal measureLong;
 
-    /**
-     * 宽
-     */
+    /** 宽(m) */
     private BigDecimal measureWidth;
 
-    /**
-     * 高
-     */
+    /** 高(m) */
     private BigDecimal measureHigh;
 
-    /**
-     * 状态 0：禁用 1：正常
-     */
+    /** 1启用 0禁用 */
     private Integer status;
+
+    private Long createBy;
+    private java.time.LocalDateTime createTime;
+    private Long updateBy;
+    private java.time.LocalDateTime updateTime;
+
+    /** 逻辑删除：0 未删 1 已删 */
+    @TableLogic
+    private Integer deleted;
 }
