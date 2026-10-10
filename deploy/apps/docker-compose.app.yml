@@ -464,7 +464,7 @@ services:
     healthcheck:
       <<: *hc-common
       # 容器内监听 80，宿主机才是 8081
-      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/80' || exit 1"]
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
     environment:
       # server_name，容器间/内网访问用
       NGINX_HOST: 192.168.20.130
@@ -483,7 +483,7 @@ services:
     ports: ["8082:80"]
     healthcheck:
       <<: *hc-common
-      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/80' || exit 1"]
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
     environment:
       NGINX_HOST: 192.168.20.130
       DOCKER_REQUEST_DOMAIN_PREFIX: http://pd-gateway:8760
@@ -501,7 +501,7 @@ services:
     ports: ["8083:80"]
     healthcheck:
       <<: *hc-common
-      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/80' || exit 1"]
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
     environment:
       NGINX_HOST: 192.168.20.130
       DOCKER_REQUEST_DOMAIN_PREFIX: http://pd-gateway:8760
@@ -519,7 +519,7 @@ services:
     ports: ["8084:80"]
     healthcheck:
       <<: *hc-common
-      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/80' || exit 1"]
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
     environment:
       NGINX_HOST: 192.168.20.130
       DOCKER_REQUEST_DOMAIN_PREFIX: http://pd-gateway:8760
