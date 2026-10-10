@@ -13,13 +13,14 @@ import com.itheima.pinda.utils.GpsLocationValidator;
 import com.rabbitmq.client.Channel;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
-import org.springframework.amqp.support.Acknowledgment;
+import org.springframework.amqp.core.Message;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -146,19 +147,19 @@ public class RabbitGpsTraceConsumer {
      * 用手动ack，处理成功才ack，失败就nack并重新入队
      */
     @RabbitListener(queues = "pinda.gps.queue")
-    public void consumeGpsTrace(String message, Channel channel, org.springframework.amqp.support.Acknowledgment ack) {
+    public void consumeGpsTrace(Message message, Channel channel) {
         try {
-            LocationEntity location = JSON.parseObject(message, LocationEntity.class);
+            LocationEntity location = JSON.parseObject(message.getBody(), LocationEntity.class);
             LocationRecord locationRecord = buildLocationRecord(location);
             if (locationRecord != null) {
                 locationRecordService.save(locationRecord);
             }
-            ack.acknowledge();
+            channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
             log.debug("[GPS落库] 单条写入成功并ack: businessId={}", location.getBusinessId());
         } catch (Exception e) {
-            log.error("[GPS落库] 消息处理失败，nack并重新入队: msg={}", message, e);
+            log.error("[GPS落库] 消息处理失败，nack并重新入队: msg={}", new String(message.getBody(), StandardCharsets.UTF_8), e);
             try {
-                ack.nack(false, true);
+                channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, true);
             } catch (Exception ex) {
                 log.error("[GPS落库] nack失败", ex);
             }

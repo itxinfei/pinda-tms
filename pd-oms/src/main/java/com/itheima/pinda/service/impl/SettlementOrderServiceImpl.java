@@ -1,6 +1,6 @@
 package com.itheima.pinda.service.impl;
 
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.itheima.pinda.entity.SettlementOrder;
 import com.itheima.pinda.mapper.SettlementOrderMapper;
 import com.itheima.pinda.service.ISettlementOrderService;

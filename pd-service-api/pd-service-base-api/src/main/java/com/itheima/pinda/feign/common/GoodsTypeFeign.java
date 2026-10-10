@@ -6,12 +6,12 @@ import com.itheima.pinda.DTO.base.GoodsTypeDto;
 import com.itheima.pinda.feign.common.hystrix.GoodsTypeFeignFallback;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
-import springfox.documentation.annotations.ApiIgnore;
+import io.swagger.v3.oas.annotations.Hidden;
 
 import java.util.List;
 
 @FeignClient(value = "pd-base", fallback = GoodsTypeFeignFallback.class, path = "/base/goodsType")
-@ApiIgnore
+@Hidden
 public interface GoodsTypeFeign {
     /**
      * 添加货物类型

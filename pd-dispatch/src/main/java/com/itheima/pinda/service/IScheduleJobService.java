@@ -9,7 +9,7 @@
 package com.itheima.pinda.service;
 
 
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 import com.itheima.pinda.DTO.OrgJobTreeDTO;
 import com.itheima.pinda.DTO.ScheduleJobDTO;
 import com.itheima.pinda.entity.ScheduleJobEntity;

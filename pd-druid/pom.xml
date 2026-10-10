@@ -3,7 +3,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>pinda-tms-java</artifactId>
+        <artifactId>pinda-tms</artifactId>
         <groupId>com.itheima</groupId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
@@ -121,8 +121,8 @@
         </dependency>
         <!-- MySQL 驱动：pd-druid 需加载 com.mysql.cj.jdbc.Driver 连接业务库做监控 -->
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
             <scope>runtime</scope>
         </dependency>
     </dependencies>

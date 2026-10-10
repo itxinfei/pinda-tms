@@ -6,7 +6,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import springfox.documentation.annotations.ApiIgnore;
+import io.swagger.v3.oas.annotations.Hidden;
 
 /**
  * 统一支付 Feign 客户端
@@ -14,7 +14,7 @@ import springfox.documentation.annotations.ApiIgnore;
  * <p>对接 pd-oms 的 /pay 接口（创建支付/查询支付/退款）。</p>
  */
 @FeignClient(value = "pd-oms", fallback = PayFeignFallback.class, path = "/pay")
-@ApiIgnore
+@Hidden
 public interface PayFeign {
 
     /**

@@ -1,18 +1,18 @@
 package com.itheima.pinda.DTO;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 @Data
 public class AppDriverQueryDTO {
-    @ApiModelProperty("当前页数")
+    @Schema(description = "当前页数")
     private Integer page = 1;
-    @ApiModelProperty("每页条数")
+    @Schema(description = "每页条数")
     private Integer pageSize = 10;
-    @ApiModelProperty("状态")
+    @Schema(description = "状态")
     private Integer status;
-    @ApiModelProperty("搜索条件")
+    @Schema(description = "搜索条件")
     private String keyword;
-    @ApiModelProperty("司机id")
+    @Schema(description = "司机id")
     private String driverId;
 }

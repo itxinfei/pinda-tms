@@ -6,13 +6,13 @@ import com.itheima.pinda.DTO.truck.TruckDto;
 import com.itheima.pinda.feign.truck.hystrix.TruckFeignFallback;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
-import springfox.documentation.annotations.ApiIgnore;
+import io.swagger.v3.oas.annotations.Hidden;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @FeignClient(value = "pd-base", fallback = TruckFeignFallback.class, path = "/base/truck")
-@ApiIgnore
+@Hidden
 public interface TruckFeign {
     /**
      * 添加车辆

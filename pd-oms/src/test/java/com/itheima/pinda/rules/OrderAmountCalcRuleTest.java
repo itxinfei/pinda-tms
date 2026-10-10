@@ -2,9 +2,9 @@ package com.itheima.pinda.rules;
 
 import com.itheima.pinda.entity.fact.AddressCheckResult;
 import com.itheima.pinda.entity.fact.AddressRule;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.kie.api.KieServices;
 import org.kie.api.builder.KieBuilder;
 import org.kie.api.builder.KieFileSystem;
@@ -26,11 +26,11 @@ public class OrderAmountCalcRuleTest {
 
     private static String drl;
 
-    @BeforeClass
+    @BeforeAll
     public static void readRule() throws Exception {
         try (InputStream in = OrderAmountCalcRuleTest.class.getClassLoader()
                 .getResourceAsStream("rules/orderAmountCalc.drl")) {
-            Assert.assertNotNull("classpath 上找不到 rules/orderAmountCalc.drl", in);
+            Assertions.assertNotNull(in, "classpath 上找不到 rules/orderAmountCalc.drl");
             ByteArrayOutputStream buf = new ByteArrayOutputStream();
             byte[] chunk = new byte[4096];
             int n;
@@ -47,8 +47,8 @@ public class OrderAmountCalcRuleTest {
         KieFileSystem kfs = ks.newKieFileSystem();
         kfs.write("src/main/resources/rules/orderAmountCalc.drl", drl);
         KieBuilder kb = ks.newKieBuilder(kfs).buildAll();
-        Assert.assertFalse("DRL 编译失败：" + kb.getResults().getMessages(),
-                kb.getResults().hasMessages(org.kie.api.builder.Message.Level.ERROR));
+        Assertions.assertFalse(kb.getResults().hasMessages(org.kie.api.builder.Message.Level.ERROR),
+                "DRL 编译失败：" + kb.getResults().getMessages());
 
         KieContainer container = ks.newKieContainer(ks.getRepository().getDefaultReleaseId());
         KieSession session = container.newKieSession();
@@ -60,8 +60,8 @@ public class OrderAmountCalcRuleTest {
             session.insert(rule);
             session.insert(result);
             int fired = session.fireAllRules();
-            Assert.assertTrue("没有任何规则命中，重量/距离组合落到了规则空档", fired > 0);
-            Assert.assertTrue("规则未置通过位", result.isPostCodeResult());
+            Assertions.assertTrue(fired > 0, "没有任何规则命中，重量/距离组合落到了规则空档");
+            Assertions.assertTrue(result.isPostCodeResult(), "规则未置通过位");
             return result.getResult();
         } finally {
             session.destroy();
@@ -71,23 +71,23 @@ public class OrderAmountCalcRuleTest {
 
     @Test
     public void testFirstWeightOnly() {
-        Assert.assertEquals("20", calc(0.5, 100));
+        Assertions.assertEquals("20", calc(0.5, 100));
     }
 
     @Test
     public void testContinuedFeeWithin200km() {
         // 首重 1kg=20 元，续重 4kg×6=24 → 44（5.9kg 也只按 4kg 续重计，向下取整是现有口径）
-        Assert.assertEquals("44", calc(5.0, 150));
-        Assert.assertEquals("44", calc(5.9, 150));
+        Assertions.assertEquals("44", calc(5.0, 150));
+        Assertions.assertEquals("44", calc(5.9, 150));
     }
 
     @Test
     public void testContinuedFee200To500km() {
-        Assert.assertEquals("29", calc(2.0, 300));
+        Assertions.assertEquals("29", calc(2.0, 300));
     }
 
     @Test
     public void testContinuedFeeAbove500km() {
-        Assert.assertEquals("35", calc(2.0, 600));
+        Assertions.assertEquals("35", calc(2.0, 600));
     }
 }

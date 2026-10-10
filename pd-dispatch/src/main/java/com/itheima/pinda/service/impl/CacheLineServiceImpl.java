@@ -10,7 +10,7 @@ package com.itheima.pinda.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.itheima.pinda.entity.CacheLineEntity;
 import com.itheima.pinda.mapper.CacheLineMapper;
 import com.itheima.pinda.service.ICacheLineService;

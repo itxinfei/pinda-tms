@@ -1,7 +1,7 @@
 package com.itheima.pinda.pay;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONObject;
 import com.itheima.pinda.entity.PaymentOrder;
 import com.itheima.pinda.pay.util.PayCryptoUtils;
 import lombok.extern.slf4j.Slf4j;

@@ -3,11 +3,11 @@ package com.itheima.pinda.feign.truck;
 import com.itheima.pinda.DTO.truck.TruckLicenseDto;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
-import springfox.documentation.annotations.ApiIgnore;
+import io.swagger.v3.oas.annotations.Hidden;
 
 @FeignClient(name = "pd-base")
 @RequestMapping("base/truck/license")
-@ApiIgnore
+@Hidden
 public interface TruckLicenseFeign {
     /**
      * 保存车辆行驶证信息

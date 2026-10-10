@@ -1,6 +1,6 @@
 package com.itheima.pinda.service.agency;
 
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 import com.itheima.pinda.entity.agency.PdAgencyScope;
 
 import java.util.List;

@@ -1,8 +1,8 @@
 spring:
   cloud:
     nacos:
-      username: ${NACOS_USERNAME:pinda}
-      password: ${NACOS_PASSWORD:pinda}
+      username: ${NACOS_USERNAME:}
+      password: ${NACOS_PASSWORD:}
       discovery:
         server-addr: ${NACOS_SERVER_ADDR:192.168.20.130:8848}
         group: pinda-tms

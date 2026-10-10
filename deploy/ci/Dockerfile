@@ -1,31 +1,23 @@
 # ============================================
 # 品达TMS Gitea Actions 作业镜像
-# 内含：JDK8 + Maven3.6 + Docker CLI + Compose v2 + Node14
-#   - Maven     ：一次构建全部后端 fat jar
+# 内含：JDK21 + Maven3.9 + Docker CLI + Compose v2
+#   - Maven     ：一次构建全部后端 fat jar（JDK21 / Spring Boot 3.3.5）
 #   - Docker CLI：通过挂载的 /var/run/docker.sock 操作宿主机 Docker 构建/部署
-#   - Node14    ：历史遗留（老 React 后台已下线，前端改由各 Dockerfile 内的 node:22 构建）
-# 采用静态二进制安装，避免各 Linux 发行版 apt 源差异带来的构建失败。
+#   - 前端构建在各自 Dockerfile 内的 node 镜像完成，本镜像不再内置 node
+# 构建方式（服务器侧，零网络下载——docker/compose 二进制直接复制宿主机）：
+#   mkdir -p /tmp/ci-ctx && cp /usr/bin/docker /tmp/ci-ctx/ \
+#   && cp /usr/libexec/docker/cli-plugins/docker-compose /tmp/ci-ctx/
+#   docker build -f deploy/ci/Dockerfile -t ci/pinda-ci:latest /tmp/ci-ctx
+# 为什么不用静态包下载：download.docker.com / github.com 直连及 DaoCloud 加速
+# 在该网络下均 short read / HTTP 22 中断，改为复制宿主机已装二进制（版本更新，
+# 功能只多不少），彻底移除构建期的外网依赖。
 # ============================================
-FROM maven:3.6.3-jdk-8
+FROM maven:3.9.9-eclipse-temurin-21
 
-ENV DOCKER_VERSION=24.0.6 \
-    COMPOSE_VERSION=v2.20.3 \
-    NODE_VERSION=v14.21.3
-
-# Docker CLI（静态包）+ Compose v2 插件
-RUN curl -fsSL https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz | tar xz -C /tmp \
-    && mv /tmp/docker/docker /usr/local/bin/docker \
-    && mkdir -p /usr/local/lib/docker/cli-plugins \
-    && curl -fsSL -o /usr/local/lib/docker/cli-plugins/docker-compose \
-       https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-linux-x86_64 \
-    && chmod +x /usr/local/lib/docker/cli-plugins/docker-compose \
-    && rm -rf /tmp/docker
-
-# Node 14（含 npm 6，与前端 package-lock v1 兼容）
-# 使用 npmmirror 国内镜像，避免 nodejs.org 连接失败
-RUN curl -fsSL https://cdn.npmmirror.com/binaries/node/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.xz | tar -xJ -C /opt \
-    && ln -s /opt/node-${NODE_VERSION}-linux-x64/bin/node /usr/local/bin/node \
-    && ln -s /opt/node-${NODE_VERSION}-linux-x64/bin/npm /usr/local/bin/npm \
-    && ln -s /opt/node-${NODE_VERSION}-linux-x64/bin/npx /usr/local/bin/npx
+# Docker CLI + Compose v2 插件（来自宿主机，构建上下文提供）
+COPY docker /usr/local/bin/docker
+COPY docker-compose /usr/local/lib/docker/cli-plugins/docker-compose
+RUN chmod +x /usr/local/bin/docker /usr/local/lib/docker/cli-plugins/docker-compose \
+    && docker --version && docker compose version
 
 WORKDIR /workspace

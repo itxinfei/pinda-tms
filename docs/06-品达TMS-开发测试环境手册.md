@@ -13,13 +13,17 @@
 
 | 凭据 | 唯一真值位置 | 读取方式 |
 |---|---|---|
-| 中间件口令（MySQL root / Nacos / RabbitMQ） | 服务器 `/data/deploy/middleware/.env`（root 0600） | `docker compose --env-file` 自动注入；`deploy/middleware/docker-compose.infra.yml` 用 `${VAR:?...}` 强制取值，缺则报错 |
+| 中间件口令（MySQL root / Redis / RabbitMQ）+ Nacos 服务端鉴权变量 | 服务器 `/data/deploy/middleware/.env`（root 0600） | `docker compose --env-file` 自动注入；`deploy/middleware/docker-compose.infra.yml` 用 `${VAR:?...}` 强制取值，缺则报错。含 `MYSQL_ROOT_PASSWORD`、`REDIS_PASSWORD`、`RABBITMQ_DEFAULT_USER/PASS`、6 个 `NACOS_AUTH_*` |
+| Nacos 客户端账号（微服务/CI 用） | 服务器 `/home/pdwl/pinda-build/deploy/apps/.env`（`NACOS_USERNAME` / `NACOS_PASSWORD` / `REDIS_PASSWORD`） | apps compose 的 `&nacos-env` / `&redis-env` 锚点注入 |
+| Seata TC 连 Nacos 的凭据 | 服务器 `/opt/seata/seata-server-1.4.2/conf/registry.conf`（仓库外，非文件托管） | `registry.nacos.username/password` + `config.nacos.username/password` 两处都要；缺则 TC 注册 403 → 崩溃循环 |
 | Gitea 管理员口令（部署状态页用） | 服务器 `/etc/pinda-gitea-cred`（root 0600） | `deploy/ci/deploy-info.sh` 读取 |
 | JWT 签名密钥对（轮换后） | 服务器 `/data/pinda-jwt/` | 由 `/data/ci/deploy.env` 的 `PINDA_JWT_*_KEY_PATH` 指路，流程见《05-部署文档.md》§2.11 |
 | SSH / sudo 口令 | 本机凭据管理器 / 你自己保管 | 不写进文档、脚本、remote URL |
 | 键名模板（无值） | `deploy/middleware/.env.example` | 新环境 `cp .env.example .env` 后填值 |
 
-> ⚠️ 反例（本轮已登记，尚未修）：29 份 `bootstrap-*.yml` 里 `password: ${NACOS_PASSWORD:pinda}` 的**默认值就是明文口令**，而 `deploy/apps/docker-compose.app.yml` 的 `&nacos-env` 只注入 `NACOS_IP/PORT/ID/SERVER_ADDR`、**从不设 `NACOS_PASSWORD`** ⇒ 线上含 prod 生效的就是这个默认值。另本机 `.git/config` 有一条带明文口令的 gitea remote。二者分别属配置文件与本机 git 配置，需授权后修改。
+> ⚠️ 反例（已于 2026-10-09 修复）：29 份 `bootstrap-*.yml` 里 `password: ${NACOS_PASSWORD:pinda}` 的默认值曾是实际生效值，因为 `deploy/apps/docker-compose.app.yml` 的 `&nacos-env` 只注入 `NACOS_IP/PORT/ID/SERVER_ADDR`、不设 `NACOS_PASSWORD`。现在 `&nacos-env` 已注入 `NACOS_USERNAME` / `NACOS_PASSWORD`，真值取服务器 `deploy/apps/.env`。另本机 `.git/config` 那条带明文口令的 gitea remote 仍待处理。
+
+> 🔑 **口令取值口径（2026-10-09 决策）**：这台内网开发测试机上，中间件口令**统一为 `123456`**，方便开发测试不必维护"哪个库用哪个口令"的对照表；安全性由内网边界保证。2026-10-09 一度给 Redis/Nacos 配过 24/20 位随机强口令，按本决策已回退。**生产环境不适用本口径，上线必须逐套更换。**
 
 ---
 
@@ -52,9 +56,9 @@
 | 组件 | 容器名 | 访问地址 | 账号 | 密码 | 备注 |
 |---|---|---|---|---|---|
 | MySQL 8.0 | mysql8 | 192.168.20.130:3306 | root | **123456** | 业务库见 §3.1 |
-| Redis 7 | redis | 192.168.20.130:6379 | （无） | 无密码 | 验证码/缓存/j2cache L2 |
-| Nacos 2.3.2 | nacos | 192.168.20.130:8848 | nacos（默认管理员）/ pinda（业务用户） | nacos / pinda | 控制台登录；命名空间 pinda |
-| RabbitMQ 3.12 | rabbitmq | 192.168.20.130:15672（管理台） | pinda | **pinda** | tags: administrator |
+| Redis 7 | redis | 192.168.20.130:6379 | （无用户名） | **123456** | `requirepass` 已启用；验证码/缓存/j2cache L2 |
+| Nacos 2.3.2 | nacos | 192.168.20.130:8848 | nacos（超管）/ pinda（业务） | **123456** / **123456** | 服务端鉴权已开启；pinda 绑角色 `ns-pinda-tms`，对命名空间 pinda 有 read+write |
+| RabbitMQ 3.12 | rabbitmq | 192.168.20.130:15672（管理台） | pinda | **123456** | tags: administrator；口令用 `rabbitmqctl change_password` 维护，`RABBITMQ_DEFAULT_PASS` 只在用户不存在时生效 |
 | Gitea 1.21 | gitea | 192.168.20.130:3000 | pinda | 见内部凭据（不入库） | SSH 端口 2222 |
 | Seata | （宿主 systemd） | 8091 | （无） | 无认证 | 非容器，/opt/seata |
 

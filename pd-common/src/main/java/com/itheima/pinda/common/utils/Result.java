@@ -1,8 +1,8 @@
 package com.itheima.pinda.common.utils;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpStatus;
 
@@ -13,9 +13,9 @@ import java.util.Map;
 /**
  * 返回数据类型
  */
-@ApiModel(value = "公用返回值", description = "公用返回值")
+@Schema(description = "公用返回值")
 @ApiResponses({
-        @ApiResponse(code = 0, message = "msg")
+        @ApiResponse(responseCode = "0", description = "msg")
 })
 @Slf4j
 public class Result extends HashMap<String, Object> implements Serializable {

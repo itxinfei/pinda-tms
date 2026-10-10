@@ -1,7 +1,7 @@
 package com.itheima.pinda.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -21,52 +21,52 @@ public class AddressBook {
     /**
      * 用户id
      */
-    @ApiModelProperty("用户id")
+    @Schema(description = "用户id")
     private String userId;
     /**
      * 名字
      */
-    @ApiModelProperty("名字")
+    @Schema(description = "名字")
     private String name;
     /**
      * 手机号
      */
-    @ApiModelProperty("手机号")
+    @Schema(description = "手机号")
     private String phoneNumber;
     /**
      * 分机号
      */
-    @ApiModelProperty("分机号")
+    @Schema(description = "分机号")
     private String extensionNumber;
     /**
      * 省id
      */
-    @ApiModelProperty("省ID")
+    @Schema(description = "省ID")
     private Long provinceId;
     /**
      * 市id
      */
-    @ApiModelProperty("市ID")
+    @Schema(description = "市ID")
     private Long cityId;
     /**
      * 区域id
      */
-    @ApiModelProperty("区ID")
+    @Schema(description = "区ID")
     private Long countyId;
     /**
      * 详细地址
      */
-    @ApiModelProperty("详细地址")
+    @Schema(description = "详细地址")
     private String address;
     /**
      * 公司名称
      */
-    @ApiModelProperty("公司名称")
+    @Schema(description = "公司名称")
     private String companyName;
     /**
      * 是否默认  1默认
      */
-    @ApiModelProperty("是否默认  1默认")
+    @Schema(description = "是否默认  1默认")
     private Integer isDefault;
     /**
      * 创建时间
@@ -75,7 +75,7 @@ public class AddressBook {
     @JsonFormat(
             pattern = "yyyy-MM-dd HH:mm:ss"
     )
-    @ApiModelProperty("创建时间")
+    @Schema(description = "创建时间")
     private LocalDateTime createTime;
 
 

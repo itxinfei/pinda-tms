@@ -1,18 +1,18 @@
 package com.itheima.pinda.controller;
 
-import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson2.JSON;
 import com.itheima.pinda.common.context.RequestContext;
 import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.entity.PaymentOrder;
 import com.itheima.pinda.service.IPayService;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,7 +25,7 @@ import java.util.Map;
 @Slf4j
 @RestController
 @RequestMapping("/pay")
-@Api(tags = "统一支付")
+@Tag(name = "统一支付")
 public class PayController {
 
     @Autowired
@@ -37,7 +37,7 @@ public class PayController {
      * @param orderId 订单ID
      * @return 支付单（含 prepayParams 供前端拉起支付）
      */
-    @ApiOperation(value = "创建支付")
+    @Operation(summary = "创建支付")
     @PostMapping("/create/{orderId}")
     public Result create(@PathVariable(name = "orderId") String orderId) {
         // 身份校验（deny-by-default）：网关应透传 userid，直连端口拒绝
@@ -60,7 +60,7 @@ public class PayController {
      * @param channel 渠道编码: wechat/alipay/mock
      * @return 处理结果
      */
-    @ApiOperation(value = "支付回调")
+    @Operation(summary = "支付回调")
     @PostMapping("/callback/{channel}")
     public Result callback(@PathVariable(name = "channel") String channel,
                            @RequestBody(required = false) String rawBody,
@@ -94,7 +94,7 @@ public class PayController {
      * @param orderId 订单ID
      * @return 支付单
      */
-    @ApiOperation(value = "查询支付状态")
+    @Operation(summary = "查询支付状态")
     @GetMapping("/query/{orderId}")
     public Result query(@PathVariable(name = "orderId") String orderId) {
         // 身份校验（deny-by-default）
@@ -114,7 +114,7 @@ public class PayController {
      * @param orderId 订单ID
      * @return 处理结果
      */
-    @ApiOperation(value = "退款")
+    @Operation(summary = "退款")
     @PostMapping("/refund/{orderId}")
     public Result refund(@PathVariable(name = "orderId") String orderId) {
         // 身份校验（deny-by-default）；管理端角色校验由网关/管理端前端控制

@@ -1,1 +1,0 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=com.itheima.pinda.dozer.DozerAutoConfiguration

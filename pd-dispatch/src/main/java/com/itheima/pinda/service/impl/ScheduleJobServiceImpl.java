@@ -11,7 +11,7 @@ package com.itheima.pinda.service.impl;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.itheima.pinda.DTO.OrgJobTreeDTO;
 import com.itheima.pinda.DTO.ScheduleJobDTO;
 import com.itheima.pinda.authority.api.OrgApi;

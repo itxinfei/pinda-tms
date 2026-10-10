@@ -1,7 +1,7 @@
 package com.itheima.pinda.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.itheima.pinda.entity.AlarmRecord;
 import com.itheima.pinda.mapper.AlarmRecordMapper;
 import com.itheima.pinda.service.IAlarmRecordService;
@@ -35,8 +35,8 @@ public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, Alarm
             wrapper.eq(AlarmRecord::getTransportTaskId, alarmRecord.getTransportTaskId());
             wrapper.eq(AlarmRecord::getAlarmType, alarmRecord.getAlarmType());
             wrapper.eq(AlarmRecord::getStatus, STATUS_UNHANDLED);
-            // MyBatis-Plus 3.3.0 selectCount 返回 Integer（3.4+ 才是 Long）
-            Integer count = baseMapper.selectCount(wrapper);
+            // MP 3.5.x selectCount 返回 Long
+            Integer count = Math.toIntExact(baseMapper.selectCount(wrapper));
             if (count != null && count > 0) {
                 log.info("[GPS告警] 已存在相同任务的未处理告警，跳过落库: taskId={}, type={}",
                         alarmRecord.getTransportTaskId(), alarmRecord.getAlarmType());

@@ -1,7 +1,6 @@
 package com.itheima.pinda.common.utils;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
 import java.util.List;
@@ -12,24 +11,24 @@ import java.util.List;
  * @author itcast
  */
 @Data
-@ApiModel(value = "分页数据消息体", description = "分页数据统一对象")
+@Schema(description = "分页数据统一对象")
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor
 public class PageResponse<T> {
 
-    @ApiModelProperty(value = "总条目数", required = true)
+    @Schema(description = "总条目数", requiredMode = Schema.RequiredMode.REQUIRED)
     private Long counts;
 
-    @ApiModelProperty(value = "页尺寸", required = true)
+    @Schema(description = "页尺寸", requiredMode = Schema.RequiredMode.REQUIRED)
     private Integer pagesize;
 
-    @ApiModelProperty(value = "总页数", required = true)
+    @Schema(description = "总页数", requiredMode = Schema.RequiredMode.REQUIRED)
     private Long pages;
 
-    @ApiModelProperty(value = "页码", required = true)
+    @Schema(description = "页码", requiredMode = Schema.RequiredMode.REQUIRED)
     private Integer page;
 
-    @ApiModelProperty(value = "数据列表", required = true)
+    @Schema(description = "数据列表", requiredMode = Schema.RequiredMode.REQUIRED)
     private List<T> items;
 }

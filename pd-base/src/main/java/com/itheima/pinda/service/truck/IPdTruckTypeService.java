@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 import com.itheima.pinda.entity.truck.PdTruckType;
 import com.itheima.pinda.entity.truck.PdTruckTypeGoodsType;
 

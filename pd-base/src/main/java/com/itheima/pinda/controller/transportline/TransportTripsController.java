@@ -3,7 +3,6 @@ package com.itheima.pinda.controller.transportline;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.alibaba.fastjson.JSON;
 import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.DTO.transportline.TransportTripsTruckDriverDto;
 import com.itheima.pinda.entity.transportline.PdTransportTrips;

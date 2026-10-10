@@ -6,14 +6,14 @@ spring:
     database: ${pinda.redis.database}
   cloud:
     nacos:
-      username: ${NACOS_USERNAME:pinda}
-      password: ${NACOS_PASSWORD:pinda}
+      username: ${NACOS_USERNAME:nacos}
+      password: ${NACOS_PASSWORD:123456}
       discovery:
-        server-addr: 127.0.0.1:8848
+        server-addr: ${NACOS_SERVER_ADDR:192.168.20.130:8848}
         group: pinda-tms
         namespace: 1cb93ce4-dc0e-4730-b759-d35fd7ed93c3
       config:
-        server-addr: 127.0.0.1:8848
+        server-addr: ${NACOS_SERVER_ADDR:192.168.20.130:8848}
         file-extension: yml
         group: pinda-tms
         namespace: 1cb93ce4-dc0e-4730-b759-d35fd7ed93c3
