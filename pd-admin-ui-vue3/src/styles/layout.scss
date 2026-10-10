@@ -29,12 +29,14 @@
     }
   }
 
+  // 子菜单标题：取消背景/主色强调（用户要求去掉 .el-sub-menu__title 特殊样式），
+  // 选中态仅由具体菜单项（.el-menu-item.is-active）表达，标题只保留 hover 反馈
   .el-sub-menu.has-active-child > .el-sub-menu__title {
-    color: var(--el-color-primary) !important;
-    background-color: var(--el-color-primary-light-9) !important;
+    color: var(--menu-text) !important;
+    background-color: transparent !important;
 
     .menu-icon {
-      color: var(--el-color-primary) !important;
+      color: currentcolor !important;
     }
   }
 }
@@ -138,11 +140,11 @@ html.sidebar-color-blue .el-menu--popup {
   }
 
   .el-sub-menu.has-active-child > .el-sub-menu__title {
-    color: var(--menu-active-text) !important;
-    background-color: var(--menu-active-bg) !important;
+    color: var(--menu-text) !important;
+    background-color: transparent !important;
 
     .menu-icon {
-      color: var(--menu-active-text) !important;
+      color: currentcolor !important;
     }
   }
 }
@@ -154,11 +156,16 @@ html.sidebar-color-blue .layout-root.layout--mix .layout-sidebar .el-menu {
     background-color: var(--menu-hover) !important;
   }
 
-  .el-menu-item.is-active,
-  .el-sub-menu.is-active > .el-sub-menu__title,
-  .el-sub-menu.has-active-child > .el-sub-menu__title {
+  // 具体菜单项选中保持高亮；子菜单标题与侧边栏规则一致：无背景、普通文字色
+  .el-menu-item.is-active {
     color: var(--menu-active-text) !important;
     background-color: var(--menu-active-bg) !important;
+  }
+
+  .el-sub-menu.is-active > .el-sub-menu__title,
+  .el-sub-menu.has-active-child > .el-sub-menu__title {
+    color: var(--menu-text) !important;
+    background-color: transparent !important;
   }
 }
 /* stylelint-enable no-descending-specificity */
