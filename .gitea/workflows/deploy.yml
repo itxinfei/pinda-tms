@@ -1,6 +1,8 @@
 # ============================================
-# 品达TMS 四端前端自动构建与部署（Gitea Actions）
-# push 到 master 后：构建 4 个 H5 Nginx 镜像 -> 只滚动重启 4 个前端容器
+# 品达TMS 四端前端手动构建与部署（Gitea Actions）
+# 2026-10-10：改为「仅手动触发」——自动 push 不再构建前端（避免构建并发打满服务器导致无响应）。
+# 手动方式：Gitea 仓库 → Actions → 选中本流水线 → Run workflow（可指定要部署的端）
+# 或：服务器上执行 /data/pinda-deploy/deploy-fe.sh [admin|driver|courier|customer|all]
 #
 # 说明：
 #   - 本流水线只部署前端，不触碰后端容器（compose up 显式列出 4 个服务）。
@@ -11,22 +13,20 @@
 name: deploy-frontend
 
 on:
-  push:
-    branches: [master]
-    # 只在前端相关路径变化时触发；后端 push 由 deploy-backend.yml 接住，避免互相空跑
-    # 2026-10-10：courier/customer 端代码已补齐；前次 18a4fb1 因 Gitea runner 瞬时故障构建失败，本次再次更新注释触发重新构建
-    paths:
-      - 'pd-admin-ui-vue3/**'
-      - 'pd-mobile/**'
-      - 'deploy/apps/Dockerfile.admin-h5'
-      - 'deploy/apps/Dockerfile.mobile-h5'
-      - 'deploy/apps/nginx/**'
-      - '.gitea/workflows/deploy.yml'
   workflow_dispatch:
+    inputs:
+      target:
+        description: '要部署的端（admin/driver/courier/customer/all，默认 all）'
+        required: false
+        default: 'all'
 
 jobs:
   deploy-frontend:
     runs-on: ubuntu-latest   # 由 act_runner 用本地 ci 镜像启动，挂载宿主 docker.sock
+    env:
+      # workflow_dispatch 传入要部署的端；默认 all
+      DEPLOY_TARGET: ${{ github.event.inputs.target || 'all' }}
+
     steps:
       - name: 检出代码
         # 不用 actions/checkout（避免从 GitHub 下载），直接 clone 内网 Gitea
@@ -38,13 +38,15 @@ jobs:
       - name: 计算镜像 TAG（git 短提交号）
         run: |
           TAG=$(echo "${GITHUB_SHA}" | cut -c1-7)
-          echo "本次构建 TAG=$TAG"
+          echo "本次构建 TAG=$TAG (target=$DEPLOY_TARGET)"
           echo "TAG=$TAG" >> "$GITHUB_ENV"
 
       - name: 构建管理端镜像（Vue3 + Vite）
         run: |
-          docker build -f deploy/apps/Dockerfile.admin-h5 \
-            -t "pinda/pd-admin-h5:${TAG}" .
+          case "$DEPLOY_TARGET" in all|admin)
+            docker build -f deploy/apps/Dockerfile.admin-h5 \
+              -t "pinda/pd-admin-h5:${TAG}" .
+          ;; esac
 
       - name: 构建移动端三端 H5 镜像（pnpm workspace，参数化）
         run: |
@@ -54,6 +56,7 @@ jobs:
           for item in $TARGETS; do
             sub=${item%%:*}
             image=${item##*:}
+            case "$DEPLOY_TARGET" in all|"$sub") ;; *) continue ;; esac
             echo ">> 构建 $image ($sub)"
             docker build -f deploy/apps/Dockerfile.mobile-h5 \
               --build-arg APP_PATH=pd-mobile \
@@ -62,21 +65,34 @@ jobs:
               -t "pinda/${image}:${TAG}" .
           done
 
-      - name: 滚动部署（仅 4 个前端服务，不碰后端）
+      - name: 滚动部署（按 target 更新对应前端服务，不碰后端）
         run: |
           export TAG
-          # 显式列出服务、不加 --remove-orphans：只更新前端，后端容器原样不动
-          docker compose -f deploy/apps/docker-compose.app.yml up -d \
-            pd-admin-h5 pd-driver-h5 pd-courier-h5 pd-customer-h5
-          docker compose -f deploy/apps/docker-compose.app.yml ps \
-            pd-admin-h5 pd-driver-h5 pd-courier-h5 pd-customer-h5
+          case "$DEPLOY_TARGET" in
+            all) SVCS="pd-admin-h5 pd-driver-h5 pd-courier-h5 pd-customer-h5" ;;
+            admin) SVCS="pd-admin-h5" ;;
+            driver) SVCS="pd-driver-h5" ;;
+            courier) SVCS="pd-courier-h5" ;;
+            customer) SVCS="pd-customer-h5" ;;
+            *) echo "未知 target: $DEPLOY_TARGET"; exit 1 ;;
+          esac
+          # 显式列出服务、不加 --remove-orphans：只更新目标前端，后端容器原样不动
+          docker compose -f deploy/apps/docker-compose.app.yml up -d $SVCS
+          docker compose -f deploy/apps/docker-compose.app.yml ps $SVCS
 
       - name: 部署后健康检查
         run: |
           # 给 nginx 一点启动时间
+          case "$DEPLOY_TARGET" in
+            all) PORTS="8081 8082 8083 8084" ;;
+            admin) PORTS="8081" ;;
+            driver) PORTS="8082" ;;
+            courier) PORTS="8083" ;;
+            customer) PORTS="8084" ;;
+          esac
           for i in $(seq 1 10); do
             ok=1
-            for p in 8081 8082 8083 8084; do
+            for p in $PORTS; do
               code=$(curl -s -o /dev/null -w '%{http_code}' -m 5 "http://127.0.0.1:${p}/") \
                 || ok=0
               [ "$code" = "200" ] || ok=0
@@ -84,7 +100,7 @@ jobs:
             [ "$ok" = "1" ] && break
             sleep 3
           done
-          for p in 8081 8082 8083 8084; do
+          for p in $PORTS; do
             echo "端口 $p -> $(curl -s -o /dev/null -w '%{http_code}' -m 5 http://127.0.0.1:${p}/)"
           done
           [ "$ok" = "1" ] || { echo "::error::有前端端口未返回 200"; exit 1; }
@@ -94,3 +110,4 @@ jobs:
         run: |
           # 只删无 tag 的悬空层（不带 -a），不影响任何在用镜像，也不碰后端
           docker image prune -f
+
