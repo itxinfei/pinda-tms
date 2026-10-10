@@ -1,9 +1,9 @@
 package rules;
 
-import com.itheima.pinda.entity.fact.AddressRule
-import com.itheima.pinda.entity.fact.AddressCheckResult
-import com.itheima.pinda.service.DroolsRulesService
-import com.itheima.pinda.service.impl.DroolsRulesServiceImpl
+import com.itheima.pinda.entity.fact.AddressRule;
+import com.itheima.pinda.entity.fact.AddressCheckResult;
+import com.itheima.pinda.service.DroolsRulesService;
+import com.itheima.pinda.service.impl.DroolsRulesServiceImpl;
 
 dialect "java"
 

@@ -1,7 +1,8 @@
 package com.itheima.pinda.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.itheima.pinda.common.utils.CustomIdGenerator;
+import com.itheima.pinda.common.CustomIdGenerator;
+import com.itheima.pinda.common.utils.IdConverter;
 import com.itheima.pinda.entity.Order;
 import com.itheima.pinda.entity.PaymentOrder;
 import com.itheima.pinda.enums.OrderPaymentStatus;
@@ -10,7 +11,7 @@ import com.itheima.pinda.service.IOrderService;
 import com.itheima.pinda.service.IPayService;
 import com.itheima.pinda.service.IPaymentOrderService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -62,7 +63,13 @@ public class PayServiceImpl implements IPayService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public PaymentOrder createPayment(String orderId) {
-        Order order = orderService.getById(orderId);
+        // 对外保持 String 入参（路径参数/Feign），内部转雪花 Long 查库
+        Long orderIdValue = IdConverter.toLong(orderId);
+        if (orderIdValue == null) {
+            log.warn("[支付] 非法订单ID，无法创建支付: orderId={}", orderId);
+            return null;
+        }
+        Order order = orderService.getById(orderIdValue);
         if (order == null) {
             log.warn("[支付] 订单不存在，无法创建支付: orderId={}", orderId);
             return null;
@@ -74,7 +81,7 @@ public class PayServiceImpl implements IPayService {
         }
         // 已存在待支付支付单则复用
         LambdaQueryWrapper<PaymentOrder> existsWrapper = new LambdaQueryWrapper<>();
-        existsWrapper.eq(PaymentOrder::getOrderId, orderId)
+        existsWrapper.eq(PaymentOrder::getOrderId, orderIdValue)
             .eq(PaymentOrder::getStatus, PaymentOrder.STATUS_PENDING);
         PaymentOrder existing = paymentOrderService.getOne(existsWrapper);
         if (existing != null) {
@@ -90,7 +97,7 @@ public class PayServiceImpl implements IPayService {
 
         PaymentOrder paymentOrder = new PaymentOrder();
         paymentOrder.setId(idGenerator.nextId(new PaymentOrder()).toString());
-        paymentOrder.setOrderId(orderId);
+        paymentOrder.setOrderId(orderIdValue);
         paymentOrder.setPayNo(payNo);
         paymentOrder.setPayChannel(channel.channelCode());
         paymentOrder.setAmount(order.getAmount());
@@ -111,7 +118,7 @@ public class PayServiceImpl implements IPayService {
             // 并发创建同一订单支付单时，唯一索引(uk_order_id)兜底：复用已创建的支付单
             log.warn("[支付] 订单[{}]并发创建支付单被唯一索引拦截，复用已有支付单", orderId);
             LambdaQueryWrapper<PaymentOrder> reuseWrapper = new LambdaQueryWrapper<>();
-            reuseWrapper.eq(PaymentOrder::getOrderId, orderId)
+            reuseWrapper.eq(PaymentOrder::getOrderId, orderIdValue)
                 .eq(PaymentOrder::getStatus, PaymentOrder.STATUS_PENDING);
             PaymentOrder reused = paymentOrderService.getOne(reuseWrapper);
             return reused != null ? reused : paymentOrder;
@@ -220,8 +227,12 @@ public class PayServiceImpl implements IPayService {
      */
     @Override
     public PaymentOrder queryPayment(String orderId) {
+        Long orderIdValue = IdConverter.toLong(orderId);
+        if (orderIdValue == null) {
+            return null;
+        }
         LambdaQueryWrapper<PaymentOrder> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(PaymentOrder::getOrderId, orderId);
+        wrapper.eq(PaymentOrder::getOrderId, orderIdValue);
         return paymentOrderService.getOne(wrapper);
     }
 

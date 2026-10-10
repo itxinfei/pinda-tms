@@ -2,48 +2,82 @@ package com.itheima.pinda.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
+
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 /**
  * 订单位置信息
  */
 @Data
-@TableName("pd_order_location")
+@TableName("oms_order_location")
 public class OrderLocation implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    /**
-     * id
-     */
-    @TableId(value = "id", type = IdType.INPUT)
-    private String id;
-    /**
-     * 订单id
-     */
-    private String orderId;
-    /**
-     * 发送地址坐标
-     */
-    private String sendLocation;
-    /**
-     * 收货地址坐标
-     */
-    private String receiveLocation;
-    /**
-     * 发送起始网点
-     */
-    private String sendAgentId;
 
     /**
-     * 接受的终止网点
+     * ID
      */
-    private String receiveAgentId;
-    /**
-     * 记录状态 0：无效，1有效
-     */
-    private String status;
+    @TableId(value = "id", type = IdType.ASSIGN_ID)
+    private Long id;
 
+    /**
+     * 租户ID
+     */
+    private Long tenantId;
+
+    /**
+     * 订单ID
+     */
+    private Long orderId;
+
+    /**
+     * 寄件经度
+     */
+    private BigDecimal sendLongitude;
+
+    /**
+     * 寄件纬度
+     */
+    private BigDecimal sendLatitude;
+
+    /**
+     * 收件经度
+     */
+    private BigDecimal receiveLongitude;
+
+    /**
+     * 收件纬度
+     */
+    private BigDecimal receiveLatitude;
+
+    /**
+     * 起始网点ID（旧 sendAgentId）
+     */
+    private Long sendOrgId;
+
+    /**
+     * 目的网点ID（旧 receiveAgentId）
+     */
+    private Long receiveOrgId;
+
+    /**
+     * 状态：0无效 1有效
+     */
+    private Integer status;
+
+    private Long createBy;
+    private LocalDateTime createTime;
+    private Long updateBy;
+    private LocalDateTime updateTime;
+
+    /**
+     * 逻辑删除：0 未删 1 已删
+     */
+    @TableLogic
+    private Integer deleted;
 }

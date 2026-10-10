@@ -7,7 +7,7 @@ import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.itheima.pinda.DTO.OrderDTO;
 import com.itheima.pinda.DTO.OrderSearchDTO;
 import com.itheima.pinda.common.utils.BaiduMapUtils;
-import com.itheima.pinda.common.utils.CustomIdGenerator;
+import com.itheima.pinda.common.utils.IdConverter;
 import com.itheima.pinda.entity.Order;
 import com.itheima.pinda.entity.fact.AddressCheckResult;
 import com.itheima.pinda.entity.fact.AddressRule;
@@ -17,7 +17,6 @@ import com.itheima.pinda.enums.OrderStatus;
 import com.itheima.pinda.mapper.OrderMapper;
 import com.itheima.pinda.service.IOrderService;
 import com.itheima.pinda.service.SettlementService;
-import org.apache.commons.lang.StringUtils;
 import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieSession;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,8 +45,8 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     /**
      * 订单状态流转图（Key: 当前状态, Value: 允许的下一个状态集合）
      * 与 pd-work 的 StateTransitionValidator 保持一致，并依据实际业务路径补充：
-     *  - 网点自寄(23002) → 网点入库(23003)：自寄订单交件直接入库
-     *  - 网点出库(23006) → 派送中(23008)：快递员接件直接进入派送（跳过待派送 23007）
+     *  - 网点自寄 → 网点入库：自寄订单交件直接入库
+     *  - 网点出库 → 派送中：快递员接件直接进入派送（跳过待派送）
      */
     private static final Map<Integer, Set<Integer>> ORDER_STATUS_TRANSITIONS = new HashMap<>();
 
@@ -85,6 +84,12 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         ORDER_STATUS_TRANSITIONS.put(OrderStatus.CANCELLED.getCode(), Collections.emptySet());
     }
 
+    @Autowired
+    private SettlementService settlementService;
+
+    @Autowired
+    private ReloadDroolsRulesService reloadDroolsRulesService;
+
     /**
      * 修改订单（重写以接入状态流转校验）
      *
@@ -97,7 +102,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
      */
     @Override
     public boolean updateById(Order order) {
-        if (order == null || StringUtils.isBlank(order.getId())) {
+        if (order == null || order.getId() == null) {
             log.warn("订单更新失败：订单ID为空");
             return false;
         }
@@ -125,22 +130,14 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         // 签收成功后触发结算：签收的 Feign 回写必经此处，是不依赖 MQ 配置的同步触发点，
         // 与交付事件 MQ 监听双触发；settle 为 REQUIRES_NEW 独立事务且幂等，不影响签收结果
         if (updated && OrderStatus.RECEIVED.getCode().equals(newStatus)) {
-            settlementService.settle(order.getId(), null);
+            settlementService.settle(String.valueOf(order.getId()), null);
         }
         return updated;
     }
 
-    @Autowired
-    private SettlementService settlementService;
-
-    @Autowired
-    private CustomIdGenerator idGenerator;
-    @Autowired
-    private ReloadDroolsRulesService reloadDroolsRulesService;
-
     @Override
     public Order saveOrder(Order order) {
-        order.setId(idGenerator.nextId(order) + "");
+        // 主键走 MyBatis-Plus ASSIGN_ID（雪花），save 时自动赋值，无需手工生成
         order.setCreateTime(LocalDateTime.now());
         order.setPaymentStatus(OrderPaymentStatus.UNPAID.getStatus());
         if (OrderPickupType.NO_PICKUP.getCode() == order.getPickupType()) {
@@ -154,9 +151,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 
     @Override
     public IPage<Order> findByPage(Integer page, Integer pageSize, Order order) {
-        Page<Order> iPage = new Page(page, pageSize);
+        Page<Order> iPage = new Page<>(page, pageSize);
         LambdaQueryWrapper<Order> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        if (StringUtils.isNotEmpty(order.getId())) {
+        if (order.getId() != null) {
             lambdaQueryWrapper.eq(Order::getId, order.getId());
         }
         if (order.getStatus() != null) {
@@ -166,35 +163,35 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
             lambdaQueryWrapper.eq(Order::getPaymentStatus, order.getPaymentStatus());
         }
         //发件人信息
-        if (StringUtils.isNotEmpty(order.getSenderName())) {
+        if (order.getSenderName() != null && !order.getSenderName().isEmpty()) {
             lambdaQueryWrapper.like(Order::getSenderName, order.getSenderName());
         }
-        if (StringUtils.isNotEmpty(order.getSenderPhone())) {
+        if (order.getSenderPhone() != null && !order.getSenderPhone().isEmpty()) {
             lambdaQueryWrapper.like(Order::getSenderPhone, order.getSenderPhone());
         }
-        if (StringUtils.isNotEmpty(order.getSenderProvinceId())) {
+        if (order.getSenderProvinceId() != null) {
             lambdaQueryWrapper.eq(Order::getSenderProvinceId, order.getSenderProvinceId());
         }
-        if (StringUtils.isNotEmpty(order.getSenderCityId())) {
+        if (order.getSenderCityId() != null) {
             lambdaQueryWrapper.eq(Order::getSenderCityId, order.getSenderCityId());
         }
-        if (StringUtils.isNotEmpty(order.getSenderCountyId())) {
+        if (order.getSenderCountyId() != null) {
             lambdaQueryWrapper.eq(Order::getSenderCountyId, order.getSenderCountyId());
         }
         //收件人信息
-        if (StringUtils.isNotEmpty(order.getReceiverName())) {
+        if (order.getReceiverName() != null && !order.getReceiverName().isEmpty()) {
             lambdaQueryWrapper.like(Order::getReceiverName, order.getReceiverName());
         }
-        if (StringUtils.isNotEmpty(order.getReceiverPhone())) {
+        if (order.getReceiverPhone() != null && !order.getReceiverPhone().isEmpty()) {
             lambdaQueryWrapper.like(Order::getReceiverPhone, order.getReceiverPhone());
         }
-        if (StringUtils.isNotEmpty(order.getReceiverProvinceId())) {
+        if (order.getReceiverProvinceId() != null) {
             lambdaQueryWrapper.eq(Order::getReceiverProvinceId, order.getReceiverProvinceId());
         }
-        if (StringUtils.isNotEmpty(order.getReceiverCityId())) {
+        if (order.getReceiverCityId() != null) {
             lambdaQueryWrapper.eq(Order::getReceiverCityId, order.getReceiverCityId());
         }
-        if (StringUtils.isNotEmpty(order.getReceiverCountyId())) {
+        if (order.getReceiverCountyId() != null) {
             lambdaQueryWrapper.eq(Order::getReceiverCountyId, order.getReceiverCountyId());
         }
         lambdaQueryWrapper.orderBy(true, false, Order::getId);
@@ -202,7 +199,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     }
 
     @Override
-    public List<Order> findAll(List<String> ids) {
+    public List<Order> findAll(List<Long> ids) {
         LambdaQueryWrapper<Order> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         if (ids != null && ids.size() > 0) {
             lambdaQueryWrapper.in(Order::getId, ids);
@@ -220,37 +217,45 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         IPage<Order> ipage = new Page<>(page, pageSize);
 
         LambdaQueryWrapper<Order> orderQueryWrapper = new LambdaQueryWrapper<>();
-        orderQueryWrapper.eq(StringUtils.isNotEmpty(orderSearchDTO.getId()), Order::getId, orderSearchDTO.getId());
-        orderQueryWrapper.like(StringUtils.isNotEmpty(orderSearchDTO.getKeyword()), Order::getId, orderSearchDTO.getKeyword());
-        orderQueryWrapper.eq(StringUtils.isNotEmpty(orderSearchDTO.getMemberId()), Order::getMemberId, orderSearchDTO.getMemberId());
-        orderQueryWrapper.eq(StringUtils.isNotEmpty(orderSearchDTO.getReceiverPhone()), Order::getReceiverPhone, orderSearchDTO.getReceiverPhone());
+        Long searchId = IdConverter.toLong(orderSearchDTO.getId());
+        Long searchMemberId = IdConverter.toLong(orderSearchDTO.getMemberId());
+        orderQueryWrapper.eq(searchId != null, Order::getId, searchId);
+        // 关键字对雪花ID做模糊匹配（MySQL 隐式将 BIGINT 转字符串比较）
+        orderQueryWrapper.like(orderSearchDTO.getKeyword() != null
+                        && !orderSearchDTO.getKeyword().isEmpty(),
+                Order::getId, orderSearchDTO.getKeyword());
+        orderQueryWrapper.eq(searchMemberId != null, Order::getMemberId, searchMemberId);
+        orderQueryWrapper.eq(orderSearchDTO.getReceiverPhone() != null
+                        && !orderSearchDTO.getReceiverPhone().isEmpty(),
+                Order::getReceiverPhone, orderSearchDTO.getReceiverPhone());
         orderQueryWrapper.orderByDesc(Order::getCreateTime);
         return page(ipage, orderQueryWrapper);
     }
 
-    //@Autowired
-    //private KieContainer kieContainer;
-
     /**
      * 计算订单价格
-     * @param orderDTO
-     * @return
+     *
+     * @param orderDTO 订单信息
+     * @return 计费结果
      */
+    @Override
     public Map calculateAmount(OrderDTO orderDTO) {
         //计算订单距离
         orderDTO = this.getDistance(orderDTO);
 
-        if("sender error msg".equals(orderDTO.getSenderAddress()) || "receiver error msg".equals(orderDTO.getReceiverAddress())){
+        if ("sender error msg".equals(orderDTO.getSenderAddress())
+                || "receiver error msg".equals(orderDTO.getReceiverAddress())) {
             //地址解析失败，直接返回
             Map map = new HashMap();
-            map.put("amount","0");
-            map.put("errorMsg","无法计算订单距离和订单价格，请输入真实地址");
-            map.put("orderDto",orderDTO);
+            map.put("amount", "0");
+            map.put("errorMsg", "无法计算订单距离和订单价格，请输入真实地址");
+            map.put("orderDto", orderDTO);
             return map;
         }
 
         if (orderDTO.getOrderCargoDto() == null || orderDTO.getDistance() == null) {
-            log.warn("[订单价格计算] 参数不完整: orderCargoDto={}, distance={}", orderDTO.getOrderCargoDto(), orderDTO.getDistance());
+            log.warn("[订单价格计算] 参数不完整: orderCargoDto={}, distance={}",
+                orderDTO.getOrderCargoDto(), orderDTO.getDistance());
             return null;
         }
 
@@ -259,7 +264,6 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
             log.error("[订单价格计算] Drools规则引擎未初始化，无法计算订单价格");
             return null;
         }
-        //修改点：修复提前 return i 导致结果组装逻辑不可达、且返回值类型错误（应为 Map）的问题
         AddressCheckResult addressCheckResult = new AddressCheckResult();
         KieSession session = null;
         try {
@@ -286,13 +290,13 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
             }
         }
 
-        if(addressCheckResult.isPostCodeResult()){
+        if (addressCheckResult.isPostCodeResult()) {
             log.info("规则匹配成功,订单价格为：{}", addressCheckResult.getResult());
             orderDTO.setAmount(new BigDecimal(addressCheckResult.getResult()));
 
             Map map = new HashMap();
-            map.put("orderDto",orderDTO);
-            map.put("amount",addressCheckResult.getResult());
+            map.put("orderDto", orderDTO);
+            map.put("amount", addressCheckResult.getResult());
 
             return map;
         }
@@ -302,27 +306,28 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 
     /**
      * 调用百度地图服务接口，根据寄件人地址和收件人地址计算订单距离
-     * @param orderDTO
-     * @return
+     *
+     * @param orderDTO 订单信息
+     * @return 订单信息
      */
-    public OrderDTO getDistance(OrderDTO orderDTO){
+    public OrderDTO getDistance(OrderDTO orderDTO) {
         //调用百度地图服务接口获取寄件人地址对应的坐标经纬度
         String begin = BaiduMapUtils.getCoordinate(orderDTO.getSenderAddress());
-        if(begin == null){
+        if (begin == null) {
             orderDTO.setSenderAddress("sender error msg");
             return orderDTO;
         }
 
         //调用百度地图服务接口获取收件人地址对应的坐标经纬度
         String end = BaiduMapUtils.getCoordinate(orderDTO.getReceiverAddress());
-        if(end == null){
+        if (end == null) {
             orderDTO.setReceiverAddress("receiver error msg");
             return orderDTO;
         }
 
         Double distance = BaiduMapUtils.getDistance(begin, end);
         DecimalFormat decimalFormat = new DecimalFormat("#.##");
-        String distanceStr = decimalFormat.format(distance/1000);
+        String distanceStr = decimalFormat.format(distance / 1000);
 
         orderDTO.setDistance(new BigDecimal(distanceStr));
 

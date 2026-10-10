@@ -1,6 +1,6 @@
 package com.itheima.pinda.service.impl;
 
-import com.itheima.pinda.common.utils.CustomIdGenerator;
+import com.itheima.pinda.common.CustomIdGenerator;
 import com.itheima.pinda.entity.Order;
 import com.itheima.pinda.entity.PaymentOrder;
 import com.itheima.pinda.enums.OrderPaymentStatus;
@@ -72,7 +72,7 @@ public class PayServiceImplTest {
     private PaymentOrder pendingOrder() {
         PaymentOrder po = new PaymentOrder();
         po.setId("1");
-        po.setOrderId("ORDER-1");
+        po.setOrderId(1L);
         po.setPayNo("PAY-001");
         po.setPayChannel(PaymentOrder.CHANNEL_MOCK);
         po.setAmount(new BigDecimal("23.50"));
@@ -133,10 +133,10 @@ public class PayServiceImplTest {
     public void testMockCreatePaymentAutoPays() throws Exception {
         // 模拟渠道创建支付单后服务端直接完成支付：支付单与订单均置为已支付
         Order order = new Order();
-        order.setId("ORDER-1");
+        order.setId(1L);
         order.setAmount(new BigDecimal("23.50"));
         order.setPaymentStatus(OrderPaymentStatus.UNPAID.getStatus());
-        when(orderService.getById("ORDER-1")).thenReturn(order);
+        when(orderService.getById(1L)).thenReturn(order);
 
         PaymentOrder po = pendingOrder();
         // 支付完成后的支付单（模拟渠道自动支付后应处于已支付状态）
@@ -146,7 +146,7 @@ public class PayServiceImplTest {
         when(paymentOrderService.getOne(any())).thenReturn(null, po, paidPo);
         when(mockChannel.createPayment(any(), any(), any())).thenReturn("{\"mock\":true}");
 
-        PaymentOrder result = payService.createPayment("ORDER-1");
+        PaymentOrder result = payService.createPayment("1");
         assertEquals(Integer.valueOf(PaymentOrder.STATUS_PAID), result.getStatus());
         assertEquals(PaymentOrder.CHANNEL_MOCK, result.getPayChannel());
     }
@@ -155,12 +155,12 @@ public class PayServiceImplTest {
     public void testCreatePaymentUnknownChannelReturnsNull() throws Exception {
         ReflectionTestUtils.setField(payService, "defaultChannel", "unknown-channel");
         Order order = new Order();
-        order.setId("ORDER-1");
+        order.setId(1L);
         order.setAmount(new BigDecimal("23.50"));
-        when(orderService.getById("ORDER-1")).thenReturn(order);
+        when(orderService.getById(1L)).thenReturn(order);
         when(paymentOrderService.getOne(any())).thenReturn(null);
 
         // 未知支付渠道 → 优雅返回 null（而非 NPE）
-        org.junit.jupiter.api.Assertions.assertNull(payService.createPayment("ORDER-1"));
+        org.junit.jupiter.api.Assertions.assertNull(payService.createPayment("1"));
     }
 }

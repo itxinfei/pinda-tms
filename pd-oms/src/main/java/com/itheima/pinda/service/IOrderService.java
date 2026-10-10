@@ -35,7 +35,7 @@ public interface IOrderService extends IService<Order> {
      * @param ids 订单id列表
      * @return 订单列表
      */
-    List<Order> findAll(List<String> ids);
+    List<Order> findAll(List<Long> ids);
 
     /**
      * 获取订单分页数据 客户端使用

@@ -2,40 +2,48 @@ package com.itheima.pinda.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.Data;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
-
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.experimental.Accessors;
 
 /**
  * 货物
  */
 @Data
-@TableName("pd_order_cargo")
+@TableName("oms_order_cargo")
 public class OrderCargo implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
     /**
-     * id
+     * ID
      */
-    @TableId(value = "id", type = IdType.INPUT)
-    private String id;
+    @TableId(value = "id", type = IdType.ASSIGN_ID)
+    private Long id;
+
     /**
-     * 订单id
+     * 租户ID
      */
-    private String orderId;
+    private Long tenantId;
+
     /**
-     * 运单id
+     * 订单ID
      */
-    private String tranOrderId;
+    private Long orderId;
+
     /**
-     * 货物类型id
+     * 运单ID（统一旧 tranOrderId 命名）
      */
-    private String goodsTypeId;
+    private Long transportOrderId;
+
+    /**
+     * 货物类型ID
+     */
+    private Long goodsTypeId;
+
     /**
      * 货物名称
      */
@@ -47,42 +55,53 @@ public class OrderCargo implements Serializable {
     private String unit;
 
     /**
-     * 货品货值
+     * 货值（保价）
      */
     private BigDecimal cargoValue;
 
     /**
-     * 货品条码
+     * 货物条码
      */
     private String cargoBarcode;
 
     /**
-     * 货品数量
+     * 数量
      */
     private Integer quantity;
 
     /**
-     * 货品体积
+     * 单件体积(m³)
      */
     private BigDecimal volume;
 
     /**
-     * 货品重量
+     * 单件重量(kg)
      */
     private BigDecimal weight;
 
     /**
-     * 货品备注
-     */
-    private String remark;
-
-    /**
-     * 货品总体积
+     * 总体积(m³)
      */
     private BigDecimal totalVolume;
 
     /**
-     * 货品总重量
+     * 总重量(kg)
      */
     private BigDecimal totalWeight;
+
+    /**
+     * 备注
+     */
+    private String remark;
+
+    private Long createBy;
+    private java.time.LocalDateTime createTime;
+    private Long updateBy;
+    private java.time.LocalDateTime updateTime;
+
+    /**
+     * 逻辑删除：0 未删 1 已删
+     */
+    @TableLogic
+    private Integer deleted;
 }

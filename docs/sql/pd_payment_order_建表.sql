@@ -10,7 +10,7 @@
 
 CREATE TABLE IF NOT EXISTS `pd_payment_order` (
   `id`               VARCHAR(64)    NOT NULL                COMMENT '主键（雪花id，应用生成）',
-  `order_id`         VARCHAR(64)    NOT NULL                COMMENT '订单id（关联 pd_order.id）',
+  `order_id`         BIGINT         NOT NULL                COMMENT '订单id（关联 oms_order.id，雪花 BIGINT）',
   `pay_no`           VARCHAR(64)    NOT NULL                COMMENT '支付流水号（系统生成，按此查询并处理回调）',
   `pay_channel`      VARCHAR(32)    NOT NULL DEFAULT 'mock' COMMENT '支付渠道: wechat-微信 alipay-支付宝 mock-模拟',
   `amount`           DECIMAL(14,2)  NOT NULL DEFAULT 0.00   COMMENT '支付金额（取订单金额，回调时校验一致性）',

@@ -2,16 +2,16 @@ package com.itheima.pinda.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.itheima.pinda.DTO.OrderCargoDto;
+import com.itheima.pinda.common.utils.IdConverter;
 import com.itheima.pinda.common.utils.Result;
+import com.itheima.pinda.converter.OrderCargoConverter;
 import com.itheima.pinda.entity.OrderCargo;
 import com.itheima.pinda.service.IOrderCargoService;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * 货物
@@ -21,6 +21,8 @@ import java.util.stream.Collectors;
 public class CargoController {
     @Autowired
     private IOrderCargoService orderCargoService;
+    @Autowired
+    private OrderCargoConverter orderCargoConverter;
 
     /**
      * 获取货物列表
@@ -31,23 +33,16 @@ public class CargoController {
      */
     @GetMapping("")
     public List<OrderCargoDto> findAll(@RequestParam(name = "tranOrderId", required = false) String tranOrderId, @RequestParam(name = "orderId", required = false) String orderId) {
-        return orderCargoService.findAll(tranOrderId, orderId).stream().map(orderCargo -> {
-            OrderCargoDto cargoDto = new OrderCargoDto();
-            BeanUtils.copyProperties(orderCargo, cargoDto);
-            return cargoDto;
-        }).collect(Collectors.toList());
+        return orderCargoConverter.toDtoList(orderCargoService.findAll(tranOrderId, orderId));
     }
 
     @GetMapping("/list")
     public List<OrderCargoDto> list(@RequestParam(name = "orderIds", required = false) List<String> orderIds) {
         LambdaQueryWrapper<OrderCargo> wrapper = new LambdaQueryWrapper<>();
-        wrapper.in(!CollectionUtils.isEmpty(orderIds), OrderCargo::getOrderId, orderIds);
+        List<Long> cargoOrderIds = IdConverter.toLongList(orderIds);
+        wrapper.in(!CollectionUtils.isEmpty(cargoOrderIds), OrderCargo::getOrderId, cargoOrderIds);
 
-        return orderCargoService.list(wrapper).stream().map(orderCargo -> {
-            OrderCargoDto cargoDto = new OrderCargoDto();
-            BeanUtils.copyProperties(orderCargo, cargoDto);
-            return cargoDto;
-        }).collect(Collectors.toList());
+        return orderCargoConverter.toDtoList(orderCargoService.list(wrapper));
     }
 
     /**
@@ -58,11 +53,9 @@ public class CargoController {
      */
     @PostMapping("")
     public OrderCargoDto save(@RequestBody OrderCargoDto dto) {
-        OrderCargo orderCargo = new OrderCargo();
-        BeanUtils.copyProperties(dto, orderCargo);
+        OrderCargo orderCargo = orderCargoConverter.toEntity(dto);
         orderCargo = orderCargoService.saveSelective(orderCargo);
-        BeanUtils.copyProperties(orderCargo, dto);
-        return dto;
+        return orderCargoConverter.toDto(orderCargo);
     }
 
     /**
@@ -75,8 +68,7 @@ public class CargoController {
     @PutMapping("/{id}")
     public OrderCargoDto update(@PathVariable(name = "id") String id, @RequestBody OrderCargoDto dto) {
         dto.setId(id);
-        OrderCargo orderCargo = new OrderCargo();
-        BeanUtils.copyProperties(dto, orderCargo);
+        OrderCargo orderCargo = orderCargoConverter.toEntity(dto);
         orderCargoService.updateById(orderCargo);
         return dto;
     }
@@ -89,7 +81,7 @@ public class CargoController {
      */
     @DeleteMapping("/{id}")
     public Result del(@PathVariable(name = "id") String id) {
-        orderCargoService.removeById(id);
+        orderCargoService.removeById(IdConverter.toLong(id));
         return Result.ok();
     }
 
@@ -102,13 +94,15 @@ public class CargoController {
      */
     @GetMapping("/{id}")
     public OrderCargoDto findById(@PathVariable(name = "id") String id) {
-        OrderCargo orderCargo = orderCargoService.getById(id);
+        Long cargoId = IdConverter.toLong(id);
+        if (cargoId == null) {
+            return null;
+        }
+        OrderCargo orderCargo = orderCargoService.getById(cargoId);
         if (orderCargo == null) {
             return null;
         }
-        OrderCargoDto dto = new OrderCargoDto();
-        BeanUtils.copyProperties(orderCargo, dto);
-        return dto;
+        return orderCargoConverter.toDto(orderCargo);
     }
 
 }

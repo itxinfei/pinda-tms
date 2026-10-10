@@ -63,9 +63,9 @@ public class PaymentOrder implements Serializable {
     private String id;
 
     /**
-     * 订单ID
+     * 订单ID（关联 oms_order.id，雪花 BIGINT）
      */
-    private String orderId;
+    private Long orderId;
 
     /**
      * 支付流水号（系统生成，唯一）
