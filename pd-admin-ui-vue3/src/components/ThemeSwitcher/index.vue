@@ -1,24 +1,9 @@
 <template>
-  <el-dropdown trigger="click" @command="handleThemeChange">
-    <el-icon :size="20">
+  <el-tooltip :content="t('login.theme')" placement="bottom">
+    <el-icon :size="20" class="click-switch" @click="cycleTheme">
       <component :is="currentThemeIcon" />
     </el-icon>
-    <template #dropdown>
-      <el-dropdown-menu>
-        <el-dropdown-item
-          v-for="item in themeList"
-          :key="item.value"
-          :command="item.value"
-          :disabled="settingsStore.theme === item.value"
-        >
-          <el-icon>
-            <component :is="item.component" />
-          </el-icon>
-          {{ item.label }}
-        </el-dropdown-item>
-      </el-dropdown-menu>
-    </template>
-  </el-dropdown>
+  </el-tooltip>
 </template>
 <script setup lang="ts">
 import { useSettingsStore } from "@/stores";
@@ -27,12 +12,6 @@ import { Moon, Sunny, Monitor } from "@element-plus/icons-vue";
 
 const { t } = useI18n();
 const settingsStore = useSettingsStore();
-
-const themeList = [
-  { label: t("login.light"), value: ThemeMode.LIGHT, component: Sunny },
-  { label: t("login.dark"), value: ThemeMode.DARK, component: Moon },
-  { label: t("login.auto"), value: ThemeMode.AUTO, component: Monitor },
-];
 
 // 自动模式跟随系统，故显示显示器图标；否则按实际生效主题显示太阳/月亮
 const currentThemeIcon = computed(() => {
@@ -44,9 +23,18 @@ const currentThemeIcon = computed(() => {
 });
 
 /**
- * 切换主题模式
+ * 点击直接切换主题：亮色 -> 暗色 -> 自动 -> 亮色
  */
-const handleThemeChange = (theme: ThemeMode) => {
-  settingsStore.theme = theme;
+const cycleTheme = () => {
+  const order = [ThemeMode.LIGHT, ThemeMode.DARK, ThemeMode.AUTO];
+  const idx = order.indexOf(settingsStore.theme);
+  const next = order[(idx + 1) % order.length];
+  settingsStore.theme = next;
 };
 </script>
+
+<style scoped>
+.click-switch {
+  cursor: pointer;
+}
+</style>
