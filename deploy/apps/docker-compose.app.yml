@@ -445,8 +445,8 @@ services:
   #  端            容器名           端口   对应后端聚合层        状态
   #  后台管理      pd-admin-h5      8081   pd-web-manager:8161   Vue3 已就位
   #  司机端        pd-driver-h5     8082   pd-web-driver:8162    uniapp 已就位
-  #  快递员端      pd-courier-h5    8083   pd-web-courier:8163   占位，待代码
-  #  客户小程序    pd-customer-h5   8084   pd-web-customer:8164  占位，待代码
+  #  快递员端      pd-courier-h5    8083   pd-web-courier:8163   已就位
+  #  客户小程序    pd-customer-h5   8084   pd-web-customer:8164  已就位
   #
   #  业务角色取自 docs/03-功能规划与需求说明.md 的「三端移动应用」：
   #  司机端 / 快递员端 / 客户小程序，加后台管理共 4 端。
