@@ -1,7 +1,8 @@
 package com.itheima.pinda.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.itheima.pinda.common.utils.CustomIdGenerator;
+import com.itheima.pinda.common.CustomIdGenerator;
+import com.itheima.pinda.common.utils.IdConverter;
 import com.itheima.pinda.entity.FreightDetail;
 import com.itheima.pinda.entity.Order;
 import com.itheima.pinda.entity.SettlementOrder;
@@ -10,7 +11,6 @@ import com.itheima.pinda.service.IOrderService;
 import com.itheima.pinda.service.ISettlementOrderService;
 import com.itheima.pinda.service.SettlementService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -70,21 +70,23 @@ public class SettlementServiceImpl implements SettlementService {
      * 实际结算逻辑（幂等）
      */
     private void doSettle(String orderId, String transportOrderId) {
-        if (StringUtils.isBlank(orderId)) {
+        Long orderIdValue = IdConverter.toLong(orderId);
+        if (orderIdValue == null) {
             log.warn("[结算] 订单id为空，跳过结算");
             return;
         }
+        Long transportOrderIdValue = IdConverter.toLong(transportOrderId);
 
         // 幂等：结算单已存在（重复交付事件/重复状态更新）直接返回
         SettlementOrder existing = settlementOrderService.getOne(
                 new LambdaQueryWrapper<SettlementOrder>()
-                        .eq(SettlementOrder::getOrderId, orderId));
+                        .eq(SettlementOrder::getOrderId, orderIdValue));
         if (existing != null) {
             log.info("[结算] 订单[{}]结算单已存在，幂等跳过: settlementNo={}", orderId, existing.getSettlementNo());
             return;
         }
 
-        Order order = orderService.getById(orderId);
+        Order order = orderService.getById(orderIdValue);
         if (order == null) {
             log.warn("[结算] 订单不存在，跳过结算: orderId={}", orderId);
             return;
@@ -96,13 +98,12 @@ public class SettlementServiceImpl implements SettlementService {
         //    后续 Drools 规则扩展后，在此按费用项拆分首重/续重/保价/上楼等多条明细
         FreightDetail existDetail = freightDetailService.getOne(
                 new LambdaQueryWrapper<FreightDetail>()
-                        .eq(FreightDetail::getOrderId, orderId)
+                        .eq(FreightDetail::getOrderId, orderIdValue)
                         .eq(FreightDetail::getFeeItem, FreightDetail.FEE_ITEM_FREIGHT));
         if (existDetail == null) {
             FreightDetail detail = new FreightDetail();
-            detail.setId(idGenerator.nextId(detail).toString());
-            detail.setOrderId(orderId);
-            detail.setTransportOrderId(transportOrderId);
+            detail.setOrderId(orderIdValue);
+            detail.setTransportOrderId(transportOrderIdValue);
             detail.setFeeItem(FreightDetail.FEE_ITEM_FREIGHT);
             detail.setFeeItemName(FreightDetail.FEE_ITEM_NAME_FREIGHT);
             detail.setQuantity(BigDecimal.ONE);
@@ -110,19 +111,23 @@ public class SettlementServiceImpl implements SettlementService {
             detail.setUnitPrice(amount);
             detail.setAmount(amount);
             detail.setCreateTime(now);
+            // id 走 ASSIGN_ID 自动雪花
             freightDetailService.save(detail);
         }
 
         // ② 结算单：应收客户、状态=待对账，应收金额=订单金额
+        //    settlement_no 非空且需在落库前确定，用雪花id预生成并显式赋值（ASSIGN_ID 不覆盖非空id）
+        Long settlementId = idGenerator.nextId(new SettlementOrder());
         SettlementOrder settlement = new SettlementOrder();
-        settlement.setId(idGenerator.nextId(settlement).toString());
-        settlement.setSettlementNo("STL" + idGenerator.nextId(settlement));
-        settlement.setOrderId(orderId);
-        settlement.setTransportOrderId(transportOrderId);
+        settlement.setId(settlementId);
+        settlement.setSettlementNo("STL" + settlementId);
+        settlement.setOrderId(orderIdValue);
+        settlement.setTransportOrderId(transportOrderIdValue);
         settlement.setSettleObjectType(SettlementOrder.OBJECT_MEMBER);
         // 散客无 memberId 时兜底，避免非空约束写入失败
-        settlement.setSettleObjectId(
-                StringUtils.defaultIfBlank(order.getMemberId(), SettlementOrder.GUEST_OBJECT_ID));
+        settlement.setSettleObjectId(order.getMemberId() == null
+                ? SettlementOrder.GUEST_OBJECT_ID
+                : String.valueOf(order.getMemberId()));
         settlement.setDirection(SettlementOrder.DIRECTION_RECEIVABLE);
         settlement.setPeriodStart(now.toLocalDate());
         settlement.setPeriodEnd(now.toLocalDate());

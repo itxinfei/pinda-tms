@@ -4,71 +4,75 @@ import com.itheima.pinda.common.base.BaseStatusEnum;
 
 /**
  * 订单状态枚举
+ *
+ * <p>2026-10-10 重构v2：code 由旧五位 23000~23011 收敛为紧凑 TINYINT 1~12，
+ * 与 oms_order.status 及 04_oms.sql 文件头映射一致。调用方一律使用枚举常量，
+ * 不得硬编码状态数字。</p>
  */
 public enum OrderStatus implements BaseStatusEnum<Integer, String> {
 
     /**
-     * 待取件
+     * 待取件（旧 23000）
      */
-    PENDING(23000, "PENDING"),
+    PENDING(1, "PENDING"),
 
     /**
-     * 已取件
+     * 已取件（旧 23001）
      */
-    PICKED_UP(23001, "PICKED_UP"),
+    PICKED_UP(2, "PICKED_UP"),
 
     /**
-     * 网点自寄
+     * 网点自寄（旧 23002）
      */
-    OUTLETS_SINCE_SENT(23002, "OUTLETS_SINCE_SENT"),
+    OUTLETS_SINCE_SENT(3, "OUTLETS_SINCE_SENT"),
 
     /**
-     * 网点入库
+     * 网点入库（旧 23003）
      */
-    OUTLETS_WAREHOUSE(23003, "OUTLETS_WAREHOUSE"),
-
-
-    /**
-     * 待装车
-     */
-    FOR_LOADING(23004, "FOR_LOADING"),
+    OUTLETS_WAREHOUSE(4, "OUTLETS_WAREHOUSE"),
 
 
     /**
-     * 运输中
+     * 待装车（旧 23004）
      */
-    IN_TRANSIT(23005, "IN_TRANSIT"),
+    FOR_LOADING(5, "FOR_LOADING"),
 
 
     /**
-     * 网点出库
+     * 运输中（旧 23005）
      */
-    OUTLETS_EX_WAREHOUSE(23006, "OUTLETS_EX_WAREHOUSE"),
+    IN_TRANSIT(6, "IN_TRANSIT"),
+
 
     /**
-     * 待派送
+     * 网点出库（旧 23006）
      */
-    TO_BE_DISPATCHED(23007, "TO_BE_DISPATCHED"),
+    OUTLETS_EX_WAREHOUSE(7, "OUTLETS_EX_WAREHOUSE"),
 
     /**
-     * 派送中
+     * 待派送（旧 23007）
      */
-    DISPATCHING(23008, "DISPATCHING"),
+    TO_BE_DISPATCHED(8, "TO_BE_DISPATCHED"),
 
     /**
-     * 已签收
+     * 派送中（旧 23008）
      */
-    RECEIVED(23009, "RECEIVED"),
+    DISPATCHING(9, "DISPATCHING"),
 
     /**
-     * 拒收
+     * 已签收（旧 23009）
      */
-    REJECTION(23010, "REJECTION"),
+    RECEIVED(10, "RECEIVED"),
 
     /**
-     * 已取消
+     * 拒收（旧 23010）
      */
-    CANCELLED(23011, "CANCELLED");
+    REJECTION(11, "REJECTION"),
+
+    /**
+     * 已取消（旧 23011）
+     */
+    CANCELLED(12, "CANCELLED");
 
     OrderStatus(Integer code, String value) {
 

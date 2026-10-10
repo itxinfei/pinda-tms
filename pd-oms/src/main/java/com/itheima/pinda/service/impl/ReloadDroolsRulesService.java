@@ -1,9 +1,8 @@
 package com.itheima.pinda.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.itheima.pinda.entity.Rule;
-import com.itheima.pinda.mapper.RuleMapper;
+import com.itheima.pinda.entity.ChargeRule;
+import com.itheima.pinda.mapper.ChargeRuleMapper;
 import org.kie.api.KieServices;
 import org.kie.api.builder.KieBuilder;
 import org.kie.api.builder.KieFileSystem;
@@ -20,26 +19,28 @@ import java.util.List;
 @Service
 public class ReloadDroolsRulesService {
     @Autowired
-    private RuleMapper ruleMapper;
+    private ChargeRuleMapper chargeRuleMapper;
 
     // 使用volatile保证可见性，使用AtomicReference保证原子性
     private volatile KieContainer kieContainer;
     private final Object reloadLock = new Object();
 
     /**
-     * 查询数据库中所有的规则
-     * @return
+     * 查询系统计费规则（rule_key='tms'）。
+     * 启动/调用时租户回落0，多租户插件自动补 tenant_id=0，恰好加载系统默认规则。
+     *
+     * @return 计费规则列表
      */
-    public List<Rule> loadRules(){
-        QueryWrapper<Rule> wrapper = new QueryWrapper<>();
-        wrapper.eq("rule_key","tms");
-        return ruleMapper.selectList(wrapper);
+    public List<ChargeRule> loadRules() {
+        QueryWrapper<ChargeRule> wrapper = new QueryWrapper<>();
+        wrapper.eq("rule_key", "tms");
+        return chargeRuleMapper.selectList(wrapper);
     }
 
     /**
      * 重新创建KieContainer对象
      */
-    public void reload(){
+    public void reload() {
         KieContainer newContainer;
         synchronized (reloadLock) {
             newContainer = this.loadContainerFromString(loadRules());
@@ -56,17 +57,18 @@ public class ReloadDroolsRulesService {
 
     /**
      * 根据规则内容创建KieContainer对象
-     * @param ruleList
-     * @return
+     *
+     * @param ruleList 计费规则列表
+     * @return KieContainer
      */
-    public KieContainer loadContainerFromString(List<Rule> ruleList){
+    public KieContainer loadContainerFromString(List<ChargeRule> ruleList) {
         KieServices ks = KieServices.Factory.get();
         KieRepository kr = ks.getRepository();
         KieFileSystem kfs = ks.newKieFileSystem();//文件系统
 
-        for (Rule rule : ruleList) {
+        for (ChargeRule rule : ruleList) {
             String drl = rule.getContent();
-            kfs.write("src/main/resources/" + drl.hashCode() + ".drl",drl);
+            kfs.write("src/main/resources/" + drl.hashCode() + ".drl", drl);
         }
 
         KieBuilder kb = ks.newKieBuilder(kfs);

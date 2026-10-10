@@ -2,6 +2,7 @@ package com.itheima.pinda.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
@@ -15,10 +16,10 @@ import java.time.LocalDateTime;
  *
  * <p>订单签收后自动生成，记录结算对象、应收/应付方向、金额与对账状态，
  * 是财务结算域最小闭环的核心单据。最小闭环阶段一单一单，
- * 后续可按客户+账期归集生成月结账单（pd_freight_bill）。</p>
+ * 后续可按客户+账期归集生成月结账单。</p>
  */
 @Data
-@TableName("pd_settlement_order")
+@TableName("oms_settlement_order")
 public class SettlementOrder implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -69,48 +70,53 @@ public class SettlementOrder implements Serializable {
     public static final String GUEST_OBJECT_ID = "GUEST";
 
     /**
-     * id
+     * ID
      */
-    @TableId(value = "id", type = IdType.INPUT)
-    private String id;
+    @TableId(value = "id", type = IdType.ASSIGN_ID)
+    private Long id;
 
     /**
-     * 结算单号
+     * 租户ID
+     */
+    private Long tenantId;
+
+    /**
+     * 结算单号（STL+雪花）
      */
     private String settlementNo;
 
     /**
-     * 订单id
+     * 代表订单ID
      */
-    private String orderId;
+    private Long orderId;
 
     /**
-     * 运单id
+     * 运单ID
      */
-    private String transportOrderId;
+    private Long transportOrderId;
 
     /**
-     * 结算对象类型：1-客户 2-司机 3-承运商
+     * 结算对象类型：1客户 2司机 3承运商
      */
     private Integer settleObjectType;
 
     /**
-     * 结算对象id
+     * 结算对象ID（散客=GUEST）
      */
     private String settleObjectId;
 
     /**
-     * 方向：1-应收 2-应付
+     * 方向：1应收 2应付
      */
     private Integer direction;
 
     /**
-     * 周期开始日期
+     * 账期开始
      */
     private LocalDate periodStart;
 
     /**
-     * 周期结束日期
+     * 账期结束
      */
     private LocalDate periodEnd;
 
@@ -135,7 +141,7 @@ public class SettlementOrder implements Serializable {
     private BigDecimal settledAmount;
 
     /**
-     * 状态：0-待对账 1-已对账 2-已结算
+     * 状态：0待对账 1已对账 2已结算
      */
     private Integer status;
 
@@ -144,13 +150,14 @@ public class SettlementOrder implements Serializable {
      */
     private String remark;
 
-    /**
-     * 创建时间
-     */
+    private Long createBy;
     private LocalDateTime createTime;
+    private Long updateBy;
+    private LocalDateTime updateTime;
 
     /**
-     * 更新时间
+     * 逻辑删除：0 未删 1 已删
      */
-    private LocalDateTime updateTime;
+    @TableLogic
+    private Integer deleted;
 }

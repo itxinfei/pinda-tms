@@ -2,11 +2,10 @@ package com.itheima.pinda.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.experimental.Accessors;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -16,70 +15,85 @@ import java.time.LocalDateTime;
  * 订单
  */
 @Data
-@EqualsAndHashCode(callSuper = false)
-@Accessors(chain = true)
-@TableName("pd_order")
+@TableName("oms_order")
 @Schema
 public class Order implements Serializable {
-
 
     private static final long serialVersionUID = 1L;
 
     /**
-     * id
+     * 订单ID（雪花，即业务单号）
      */
-    @TableId(value = "id", type = IdType.INPUT)
-    private String id;
-
+    @TableId(value = "id", type = IdType.ASSIGN_ID)
+    private Long id;
 
     /**
-     * 订单类型，1为同城订单，2为城际订单
+     * 租户ID
+     */
+    private Long tenantId;
+
+    /**
+     * 订单号（展示用，可与id同值）
+     */
+    private String orderNo;
+
+    /**
+     * 订单类型，1同城 2城际
      */
     private Integer orderType;
 
-
     /**
-     * 取件类型，1为同城订单，2为城际订单
+     * 取件类型，1网点自寄 2上门取件
      */
     private Integer pickupType;
 
     /**
-     * 下单时间
+     * 订单状态（紧凑码 1~12，见 OrderStatus 枚举与 04_oms.sql 文件头映射）
      */
-    private LocalDateTime createTime;
+    private Integer status;
 
     /**
-     * 客户id
+     * 下单会员ID
      */
-    private String memberId;
+    private Long memberId;
 
     /**
-     * 收件人省份id
+     * 寄件人
      */
-    private String receiverProvinceId;
+    private String senderName;
 
     /**
-     * 收件人城市id
+     * 寄件人电话
      */
-    private String receiverCityId;
+    private String senderPhone;
 
     /**
-     * 收件人区县id
+     * 寄件省ID
      */
-    private String receiverCountyId;
+    private Integer senderProvinceId;
 
     /**
-     * 收件人详细地址
+     * 寄件市ID
      */
-    private String receiverAddress;
+    private Integer senderCityId;
 
     /**
-     * 收件人地址Id
+     * 寄件区县ID
      */
-    private String receiverAddressId;
+    private Integer senderCountyId;
 
     /**
-     * 收件人姓名
+     * 寄件详细地址
+     */
+    private String senderAddress;
+
+    /**
+     * 寄件地址簿ID
+     */
+    private Long senderAddressId;
+
+    /**
+     * 收件人
      */
     private String receiverName;
 
@@ -89,76 +103,68 @@ public class Order implements Serializable {
     private String receiverPhone;
 
     /**
-     * 发件人省份id
+     * 收件省ID
      */
-    private String senderProvinceId;
+    private Integer receiverProvinceId;
 
     /**
-     * 发件人城市id
+     * 收件市ID
      */
-    private String senderCityId;
+    private Integer receiverCityId;
 
     /**
-     * 发件人区县id
+     * 收件区县ID
      */
-    private String senderCountyId;
+    private Integer receiverCountyId;
 
     /**
-     * 发件人详细地址
+     * 收件详细地址
      */
-    private String senderAddress;
+    private String receiverAddress;
 
     /**
-     * 发件人地址Id
+     * 收件地址簿ID
      */
-    private String senderAddressId;
+    private Long receiverAddressId;
 
     /**
-     * 发件人姓名
+     * 当前所属网点ID
      */
-    private String senderName;
+    private Long currentOrgId;
 
     /**
-     * 发件人电话
-     */
-    private String senderPhone;
-
-    /**
-     * 当前所在网点
-     */
-    private String currentAgencyId;
-
-    /**
-     * 付款方式,1.预结2到付
+     * 付款方式，1预付 2到付
      */
     private Integer paymentMethod;
 
     /**
-     * 付款状态,1.未付2已付
+     * 付款状态，1未付 2已付
      */
     private Integer paymentStatus;
 
     /**
-     * 金额
+     * 订单金额
      */
     private BigDecimal amount;
+
+    /**
+     * 距离(km)
+     */
+    private BigDecimal distance;
 
     /**
      * 预计到达时间
      */
     private LocalDateTime estimatedArrivalTime;
 
-    /**
-     * 距离
-     */
-    private BigDecimal distance;
+    private Long createBy;
+    private LocalDateTime createTime;
+    private Long updateBy;
+    private LocalDateTime updateTime;
 
     /**
-     * 订单状态: 23000为待取件,23001为已取件，23002为网点自寄，23003为网点入库，
-     * 23004为待装车，23005为运输中，23006为网点出库，23007为待派送，23008为派送中，
-     * 23009为已签收，23010为拒收，230011为已取消
+     * 逻辑删除：0 未删 1 已删
      */
-    private Integer status;
-
-
+    @TableLogic
+    private Integer deleted;
 }

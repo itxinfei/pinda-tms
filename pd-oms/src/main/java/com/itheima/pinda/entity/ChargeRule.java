@@ -4,18 +4,22 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * 订单位置信息
+ * 计费规则（Drools 脚本）
+ *
+ * <p>tenant_id=0 为系统默认规则；租户可维护各自版本。
+ * 由 ReloadDroolsRulesService 加载构建 KieContainer。</p>
  */
 @Data
-@TableName("oms_order_location")
-public class OrderLocation implements Serializable {
+@TableName("oms_charge_rule")
+@Schema
+public class ChargeRule implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -26,47 +30,27 @@ public class OrderLocation implements Serializable {
     private Long id;
 
     /**
-     * 租户ID
+     * 租户ID，0为系统默认
      */
     private Long tenantId;
 
     /**
-     * 订单ID
+     * 规则标识
      */
-    private Long orderId;
+    private String ruleKey;
 
     /**
-     * 寄件经度
+     * 版本
      */
-    private BigDecimal sendLongitude;
+    private String version;
 
     /**
-     * 寄件纬度
+     * 规则脚本
      */
-    private BigDecimal sendLatitude;
+    private String content;
 
     /**
-     * 收件经度
-     */
-    private BigDecimal receiveLongitude;
-
-    /**
-     * 收件纬度
-     */
-    private BigDecimal receiveLatitude;
-
-    /**
-     * 起始网点ID（旧 sendAgentId）
-     */
-    private Long sendOrgId;
-
-    /**
-     * 目的网点ID（旧 receiveAgentId）
-     */
-    private Long receiveOrgId;
-
-    /**
-     * 状态：0无效 1有效
+     * 状态：1启用 0禁用
      */
     private Integer status;
 

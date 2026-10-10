@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
  * 后续 Drools 规则扩展后再拆分首重/续重/保价/上楼等费用项。</p>
  */
 @Data
-@TableName("pd_freight_detail")
+@TableName("oms_freight_detail")
 public class FreightDetail implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -38,20 +38,25 @@ public class FreightDetail implements Serializable {
     public static final String UNIT_TICKET = "票";
 
     /**
-     * id
+     * ID
      */
-    @TableId(value = "id", type = IdType.INPUT)
-    private String id;
+    @TableId(value = "id", type = IdType.ASSIGN_ID)
+    private Long id;
 
     /**
-     * 订单id
+     * 租户ID
      */
-    private String orderId;
+    private Long tenantId;
 
     /**
-     * 运单id
+     * 订单ID
      */
-    private String transportOrderId;
+    private Long orderId;
+
+    /**
+     * 运单ID
+     */
+    private Long transportOrderId;
 
     /**
      * 费用项编码：FREIGHT-运费；后续扩展 FIRST/FIRST_CONTINUED/INSURED/UPSTAIRS 等
@@ -84,7 +89,8 @@ public class FreightDetail implements Serializable {
     private BigDecimal amount;
 
     /**
-     * 创建时间
+     * 该表仅记录创建，不做更新与逻辑删除（与 DDL 一致）
      */
+    private Long createBy;
     private LocalDateTime createTime;
 }
