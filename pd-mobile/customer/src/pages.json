@@ -6,16 +6,99 @@
 	},
 	"pages": [
 		{
-			"path": "pages/index/index",
+			"path": "pages/customer/home/index",
 			"style": {
-				"navigationBarTitleText": "品达物流 · 客户端"
+				"navigationBarTitleText": "品达物流"
+			}
+		},
+		{
+			"path": "pages/customer/login/index",
+			"style": {
+				"navigationBarTitleText": "登录"
+			}
+		},
+		{
+			"path": "pages/customer/mailing/list",
+			"style": {
+				"navigationBarTitleText": "我的运单"
+			}
+		},
+		{
+			"path": "pages/customer/mailing/create",
+			"style": {
+				"navigationBarTitleText": "寄件"
+			}
+		},
+		{
+			"path": "pages/customer/mailing/detail",
+			"style": {
+				"navigationBarTitleText": "运单详情"
+			}
+		},
+		{
+			"path": "pages/customer/mailing/track",
+			"style": {
+				"navigationBarTitleText": "实时轨迹"
+			}
+		},
+		{
+			"path": "pages/customer/address/list",
+			"style": {
+				"navigationBarTitleText": "地址簿"
+			}
+		},
+		{
+			"path": "pages/customer/address/edit",
+			"style": {
+				"navigationBarTitleText": "编辑地址"
+			}
+		},
+		{
+			"path": "pages/customer/agency/picker",
+			"style": {
+				"navigationBarTitleText": "选择网点"
+			}
+		},
+		{
+			"path": "pages/customer/profile/index",
+			"style": {
+				"navigationBarTitleText": "个人中心"
 			}
 		}
 	],
+	"tabBar": {
+		"color": "#86909C",
+		"selectedColor": "#2B6CFF",
+		"backgroundColor": "#FFFFFF",
+		"borderStyle": "black",
+		"list": [
+			{
+				"pagePath": "pages/customer/home/index",
+				"text": "首页"
+			},
+			{
+				"pagePath": "pages/customer/mailing/list",
+				"text": "我的运单"
+			},
+			{
+				"pagePath": "pages/customer/profile/index",
+				"text": "我的"
+			}
+		]
+	},
 	"globalStyle": {
 		"navigationBarTextStyle": "white",
-		"navigationBarTitleText": "品达物流 · 客户端",
+		"navigationBarTitleText": "品达物流",
 		"navigationBarBackgroundColor": "#2B6CFF",
 		"backgroundColor": "#F5F7FA"
+	},
+	"condition": {
+		"current": 0,
+		"list": [
+			{
+				"name": "登录页",
+				"pathName": "pages/customer/login/index"
+			}
+		]
 	}
 }

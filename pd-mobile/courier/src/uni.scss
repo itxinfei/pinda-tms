@@ -1,2 +1,17 @@
-/* uview-plus 主题变量（需在 uni.scss 引入，供组件与自定义样式共享变量） */
+/* uview-plus 主题变量（必须引入，供组件与自定义样式共享变量） */
 @import "uview-plus/theme.scss";
+
+/* 品牌主色（覆盖 uview-plus 主题变量，单一真源） */
+$u-primary: #2B6CFF;
+$u-success: #00B42A;
+$u-warning: #FF7D00;
+$u-error: #F53F3F;
+$u-main-color: #1D2129;
+$u-content-color: #4E5969;
+$u-tips-color: #86909C;
+$u-border-color: #E5E6EB;
+$u-bg-color: #F5F6F8;
+$u-radius: 16rpx;
+
+/* 设计 Token（CSS 变量 / 全局 class）统一在 App.vue 引入，避免 uni.scss
+   被注入到每个页面 style 块时相对路径解析失败。 */
