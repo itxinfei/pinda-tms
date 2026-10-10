@@ -30,8 +30,10 @@ WORKDIR /build
 # 先只拷依赖清单做安装，充分利用镜像层缓存：
 # 只要 package.json / pnpm-lock.yaml 没变，改业务代码重建时这层直接命中，不用重装依赖
 COPY pd-admin-ui-vue3/package.json pd-admin-ui-vue3/pnpm-lock.yaml ./
+# 增加 fetch 重试参数：内网服务器对外 npm 源偶发 DNS/网络抖动（EAI_AGAIN），
+# 默认重试 2 次不够，放宽到 5 次 + 更长超时
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile
+    pnpm install --frozen-lockfile --fetch-retries=5 --fetch-retry-factor=2 --fetch-retry-mintimeout=20000 --fetch-timeout=120000
 
 # 再拷源码并构建
 COPY pd-admin-ui-vue3/ ./
