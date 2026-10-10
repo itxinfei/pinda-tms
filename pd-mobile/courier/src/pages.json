@@ -6,16 +6,105 @@
 	},
 	"pages": [
 		{
-			"path": "pages/index/index",
+			"path": "pages/courier/home/index",
 			"style": {
-				"navigationBarTitleText": "品达物流 · 快递员端"
+				"navigationBarTitleText": "快递员工作台"
+			}
+		},
+		{
+			"path": "pages/courier/login/index",
+			"style": {
+				"navigationBarTitleText": "登录"
+			}
+		},
+		{
+			"path": "pages/courier/task/list",
+			"style": {
+				"navigationBarTitleText": "取派任务"
+			}
+		},
+		{
+			"path": "pages/courier/task/detail",
+			"style": {
+				"navigationBarTitleText": "任务详情"
+			}
+		},
+		{
+			"path": "pages/courier/pod/sign",
+			"style": {
+				"navigationBarTitleText": "电子签收"
+			}
+		},
+		{
+			"path": "pages/courier/task/warehousing",
+			"style": {
+				"navigationBarTitleText": "入库"
+			}
+		},
+		{
+			"path": "pages/courier/task/handover",
+			"style": {
+				"navigationBarTitleText": "交接"
+			}
+		},
+		{
+			"path": "pages/courier/task/verify",
+			"style": {
+				"navigationBarTitleText": "身份证核验"
+			}
+		},
+		{
+			"path": "pages/courier/task/route",
+			"style": {
+				"navigationBarTitleText": "路由轨迹"
+			}
+		},
+		{
+			"path": "pages/courier/profile/index",
+			"style": {
+				"navigationBarTitleText": "个人中心"
+			}
+		},
+		{
+			"path": "pages/courier/exception/report",
+			"style": {
+				"navigationBarTitleText": "异常上报"
 			}
 		}
 	],
+	"tabBar": {
+		"color": "#86909C",
+		"selectedColor": "#2B6CFF",
+		"backgroundColor": "#FFFFFF",
+		"borderStyle": "black",
+		"list": [
+			{
+				"pagePath": "pages/courier/home/index",
+				"text": "首页"
+			},
+			{
+				"pagePath": "pages/courier/task/list",
+				"text": "任务"
+			},
+			{
+				"pagePath": "pages/courier/profile/index",
+				"text": "我的"
+			}
+		]
+	},
 	"globalStyle": {
 		"navigationBarTextStyle": "white",
-		"navigationBarTitleText": "品达物流 · 快递员端",
+		"navigationBarTitleText": "品达物流",
 		"navigationBarBackgroundColor": "#2B6CFF",
 		"backgroundColor": "#F5F7FA"
+	},
+	"condition": {
+		"current": 0,
+		"list": [
+			{
+				"name": "登录页",
+				"pathName": "pages/courier/login/index"
+			}
+		]
 	}
 }

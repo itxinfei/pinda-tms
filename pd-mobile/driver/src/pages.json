@@ -6,16 +6,118 @@
 	},
 	"pages": [
 		{
-			"path": "pages/index/index",
+			"path": "pages/driver/home/index",
 			"style": {
 				"navigationBarTitleText": "品达物流 · 司机端"
 			}
+		},
+		{
+			"path": "pages/driver/login/index",
+			"style": {
+				"navigationBarTitleText": "登录"
+			}
+		},
+		{
+			"path": "pages/driver/task/wait",
+			"style": {
+				"navigationBarTitleText": "待提货",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/driver/task/onTheWay",
+			"style": {
+				"navigationBarTitleText": "在途任务"
+			}
+		},
+		{
+			"path": "pages/driver/task/detail",
+			"style": {
+				"navigationBarTitleText": "任务详情"
+			}
+		},
+		{
+			"path": "pages/driver/task/pickup",
+			"style": {
+				"navigationBarTitleText": "提货"
+			}
+		},
+		{
+			"path": "pages/driver/task/deliver",
+			"style": {
+				"navigationBarTitleText": "送达"
+			}
+		},
+		{
+			"path": "pages/driver/task/track",
+			"style": {
+				"navigationBarTitleText": "实时轨迹"
+			}
+		},
+		{
+			"path": "pages/driver/task/scan",
+			"style": {
+				"navigationBarTitleText": "扫码接单"
+			}
+		},
+		{
+			"path": "pages/driver/video/push",
+			"style": {
+				"navigationBarTitleText": "视频推流"
+			}
+		},
+		{
+			"path": "pages/driver/car/info",
+			"style": {
+				"navigationBarTitleText": "车辆信息"
+			}
+		},
+		{
+			"path": "pages/driver/profile/index",
+			"style": {
+				"navigationBarTitleText": "个人中心"
+			}
+		},
+		{
+			"path": "pages/driver/exception/report",
+			"style": {
+				"navigationBarTitleText": "异常上报"
+			}
 		}
 	],
+	"tabBar": {
+		"color": "#86909C",
+		"selectedColor": "#2B6CFF",
+		"backgroundColor": "#FFFFFF",
+		"borderStyle": "black",
+		"list": [
+			{
+				"pagePath": "pages/driver/home/index",
+				"text": "首页"
+			},
+			{
+				"pagePath": "pages/driver/task/wait",
+				"text": "任务"
+			},
+			{
+				"pagePath": "pages/driver/profile/index",
+				"text": "我的"
+			}
+		]
+	},
 	"globalStyle": {
 		"navigationBarTextStyle": "white",
 		"navigationBarTitleText": "品达物流 · 司机端",
 		"navigationBarBackgroundColor": "#2B6CFF",
 		"backgroundColor": "#F5F7FA"
+	},
+	"condition": {
+		"current": 0,
+		"list": [
+			{
+				"name": "登录页",
+				"pathName": "pages/driver/login/index"
+			}
+		]
 	}
 }
