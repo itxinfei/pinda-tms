@@ -14,13 +14,8 @@ import { useTagsViewStore } from "@/stores";
 import { cleanupSse } from "@/utils/sse";
 import router from "@/router";
 
-// 会话失效已处理，登录成功后复位
+// 会话失效处理中标记，避免重复弹窗
 let sessionExpired = false;
-
-// 连续续期失败上限
-const MAX_REFRESH_FAILURES = 3;
-// 连续续期失败次数
-let refreshFailures = 0;
 
 // 会话失效原因，决定弹窗提示文案
 type RedirectReason = "expired" | "password-changed";
@@ -44,40 +39,7 @@ export const useUserStore = defineStore("user", () => {
     const { accessToken, refreshToken } = await AuthAPI.login(loginRequest);
     rememberMe.value = loginRequest.rememberMe ?? false;
     AuthStorage.setTokens(accessToken, refreshToken, rememberMe.value);
-    refreshFailures = 0;
     sessionExpired = false;
-  }
-
-  /**
-   * 扫码登录：用票据换取会话令牌
-   */
-  async function loginByQrCode(ticket: string): Promise<void> {
-    const { accessToken, refreshToken } = await AuthAPI.qrLogin(ticket);
-    AuthStorage.setTokens(accessToken, refreshToken, false);
-    refreshFailures = 0;
-    sessionExpired = false;
-  }
-
-  let refreshPromise: Promise<void> | null = null;
-
-  /**
-   * 刷新 token（单飞）：并发请求共享同一次 refresh
-   */
-  function refreshTokenOnce(): Promise<void> {
-    if (refreshPromise) return refreshPromise;
-
-    refreshPromise = doRefreshToken().finally(() => {
-      refreshPromise = null;
-    });
-
-    return refreshPromise;
-  }
-
-  /**
-   * 等待进行中的续期；无续期时立即返回
-   */
-  function waitRefresh(): Promise<void> {
-    return refreshPromise ?? Promise.resolve();
   }
 
   /**
@@ -107,7 +69,7 @@ export const useUserStore = defineStore("user", () => {
     // 1. 重置用户状态
     resetUserState();
 
-    // 2. 重置其他模块状态
+    // 2. 重置其他模块
     usePermissionStoreHook().resetRouter();
     useDictStoreHook().clearDictCache();
     useDictStoreHook().teardownDictSync();
@@ -129,7 +91,8 @@ export const useUserStore = defineStore("user", () => {
    * 会话失效的统一出口：弹窗提示，用户确认后清状态并跳登录页
    *
    * @param reason 失效原因，决定弹窗文案
-   */ async function redirectToLogin(reason: RedirectReason = "expired"): Promise<void> {
+   */
+  async function redirectToLogin(reason: RedirectReason = "expired"): Promise<void> {
     if (sessionExpired) return;
     sessionExpired = true;
 
@@ -154,44 +117,16 @@ export const useUserStore = defineStore("user", () => {
     window.location.reload();
   }
 
-  /**
-   * 刷新 token
-   */
-  async function doRefreshToken(): Promise<void> {
-    if (refreshFailures >= MAX_REFRESH_FAILURES) {
-      throw new Error("令牌续期连续失败，请重新登录");
-    }
-
-    const currentRefreshToken = AuthStorage.getRefreshToken();
-
-    if (!currentRefreshToken) {
-      throw new Error("没有有效的刷新令牌");
-    }
-
-    try {
-      const { accessToken, refreshToken: newRefreshToken } =
-        await AuthAPI.refreshToken(currentRefreshToken);
-      AuthStorage.setTokens(accessToken, newRefreshToken, AuthStorage.getRememberMe());
-      refreshFailures = 0;
-    } catch (error) {
-      refreshFailures += 1;
-      throw error;
-    }
-  }
-
   return {
     userInfo,
     rememberMe,
     isLoggedIn: () => !!AuthStorage.getAccessToken(),
     login,
-    loginByQrCode,
     logout,
     getUserInfo,
     resetAllState,
     resetUserState,
     redirectToLogin,
-    refreshTokenOnce,
-    waitRefresh,
   };
 });
 

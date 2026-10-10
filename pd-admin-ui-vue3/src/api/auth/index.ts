@@ -5,7 +5,7 @@ import type {
   LoginResult,
 } from "./types";
 
-const AUTH_BASE_URL = "/api/authority/anno";
+const AUTH_BASE_URL = "/api/auth/anno";
 
 const AuthAPI = {
   /**
@@ -13,6 +13,7 @@ const AuthAPI = {
    */
   async login(data: LoginRequest) {
     const payload = {
+      tenantCode: "pinda", // 品达默认租户编码（pd_auth.pd_auth_tenant 实测 code=pinda，LoginParamDTO 必填）
       account: data.username,
       password: data.password,
       key: data.captchaId,
@@ -26,13 +27,13 @@ const AuthAPI = {
       anonymous: true,
     });
 
-    // 品达返回格式转换：{ user, token: { token, expire }, permissionsList }
+    // 新版后端返回：{ token, userId, account, name, avatar, orgId, tenantId, permissionsList }
     // 转成前端期望格式：{ accessToken, refreshToken, tokenType, expiresIn }
     return {
-      accessToken: result.token?.token || "",
-      refreshToken: result.token?.token || "", // 品达没有 refreshToken，先用 accessToken 代替
+      accessToken: result.token || "",
+      refreshToken: result.token || "", // 品达没有 refreshToken，先用 accessToken 代替
       tokenType: "Bearer",
-      expiresIn: result.token?.expire || 7200,
+      expiresIn: 7200,
     };
   },
 

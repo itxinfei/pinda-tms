@@ -2,8 +2,6 @@ import { store } from "@/stores";
 import TenantAPI from "@/api/system/tenant";
 import type { TenantInfo } from "@/api/system/tenant";
 import { STORAGE_KEYS } from "@/constants";
-import AuthAPI from "@/api/auth";
-import { AuthStorage } from "@/utils/auth";
 
 // 租户 Store
 export const useTenantStore = defineStore("tenant", () => {
@@ -108,9 +106,8 @@ export const useTenantStore = defineStore("tenant", () => {
    * 切换租户
    *
    * @param tenantId 目标租户 ID
-   */ async function switchTenant(tenantId: number): Promise<void> {
-    await refreshTokenIfSupported(tenantId);
-
+   */
+  async function switchTenant(tenantId: number): Promise<void> {
     const tenantInfo = await TenantAPI.switchTenant(tenantId);
     if (tenantInfo) {
       setCurrentTenant(tenantInfo);
@@ -159,20 +156,6 @@ export const useTenantStore = defineStore("tenant", () => {
     } catch (error) {
       console.debug("[Tenant] 获取当前租户失败，尝试本地/默认选择:", error);
       return null;
-    }
-  }
-
-  /**
-   * 切换租户后重新签发令牌
-   */
-  async function refreshTokenIfSupported(tenantId: number): Promise<void> {
-    try {
-      const token = await AuthAPI.switchTenant(tenantId);
-      if (token?.accessToken && token?.refreshToken) {
-        AuthStorage.setTokens(token.accessToken, token.refreshToken, AuthStorage.getRememberMe());
-      }
-    } catch {
-      // 忽略：非平台用户或后端未启用该接口时，回退到旧接口
     }
   }
 

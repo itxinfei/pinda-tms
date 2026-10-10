@@ -1,108 +1,158 @@
 <template>
   <view class="page track-page">
-    <u-navbar title="实时轨迹" autoBack></u-navbar>
-    <map
-      class="track-map"
-      :latitude="center.lat"
-      :longitude="center.lng"
-      :markers="markers"
-      v-if="center.lat"
-    ></map>
-    <view class="card" v-if="trace">
-      <text class="section-title">轨迹节点</text>
-      <!-- 修改点：uview-plus 无 u-time-line 组件，改用普通 view + CSS 时间轴 -->
-      <view class="tl" v-if="trace.tracks && trace.tracks.length">
-        <view class="tl-row" v-for="(t, i) in trace.tracks" :key="i">
-          <view class="tl-dot"></view>
-          <view class="tl-item">
-            <text class="tl-msg">{{ t.msg || t.status || '' }}</text>
-            <text class="tl-time">{{ t.time || '' }}</text>
-          </view>
+    <u-navbar :title="'实时轨迹'" :back="true" :borderBottom="false" bgColor="#2B6CFF" />
+
+    <view v-if="loading" class="state-wrap">
+      <u-loading-page :loading="true" :bgColor="'#F5F6F8'" />
+    </view>
+    <view v-else-if="!hasTrack" class="state-wrap">
+      <u-empty mode="map" text="暂无轨迹数据" />
+      <view class="track-tip">订单调度后将展示实时轨迹</view>
+    </view>
+    <template v-else>
+      <!-- 地图（H5 端 uni-app 原生 map；坐标已转 GCJ-02） -->
+      <map
+        class="track-map"
+        :latitude="center.lat"
+        :longitude="center.lng"
+        :markers="markers"
+        :polyline="polyline"
+        :show-location="true"
+        scale="14"
+      />
+      <view class="track-panel">
+        <view class="panel-row">
+          <text class="panel-label">最新位置</text>
+          <text class="panel-value">{{ latestMsg }}</text>
+        </view>
+        <view class="panel-row">
+          <text class="panel-label">订单状态</text>
+          <text class="panel-value">{{ statusInfo(orderStatus).label }}</text>
         </view>
       </view>
-      <u-empty v-else mode="list" text="暂无轨迹节点"></u-empty>
-    </view>
-    <u-empty v-if="!trace" mode="list" text="暂无轨迹"></u-empty>
+    </template>
   </view>
 </template>
 
-<script setup lang="ts">
-import { ref } from 'vue'
-import { orderTrace } from '@/common/api/customer'
-import { wgs84ToGcj02 } from '@/common/utils/coord'
-import { onLoad } from '@dcloudio/uni-app'
+<script setup>
+import { ref, computed } from 'vue';
+import { onLoad } from '@dcloudio/uni-app';
+import { trace } from '../../../common/api/index.js';
+import { safeToGcj02 } from '../../../common/utils/coord.js';
+import { statusInfo } from '../../../common/utils/order.js';
 
-const orderId = ref('')
-const trace = ref<any>(null)
-const center = ref({ lat: 0, lng: 0 })
-const markers = ref<any[]>([])
+const id = ref('');
+const loading = ref(false);
+const orderStatus = ref(null);
+const tracks = ref([]);
+const latestMsg = ref('加载中...');
 
-onLoad((opt: any) => {
-  orderId.value = opt.orderId || opt.id
-  load()
-})
+const hasTrack = computed(() => tracks.value && tracks.value.length > 0);
 
-async function load() {
+// 轨迹点（后端 WGS84）→ 地图点（GCJ-02）
+const points = computed(() => {
+  if (!hasTrack.value) return [];
+  return tracks.value
+    .map((t) => safeToGcj02(t.lng ?? t.longitude, t.lat ?? t.latitude))
+    .filter((p) => p !== null);
+});
+
+const center = computed(() => {
+  const p = points.value[points.value.length - 1] || { lng: 114.3055, lat: 30.5928 };
+  return p;
+});
+
+const markers = computed(() => {
+  if (!hasTrack.value) return [];
+  const arr = [];
+  const ps = points.value;
+  if (ps.length > 0) {
+    // 起点（默认标记 + label）
+    arr.push({
+      id: 1,
+      latitude: ps[0].lat,
+      longitude: ps[0].lng,
+      width: 20,
+      height: 20,
+      label: { content: '起点', color: '#00B42A', fontSize: 12, anchorX: -8, anchorY: -28 },
+    });
+    // 最新点
+    const last = ps[ps.length - 1];
+    arr.push({
+      id: 2,
+      latitude: last.lat,
+      longitude: last.lng,
+      width: 20,
+      height: 20,
+      label: { content: '当前位置', color: '#2B6CFF', fontSize: 12, anchorX: -20, anchorY: -28 },
+    });
+  }
+  return arr;
+});
+
+const polyline = computed(() => {
+  if (points.value.length < 2) return [];
+  return [
+    {
+      points: points.value,
+      color: '#2B6CFF',
+      width: 4,
+      dottedLine: false,
+    },
+  ];
+});
+
+const load = async () => {
+  loading.value = true;
   try {
-    const res = await orderTrace(orderId.value)
-    trace.value = res
-    const tracks = (res && res.tracks) || []
-    if (tracks.length) {
-      const last = tracks[tracks.length - 1]
-      if (last && last.lng != null && last.lat != null) {
-        const [lng, lat] = wgs84ToGcj02(Number(last.lng), Number(last.lat))
-        center.value = { lat, lng }
-        markers.value = [
-          { id: 1, latitude: lat, longitude: lng, title: '当前位置', width: 28, height: 28 },
-        ]
-      }
+    const data = await trace(id.value);
+    orderStatus.value = data ? data.orderStatus : null;
+    tracks.value = (data && data.tracks) || [];
+    if (tracks.value.length > 0) {
+      const last = tracks.value[tracks.value.length - 1];
+      latestMsg.value = `更新于 ${last.time || ''}`;
+    } else {
+      latestMsg.value = '暂无轨迹数据';
     }
-  } catch (e) {}
-}
+  } catch (e) {
+    tracks.value = [];
+  } finally {
+    loading.value = false;
+  }
+};
+
+onLoad((options) => {
+  id.value = options.id || '';
+  load();
+});
 </script>
 
-<style lang="scss">
-.track-page {
-  padding: 0;
-  display: flex;
-  flex-direction: column;
+<style lang="scss" scoped>
+.track-page { padding: 0; }
+.state-wrap { padding-top: 120rpx; }
+.track-tip {
+  text-align: center;
+  color: var(--c-text-3);
+  font-size: var(--f-tip);
+  margin-top: 16rpx;
 }
 .track-map {
   width: 100%;
-  height: 50vh;
+  height: 70vh;
 }
-.section-title {
-  display: block;
-  font-size: var(--f-sub);
-  color: var(--c-text-1);
-  font-weight: bold;
-  margin-bottom: var(--s-3);
+.track-panel {
+  margin: 16rpx 24rpx 32rpx;
+  padding: 24rpx;
+  background: var(--c-surface);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-card);
 }
-.tl-row {
+.panel-row {
   display: flex;
-  align-items: flex-start;
-}
-.tl-dot {
-  width: 12rpx;
-  height: 12rpx;
-  border-radius: 50%;
-  background: var(--c-primary);
-  margin: 8rpx var(--s-3) 0 0;
-  flex-shrink: 0;
-}
-.tl-item {
-  display: flex;
-  flex-direction: column;
-  padding-bottom: var(--s-4);
-  border-bottom: 1rpx solid var(--c-border);
-}
-.tl-msg {
+  justify-content: space-between;
+  padding: 8rpx 0;
   font-size: var(--f-body);
-  color: var(--c-text-2);
 }
-.tl-time {
-  font-size: var(--f-tip);
-  color: var(--c-text-3);
-  margin-top: var(--s-1);
-}
+.panel-label { color: var(--c-text-3); }
+.panel-value { color: var(--c-text-1); }
 </style>
