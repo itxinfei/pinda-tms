@@ -63,7 +63,7 @@
         <swagger.version>2.9.2</swagger.version>
         <shiro.version>1.4.0</shiro.version>
         <druid.version>1.1.22</druid.version>
-        <drools.version>6.5.0.Final</drools.version>
+        <drools.version>8.38.0.Final</drools.version>
         <httpclient.version>4.5.11</httpclient.version>
         <http-core.version>4.4.9</http-core.version>
         <commons.io.version>2.5</commons.io.version>

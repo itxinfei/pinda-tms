@@ -1,14 +1,14 @@
 # ============================================
 # 品达TMS 后端自动构建与部署（Gitea Actions）
 #
-# 当前迁移阶段（2026-10-09）：只有 pd-auth 迁到 JDK21 + Spring Boot 3.3，
-# 所以本流水线只「打包 pd-auth -> 构建 pd-auth-server 镜像 -> 滚动这一个容器」。
-# ⚠️ 旧模块（pd-oms/pd-base/...）仍是 javax + Spring Boot 2.2，不能进全 reactor 构建；
-#    每迁完一个模块，就在下面 4 处清单中同步追加（MOD / 镜像 / compose / 端口）。
+# 当前迁移阶段（2026-10-09）：pd-auth、pd-gateway 已迁到 JDK21 + Spring Boot 3.3，
+# 本流水线「打包两个模块 -> 构建两个镜像 -> 滚动这两个容器」。
+# ⚠️ 旧模块（pd-oms/pd-base/...）仍是 javax + Spring Boot 2.2，不能进构建；
+#    每迁完一个模块，就在下面 paths、Maven、上下文、compose/端口清单中同步追加。
 #
 # 前置条件（服务器侧，2026-10-09 已就绪）：
 #   - ci/pinda-ci:latest     = JDK21 + Maven3.9 + Docker CLI + Compose v2
-#   - /data/ci/maven-settings.xml = RDC 仓库凭据（挂载为 /ci，只读）
+#   - /data/ci/maven-settings.xml = 仓库凭据（挂载为 /ci，只读）
 #   - /data/ci/apps.env      = 密钥（NACOS_USERNAME/PASSWORD/REDIS_PASSWORD，0600）
 #   - pinda/jre21-fontconfig:1    = 运行时基础镜像
 # ============================================
@@ -20,6 +20,7 @@ on:
     # 只在「当前已迁移模块」或构建相关路径变化时触发
     paths:
       - 'pd-auth/**'
+      - 'pd-gateway/**'
       - 'pom.xml'
       - 'deploy/apps/Dockerfile'
       - '.gitea/workflows/deploy-backend.yml'
@@ -42,54 +43,71 @@ jobs:
           echo "本次构建 TAG=$TAG"
           echo "TAG=$TAG" >> "$GITHUB_ENV"
 
-      - name: Maven 打包 pd-auth（JDK21，跳过测试）
-        # -f pd-auth/pom.xml：以子模块为构建入口，只经 relativePath 解析父 pom，
-        # 不读根 pom 的 modules。当前 pd-gateway 未提交、旧模块 parent 改名未提交，
-        # -pl 方式仍要构建全 reactor 模型，会直接失败。
+      - name: Maven 打包已迁移模块（JDK21，跳过测试）
+        # -f 子模块 pom + -am（also make）：从父 pom 解析依赖链，自动先把
+        # pd-common / pd-service-api 等依赖模块构建进 /root/.m2（挂载 /data/m2 缓存），
+        # 再打包目标模块。不加 -am 时 CI 全新 .m2 会报依赖 SNAPSHOT 无法解析。
         run: |
-          mvn -B -f pd-auth/pom.xml package -Dmaven.test.skip=true -s /ci/maven-settings.xml
-        timeout-minutes: 20
+          mvn -B -f pd-auth/pom.xml -am package -Dmaven.test.skip=true -s /ci/maven-settings.xml
+          mvn -B -f pd-gateway/pom.xml -am package -Dmaven.test.skip=true -s /ci/maven-settings.xml
+        timeout-minutes: 25
 
-      - name: 准备镜像构建上下文（只放一个 jar，上下文 ~80MB）
+      - name: 准备镜像构建上下文（硬链接 jar，每目录只放一个 jar）
         run: |
           set -e
-          JAR=$(find pd-auth/target -maxdepth 1 -type f -name '*.jar' \
-            ! -name '*sources*' ! -name '*javadoc*' ! -name '*.original' | head -1)
-          if [ -z "$JAR" ]; then
-            echo "::error::未找到 pd-auth 的 fat jar"
-            exit 1
-          fi
-          mkdir -p .ctx/pd-auth-server
-          ln -f "$JAR" .ctx/pd-auth-server/app.jar
-          echo ">> pd-auth-server <- $(basename "$JAR") ($(du -h "$JAR" | cut -f1))"
+          # 镜像名 -> 模块目录
+          declare -A MODS=(
+            [pd-auth-server]=pd-auth
+            [pd-gateway]=pd-gateway
+          )
+          for svc in "${!MODS[@]}"; do
+            JAR=$(find "${MODS[$svc]}/target" -maxdepth 1 -type f -name '*.jar' \
+              ! -name '*sources*' ! -name '*javadoc*' ! -name '*.original' 2>/dev/null | head -1)
+            if [ -z "$JAR" ]; then
+              echo "::error::未找到 ${MODS[$svc]} 的 fat jar"
+              exit 1
+            fi
+            mkdir -p ".ctx/$svc"
+            ln -f "$JAR" ".ctx/$svc/app.jar"
+            echo ">> $svc <- $(basename "$JAR") ($(du -h "$JAR" | cut -f1))"
+          done
 
-      - name: 构建 pd-auth-server 镜像
+      - name: 构建服务镜像
         run: |
-          docker build -f deploy/apps/Dockerfile \
-            -t "pinda/pd-auth-server:${TAG}" .ctx/pd-auth-server
-          docker images "pinda/pd-auth-server:${TAG}"
+          set -e
+          for svc in pd-auth-server pd-gateway; do
+            echo ">> docker build $svc:$TAG"
+            docker build -f deploy/apps/Dockerfile -t "pinda/$svc:${TAG}" ".ctx/$svc"
+          done
+        timeout-minutes: 15
 
-      - name: 滚动部署 pd-auth-server（不碰其他容器）
+      - name: 滚动部署（只动这两个容器，不碰其他）
         run: |
           export TAG
-          # 显式只列这一个服务、不加 --remove-orphans：其他容器原样不动
-          docker compose --env-file /ci/apps.env -f deploy/apps/docker-compose.app.yml up -d pd-auth-server
-          docker compose -f deploy/apps/docker-compose.app.yml ps pd-auth-server
+          # 显式列出服务、不加 --remove-orphans：其他容器原样不动
+          docker compose --env-file /ci/apps.env -f deploy/apps/docker-compose.app.yml up -d \
+            pd-gateway pd-auth-server
+          docker compose -f deploy/apps/docker-compose.app.yml ps pd-gateway pd-auth-server
+        timeout-minutes: 10
 
-      - name: 部署后健康检查（9000 端口，最长 3 分钟）
+      - name: 部署后健康检查（8760/9000，最长 4 分钟）
         run: |
+          PORTS="8760 9000"
           ok=0
-          for i in $(seq 1 36); do
-            code=$(curl -s -o /dev/null -w '%{http_code}' -m 3 "http://127.0.0.1:9000/")
-            # 服务已起：401（需登录）/404（无根路径处理器）都算端口就绪
-            if [ "$code" = "200" ] || [ "$code" = "401" ] || [ "$code" = "404" ]; then
-              ok=1
-              break
-            fi
+          for i in $(seq 1 48); do
+            ok=1
+            for p in $PORTS; do
+              code=$(curl -s -o /dev/null -w '%{http_code}' -m 3 "http://127.0.0.1:${p}/")
+              # 401=网关/服务鉴权拦截（服务已就绪）；404=无根路径处理器
+              [ "$code" = "200" ] || [ "$code" = "401" ] || [ "$code" = "404" ] || ok=0
+            done
+            [ "$ok" = "1" ] && break
             sleep 5
           done
-          echo "端口 9000 -> $(curl -s -o /dev/null -w '%{http_code}' -m 3 http://127.0.0.1:9000/)"
-          [ "$ok" = "1" ] || { echo "::error::pd-auth-server 9000 端口未就绪"; exit 1; }
+          for p in $PORTS; do
+            echo "端口 $p -> $(curl -s -o /dev/null -w '%{http_code}' -m 3 http://127.0.0.1:${p}/)"
+          done
+          [ "$ok" = "1" ] || { echo "::error::有端口未就绪"; exit 1; }
 
       - name: 清理悬空镜像
         if: always()

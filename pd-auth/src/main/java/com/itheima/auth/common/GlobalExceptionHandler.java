@@ -1,6 +1,7 @@
 package com.itheima.auth.common;
 
 import cn.dev33.satoken.exception.NotLoginException;
+import cn.dev33.satoken.exception.SameTokenInvalidException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -57,6 +58,13 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public R<Void> handleNotLogin(NotLoginException e) {
         return R.fail(R.UNAUTHORIZED_CODE, "未登录或登录已过期，请重新登录");
+    }
+
+    /** Same-Token 无效：请求未经过网关，属于绕过网关直连子服务 */
+    @ExceptionHandler(SameTokenInvalidException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public R<Void> handleSameTokenInvalid(SameTokenInvalidException e) {
+        return R.fail(R.UNAUTHORIZED_CODE, "非法来源请求，请通过网关访问");
     }
 
     /** 请求方法不支持（如接口只接受 POST，却用 GET） */

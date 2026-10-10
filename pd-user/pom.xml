@@ -12,31 +12,14 @@
 	<version>1.0.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<name>pd-user</name>
-	<description>基础服务</description>
+	<description>会员服务</description>
 
 	<dependencies>
-	<!--	<dependency>
-			<groupId>com.itheima</groupId>
-			<artifactId>pd-auth-entity</artifactId>
-			<version>1.0-SNAPSHOT</version>
-			&lt;!&ndash;<version>1.0.0</version>&ndash;&gt;
-		</dependency>
-		<dependency>
-			<groupId>com.itheima</groupId>
-			<artifactId>pd-auth-api</artifactId>
-			<version>1.0.0</version>
-		</dependency>-->
 		<!--项目依赖-->
 		<dependency>
 			<groupId>com.itheima</groupId>
 			<artifactId>pd-common</artifactId>
 			<version>1.0.0-SNAPSHOT</version>
-			<exclusions>
-				<exclusion>
-					<groupId>redis.clients</groupId>
-					<artifactId>jedis</artifactId>
-				</exclusion>
-			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>com.itheima</groupId>
@@ -52,93 +35,69 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<!-- Nacos 注册/配置（版本由 Spring Cloud Alibaba BOM 托管） -->
 		<dependency>
 			<groupId>com.alibaba.cloud</groupId>
 			<artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
-			<version>${spring-cloud-alibaba-version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.alibaba.cloud</groupId>
 			<artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
-			<version>${spring-cloud-alibaba-version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.mysql</groupId>
-            <artifactId>mysql-connector-j</artifactId>
+			<artifactId>mysql-connector-j</artifactId>
 			<scope>runtime</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.shiro</groupId>
-			<artifactId>shiro-spring</artifactId>
-			<version>${shiro.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.httpcomponents</groupId>
-			<artifactId>httpcore</artifactId>
-			<version>${http-core.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<optional>true</optional>
 		</dependency>
-		<!--MyBatisPLus-->
-		
-		<dependency>
-			<groupId>com.baomidou</groupId>
-			<artifactId>mybatis-plus</artifactId>
-			<version>${mybatis-plus.version}</version>
-		</dependency>
+		<!-- MyBatis-Plus（Spring Boot 3 starter；版本由根 pom 统一托管） -->
 		<dependency>
 			<groupId>com.baomidou</groupId>
 			<artifactId>mybatis-plus-spring-boot3-starter</artifactId>
-			<version>${mybatis-plus.version}</version>
 		</dependency>
+		<!-- 分页插件 MybatisPlusInterceptor / Page 在 extension -->
+		<dependency>
+			<groupId>com.baomidou</groupId>
+			<artifactId>mybatis-plus-extension</artifactId>
+		</dependency>
+		<!-- PaginationInnerInterceptor 在 jsqlparser 模块 -->
+		<dependency>
+			<groupId>com.baomidou</groupId>
+			<artifactId>mybatis-plus-jsqlparser</artifactId>
+		</dependency>
+		<!-- Druid（Spring Boot 3 专用 starter） -->
 		<dependency>
 			<groupId>com.alibaba</groupId>
-			<artifactId>druid-spring-boot-starter</artifactId>
-			<version>${druid.version}</version>
+			<artifactId>druid-spring-boot-3-starter</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>commons-io</groupId>
-			<artifactId>commons-io</artifactId>
-			<version>${commons.io.version}</version>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+		</dependency>
+		<!-- springdoc-openapi 接口文档（替换 springfox） -->
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+		</dependency>
+		<!-- ===== J2Cache（二级缓存）=====
+		     Boot3 不读 boot2 starter 的 spring.factories 自动配置，CacheChannel bean 缺失，
+		     运行期装配为独立待适配子任务（J2CACHE-BOOT3）；此处先保留构件保证编译。
+		     starter pom 未写死 spring 版本，不会与 Boot3 依赖冲突。 -->
+		<dependency>
+			<groupId>net.oschina.j2cache</groupId>
+			<artifactId>j2cache-core</artifactId>
+			<version>2.8.0-release</version>
 		</dependency>
 		<dependency>
 			<groupId>net.oschina.j2cache</groupId>
 			<artifactId>j2cache-spring-boot2-starter</artifactId>
 			<version>2.8.0-release</version>
 		</dependency>
-		<dependency>
-			<groupId>net.oschina.j2cache</groupId>
-			<artifactId>j2cache-core</artifactId>
-			<version>2.8.0-release</version>
-			<exclusions>
-				<exclusion>
-					<groupId>org.slf4j</groupId>
-					<artifactId>slf4j-simple</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>org.slf4j</groupId>
-					<artifactId>slf4j-api</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-	        <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-jsqlparser</artifactId>
-            <version>${mybatis-plus.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-extension</artifactId>
-            <version>${mybatis-plus.version}</version>
-        </dependency>
-            <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-        </dependency>
-    </dependencies>
+	</dependencies>
 
 	<build>
 		<plugins>
