@@ -7,57 +7,22 @@
 
     <div class="login-layout">
       <div class="login-brand">
-        <div class="login-brand__header">
-          <el-image :src="logo" class="login-brand__logo" />
-          <div class="login-brand__identity">
-            <span class="login-brand__name">{{ appConfig.title }}</span>
-            <span class="login-brand__version">v{{ appConfig.version }}</span>
-          </div>
-        </div>
-
-        <div class="login-brand__hero">
-          <el-tag class="login-brand__tag" type="primary" effect="plain">
-            <span class="login-brand__tag-dot" />
-            开源物流运输管理系统
-          </el-tag>
-          <h1 class="login-brand__title">中小企业自营车队 / 区域 3PL 解决方案</h1>
-          <p class="login-brand__subtitle">
-            覆盖订单管理、智能调度、在途跟踪、异常告警全流程，让物流管理更简单高效
-          </p>
-          <div class="login-brand__features">
-            <div class="login-brand__feature">
-              <span class="login-brand__feature-mark">
-                <el-icon class="login-brand__feature-icon"><Van /></el-icon>
-              </span>
-              <span class="login-brand__feature-text">运输调度</span>
-            </div>
-            <div class="login-brand__feature">
-              <span class="login-brand__feature-mark">
-                <el-icon class="login-brand__feature-icon"><Location /></el-icon>
-              </span>
-              <span class="login-brand__feature-text">在途跟踪</span>
-            </div>
-            <div class="login-brand__feature">
-              <span class="login-brand__feature-mark">
-                <el-icon class="login-brand__feature-icon"><Warning /></el-icon>
-              </span>
-              <span class="login-brand__feature-text">异常告警</span>
-            </div>
-          </div>
-        </div>
+        <img :src="loginHero" class="login-brand__hero-img" alt="物流配送" />
+        <div class="login-brand__slogan">品质速递 使命必达</div>
+        <div class="login-brand__copyright">© 2020-2026 品达物流集团</div>
       </div>
 
       <div class="login-card">
         <div class="login-card__inner">
           <transition name="fade-slide" mode="out-in">
-            <QrCodeLogin
-              v-if="component === 'qrcode'"
-              key="qrcode"
-              class="login-card__form"
-              @switch="component = 'login'"
-            />
-
-            <div v-else-if="component === 'login'" key="login" class="login-card__form">
+            <div v-if="component === 'login'" key="login" class="login-card__form">
+              <div class="login-card__brand">
+                <el-image :src="logo" class="login-card__logo" />
+                <div class="login-card__brand-text">
+                  <span class="login-card__brand-name">品达物流</span>
+                  <span class="login-card__brand-en">FASTER AND SAFER</span>
+                </div>
+              </div>
               <h2 class="login-card__title">欢迎登录</h2>
               <p class="login-card__desc">品达物流运输管理系统</p>
 
@@ -158,21 +123,20 @@
 <script setup lang="ts">
 defineOptions({ name: "LoginPage", inheritAttrs: false });
 
-import { Clock, Lock, Loading, Refresh, User, Van, Location, Warning } from "@element-plus/icons-vue";
+import { Clock, Lock, Loading, Refresh, User } from "@element-plus/icons-vue";
 import type { FormInstance } from "element-plus";
 import AuthAPI from "@/api/auth";
 import type { LoginRequest } from "@/api/auth";
 import router from "@/router";
 import { useUserStore } from "@/stores";
 import { AuthStorage } from "@/utils/auth";
-import { appConfig } from "@/settings";
 import ResetPwd from "./components/ResetPwd.vue";
-import QrCodeLogin from "./components/QrCodeLogin.vue";
 import logo from "@/assets/images/logo.png";
+import loginHero from "@/assets/images/login-hero.png";
 
 const userStore = useUserStore();
 const route = useRoute();
-const component = ref<"login" | "resetPwd" | "qrcode">("login");
+const component = ref<"login" | "resetPwd">("login");
 
 const loginFormRef = ref<FormInstance>();
 const loading = ref(false);
@@ -277,6 +241,7 @@ $text-primary: #273248;
 $text-secondary: #667085;
 $text-muted: #98a2b3;
 $input-h: 44px;
+$brand-red: #d7000f; // 品达品牌红：登录按钮、书法标语（参考原版登录页）
 
 .login-page {
   // 品牌色阶：从运行时主题色派生，切换主题色板（ArcoD/AntD/ElementD）时整页跟随
@@ -313,199 +278,51 @@ $input-h: 44px;
 
 .login-brand {
   position: relative;
-  display: flex;
   flex: 0 0 65%;
-  flex-direction: column;
   min-height: 100vh;
-  padding: 28px 64px 48px;
   overflow: hidden;
-  // 白云蓝海渐变（原 bg.svg）：白 → 主题色浅蓝，各 stop 按主题色混合比例派生
-  background: linear-gradient(
-    180deg,
-    #fff 0%,
-    color-mix(in srgb, var(--el-color-primary) 3%, #fff) 16%,
-    color-mix(in srgb, var(--el-color-primary) 5%, #fff) 32%,
-    color-mix(in srgb, var(--el-color-primary) 6%, #fff) 48%,
-    color-mix(in srgb, var(--el-color-primary) 8%, #fff) 62%,
-    color-mix(in srgb, var(--el-color-primary) 15%, #fff) 76%,
-    color-mix(in srgb, var(--el-color-primary) 25%, #fff) 88%,
-    color-mix(in srgb, var(--el-color-primary) 42%, #fff) 100%
-  );
+  /* 插画铺满整个品牌区，标语与版权叠加其上 */
+  background: linear-gradient(180deg, #e8f4ff 0%, #cfe6ff 55%, #a8d0f5 100%);
   animation: login-pane-in 0.36s ease-out both;
 
-  &__header,
-  &__hero {
-    position: relative;
+  &__hero-img {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+  }
+
+  &__slogan {
+    position: absolute;
     z-index: 1;
-  }
-
-  &__header {
-    display: flex;
-    gap: 14px;
-    align-items: center;
-  }
-
-  &__logo {
-    box-sizing: border-box;
-    width: 42px;
-    height: 42px;
-    padding: 5px;
-    background: color-mix(in srgb, var(--el-color-primary) 8%, transparent);
-    border: 1px solid color-mix(in srgb, var(--el-color-primary) 18%, transparent);
-    border-radius: 12px;
-  }
-
-  &__identity {
-    display: inline-flex;
-    gap: 10px;
-    align-items: center;
-    min-width: 0;
-  }
-
-  &__name {
-    font-size: 24px;
-    font-weight: 600;
-    line-height: 1;
-    color: var(--brand-deep);
-  }
-
-  &__version {
-    display: inline-flex;
-    align-items: center;
-    height: 22px;
-    padding: 0 8px;
-    font-size: 12px;
-    font-weight: 600;
-    line-height: 1;
-    color: color-mix(in srgb, var(--brand-deep) 80%, transparent);
-    background: color-mix(in srgb, var(--el-color-primary) 8%, transparent);
-    border: 1px solid color-mix(in srgb, var(--el-color-primary) 16%, transparent);
-    border-radius: 999px;
-  }
-
-  &__hero {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    justify-content: center;
-    width: min(760px, 100%);
-    padding: 40px 0 60px;
-  }
-
-  &__tag {
-    gap: 8px;
-    // 去掉 main 包装层后 tag 成为 hero 的 flex 子项，防止被 stretch 拉满宽度
-    align-self: flex-start;
-    height: 32px;
-    padding: 0 15px 0 13px;
-    margin-bottom: 20px;
-    font-size: 12px;
+    left: 7%;
+    top: 50%;
+    transform: translateY(-50%) rotate(-4deg);
+    font-family: "STXingkai", "STKaiti", "KaiTi", "楷体", serif;
+    font-size: 64px;
     font-weight: 700;
-    color: var(--brand-strong);
-    background: color-mix(in srgb, var(--el-color-primary) 8%, transparent);
-    border-color: color-mix(in srgb, var(--el-color-primary) 16%, transparent);
-
-    :deep(.el-tag__content) {
-      display: inline-flex;
-      gap: 8px;
-      align-items: center;
-    }
-  }
-
-  &__tag-dot {
-    display: inline-block;
-    flex-shrink: 0;
-    width: 7px;
-    height: 7px;
-    background: var(--el-color-primary);
-    border-radius: 50%;
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--el-color-primary) 16%, transparent);
-  }
-
-  &__title {
-    margin: 0;
-    font-size: 36px;
-    font-weight: 800;
-    line-height: 1.15;
-    color: var(--brand-deep);
-    letter-spacing: 0;
-  }
-
-  &__subtitle {
-    max-width: 520px;
-    margin: 16px 0 0;
-    font-size: 16px;
-    line-height: 1.6;
-    color: #64748b;
-  }
-
-  &__desc {
-    max-width: 560px;
-    margin: 0;
-    font-size: 18px;
-    line-height: 1.6;
-    color: #475569;
-  }
-
-  &__features {
-    display: inline-flex;
-    align-items: center;
-    width: fit-content;
-    max-width: 100%;
-    margin-top: 32px;
-  }
-
-  &__feature {
-    position: relative;
-    display: inline-flex;
-    gap: 10px;
-    align-items: center;
-    height: 32px;
-    padding: 0 15px;
-    font-size: 14px;
-    font-weight: 600;
-    color: color-mix(in srgb, var(--brand-deep) 85%, transparent);
-    background: transparent;
-
-    &:first-child {
-      padding-left: 0;
-    }
-
-    &:not(:last-child)::after {
-      position: absolute;
-      top: 7px;
-      right: 0;
-      width: 1px;
-      height: 14px;
-      content: "";
-      background: color-mix(in srgb, var(--el-color-primary) 18%, transparent);
-    }
-  }
-
-  &__feature-mark {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 22px;
-    height: 22px;
-    color: var(--brand-strong);
-    background: color-mix(in srgb, var(--el-color-primary) 8%, transparent);
-    border: 1px solid color-mix(in srgb, var(--el-color-primary) 16%, transparent);
-    border-radius: 6px;
-  }
-
-  &__feature-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 14px;
-    height: 14px;
-    color: var(--brand-strong);
-  }
-
-  &__feature-text {
-    line-height: 1;
+    line-height: 1.2;
+    color: $brand-red;
+    text-shadow:
+      0 2px 4px rgb(255 255 255 / 60%),
+      0 6px 20px rgb(255 255 255 / 45%);
+    letter-spacing: 8px;
     white-space: nowrap;
+    user-select: none;
+  }
+
+  &__copyright {
+    position: absolute;
+    z-index: 1;
+    bottom: 26px;
+    left: 0;
+    right: 0;
+    font-size: 12px;
+    text-align: center;
+    color: rgb(39 50 72 / 55%);
   }
 }
 
@@ -533,6 +350,42 @@ $input-h: 44px;
 
   &__form {
     width: 100%;
+  }
+
+  &__brand {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 22px;
+  }
+
+  &__logo {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+  }
+
+  &__brand-text {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+  }
+
+  &__brand-name {
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.15;
+    color: $text-primary;
+    letter-spacing: 0;
+  }
+
+  &__brand-en {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2.5px;
+    line-height: 1;
+    color: $brand-red;
   }
 
   &__title {
@@ -609,11 +462,16 @@ $input-h: 44px;
     height: 44px;
     font-size: 16px;
     font-weight: 600;
+    background: $brand-red;
+    border-color: $brand-red;
     border-radius: 8px;
-    box-shadow: 0 12px 24px color-mix(in srgb, var(--el-color-primary) 18%, transparent);
+    box-shadow: 0 12px 24px rgb(215 0 15 / 22%);
 
-    &:hover {
-      box-shadow: 0 14px 28px color-mix(in srgb, var(--el-color-primary) 22%, transparent);
+    &:hover,
+    &:focus {
+      background: #b8000c;
+      border-color: #b8000c;
+      box-shadow: 0 14px 28px rgb(215 0 15 / 28%);
     }
 
     &:focus,
@@ -730,81 +588,35 @@ $input-h: 44px;
 }
 
 .dark .login-brand {
-  // 深蓝渐变底（原 bg-dark.svg），暗色下不随主题色变化
+  // 深蓝渐变底，插画之上叠加轻微暗化遮罩提升标语可读性
   background: linear-gradient(135deg, #0f1a33 0%, #0c1428 55%, #0a1020 100%);
 
-  // 网格纹理（原 bg-dark.svg pattern）：白色细线 + 上浓下淡遮罩
-  &::before {
+  &::after {
     position: absolute;
     inset: 0;
+    z-index: 0;
     content: "";
-    background-image:
-      linear-gradient(rgb(255 255 255 / 5%) 1px, transparent 1px),
-      linear-gradient(90deg, rgb(255 255 255 / 5%) 1px, transparent 1px);
-    background-size: 72px 72px;
-    mask-image: linear-gradient(
-      to bottom,
-      rgb(0 0 0 / 90%) 0%,
-      rgb(0 0 0 / 30%) 70%,
-      transparent 100%
-    );
+    background: linear-gradient(180deg, rgb(10 16 32 / 10%) 0%, rgb(10 16 32 / 35%) 100%);
   }
 
-  &__logo {
-    background: rgb(255 255 255 / 10%);
-    border-color: rgb(255 255 255 / 20%);
+  &__slogan {
+    color: $brand-red;
+    text-shadow:
+      0 2px 4px rgb(0 0 0 / 35%),
+      0 6px 22px rgb(0 0 0 / 45%);
   }
 
-  &__name {
-    color: rgb(255 255 255 / 92%);
-  }
-
-  &__version {
-    color: rgb(255 255 255 / 85%);
-    background: rgb(255 255 255 / 10%);
-    border-color: rgb(255 255 255 / 16%);
-  }
-
-  &__tag {
-    color: #fff;
-    background: rgb(255 255 255 / 8%);
-    border-color: rgb(255 255 255 / 16%);
-  }
-
-  &__tag-dot {
-    background: #fff;
-    box-shadow: 0 0 0 3px rgb(255 255 255 / 18%);
-  }
-
-  &__title {
-    color: #fff;
-  }
-
-  &__desc {
-    color: rgb(255 255 255 / 65%);
-  }
-
-  &__feature {
-    color: rgb(255 255 255 / 85%);
-
-    &:not(:last-child)::after {
-      background: rgb(255 255 255 / 18%);
-    }
-  }
-
-  &__feature-mark {
-    color: #fff;
-    background: rgb(255 255 255 / 10%);
-    border-color: rgb(255 255 255 / 16%);
-  }
-
-  &__feature-icon {
-    color: #fff;
+  &__copyright {
+    color: rgb(255 255 255 / 45%);
   }
 }
 
 .dark .login-card {
   background: #0b1020;
+
+  &__brand-name {
+    color: rgb(255 255 255 / 88%);
+  }
 
   &__title {
     color: rgb(255 255 255 / 85%);
@@ -890,23 +702,17 @@ $input-h: 44px;
     top: 37px;
   }
 
+  /* 窄屏收起左侧插画品牌区，登录卡片占满视口 */
   .login-brand {
-    flex: none;
-    height: auto;
-    min-height: auto;
-    padding: 28px 40px 32px;
-    background: transparent;
-
-    &__hero {
-      display: none;
-    }
+    display: none;
   }
 
   /* 深色品牌区的渐变与网格纹理不适合窄屏，透出页面底色 */
   .dark .login-brand {
     background: none;
 
-    &::before {
+    &::before,
+    &::after {
       display: none;
     }
   }

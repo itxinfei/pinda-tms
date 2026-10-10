@@ -2,8 +2,8 @@
  * API 响应壳
  */
 export interface ApiResult<T = unknown> {
-  /** 业务状态码 */
-  code: string;
+  /** 业务状态码（脚手架为字符串码，品达后端为数字码） */
+  code: string | number;
   /** 业务数据 */
   data: T;
   /** 业务消息 */
@@ -60,4 +60,20 @@ export interface ExcelResult {
   validCount: number;
   /** 错误信息列表 */
   messageList: string[];
+}
+
+/**
+ * 后端统一分页结果（com.itheima.pinda.common.utils.PageResponse）
+ */
+export interface PageResponse<T> {
+  /** 总记录数 */
+  counts: number;
+  /** 每页记录数 */
+  pagesize: number;
+  /** 总页数 */
+  pages: number;
+  /** 当前页码 */
+  page: number;
+  /** 当前页数据 */
+  items: T[];
 }
