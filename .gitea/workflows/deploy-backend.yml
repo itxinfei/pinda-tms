@@ -85,9 +85,11 @@ jobs:
         run: |
           export TAG
           # 显式列出服务、不加 --remove-orphans：其他容器原样不动
+          # /ci 由 runner 容器挂载（-v /data/ci:/ci:ro）
           docker compose --env-file /ci/apps.env -f deploy/apps/docker-compose.app.yml up -d \
             pd-gateway pd-auth-server
-          docker compose -f deploy/apps/docker-compose.app.yml ps pd-gateway pd-auth-server
+          # ps 也要带 --env-file，否则无默认值的 ${REDIS_PASSWORD} 等会解析失败
+          docker compose --env-file /ci/apps.env -f deploy/apps/docker-compose.app.yml ps pd-gateway pd-auth-server
         timeout-minutes: 10
 
       - name: 部署后健康检查（8760/9000，最长 4 分钟）
