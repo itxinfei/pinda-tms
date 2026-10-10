@@ -17,13 +17,9 @@ name: deploy-backend
 on:
   push:
     branches: [master]
-    # 只在「当前已迁移模块」或构建相关路径变化时触发
-    paths:
-      - 'pd-auth/**'
-      - 'pd-gateway/**'
-      - 'pom.xml'
-      - 'deploy/apps/Dockerfile'
-      - '.gitea/workflows/deploy-backend.yml'
+    # 注：曾用 paths 过滤，但 Gitea 1.21 对「workflow 文件自身变更」不触发 push 事件，
+    # 且 paths 语义在旧版存在误判；改为任何 push 都触发（渐进期构建快，开销可接受）。
+    # 需要精确过滤时再引入 paths，并用手动 workflow_dispatch 兜底。
   workflow_dispatch:
 
 jobs:

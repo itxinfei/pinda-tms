@@ -41,6 +41,7 @@ spring:
       password: ${REDIS_PASSWORD:123456}
 
 # Sa-Token 配置
+# 2026-10-10: 渐进式 CI 验证（pd-auth 触发点）
 sa-token:
   # token 头字段（全端统一，兼容旧契约）
   token-name: token
