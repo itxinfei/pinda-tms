@@ -7,108 +7,27 @@
         <groupId>com.itheima</groupId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
-    <groupId>com.itheima</groupId>
     <artifactId>pd-netty</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
     <name>pd-netty</name>
-    <description>netty服务</description>
-
-    <properties>
-        <pd-auth-entity.version>1.0.0</pd-auth-entity.version>
-        <pd-auth-api.version>1.0.0</pd-auth-api.version>
-        <pd-common.version>1.0.0-SNAPSHOT</pd-common.version>
-        <pd-service-base-api.version>1.0.0-SNAPSHOT</pd-service-base-api.version>
-        <pd-service-work-api.version>1.0.0-SNAPSHOT</pd-service-work-api.version>
-        <pd-service-oms-api.version>1.0.0-SNAPSHOT</pd-service-oms-api.version>
-        <pd-service-user-api.version>1.0.0-SNAPSHOT</pd-service-user-api.version>
-        <quartz.version>2.3.0</quartz.version>
-        <!--
-        TODO [安全漏洞 P0]: fastjson 1.2.47 存在已知 RCE 漏洞（CVE-2023-4911）。
-        需要团队决策迁移方案：fastjson2 vs fastjson 1.2.83。
-        参考：https://github.com/alibaba/fastjson2/issues/2319
-        当前暂不升级，避免未预期的兼容性问题。
-        -->
-        <fastjson.version>1.2.47</fastjson.version>
-    </properties>
+    <description>轨迹接入与落库服务</description>
 
     <dependencies>
-        <dependency>
-            <groupId>com.itheima</groupId>
-            <artifactId>pd-common</artifactId>
-            <version>${pd-common.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.alibaba.cloud</groupId>
-            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
-            <version>${spring-cloud-alibaba-version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.alibaba.cloud</groupId>
-            <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
-            <version>${spring-cloud-alibaba-version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-amqp</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-all</artifactId>
-            <version>4.1.12.Final</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-configuration-processor</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.projectreactor</groupId>
-            <artifactId>reactor-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.amqp</groupId>
-            <artifactId>spring-rabbit-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>${lombok.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.alibaba</groupId>
-            <artifactId>fastjson</artifactId>
-            <version>${fastjson.version}</version>
-        </dependency>
-
-        <!-- GPS 轨迹落库依赖 -->
-        <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
-            <version>${mybatis-plus.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.mysql</groupId>
-            <artifactId>mysql-connector-j</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-            <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-jsqlparser</artifactId>
-            <version>${mybatis-plus.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-extension</artifactId>
-            <version>${mybatis-plus.version}</version>
-        </dependency>
+        <dependency><groupId>com.itheima</groupId><artifactId>pd-common</artifactId><version>1.0.0-SNAPSHOT</version></dependency>
+        <dependency><groupId>com.alibaba.cloud</groupId><artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId></dependency>
+        <dependency><groupId>com.alibaba.cloud</groupId><artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId></dependency>
+        <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-amqp</artifactId></dependency>
+        <dependency><groupId>io.netty</groupId><artifactId>netty-all</artifactId></dependency>
+        <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-configuration-processor</artifactId><optional>true</optional></dependency>
+        <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-test</artifactId><scope>test</scope></dependency>
+        <dependency><groupId>io.projectreactor</groupId><artifactId>reactor-test</artifactId><scope>test</scope></dependency>
+        <dependency><groupId>org.springframework.amqp</groupId><artifactId>spring-rabbit-test</artifactId><scope>test</scope></dependency>
+        <dependency><groupId>org.projectlombok</groupId><artifactId>lombok</artifactId><optional>true</optional></dependency>
+        <dependency><groupId>com.alibaba.fastjson2</groupId><artifactId>fastjson2</artifactId></dependency>
+        <dependency><groupId>com.baomidou</groupId><artifactId>mybatis-plus-spring-boot3-starter</artifactId></dependency>
+        <dependency><groupId>com.baomidou</groupId><artifactId>mybatis-plus-extension</artifactId></dependency>
+        <dependency><groupId>com.baomidou</groupId><artifactId>mybatis-plus-jsqlparser</artifactId></dependency>
+        <dependency><groupId>com.mysql</groupId><artifactId>mysql-connector-j</artifactId><scope>runtime</scope></dependency>
+        <dependency><groupId>org.springdoc</groupId><artifactId>springdoc-openapi-starter-webmvc-ui</artifactId></dependency>
     </dependencies>
 
     <build>
@@ -119,5 +38,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>
