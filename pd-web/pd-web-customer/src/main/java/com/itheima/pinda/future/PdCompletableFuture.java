@@ -1,15 +1,14 @@
 package com.itheima.pinda.future;
 
+import com.itheima.pinda.DTO.AreaDTO;
 import com.itheima.pinda.DTO.OrderCargoDto;
+import com.itheima.pinda.DTO.OrgDTO;
 import com.itheima.pinda.DTO.TaskPickupDispatchDTO;
 import com.itheima.pinda.DTO.TransportOrderDTO;
-import com.itheima.pinda.authority.api.AreaApi;
-import com.itheima.pinda.authority.api.OrgApi;
-import com.itheima.pinda.authority.entity.common.Area;
-import com.itheima.pinda.authority.entity.core.Org;
-import com.itheima.pinda.base.R;
 import com.itheima.pinda.enums.pickuptask.PickupDispatchTaskStatus;
+import com.itheima.pinda.feign.AreaFeign;
 import com.itheima.pinda.feign.CargoFeign;
+import com.itheima.pinda.feign.OrgFeign;
 import com.itheima.pinda.feign.PickupDispatchTaskFeign;
 import com.itheima.pinda.feign.TransportOrderFeign;
 import com.itheima.pinda.util.Rx;
@@ -24,11 +23,11 @@ import java.util.stream.Collectors;
 public class PdCompletableFuture {
 
 
-    public static final CompletableFuture<Map<Long, Area>> areaMapFuture(AreaApi api, Long parentId, Set<Long> areaSet) {
-        R<List<Area>> result = api.findAll(parentId, new ArrayList<>(areaSet));
-        // 修改点：远程调用结果 data 可能为 null，统一通过 Rx 安全取值，避免 NPE
+    public static final CompletableFuture<Map<Long, AreaDTO>> areaMapFuture(AreaFeign api, Long parentId, Set<Long> areaSet) {
+        // Feign 直接返回裸 List（无 R 包装），远程失败可能为 null，统一通过 Rx 安全取值
+        List<AreaDTO> result = api.findAll(parentId, new ArrayList<>(areaSet));
         return CompletableFuture.supplyAsync(() ->
-                Rx.dataList(result).stream().collect(Collectors.toMap(Area::getId, vo -> vo)));
+                Rx.list(result).stream().collect(Collectors.toMap(AreaDTO::getId, vo -> vo)));
     }
 
     /**
@@ -39,12 +38,12 @@ public class PdCompletableFuture {
      * @param ids        机构id列表
      * @return 执行结果
      */
-    public static final CompletableFuture<Map<Long, Org>> agencyMapFuture(OrgApi api, Integer agencyType, Set<String> ids, Long countyId) {
+    public static final CompletableFuture<Map<Long, OrgDTO>> agencyMapFuture(OrgFeign api, Integer agencyType, Set<String> ids, Long countyId) {
         return CompletableFuture.supplyAsync(() -> {
-            R<List<Org>> result = api.list(agencyType, ids.stream().mapToLong(id -> Long.valueOf(id)).boxed().collect(Collectors.toList()), countyId, null, null);
-            // 修改点：远程调用成功但 data 可能为 null，增加判空避免 NPE
-            if (result.getIsSuccess() && result.getData() != null) {
-                return result.getData().stream().collect(Collectors.toMap(Org::getId, org -> org));
+            List<OrgDTO> result = api.list(agencyType, ids.stream().mapToLong(Long::valueOf).boxed().collect(Collectors.toList()), countyId, null, null);
+            // 远程调用成功但结果可能为 null，增加判空避免 NPE
+            if (result != null) {
+                return result.stream().collect(Collectors.toMap(OrgDTO::getId, org -> org));
             }
             return new HashMap<>();
         });
@@ -81,13 +80,17 @@ public class PdCompletableFuture {
         return CompletableFuture.supplyAsync(() -> {
             TaskPickupDispatchDTO queryDTO = new TaskPickupDispatchDTO();
             queryDTO.setTaskType(taskType);
-            queryDTO.setOrderIds(taskPickupDispatchSet.stream().collect(Collectors.toList()));
+            // TaskPickupDispatchDTO.orderIds 已 Long 化（订单 ID），调用边界转换
+            queryDTO.setOrderIds(taskPickupDispatchSet.stream().map(Long::valueOf).collect(Collectors.toList()));
             List<TaskPickupDispatchDTO> result = api.findAll(queryDTO);
             if (!CollectionUtils.isEmpty(result)) {
                 log.info("TaskPickupDispatchDTO result：{}", result);
                 result = result.stream().filter(item -> (!PickupDispatchTaskStatus.CANCELLED.getCode().equals(item.getStatus()))).collect(Collectors.toList());
                 log.info("TaskPickupDispatchDTO result by duplicate：{}", result);
-                return result.stream().collect(Collectors.toMap(TaskPickupDispatchDTO::getOrderId, item -> item, (v1, v2) -> v1));
+                // Map 以订单 ID(String) 为键供调用方查询；orderId 为 null 无法入键，先过滤
+                return result.stream()
+                        .filter(item -> item.getOrderId() != null)
+                        .collect(Collectors.toMap(item -> String.valueOf(item.getOrderId()), item -> item, (v1, v2) -> v1));
             }
             return new HashMap<>();
         });
@@ -98,9 +101,11 @@ public class PdCompletableFuture {
             if (CollectionUtils.isEmpty(taskPickupDispatchSet)) {
                 return new HashMap<>();
             }
-            List<TransportOrderDTO> result = api.findByOrderIds(taskPickupDispatchSet.stream().collect(Collectors.toList()));
+            List<TransportOrderDTO> result = api.findByOrderIds(taskPickupDispatchSet.stream().map(Long::valueOf).collect(Collectors.toList()));
             if (!CollectionUtils.isEmpty(result)) {
-                return result.stream().collect(Collectors.toMap(TransportOrderDTO::getOrderId, transportOrderDTO -> transportOrderDTO));
+                return result.stream()
+                        .filter(dto -> dto.getOrderId() != null)
+                        .collect(Collectors.toMap(dto -> String.valueOf(dto.getOrderId()), transportOrderDTO -> transportOrderDTO));
             }
             return new HashMap<>();
         });

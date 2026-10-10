@@ -19,11 +19,13 @@
         <module>pd-service-work-api</module>
         <module>pd-service-user-api</module>
         <module>pd-service-aggregation-api</module>
+        <module>pd-service-auth-api</module>
         <module>pd-service-base-domain</module>
         <module>pd-service-oms-domain</module>
         <module>pd-service-work-domain</module>
         <module>pd-service-user-domain</module>
         <module>pd-service-aggregation-domain</module>
+        <module>pd-service-auth-domain</module>
     </modules>
 
     <dependencies>

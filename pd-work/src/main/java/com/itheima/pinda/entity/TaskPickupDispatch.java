@@ -2,27 +2,18 @@ package com.itheima.pinda.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.Data;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.experimental.Accessors;
-
 /**
- * <p>
- * 取件、派件任务信息表
- * </p>
- *
- * @author jpf
- * @since 2020-01-11
+ * 末端取件/派件任务（一个订单一条）
  */
 @Data
-@EqualsAndHashCode(callSuper = false)
-@Accessors(chain = true)
-@TableName("pd_task_pickup_dispatch")
+@TableName("work_pickup_dispatch_task")
 public class TaskPickupDispatch implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -30,38 +21,48 @@ public class TaskPickupDispatch implements Serializable {
     /**
      * id
      */
-    @TableId(value = "id", type = IdType.INPUT)
-    private String id;
+    @TableId(value = "id", type = IdType.ASSIGN_ID)
+    private Long id;
 
     /**
-     * 关联订单id
+     * 租户ID
      */
-    private String orderId;
+    private Long tenantId;
 
     /**
-     * 任务类型，1为取件任务，2为派件任务
+     * 订单ID（oms_order.id）
+     */
+    private Long orderId;
+
+    /**
+     * 任务类型：1取件 2派件
      */
     private Integer taskType;
 
     /**
-     * 任务状态，1为待执行（对应 待上门和须交接）、2为进行中（该状态暂不使用，属于保留状态）、3为待确认（对应 待妥投和须交件）、4为已完成、5为已取消
+     * 任务状态：1待执行 2进行中 3待确认 4已完成 5已取消
      */
     private Integer status;
 
     /**
-     * 签收状态(1为已签收，2为拒收)
+     * 签收状态：1签收 2拒收
      */
     private Integer signStatus;
 
     /**
-     * 网点ID
+     * 所属网点 sys_org.id
      */
-    private String agencyId;
+    private Long orgId;
 
     /**
-     * 快递员ID
+     * 快递员 sys_user.id
      */
-    private String courierId;
+    private Long courierId;
+
+    /**
+     * 分配状态：1未分配 2已分配 3待人工分配
+     */
+    private Integer assignedStatus;
 
     /**
      * 预计开始时间
@@ -94,17 +95,18 @@ public class TaskPickupDispatch implements Serializable {
     private LocalDateTime cancelTime;
 
     /**
-     * 任务分配状态(1未分配2已分配3待人工分配)
-     */
-    private Integer assignedStatus;
-
-    /**
      * 备注
      */
     private String mark;
 
-    /**
-     * 任务创建时间
-     */
+    private Long createBy;
     private LocalDateTime createTime;
+    private Long updateBy;
+    private LocalDateTime updateTime;
+
+    /**
+     * 逻辑删除：0 未删 1 已删
+     */
+    @TableLogic
+    private Integer deleted;
 }

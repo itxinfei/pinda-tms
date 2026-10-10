@@ -8,10 +8,10 @@ import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.entity.ScheduleExceptionOrder;
 import com.itheima.pinda.service.IScheduleExceptionOrderService;
 import com.itheima.pinda.service.IScheduleJobService;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,7 +31,7 @@ import java.time.LocalDateTime;
 @Slf4j
 @RestController
 @RequestMapping("/scheduleExceptionOrder")
-@Api(tags = "异常调度订单")
+@Tag(name = "异常调度订单")
 public class ScheduleExceptionOrderController {
 
     @Autowired
@@ -49,7 +49,7 @@ public class ScheduleExceptionOrderController {
      * @param orderId  订单ID模糊筛选（可选）
      * @return 分页结果
      */
-    @ApiOperation(value = "分页查询异常调度订单")
+    @Operation(summary = "分页查询异常调度订单")
     @GetMapping("/page")
     public Result page(@RequestParam(name = "page", defaultValue = "1") Integer page,
                        @RequestParam(name = "pageSize", defaultValue = "10") Integer pageSize,
@@ -71,7 +71,7 @@ public class ScheduleExceptionOrderController {
      * @param remark 处理备注（可选）
      * @return 处理结果
      */
-    @ApiOperation(value = "标记异常调度订单为已处理")
+    @Operation(summary = "标记异常调度订单为已处理")
     @PutMapping("/{id}/handle")
     public Result handle(@PathVariable(name = "id") String id,
                          @RequestParam(name = "remark", required = false) String remark) {
@@ -101,7 +101,7 @@ public class ScheduleExceptionOrderController {
      * @param agencyId 机构ID
      * @return 处理结果
      */
-    @ApiOperation(value = "按机构触发重新调度")
+    @Operation(summary = "按机构触发重新调度")
     @PutMapping("/retry/{agencyId}")
     public Result retry(@PathVariable(name = "agencyId") String agencyId) {
         if (StringUtils.isBlank(agencyId)) {

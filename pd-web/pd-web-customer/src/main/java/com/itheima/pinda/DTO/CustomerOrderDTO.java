@@ -1,7 +1,6 @@
 package com.itheima.pinda.DTO;
 
-import com.itheima.pinda.authority.entity.common.Area;
-import com.itheima.pinda.utils.DateUtils;
+import com.itheima.pinda.common.utils.DatePatterns;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -11,12 +10,20 @@ import org.springframework.util.ObjectUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
 @ToString
 public class CustomerOrderDTO extends OrderDTO {
+
+    /**
+     * 通用时间格式（与全局 DatePatterns.DATE_TIME 对齐）。
+     * 替代旧 com.itheima.pinda.utils.DateUtils.format / DEFAULT_DATE_TIME_FORMAT。
+     */
+    private static final DateTimeFormatter COMMON_TIME_FORMATTER =
+            DateTimeFormatter.ofPattern(DatePatterns.DATE_TIME);
 
     /**
      * 收件人省份
@@ -89,7 +96,7 @@ public class CustomerOrderDTO extends OrderDTO {
      */
     private RouteDTO routeDTO;
 
-    public CustomerOrderDTO(OrderDTO orderDTO, Map<Long, Area> areaMap, Map<String, OrderCargoDto> cargoMap, Map<String, TransportOrderDTO> transportOrderMap, Map<String, TaskPickupDispatchDTO> taskPickupDispatchDTOPullMap, Map<String, TaskPickupDispatchDTO> taskPickupDispatchDTOPushMap) {
+    public CustomerOrderDTO(OrderDTO orderDTO, Map<Long, AreaDTO> areaMap, Map<String, OrderCargoDto> cargoMap, Map<String, TransportOrderDTO> transportOrderMap, Map<String, TaskPickupDispatchDTO> taskPickupDispatchDTOPullMap, Map<String, TaskPickupDispatchDTO> taskPickupDispatchDTOPushMap) {
         BeanUtils.copyProperties(orderDTO, this);
         this.receiverProvince = areaMap.get(parseLong(this.getReceiverProvinceId())) != null ? areaMap.get(parseLong(this.getReceiverProvinceId())).getName() : "";
         this.receiverCity = areaMap.get(parseLong(this.getReceiverCityId())) != null ? areaMap.get(parseLong(this.getReceiverCityId())).getName() : "";
@@ -104,7 +111,11 @@ public class CustomerOrderDTO extends OrderDTO {
         this.actualDispathedTime = taskPickupDispatchDTOPushMap.get(this.getId()) != null ? taskPickupDispatchDTOPushMap.get(this.getId()).getActualEndTime() : null;
         this.cancelTime = taskPickupDispatchDTOPullMap.get(this.getId()) != null ? taskPickupDispatchDTOPullMap.get(this.getId()).getCancelTime() : null;
 
-        this.tranOrderId = transportOrderMap.get(this.getId()) != null ? transportOrderMap.get(this.getId()).getOrderId() : null;
+        // 运单号会下发给 App，雪花 ID 保持 String；先判空避免出现 "null" 字符串
+        TransportOrderDTO tranOrder = transportOrderMap.get(this.getId());
+        this.tranOrderId = tranOrder != null && tranOrder.getOrderId() != null
+                ? String.valueOf(tranOrder.getOrderId())
+                : null;
 
         if (!CollectionUtils.isEmpty(cargoMap) && cargoMap.get(this.getId()) != null) {
             OrderCargoDto cargo = cargoMap.get(this.getId());
@@ -115,10 +126,10 @@ public class CustomerOrderDTO extends OrderDTO {
         }
 
         if (this.getCreateTime() != null) {
-            commonTimeStr = "下单时间：" + DateUtils.format(this.getCreateTime(), DateUtils.DEFAULT_DATE_TIME_FORMAT);
+            commonTimeStr = "下单时间：" + this.getCreateTime().format(COMMON_TIME_FORMATTER);
         }
         if (this.getActualDispathedTime() != null) {
-            commonTimeStr = "签收时间：" + DateUtils.format(this.getActualDispathedTime(), DateUtils.DEFAULT_DATE_TIME_FORMAT);
+            commonTimeStr = "签收时间：" + this.getActualDispathedTime().format(COMMON_TIME_FORMATTER);
         }
     }
 

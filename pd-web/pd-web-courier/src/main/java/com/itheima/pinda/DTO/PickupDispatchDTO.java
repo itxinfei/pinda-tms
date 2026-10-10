@@ -1,10 +1,9 @@
 package com.itheima.pinda.DTO;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.itheima.pinda.authority.entity.common.Area;
 import com.itheima.pinda.common.utils.DateUtils;
 import com.itheima.pinda.enums.pickuptask.PickupDispatchTaskType;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -20,61 +19,61 @@ public class PickupDispatchDTO implements Serializable {
     /**
      * 订单号
      */
-    @ApiModelProperty("订单号")
+    @Schema(description = "订单号")
     private String orderNumber;
     /**
      * 运单号
      */
-    @ApiModelProperty("运单号")
+    @Schema(description = "运单号")
     private String tranOrderId;
 
     /**
      * 任务类型，1为取件任务，2为派件任务3为取消的任务
      */
-    @ApiModelProperty("任务类型")
+    @Schema(description = "任务类型")
     private Integer taskType;
 
     /**
      * 任务状态，详见取派件任务状态[1.下单2.已取件3.网点入库，待装车4.网点出库，待派送5.派送中6.已签收(或拒收)7已取消]
      */
-    @ApiModelProperty("任务状态")
+    @Schema(description = "任务状态")
     private Integer status;
 
     /**
      * 收件人
      */
-    @ApiModelProperty("收件人")
+    @Schema(description = "收件人")
     private String receiver;
 
     /**
      * 发件人
      */
-    @ApiModelProperty("发件人")
+    @Schema(description = "发件人")
     private String sender;
 
     /**
      * 收件人地址
      */
-    @ApiModelProperty("收件人地址")
+    @Schema(description = "收件人地址")
     private String receiverAddress;
 
     /**
      * 发件人地址
      */
-    @ApiModelProperty("发件人地址")
+    @Schema(description = "发件人地址")
     private String senderAddress;
 
     /**
      * 目的地 取件时为发件人地址  派件是为收件人地址
      */
-    @ApiModelProperty("目的地")
+    @Schema(description = "目的地")
     private String address;
 
     /**
      * 预计取派件时间
      * 可根据当前时间计算剩余时间
      */
-    @ApiModelProperty("预计取派件时间")
+    @Schema(description = "预计取派件时间")
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @JsonFormat(
             pattern = "yyyy-MM-dd HH:mm:ss"
@@ -83,7 +82,7 @@ public class PickupDispatchDTO implements Serializable {
     /**
      * 实际取派件时间
      */
-    @ApiModelProperty("实际取派件时间")
+    @Schema(description = "实际取派件时间")
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @JsonFormat(
             pattern = "yyyy-MM-dd HH:mm:ss"
@@ -93,22 +92,23 @@ public class PickupDispatchDTO implements Serializable {
     /**
      * 剩余时间
      */
-    @ApiModelProperty("剩余时间")
+    @Schema(description = "剩余时间")
     private Long finishTime;
 
-    @ApiModelProperty("主键")
+    @Schema(description = "主键")
     private String id;
 
     public PickupDispatchDTO() {
 
     }
 
-    public PickupDispatchDTO(TaskPickupDispatchDTO item, Map<String, TransportOrderDTO> tranOrderMap, Map<String, OrderDTO> orderMap, Map<Long, Area> areaMap) {
-        OrderDTO order = orderMap.get(item.getOrderId());
+    public PickupDispatchDTO(TaskPickupDispatchDTO item, Map<Long, TransportOrderDTO> tranOrderMap, Map<String, OrderDTO> orderMap, Map<Long, AreaDTO> areaMap) {
+        OrderDTO order = orderMap.get(String.valueOf(item.getOrderId()));
         log.info("构建快递员取件任务：{},{}", item.getOrderId(), order);
-        this.id = item.getId();
-        this.orderNumber = item.getOrderId();
-        this.tranOrderId = tranOrderMap.get(item.getOrderId()) != null ? tranOrderMap.get(item.getOrderId()).getId() : "";
+        this.id = String.valueOf(item.getId());
+        this.orderNumber = String.valueOf(item.getOrderId());
+        TransportOrderDTO tranOrder = tranOrderMap.get(item.getOrderId());
+        this.tranOrderId = tranOrder != null ? String.valueOf(tranOrder.getId()) : "";
         this.taskType = item.getTaskType();
         this.status = item.getStatus();
         this.receiver = order.getReceiverName();

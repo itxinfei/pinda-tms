@@ -1,8 +1,8 @@
 package com.itheima.pinda.controller;
 
 import com.itheima.pinda.DTO.OrderPointDTO;
-import com.itheima.pinda.authority.api.OrgApi;
-import com.itheima.pinda.authority.entity.core.Org;
+import com.itheima.pinda.DTO.OrgDTO;
+import com.itheima.pinda.feign.OrgFeign;
 import com.itheima.pinda.entity.CacheLineDetailEntity;
 import com.itheima.pinda.entity.CacheLineEntity;
 import com.itheima.pinda.entity.CacheLineUseEntity;
@@ -11,8 +11,8 @@ import com.itheima.pinda.service.ICacheLineDetailService;
 import com.itheima.pinda.service.ICacheLineService;
 import com.itheima.pinda.service.ICacheLineUseService;
 import com.itheima.pinda.service.IOrderClassifyOrderService;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,11 +32,11 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/orderLocus")
-@Api(tags = "订单轨迹")
+@Tag(name = "订单轨迹")
 @Slf4j
 public class OrderLocusController {
     @Autowired
-    private OrgApi orgApi;
+    private OrgFeign orgFeign;
     @Autowired
     private IOrderClassifyOrderService orderClassifyOrderService;
     @Autowired
@@ -48,7 +48,7 @@ public class OrderLocusController {
 
     @SneakyThrows
     @GetMapping("point/{id}")
-    @ApiOperation("查询订单轨迹经点坐标")
+    @Operation(summary = "查询订单轨迹经点坐标")
     public LinkedHashSet<OrderPointDTO> findPointByOrderId(@PathVariable("id") String id) {
 
         LinkedHashSet<OrderPointDTO> OrderPointDTOs = new LinkedHashSet<>();
@@ -66,18 +66,18 @@ public class OrderLocusController {
             agencySet.addAll(cacheLineDetailEntities.stream().map(cacheLineDetailEntity -> cacheLineDetailEntity.getStartAgencyId()).collect(Collectors.toSet()));
             agencySet.addAll(cacheLineDetailEntities.stream().map(cacheLineDetailEntity -> cacheLineDetailEntity.getEndAgencyId()).collect(Collectors.toSet()));
 
-            CompletableFuture<Map<Long, Org>> agnecyMapFu = PdCompletableFuture.agencyMapFuture(orgApi, null, agencySet, null);
-            Map<Long, Org> agency = agnecyMapFu.get();
+            CompletableFuture<Map<Long, OrgDTO>> agnecyMapFu = PdCompletableFuture.agencyMapFuture(orgFeign, null, agencySet, null);
+            Map<Long, OrgDTO> agency = agnecyMapFu.get();
 
             cacheLineDetailEntities.forEach(cacheLineDetailEntity -> {
 
-                Org startAgency = agency.get(Long.parseLong(cacheLineDetailEntity.getStartAgencyId()));
+                OrgDTO startAgency = agency.get(Long.parseLong(cacheLineDetailEntity.getStartAgencyId()));
                 if (startAgency == null) {
                     log.warn("未找到起始机构: {}", cacheLineDetailEntity.getStartAgencyId());
                     return;
                 }
 
-                Org endAgency = agency.get(Long.parseLong(cacheLineDetailEntity.getEndAgencyId()));
+                OrgDTO endAgency = agency.get(Long.parseLong(cacheLineDetailEntity.getEndAgencyId()));
                 if (endAgency == null) {
                     log.warn("未找到结束机构: {}", cacheLineDetailEntity.getEndAgencyId());
                     return;

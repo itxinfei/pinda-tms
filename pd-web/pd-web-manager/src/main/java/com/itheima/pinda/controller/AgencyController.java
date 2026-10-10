@@ -1,21 +1,18 @@
 package com.itheima.pinda.controller;
 
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.itheima.pinda.DTO.AreaDTO;
+import com.itheima.pinda.DTO.OrgDTO;
+import com.itheima.pinda.DTO.OrgTreeDTO;
+import com.itheima.pinda.DTO.UserDTO;
 import com.itheima.pinda.DTO.angency.AgencyScopeDto;
-import com.itheima.pinda.authority.api.AreaApi;
-import com.itheima.pinda.authority.api.OrgApi;
-import com.itheima.pinda.authority.api.RoleApi;
-import com.itheima.pinda.authority.api.UserApi;
-import com.itheima.pinda.authority.dto.core.OrgTreeDTO;
-import com.itheima.pinda.authority.entity.auth.User;
-import com.itheima.pinda.authority.entity.common.Area;
-import com.itheima.pinda.authority.entity.core.Org;
-import com.itheima.pinda.authority.enumeration.core.OrgType;
-import com.itheima.pinda.base.R;
 import com.itheima.pinda.common.utils.EntCoordSyncJob;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
+import com.itheima.pinda.enums.org.OrgType;
+import com.itheima.pinda.feign.AreaFeign;
+import com.itheima.pinda.feign.OrgFeign;
+import com.itheima.pinda.feign.RoleFeign;
+import com.itheima.pinda.feign.UserFeign;
 import com.itheima.pinda.feign.agency.AgencyScopeFeign;
 import com.itheima.pinda.util.BeanUtil;
 import com.itheima.pinda.util.Rx;
@@ -24,12 +21,10 @@ import com.itheima.pinda.vo.base.angency.AgencyScopeVo;
 import com.itheima.pinda.vo.base.angency.AgencySimpleVo;
 import com.itheima.pinda.vo.base.angency.AgencyVo;
 import com.itheima.pinda.vo.base.userCenter.SysUserVo;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiImplicitParam;
-import io.swagger.annotations.ApiImplicitParams;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -40,28 +35,28 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("agency")
-@Api(tags = "组织管理")
+@Tag(name = "组织管理")
 @Slf4j
 public class AgencyController {
     @Autowired
-    private OrgApi orgApi;
+    private OrgFeign orgFeign;
     @Autowired
-    private AreaApi areaApi;
+    private AreaFeign areaFeign;
     @Autowired
-    private UserApi userApi;
+    private UserFeign userFeign;
     @Autowired
-    private RoleApi roleApi;
+    private RoleFeign roleFeign;
     @Autowired
     private AgencyScopeFeign agencyScopeFeign;
 
-    @ApiOperation(value = "获取树状机构信息")
+    @Operation(summary = "获取树状机构信息")
     @GetMapping("/tree")
     public List<AgencySimpleVo> treeAgency() {
         List<AgencySimpleVo> resultList = new ArrayList<>();
 
-        R<List<OrgTreeDTO>> result = orgApi.tree(null, true);
-        if (result.getIsSuccess() && result.getData() != null && result.getData().size() > 0) {
-            resultList.addAll(result.getData().stream().map(orgTreeDTO -> {
+        List<OrgTreeDTO> tree = orgFeign.tree(null, true);
+        if (tree != null && tree.size() > 0) {
+            resultList.addAll(tree.stream().map(orgTreeDTO -> {
                 AgencySimpleVo simpleVo = BeanUtil.parseOrg2SimpleVo(orgTreeDTO);
                 simpleVo.setSubAgencies(getNode(orgTreeDTO.getChildren()));
                 return simpleVo;
@@ -70,58 +65,46 @@ public class AgencyController {
         return resultList;
     }
 
-    @ApiOperation(value = "获取机构详情")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "id", value = "机构id", required = true, example = "1", paramType = "{path}")
-    })
+    @Operation(summary = "获取机构详情")
     @GetMapping("/{id}")
     public AgencyVo findAgencyById(@PathVariable(name = "id") String id) {
-        // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
-        Org org = Rx.data(orgApi.get(Long.valueOf(id)));
+        // 远程调用可能返回 null，直接判空，避免 NPE
+        OrgDTO org = orgFeign.get(Long.valueOf(id));
         if (org != null) {
-            AgencyVo vo = BeanUtil.parseOrg2Vo(org, orgApi, areaApi);
-            return vo;
+            return BeanUtil.parseOrg2Vo(org, orgFeign, areaFeign);
         }
         return null;
     }
 
-    @ApiOperation(value = "获取员工详情")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "id", value = "员工id", required = true, example = "1", paramType = "{path}")
-    })
+    @Operation(summary = "获取员工详情")
     @GetMapping("/user/{id}")
     public SysUserVo findById(@PathVariable(name = "id") String id) {
-        // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
-        User user = Rx.data(userApi.get(Long.valueOf(id)));
+        // 远程调用可能返回 null，直接判空，避免 NPE
+        UserDTO user = userFeign.get(Long.valueOf(id));
         SysUserVo vo = null;
         if (user != null) {
-            vo = BeanUtil.parseUser2Vo(user, roleApi, orgApi);
+            vo = BeanUtil.parseUser2Vo(user, roleFeign, orgFeign);
         }
         return vo;
     }
 
-    @ApiOperation(value = "获取员工分页数据")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "page", value = "页码", required = true, example = "1"),
-            @ApiImplicitParam(name = "pageSize", value = "页尺寸", required = true, example = "10"),
-            @ApiImplicitParam(name = "agencyId", value = "机构id")
-    })
+    @Operation(summary = "获取员工分页数据")
     @GetMapping("/user/page")
     public PageResponse<SysUserVo> findUserByPage(@RequestParam(name = "page") Integer page,
                                                   @RequestParam(name = "pageSize") Integer pageSize,
                                                   @RequestParam(name = "agencyId", required = false) String agencyId) {
-        // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
-        IPage<User> userPage = Rx.data(userApi.page(page.longValue(), pageSize.longValue(), StringUtils.isNotEmpty(agencyId) ? Long.valueOf(agencyId) : null, null, null, null, null));
+        // 远程调用可能返回 null，直接判空，避免 NPE
+        Long orgId = StringUtils.isNotEmpty(agencyId) ? Long.valueOf(agencyId) : null;
+        PageResponse<UserDTO> userPage = userFeign.page(page.longValue(), pageSize.longValue(), orgId, null, null, null, null);
         if (userPage != null) {
-            //处理对象转换
-            // 修改点：records 可能为 null，统一通过 Rx 安全取值
-            List<SysUserVo> voList = Rx.list(userPage.getRecords()).stream().map(user -> BeanUtil.parseUser2Vo(user, roleApi, orgApi)).collect(Collectors.toList());
-            return PageResponse.<SysUserVo>builder().items(voList).page(page).pagesize(pageSize).counts(userPage.getTotal()).pages(userPage.getPages()).build();
+            //处理对象转换：items 可能为 null，统一通过 Rx 安全取值
+            List<SysUserVo> voList = Rx.items(userPage).stream().map(user -> BeanUtil.parseUser2Vo(user, roleFeign, orgFeign)).collect(Collectors.toList());
+            return PageResponse.<SysUserVo>builder().items(voList).page(page).pagesize(pageSize).counts(userPage.getCounts()).pages(userPage.getPages()).build();
         }
         return PageResponse.<SysUserVo>builder().items(new ArrayList<>()).page(page).pagesize(pageSize).counts(0L).pages(0L).build();
     }
 
-    @ApiOperation(value = "保存机构业务范围")
+    @Operation(summary = "保存机构业务范围")
     @PostMapping("/scope")
     public Result saveScope(@RequestBody AgencyScopeVo vo) {
         //验证和处理范围和区域信息
@@ -159,7 +142,7 @@ public class AgencyController {
         } else {
             for (AreaSimpleVo areaSimpleVo : areas) {
                 String adcodeOld = "";
-                Area area = new Area();
+                AreaDTO area = new AreaDTO();
                 //一个区域的多个范围
                 List<List<Map>> list = areaSimpleVo.getMutiPoints();
                 if (list == null || list.size() == 0) {
@@ -177,8 +160,8 @@ public class AgencyController {
                                 if (!StringUtils.equals(adcode, adcodeOld) && i>0) {
                                     return Result.error(5000, "一个机构作业范围必须在一个区域内");
                                 }
-                                // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
-                                Area areaByCode = Rx.data(areaApi.getByCode(adcode + "000000"));
+                                // 远程调用可能返回 null，直接判空，避免 NPE
+                                AreaDTO areaByCode = areaFeign.getByCode(adcode + "000000");
                                 if (areaByCode != null) {
                                     area = areaByCode;
                                 }
@@ -202,22 +185,19 @@ public class AgencyController {
         return lng+","+lat;
     }
 
-    @ApiOperation(value = "获取机构业务范围")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "id", value = "机构id", required = true, example = "1", paramType = "{path}")
-    })
+    @Operation(summary = "获取机构业务范围")
     @GetMapping("/{id}/scope")
     public AgencyScopeVo findAllAgencyScope(@PathVariable(name = "id") String id) {
-        // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
-        Org org = Rx.data(orgApi.get(Long.valueOf(id)));
+        // 远程调用可能返回 null，直接判空，避免 NPE
+        OrgDTO org = orgFeign.get(Long.valueOf(id));
         if (org != null) {
             List<AgencyScopeDto> agencyScopeDtoList = null;
-            if (org != null && org.getOrgType() != null) {
+            if (org.getOrgType() != null) {
                 if (org.getOrgType() == OrgType.BUSINESS_HALL.getType()) {
                     //当前机构为网点
                     agencyScopeDtoList = getAgencyScopes(id, null);
                 } else if (org.getOrgType() == OrgType.SECONDARY_TRANSFER_CENTER.getType()) {
-                    //当前机构为二级转运中心¬
+                    //当前机构为二级转运中心
                     List<String> agencyIds = getOrgIds(Long.valueOf(id), null).stream().map(item -> String.valueOf(item)).collect(Collectors.toList());
                     agencyScopeDtoList = getAgencyScopes(null, agencyIds);
                 } else if (org.getOrgType() == OrgType.TOP_TRANSFER_CENTER.getType()) {
@@ -241,15 +221,15 @@ public class AgencyController {
             }
             //处理返回信息
             AgencyScopeVo vo = new AgencyScopeVo();
-            AgencyVo agencyVo = org == null ? null : BeanUtil.parseOrg2Vo(org, orgApi, areaApi);
+            AgencyVo agencyVo = BeanUtil.parseOrg2Vo(org, orgFeign, areaFeign);
             vo.setAgency(agencyVo);
             List<AreaSimpleVo> areas = new ArrayList<>();
             if (agencyScopeDtoList != null) {
                 List<Long> areaIds = agencyScopeDtoList.stream().map(dto -> Long.valueOf(dto.getAreaId())).collect(Collectors.toList());
                 if (areaIds.size() > 0) {
-                    R<List<Area>> areaResult = areaApi.findAll(null, areaIds);
-                    if (areaResult.getIsSuccess() && areaResult.getData() != null) {
-                        areas.addAll(areaResult.getData().stream().map(BeanUtil::parseArea2Vo).collect(Collectors.toList()));
+                    List<AreaDTO> areaList = areaFeign.findAll(null, areaIds);
+                    if (areaList != null) {
+                        areas.addAll(areaList.stream().map(BeanUtil::parseArea2Vo).collect(Collectors.toList()));
                     }
                 }
             }
@@ -261,6 +241,7 @@ public class AgencyController {
 
     /**
      * 返回结果中添加区域内的作业范围
+     *
      * @param areas
      * @param agencyScopeDtoList
      * @return
@@ -284,9 +265,9 @@ public class AgencyController {
      * @return 子级组织id列表
      */
     private List<Long> getOrgIds(Long id, List<Long> ids) {
-        R<List<Org>> listResult = orgApi.list(null, null, null, id, ids);
-        if (listResult.getIsSuccess() && listResult.getData() != null && listResult.getData().size() > 0) {
-            return listResult.getData().stream().map(Org::getId).collect(Collectors.toList());
+        List<OrgDTO> list = orgFeign.list(null, null, null, id, ids);
+        if (list != null && list.size() > 0) {
+            return list.stream().map(OrgDTO::getId).collect(Collectors.toList());
         }
         return new ArrayList<>();
     }

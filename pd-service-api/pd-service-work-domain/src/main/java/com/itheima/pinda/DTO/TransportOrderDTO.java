@@ -14,13 +14,13 @@ public class TransportOrderDTO implements Serializable {
     /**
      * id
      */
-    private String id;
+    private Long id;
 
 
     /**
      * 订单ID
      */
-    private String orderId;
+    private Long orderId;
 
     /**
      * 运单状态(1.新建 2.已装车，发往x转运中心 3.到达 4.到达终端网点)

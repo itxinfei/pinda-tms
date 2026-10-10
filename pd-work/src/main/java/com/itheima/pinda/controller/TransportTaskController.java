@@ -10,7 +10,6 @@ import com.itheima.pinda.service.ITransportOrderTaskService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -56,7 +55,7 @@ public class TransportTaskController {
      * @return 运输任务信息
      */
     @PutMapping("/{id}")
-    public TaskTransportDTO updateById(@PathVariable(name = "id") String id, @RequestBody TaskTransportDTO dto) {
+    public TaskTransportDTO updateById(@PathVariable(name = "id") Long id, @RequestBody TaskTransportDTO dto) {
         taskTransportService.updateWithRelations(id, dto, dto.getTransportOrderIds());
         dto.setId(id);
         return dto;
@@ -86,10 +85,10 @@ public class TransportTaskController {
             taskTransportIPage.getRecords().forEach(taskTransport -> {
                 TaskTransportDTO resultDto = new TaskTransportDTO();
                 BeanUtils.copyProperties(taskTransport, resultDto);
-                List<String> transportOrderIds = new ArrayList<>();
+                List<Long> transportOrderIds = new ArrayList<>();
                 //查询运输任务与运单关系
                 List<TransportOrderTask> transportOrderTaskList = transportOrderTaskService.findAll(null, taskTransport.getId());
-                transportOrderIds.addAll(transportOrderTaskList.stream().map(transportOrderTask -> transportOrderTask.getTransportOrderId()).collect(Collectors.toList()));
+                transportOrderIds.addAll(transportOrderTaskList.stream().map(TransportOrderTask::getTransportOrderId).collect(Collectors.toList()));
                 resultDto.setTransportOrderIds(transportOrderIds);
                 resultDto.setTransportOrderCount(resultDto.getTransportOrderIds().size());
                 dtoList.add(resultDto);
@@ -119,13 +118,15 @@ public class TransportTaskController {
     /**
      * 根据运单id或运输任务id获取运输任务列表
      *
+     * @param transportOrderId 运单id
+     * @param taskTransportId  运输任务id
      * @return 运输任务列表
      */
     @GetMapping("/listByOrderIdOrTaskId")
-    public List<TaskTransportDTO> findAllByOrderIdOrTaskId(@RequestParam(name = "transportOrderId", required = false) String transportOrderId,
-                                                           @RequestParam(name = "taskTransportId", required = false) String taskTransportId) {
+    public List<TaskTransportDTO> findAllByOrderIdOrTaskId(@RequestParam(name = "transportOrderId", required = false) Long transportOrderId,
+                                                           @RequestParam(name = "taskTransportId", required = false) Long taskTransportId) {
         List<TransportOrderTask> transportOrderTaskList = transportOrderTaskService.findAll(transportOrderId, taskTransportId);
-        List<String> transportTaskIds = transportOrderTaskList.stream().map(transportOrderTask -> transportOrderTask.getTransportTaskId()).collect(Collectors.toList());
+        List<Long> transportTaskIds = transportOrderTaskList.stream().map(TransportOrderTask::getTaskId).collect(Collectors.toList());
         List<TaskTransportDTO> dtoList = new ArrayList<>();
         if (transportTaskIds != null && transportTaskIds.size() > 0) {
             dtoList.addAll(taskTransportService.findAll(transportTaskIds, null, null, null).stream().map(taskTransport -> {
@@ -144,14 +145,14 @@ public class TransportTaskController {
      * @return 运输任务信息
      */
     @GetMapping("/{id}")
-    public TaskTransportDTO findById(@PathVariable(name = "id") String id) {
+    public TaskTransportDTO findById(@PathVariable(name = "id") Long id) {
         TaskTransportDTO dto = new TaskTransportDTO();
         TaskTransport taskTransport = taskTransportService.getById(id);
         if (taskTransport != null) {
             BeanUtils.copyProperties(taskTransport, dto);
-            List<String> transportOrderIds = new ArrayList<>();
+            List<Long> transportOrderIds = new ArrayList<>();
             List<TransportOrderTask> transportOrderTaskList = transportOrderTaskService.findAll(null, taskTransport.getId());
-            transportOrderIds.addAll(transportOrderTaskList.stream().map(transportOrderTask -> transportOrderTask.getTransportOrderId()).collect(Collectors.toList()));
+            transportOrderIds.addAll(transportOrderTaskList.stream().map(TransportOrderTask::getTransportOrderId).collect(Collectors.toList()));
             dto.setTransportOrderIds(transportOrderIds);
             dto.setTransportOrderCount(dto.getTransportOrderIds().size());
         } else {

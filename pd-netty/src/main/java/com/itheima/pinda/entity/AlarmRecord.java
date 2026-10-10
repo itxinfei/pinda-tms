@@ -28,6 +28,7 @@ public class AlarmRecord implements Serializable {
 
     /**
      * 告警类型: SPEED_OVER-超速 STAY_TOO_LONG-长时间停留 DEVIATE_ROUTE-偏离路线
+     * VEHICLE_OFFLINE-车辆离线（2026-10-10 P0-5 新增）
      */
     private String alarmType;
 

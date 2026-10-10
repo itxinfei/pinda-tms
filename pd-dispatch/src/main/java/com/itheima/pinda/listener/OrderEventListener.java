@@ -11,7 +11,7 @@ import com.itheima.pinda.feign.OrderFeign;
 import com.itheima.pinda.feign.TransportOrderFeign;
 import com.itheima.pinda.service.SmsNotificationService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;

@@ -7,14 +7,13 @@ import com.itheima.pinda.DTO.TripsTruckDriverDTO;
 import com.itheima.pinda.DTO.transportline.TransportTripsDto;
 import com.itheima.pinda.DTO.transportline.TransportTripsTruckDriverDto;
 import com.itheima.pinda.DTO.truck.TruckDto;
-import com.itheima.pinda.authority.api.UserApi;
-import com.itheima.pinda.authority.entity.auth.User;
-import com.itheima.pinda.base.R;
+import com.itheima.pinda.DTO.UserDTO;
 import com.itheima.pinda.common.utils.DateUtils;
 import com.itheima.pinda.entity.CacheLineDetailEntity;
 import com.itheima.pinda.entity.OrderClassifyAttachEntity;
 import com.itheima.pinda.feign.transportline.TransportTripsFeign;
 import com.itheima.pinda.feign.truck.TruckFeign;
+import com.itheima.pinda.feign.UserFeign;
 import com.itheima.pinda.service.IOrderClassifyAttachService;
 import com.itheima.pinda.service.ITaskTripsSchedulingService;
 import com.itheima.pinda.utils.IdUtils;
@@ -51,7 +50,7 @@ public class TaskTripsSchedulingServiceImpl implements ITaskTripsSchedulingServi
     private TruckFeign truckFeign;
 
     @Autowired
-    private UserApi userApi;
+    private UserFeign userFeign;
 
     @Autowired
     private IOrderClassifyAttachService orderClassifyAttachService;
@@ -192,10 +191,13 @@ public class TaskTripsSchedulingServiceImpl implements ITaskTripsSchedulingServi
             List<String> truckIds = truckDtos.stream().filter(item -> item.getStatus() == 1).map(item -> item.getId()).collect(Collectors.toList());
 
             // 获取全部司机id
-            R<List<User>> userR = userApi.list(transportTripsTruckDriverDtoList.stream().filter(item -> StringUtils.isNotBlank(item.getUserId())).map(item -> Long.parseLong(item.getUserId())).collect(Collectors.toList()), null, null, null);
-            List<User> users = userR.getData();
+            List<UserDTO> users = userFeign.list(transportTripsTruckDriverDtoList.stream().filter(item -> StringUtils.isNotBlank(item.getUserId())).map(item -> Long.parseLong(item.getUserId())).collect(Collectors.toList()), null, null, null);
+            // 远程失败(fallback 返回 null)按无可用司机降级，避免 NPE
+            if (users == null) {
+                users = new ArrayList<>();
+            }
             // 正常状态司机id
-            List<String> userIds = users.stream().filter(item -> item.getStatus()).map(item -> item.getId().toString()).collect(Collectors.toList());
+            List<String> userIds = users.stream().filter(item -> Boolean.TRUE.equals(item.getStatus())).map(item -> item.getId().toString()).collect(Collectors.toList());
 
             transportTripsTruckDriverDtoList.forEach(item -> {
                 if (userIds.contains(item.getUserId()) && truckIds.contains(item.getTruckId())) {

@@ -5,16 +5,15 @@ import com.itheima.pinda.DTO.OrderClassifyDTO;
 import com.itheima.pinda.DTO.OrderClassifyGroupDTO;
 import com.itheima.pinda.DTO.OrderSearchDTO;
 import com.itheima.pinda.DTO.angency.AgencyScopeDto;
-import com.itheima.pinda.authority.api.AreaApi;
-import com.itheima.pinda.authority.entity.common.Area;
-import com.itheima.pinda.base.R;
+import com.itheima.pinda.DTO.AreaDTO;
 import com.itheima.pinda.common.utils.EntCoordSyncJob;
 import com.itheima.pinda.common.utils.Result;
-import com.itheima.pinda.entity.Order;
+import com.itheima.pinda.DTO.OrderDTO;
 import com.itheima.pinda.entity.OrderClassifyEntity;
 import com.itheima.pinda.entity.OrderClassifyOrderEntity;
 import com.itheima.pinda.enums.OrderStatus;
 import com.itheima.pinda.feign.OrderFeign;
+import com.itheima.pinda.feign.AreaFeign;
 import com.itheima.pinda.feign.agency.AgencyScopeFeign;
 import com.itheima.pinda.future.PdCompletableFuture;
 import com.itheima.pinda.service.IOrderClassifyOrderService;
@@ -152,7 +151,7 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
         orderSearchDTO.setStatus(OrderStatus.IN_TRANSIT.getCode());
         orderSearchDTO.setCurrentAgencyId(agencyId);
         //调用Feign接口实现远程调用，查询当前机构下的新订单
-        List<Order> orderList = orderFeign.list(orderSearchDTO);
+        List<OrderDTO> orderList = orderFeign.list(orderSearchDTO);
 
         log.info("查询到新订单个数：{}",orderList.size());
 
@@ -177,7 +176,7 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
      * @param order
      * @return
      */
-    private String getStartAgencyId(Order order) {
+    private String getStartAgencyId(OrderDTO order) {
         //根据当前订单获取发件人地址详细信息，包含省市区
         String address = senderFullAddress(order);
         if(StringUtils.isBlank(address)){
@@ -208,8 +207,7 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
         String adcode = (String) map.get("adcode");
 
         //根据adcode（区域编码）查询我们系统中的区域信息
-        R<Area> areaR = areaApi.getByCode(adcode + "000000");
-        Area area = areaR.getData();
+        AreaDTO area = areaFeign.getByCode(adcode + "000000");
         if(area == null){
             exceptionHappend("没有查询到区域数据");
         }
@@ -238,7 +236,7 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
      * @return
      */
     @SneakyThrows
-    private String senderFullAddress(Order order) {
+    private String senderFullAddress(OrderDTO order) {
         Long provinceId = Long.valueOf(order.getSenderProvinceId());//省份id
         Long cityId = Long.valueOf(order.getSenderCityId());//市id
         Long countyId = Long.valueOf(order.getSenderCountyId());//区id
@@ -248,8 +246,8 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
         areaSet.add(cityId);
         areaSet.add(countyId);
 
-        CompletableFuture<Map<Long, Area>> future = PdCompletableFuture.areaMapFuture(areaApi, null, areaSet);
-        Map<Long, Area> areaMap = future.get();
+        CompletableFuture<Map<Long, AreaDTO>> future = PdCompletableFuture.areaMapFuture(areaFeign, null, areaSet);
+        Map<Long, AreaDTO> areaMap = future.get();
 
         //根据key（id的值）获取到对应的区域Area对象
         String provinceName = areaMap.get(provinceId).getName();
@@ -273,7 +271,7 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
         orderSearchDTO.setStatus(OrderStatus.OUTLETS_WAREHOUSE.getCode());
         orderSearchDTO.setCurrentAgencyId(agencyId);
         //调用Feign接口实现远程调用，查询当前机构下的新订单
-        List<Order> orderList = orderFeign.list(orderSearchDTO);
+        List<OrderDTO> orderList = orderFeign.list(orderSearchDTO);
 
         log.info("查询到新订单个数：{}",orderList.size());
 
@@ -323,7 +321,7 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
      * @param order
      * @return
      */
-    private String getEndAgencyId(Order order) {
+    private String getEndAgencyId(OrderDTO order) {
         //根据当前订单获取收件人地址详细信息，包含省市区，例如：北京市昌平区建材城西路金燕龙办公楼
         String address = receiverFullAddress(order);
         if(StringUtils.isBlank(address)){
@@ -354,8 +352,7 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
         String adcode = (String) map.get("adcode");
 
         //根据adcode（区域编码）查询我们系统中的区域信息
-        R<Area> areaR = areaApi.getByCode(adcode + "000000");
-        Area area = areaR.getData();
+        AreaDTO area = areaFeign.getByCode(adcode + "000000");
         if(area == null){
             exceptionHappend("没有查询到区域数据");
         }
@@ -415,7 +412,7 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
     }
 
     @Autowired
-    private AreaApi areaApi;
+    private AreaFeign areaFeign;
 
     /**
      * 根据订单获取对应的完整收件人地址信息
@@ -423,7 +420,7 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
      * @return
      */
     @SneakyThrows
-    private String receiverFullAddress(Order order) {
+    private String receiverFullAddress(OrderDTO order) {
         Long provinceId = Long.valueOf(order.getReceiverProvinceId());//省份id
         Long cityId = Long.valueOf(order.getReceiverCityId());//市id
         Long countyId = Long.valueOf(order.getReceiverCountyId());//区id
@@ -433,8 +430,8 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
         areaSet.add(cityId);
         areaSet.add(countyId);
 
-        CompletableFuture<Map<Long, Area>> future = PdCompletableFuture.areaMapFuture(areaApi, null, areaSet);
-        Map<Long, Area> areaMap = future.get();
+        CompletableFuture<Map<Long, AreaDTO>> future = PdCompletableFuture.areaMapFuture(areaFeign, null, areaSet);
+        Map<Long, AreaDTO> areaMap = future.get();
 
         //根据key（id的值）获取到对应的区域Area对象
         String provinceName = areaMap.get(provinceId).getName();

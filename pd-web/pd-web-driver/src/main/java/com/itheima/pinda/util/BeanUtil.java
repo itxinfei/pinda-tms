@@ -1,16 +1,15 @@
 package com.itheima.pinda.util;
 
-import com.itheima.pinda.authority.api.AreaApi;
-import com.itheima.pinda.authority.api.OrgApi;
-import com.itheima.pinda.authority.api.RoleApi;
-import com.itheima.pinda.authority.dto.auth.RoleDTO;
-import com.itheima.pinda.authority.entity.auth.User;
-import com.itheima.pinda.authority.entity.common.Area;
-import com.itheima.pinda.authority.entity.core.Org;
-import com.itheima.pinda.authority.enumeration.common.StaticStation;
-import com.itheima.pinda.authority.enumeration.core.OrgType;
-import com.itheima.pinda.base.R;
+import com.itheima.pinda.DTO.AreaDTO;
+import com.itheima.pinda.DTO.OrgDTO;
+import com.itheima.pinda.DTO.RoleDTO;
+import com.itheima.pinda.DTO.UserDTO;
 import com.itheima.pinda.common.utils.Constant;
+import com.itheima.pinda.constant.StaticStation;
+import com.itheima.pinda.enums.org.OrgType;
+import com.itheima.pinda.feign.AreaFeign;
+import com.itheima.pinda.feign.OrgFeign;
+import com.itheima.pinda.feign.RoleFeign;
 import com.itheima.pinda.vo.*;
 import org.springframework.beans.BeanUtils;
 
@@ -18,7 +17,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class BeanUtil {
-    public static SysUserVo parseUser2Vo(User user, RoleApi roleApi, OrgApi orgApi) {
+    public static SysUserVo parseUser2Vo(UserDTO user, RoleFeign roleFeign, OrgFeign orgFeign) {
         SysUserVo vo = new SysUserVo();
         //填充基本信息
         vo.setUserId(String.valueOf(user.getId()));
@@ -30,29 +29,27 @@ public class BeanUtil {
         // 员工编号自动生成：EMP + 用户ID（左补零至至少8位，保留完整ID，唯一）
         vo.setWorkNumber(generateWorkNumber(user));
         //处理角色信息
-        if (roleApi != null) {
-            R<List<RoleDTO>> result = roleApi.list(user.getId());
+        if (roleFeign != null) {
+            List<RoleDTO> result = roleFeign.list(user.getId());
             List<RoleVo> roles = new ArrayList<>();
-            if (result.getIsSuccess() && result.getData() != null) {
-                result.getData().forEach(role -> {
-                    roles.add(parseRole2Vo(role));
-                });
+            if (result != null) {
+                result.forEach(role -> roles.add(parseRole2Vo(role)));
             }
             vo.setRoles(roles);
         }
         //处理所属机构信息
-        if (orgApi != null && user.getOrgId() != null && user.getOrgId() != 0) {
-            R<Org> result = orgApi.get(user.getOrgId());
-            if (result.getIsSuccess() && result.getData() != null) {
-                vo.setAgency(parseOrg2SimpleVo(result.getData()));
+        if (orgFeign != null && user.getOrgId() != null && user.getOrgId() != 0) {
+            OrgDTO result = orgFeign.get(user.getOrgId());
+            if (result != null) {
+                vo.setAgency(parseOrg2SimpleVo(result));
             }
         }
         //处理岗位信息
         if (user.getStationId() != null && user.getStationId() != 0) {
-            if (user.getStationId() == StaticStation.COURIER_ID) {
+            if (StaticStation.COURIER_ID.equals(user.getStationId())) {
                 vo.setStation(Constant.UserStation.COURIER.getStation());
                 vo.setStationName(Constant.UserStation.COURIER.getName());
-            } else if (user.getStationId() == StaticStation.DRIVER_ID) {
+            } else if (StaticStation.DRIVER_ID.equals(user.getStationId())) {
                 vo.setStation(Constant.UserStation.DRIVER.getStation());
                 vo.setStationName(Constant.UserStation.DRIVER.getName());
             } else {
@@ -83,7 +80,7 @@ public class BeanUtil {
      * @param org
      * @return
      */
-    public static AgencyVo parseOrg2Vo(Org org, OrgApi orgApi, AreaApi areaApi) {
+    public static AgencyVo parseOrg2Vo(OrgDTO org, OrgFeign orgFeign, AreaFeign areaFeign) {
         AgencyVo agencyVo = new AgencyVo();
         agencyVo.setId(org.getId() + "");
         agencyVo.setName(org.getName());
@@ -95,20 +92,20 @@ public class BeanUtil {
         agencyVo.setLongitude(org.getLongitude());
         agencyVo.setLatitude(org.getLatitude());
         agencyVo.setContractNumber(org.getContractNumber());
-        agencyVo.setStatus(org.getStatus() ? 0 : 1);
-        // 负责人信息：由 org.manager 名称承载（如需完整用户对象可再经 userApi 查询）
+        agencyVo.setStatus(Boolean.TRUE.equals(org.getStatus()) ? 0 : 1);
+        // 负责人信息：由 org.manager 名称承载（如需完整用户对象可再经 userFeign 查询）
         if (org.getManager() != null) {
             SysUserVo managerVo = new SysUserVo();
             managerVo.setName(org.getManager());
             agencyVo.setManager(managerVo);
         }
         //处理父级信息
-        if (org.getParentId() != null && org.getParentId() != 0 && orgApi != null) {
-            R<Org> result = orgApi.get(org.getParentId());
-            if (result.getIsSuccess() && result.getData() != null && result.getData().getId() != null) {
+        if (org.getParentId() != null && org.getParentId() != 0 && orgFeign != null) {
+            OrgDTO result = orgFeign.get(org.getParentId());
+            if (result != null && result.getId() != null) {
                 AgencySimpleVo simpleVo = new AgencySimpleVo();
-                BeanUtils.copyProperties(result.getData(), simpleVo);
-                simpleVo.setId(String.valueOf(result.getData().getId()));
+                BeanUtils.copyProperties(result, simpleVo);
+                simpleVo.setId(String.valueOf(result.getId()));
                 agencyVo.setParent(simpleVo);
             }
         }
@@ -126,10 +123,10 @@ public class BeanUtil {
         if (countyOk) {
             areaIds.add(org.getCountyId());
         }
-        if (areaIds.size() > 0 && areaApi != null) {
-            R<List<Area>> result = areaApi.findAll(null, new ArrayList<>(areaIds));
-            if (result.getIsSuccess()) {
-                Map<Long, Area> areaMap = result.getData().stream().collect(Collectors.toMap(Area::getId, area -> area));
+        if (areaIds.size() > 0 && areaFeign != null) {
+            List<AreaDTO> result = areaFeign.findAll(null, new ArrayList<>(areaIds));
+            if (result != null) {
+                Map<Long, AreaDTO> areaMap = result.stream().collect(Collectors.toMap(AreaDTO::getId, area -> area));
                 if (provinceOk) {
                     agencyVo.setProvince(parseArea2Vo(areaMap.get(org.getProvinceId())));
                 }
@@ -144,14 +141,14 @@ public class BeanUtil {
         return agencyVo;
     }
 
-    public static AgencySimpleVo parseOrg2SimpleVo(Org org) {
+    public static AgencySimpleVo parseOrg2SimpleVo(OrgDTO org) {
         AgencySimpleVo vo = new AgencySimpleVo();
         vo.setId(String.valueOf(org.getId()));
         vo.setName(org.getName());
         return vo;
     }
 
-    public static AreaSimpleVo parseArea2Vo(Area area) {
+    public static AreaSimpleVo parseArea2Vo(AreaDTO area) {
         AreaSimpleVo vo = new AreaSimpleVo();
         if (area != null && area.getId() != null) {
             BeanUtils.copyProperties(area, vo);
@@ -166,7 +163,7 @@ public class BeanUtil {
      * @param user 用户
      * @return 员工编号
      */
-    private static String generateWorkNumber(User user) {
+    private static String generateWorkNumber(UserDTO user) {
         if (user == null || user.getId() == null) {
             return "";
         }

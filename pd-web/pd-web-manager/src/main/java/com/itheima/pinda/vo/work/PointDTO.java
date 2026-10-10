@@ -1,15 +1,14 @@
 package com.itheima.pinda.vo.work;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 @Data
-@ApiModel("位置打点")
+@Schema(description = "位置打点")
 public class PointDTO {
-    @ApiModelProperty("名称")
+    @Schema(description = "名称")
     private String name;
-    @ApiModelProperty("坐标")
+    @Schema(description = "坐标")
     private MarkerPoint markerPoint;
 
     public void setMarkerPoints(String lng, String lat) {
@@ -21,9 +20,9 @@ public class PointDTO {
 
     @Data
     class MarkerPoint {
-        @ApiModelProperty("精度")
+        @Schema(description = "精度")
         private String lng;
-        @ApiModelProperty("纬度")
+        @Schema(description = "纬度")
         private String lat;
     }
 

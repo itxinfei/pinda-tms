@@ -2,27 +2,18 @@ package com.itheima.pinda.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.Data;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.experimental.Accessors;
-
 /**
- * <p>
- * 运单表
- * </p>
- *
- * @author jpf
- * @since 2020-01-06
+ * 运单
  */
 @Data
-@EqualsAndHashCode(callSuper = false)
-@Accessors(chain = true)
-@TableName("pd_transport_order")
+@TableName("work_transport_order")
 public class TransportOrder implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -30,27 +21,37 @@ public class TransportOrder implements Serializable {
     /**
      * id
      */
-    @TableId(value = "id", type = IdType.INPUT)
-    private String id;
-
+    @TableId(value = "id", type = IdType.ASSIGN_ID)
+    private Long id;
 
     /**
-     * 订单ID
+     * 租户ID
      */
-    private String orderId;
+    private Long tenantId;
 
     /**
-     * 运单状态(1.新建 2.已装车，发往x转运中心 3.到达 4.到达终端网点)
+     * 订单ID（来源订单 oms_order.id）
+     */
+    private Long orderId;
+
+    /**
+     * 运单状态：1新建 2已装车 3到达 4到达终端网点 5已签收 6拒收
      */
     private Integer status;
 
     /**
-     * 调度状态调度状态(1.待调度2.未匹配线路3.已调度)
+     * 调度状态：1待调度 2未匹配线路 3已调度
      */
     private Integer schedulingStatus;
 
-    /**
-     * 创建时间
-     */
+    private Long createBy;
     private LocalDateTime createTime;
+    private Long updateBy;
+    private LocalDateTime updateTime;
+
+    /**
+     * 逻辑删除：0 未删 1 已删
+     */
+    @TableLogic
+    private Integer deleted;
 }

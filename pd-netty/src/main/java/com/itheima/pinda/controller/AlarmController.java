@@ -11,7 +11,7 @@ import com.itheima.pinda.service.IAlarmRecordService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -46,7 +46,7 @@ public class AlarmController {
      * 分页查询：按运输任务ID/告警类型/处理状态筛选
      *
      * @param transportTaskId 运输任务ID（可选）
-     * @param alarmType       告警类型（可选）：SPEED_OVER/STAY_TOO_LONG/DEVIATE_ROUTE
+     * @param alarmType       告警类型（可选）：SPEED_OVER/STAY_TOO_LONG/DEVIATE_ROUTE/VEHICLE_OFFLINE 及人工上报异常类型
      * @param status          处理状态（可选）：0-未处理 1-已处理
      * @param page            页码，默认1
      * @param pageSize        每页条数，默认10，最大200

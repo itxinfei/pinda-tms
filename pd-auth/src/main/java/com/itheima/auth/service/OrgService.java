@@ -55,7 +55,7 @@ public class OrgService {
         Long parentId = org.getParentId() == null ? 0L : org.getParentId();
         org.setParentId(parentId);
         org.setTreePath(buildChildTreePath(parentId));
-        org.setCreateUser(StpUtil.getLoginIdAsLong());
+        org.setCreateBy(StpUtil.getLoginIdAsLong());
         org.setCreateTime(LocalDateTime.now());
         orgMapper.insert(org);
         return org.getId();
@@ -79,7 +79,7 @@ public class OrgService {
         }
         // treePath 已在移动中处理，避免被入参里的旧值覆盖；tenantId 不在此更新
         org.setTreePath(null);
-        org.setUpdateUser(StpUtil.getLoginIdAsLong());
+        org.setUpdateBy(StpUtil.getLoginIdAsLong());
         org.setUpdateTime(LocalDateTime.now());
         orgMapper.updateById(org);
     }

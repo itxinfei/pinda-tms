@@ -191,7 +191,7 @@ public class OrderEventMQListener {
      */
     private void sendOrderSms(String orderId, String content) {
         try {
-            if (org.apache.commons.lang.StringUtils.isBlank(orderId)) {
+            if (org.apache.commons.lang3.StringUtils.isBlank(orderId)) {
                 log.warn("[短信通知] 订单ID为空，跳过短信发送");
                 return;
             }
@@ -200,9 +200,9 @@ public class OrderEventMQListener {
                 log.warn("[短信通知] 订单[{}]不存在，跳过短信发送", orderId);
                 return;
             }
-            String mobile = org.apache.commons.lang.StringUtils.isNotBlank(orderDTO.getReceiverPhone())
+            String mobile = org.apache.commons.lang3.StringUtils.isNotBlank(orderDTO.getReceiverPhone())
                 ? orderDTO.getReceiverPhone() : orderDTO.getSenderPhone();
-            if (org.apache.commons.lang.StringUtils.isBlank(mobile)) {
+            if (org.apache.commons.lang3.StringUtils.isBlank(mobile)) {
                 log.warn("[短信通知] 订单[{}]无收件人/发件人手机号，跳过短信发送", orderId);
                 return;
             }

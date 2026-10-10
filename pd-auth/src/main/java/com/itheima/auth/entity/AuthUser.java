@@ -2,6 +2,7 @@ package com.itheima.auth.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
@@ -11,7 +12,7 @@ import java.time.LocalDateTime;
  * 登录账号。隶属于某个租户，账号在租户内唯一。
  */
 @Data
-@TableName("pd_auth_user")
+@TableName("sys_user")
 public class AuthUser {
 
     @TableId(type = IdType.ASSIGN_ID)
@@ -26,21 +27,21 @@ public class AuthUser {
     /** 姓名 */
     private String name;
 
-    /** 所属组织ID（#c_core_org） */
+    /** 所属组织ID */
     private Long orgId;
 
-    /** 岗位ID（#c_core_station） */
+    /** 岗位ID */
     private Long stationId;
 
     private String email;
 
     private String mobile;
 
-    /** 性别：W 女 / M 男 / N 未知 */
-    private String sex;
+    /** 性别：0 未知 1 男 2 女 */
+    private Integer sex;
 
-    /** 启用状态：true 启用 false 禁用 */
-    private Boolean status;
+    /** 启用状态：1 启用 0 禁用 */
+    private Integer status;
 
     private String avatar;
 
@@ -56,8 +57,12 @@ public class AuthUser {
     /** 最后登录时间 */
     private LocalDateTime lastLoginTime;
 
-    private Long createUser;
+    private Long createBy;
     private LocalDateTime createTime;
-    private Long updateUser;
+    private Long updateBy;
     private LocalDateTime updateTime;
+
+    /** 逻辑删除：0 未删 1 已删 */
+    @TableLogic
+    private Integer deleted;
 }

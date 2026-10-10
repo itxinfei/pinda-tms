@@ -16,3 +16,12 @@ spring:
     active: prod
   main:
     allow-bean-definition-overriding: true
+  # JDK 21 虚拟线程：Tomcat 请求处理与阻塞式 Feign 调用改跑虚拟线程，免调平台线程池
+  threads:
+    virtual:
+      enabled: true
+  cloud:
+    openfeign:
+      circuitbreaker:
+        # Feign 熔断降级总开关（实现为 Resilience4j；各 XxxFeignFallback 由此生效）
+        enabled: true

@@ -9,9 +9,9 @@ import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.feign.truck.TruckFeign;
 import com.itheima.pinda.feign.truck.TruckLicenseFeign;
 import com.itheima.pinda.feign.truck.TruckTypeFeign;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiImplicitParam;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
  * @since 2020-03-19
  */
 @Slf4j
-@Api(tags = "车辆信息")
+@Tag(name = "车辆信息")
 @Controller
 @RequestMapping("business/car")
 public class CarController {
@@ -47,8 +47,8 @@ public class CarController {
     }
 
     @SneakyThrows
-    @ApiOperation(value = "获取车辆信息")
-    @ApiImplicitParam(name = "id", value = "主键", required = true)
+    @Operation(summary = "获取车辆信息")
+    @Parameter(name = "id", description = "主键", required = true)
     @ResponseBody
     @GetMapping("info")
     public Result info(String id) {

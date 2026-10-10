@@ -7,12 +7,7 @@ import com.itheima.pinda.entity.TaskPickupDispatch;
 import java.util.List;
 
 /**
- * <p>
  * 取件、派件任务信息表 服务类
- * </p>
- *
- * @author jpf
- * @since 2019-12-30
  */
 public interface ITaskPickupDispatchService extends IService<TaskPickupDispatch> {
     /**
@@ -37,8 +32,9 @@ public interface ITaskPickupDispatchService extends IService<TaskPickupDispatch>
      * 获取取派件任务列表
      *
      * @param ids      取派件任务id列表
+     * @param orderIds 订单id列表
      * @param dispatch 查询条件
      * @return 取派件任务列表
      */
-    List<TaskPickupDispatch> findAll(List<String> ids, List<String> orderIds, TaskPickupDispatch dispatch);
+    List<TaskPickupDispatch> findAll(List<Long> ids, List<Long> orderIds, TaskPickupDispatch dispatch);
 }

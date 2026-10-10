@@ -2,7 +2,7 @@ package com.itheima.pinda.feign;
 
 import com.itheima.pinda.DTO.DriverJobDTO;
 import com.itheima.pinda.common.utils.PageResponse;
-import com.itheima.pinda.feign.hystrix.DriverJobFeignFallback;
+import com.itheima.pinda.feign.fallback.DriverJobFeignFallback;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,7 +28,7 @@ public interface DriverJobFeign {
      * @return 司机作业单信息
      */
     @PutMapping("/driver-job/{id}")
-    DriverJobDTO updateById(@PathVariable(name = "id") String id, @RequestBody DriverJobDTO dto);
+    DriverJobDTO updateById(@PathVariable(name = "id") Long id, @RequestBody DriverJobDTO dto);
 
     /**
      * 获取司机作业单分页数据
@@ -46,13 +46,13 @@ public interface DriverJobFeign {
      * @return 司机作业单信息
      */
     @GetMapping("/driver-job/{id}")
-    DriverJobDTO findById(@PathVariable(name = "id") String id);
+    DriverJobDTO findById(@PathVariable(name = "id") Long id);
 
     /**
      * 根据参数查询全部信息
      *
-     * @param dto
-     * @return
+     * @param dto 查询条件
+     * @return 司机作业单集合
      */
     @PostMapping("/driver-job/findAll")
     List<DriverJobDTO> findAll(@RequestBody DriverJobDTO dto);

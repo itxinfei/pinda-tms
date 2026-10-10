@@ -9,7 +9,7 @@
 package com.itheima.pinda.DTO;
 
 import com.itheima.pinda.entity.ScheduleJobLogEntity;
-import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -21,7 +21,7 @@ import java.util.List;
  * @since 1.0.0
  */
 @Data
-@ApiModel(value = "定时任务日志")
+@Schema(description = "定时任务日志")
 public class ScheduleJobLogDTO extends ScheduleJobLogEntity {
 
     List<OrderClassifyLogDTO> orderClassifyLogDTOS;

@@ -4,40 +4,34 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
-import com.itheima.pinda.common.CustomIdGenerator;
 import com.itheima.pinda.entity.TransportOrder;
 import com.itheima.pinda.enums.transportorder.TransportOrderSchedulingStatus;
 import com.itheima.pinda.enums.transportorder.TransportOrderStatus;
 import com.itheima.pinda.mapper.TransportOrderMapper;
 import com.itheima.pinda.service.ITransportOrderService;
 import com.itheima.pinda.state.StateTransitionValidator;
-import org.apache.commons.lang.StringUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * <p>
  * 运单服务实现类
- * </p>
  */
 @Service
 @Slf4j
 public class TransportOrderServiceImpl extends
         ServiceImpl<TransportOrderMapper, TransportOrder> implements ITransportOrderService {
-    @Autowired
-    private CustomIdGenerator idGenerator;
 
     @Autowired
     private StateTransitionValidator stateTransitionValidator;
 
     @Override
     public TransportOrder saveTransportOrder(TransportOrder transportOrder) {
+        // Long 雪花主键由 @TableId(ASSIGN_ID) 自动生成
         transportOrder.setCreateTime(LocalDateTime.now());
-        transportOrder.setId(idGenerator.nextId(transportOrder) + "");
         transportOrder.setStatus(TransportOrderStatus.CREATED.getCode());
         transportOrder.setSchedulingStatus(TransportOrderSchedulingStatus.TO_BE_SCHEDULED.getCode());
         save(transportOrder);
@@ -56,7 +50,7 @@ public class TransportOrderServiceImpl extends
      */
     @Override
     public boolean updateById(TransportOrder transportOrder) {
-        if (transportOrder == null || StringUtils.isBlank(transportOrder.getId())) {
+        if (transportOrder == null || transportOrder.getId() == null) {
             log.warn("运单更新失败：运单ID为空");
             return false;
         }
@@ -93,41 +87,44 @@ public class TransportOrderServiceImpl extends
     }
 
     @Override
-    public IPage<TransportOrder> findByPage(Integer page, Integer pageSize, String orderId, Integer status, Integer schedulingStatus) {
-        Page<TransportOrder> iPage = new Page(page, pageSize);
-        LambdaQueryWrapper<TransportOrder> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        if (StringUtils.isNotEmpty(orderId)) {
-            lambdaQueryWrapper.like(TransportOrder::getOrderId, orderId);
+    public IPage<TransportOrder> findByPage(Integer page, Integer pageSize, Long orderId,
+                                            Integer status, Integer schedulingStatus) {
+        Page<TransportOrder> iPage = new Page<>(page, pageSize);
+        LambdaQueryWrapper<TransportOrder> wrapper = new LambdaQueryWrapper<>();
+        if (orderId != null) {
+            wrapper.eq(TransportOrder::getOrderId, orderId);
         }
         if (status != null) {
-            lambdaQueryWrapper.eq(TransportOrder::getStatus, status);
+            wrapper.eq(TransportOrder::getStatus, status);
         }
         if (schedulingStatus != null) {
-            lambdaQueryWrapper.eq(TransportOrder::getSchedulingStatus, schedulingStatus);
+            wrapper.eq(TransportOrder::getSchedulingStatus, schedulingStatus);
         }
-        return page(iPage, lambdaQueryWrapper);
+        return page(iPage, wrapper);
     }
 
     @Override
-    public List<TransportOrder> findAll(List<String> ids, String orderId, Integer status, Integer schedulingStatus) {
-        LambdaQueryWrapper<TransportOrder> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        if (ids != null && ids.size() > 0) {
-            lambdaQueryWrapper.in(TransportOrder::getId, ids);
+    public List<TransportOrder> findAll(List<Long> ids, Long orderId, Integer status,
+                                        Integer schedulingStatus) {
+        LambdaQueryWrapper<TransportOrder> wrapper = new LambdaQueryWrapper<>();
+        if (ids != null && !ids.isEmpty()) {
+            wrapper.in(TransportOrder::getId, ids);
         }
-        if (StringUtils.isNotEmpty(orderId)) {
-            lambdaQueryWrapper.like(TransportOrder::getOrderId, orderId);
+        if (orderId != null) {
+            wrapper.eq(TransportOrder::getOrderId, orderId);
         }
         if (status != null) {
-            lambdaQueryWrapper.eq(TransportOrder::getStatus, status);
+            wrapper.eq(TransportOrder::getStatus, status);
         }
         if (schedulingStatus != null) {
-            lambdaQueryWrapper.eq(TransportOrder::getSchedulingStatus, schedulingStatus);
+            wrapper.eq(TransportOrder::getSchedulingStatus, schedulingStatus);
         }
-        return list(lambdaQueryWrapper);
+        return list(wrapper);
     }
 
     @Override
-    public TransportOrder findByOrderId(String orderId) {
-        return getOne(new LambdaQueryWrapper<TransportOrder>().eq(TransportOrder::getOrderId, orderId));
+    public TransportOrder findByOrderId(Long orderId) {
+        return getOne(new LambdaQueryWrapper<TransportOrder>()
+                .eq(TransportOrder::getOrderId, orderId));
     }
 }

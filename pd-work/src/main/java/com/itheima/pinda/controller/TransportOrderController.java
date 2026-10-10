@@ -55,7 +55,7 @@ public class TransportOrderController {
      * @return 运单信息
      */
     @PutMapping("/{id}")
-    public TransportOrderDTO updateById(@PathVariable(name = "id") String id, @RequestBody TransportOrderDTO dto) {
+    public TransportOrderDTO updateById(@PathVariable(name = "id") Long id, @RequestBody TransportOrderDTO dto) {
         dto.setId(id);
         TransportOrder transportOrder = new TransportOrder();
         BeanUtils.copyProperties(dto, transportOrder);
@@ -77,7 +77,7 @@ public class TransportOrderController {
     @GetMapping("/page")
     public PageResponse<TransportOrderDTO> findByPage(@RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
                                                       @RequestParam(name = "pageSize", required = false, defaultValue = "10") Integer pageSize,
-                                                      @RequestParam(name = "orderId", required = false) String orderId,
+                                                      @RequestParam(name = "orderId", required = false) Long orderId,
                                                       @RequestParam(name = "status", required = false) Integer status,
                                                       @RequestParam(name = "schedulingStatus", required = false) Integer schedulingStatus) {
         IPage<TransportOrder> orderIPage = transportOrderService.findByPage(page, pageSize, orderId, status, schedulingStatus);
@@ -98,7 +98,7 @@ public class TransportOrderController {
      * @return 运单信息
      */
     @GetMapping("/{id}")
-    public TransportOrderDTO findById(@PathVariable(name = "id") String id) {
+    public TransportOrderDTO findById(@PathVariable(name = "id") Long id) {
         TransportOrderDTO dto = new TransportOrderDTO();
         TransportOrder transportOrder = transportOrderService.getById(id);
         if (transportOrder != null) {
@@ -116,7 +116,7 @@ public class TransportOrderController {
      * @return 运单信息
      */
     @GetMapping("/orderId/{orderId}")
-    public TransportOrderDTO findByOrderId(@PathVariable(name = "orderId") String orderId) {
+    public TransportOrderDTO findByOrderId(@PathVariable(name = "orderId") Long orderId) {
         TransportOrderDTO dto = new TransportOrderDTO();
         TransportOrder transportOrder = transportOrderService.findByOrderId(orderId);
         if (transportOrder != null) {
@@ -130,15 +130,15 @@ public class TransportOrderController {
     /**
      * 根据多个订单id查询运单信息
      *
-     * @param ids
-     * @return
+     * @param ids 订单id集合
+     * @return 运单集合
      */
     @GetMapping("orderIds")
-    public List<TransportOrderDTO> findByOrderIds(@RequestParam(name = "ids") List<String> ids) {
+    public List<TransportOrderDTO> findByOrderIds(@RequestParam(name = "ids") List<Long> ids) {
         if (CollectionUtils.isEmpty(ids)) {
             return Collections.emptyList();
         }
-        LambdaQueryWrapper<TransportOrder> wrapper = new LambdaQueryWrapper();
+        LambdaQueryWrapper<TransportOrder> wrapper = new LambdaQueryWrapper<>();
         wrapper.in(TransportOrder::getOrderId, ids);
         List<TransportOrder> transportOrders = transportOrderService.list(wrapper);
         return transportOrders.stream().map(item -> {
@@ -151,12 +151,12 @@ public class TransportOrderController {
     /**
      * 根据多个参数获取运单信息
      *
-     * @param transportOrderSearchDTO
-     * @return
+     * @param transportOrderSearchDTO 查询条件
+     * @return 运单集合
      */
     @PostMapping("list")
     public List<TransportOrderDTO> list(@RequestBody TransportOrderSearchDTO transportOrderSearchDTO) {
-        LambdaQueryWrapper<TransportOrder> wrapper = new LambdaQueryWrapper();
+        LambdaQueryWrapper<TransportOrder> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(transportOrderSearchDTO.getStatus() != null, TransportOrder::getStatus, transportOrderSearchDTO.getStatus());
         wrapper.eq(transportOrderSearchDTO.getSchedulingStatus() != null, TransportOrder::getSchedulingStatus, transportOrderSearchDTO.getSchedulingStatus());
         wrapper.in(!CollectionUtils.isEmpty(transportOrderSearchDTO.getOrderIds()), TransportOrder::getOrderId, transportOrderSearchDTO.getOrderIds());

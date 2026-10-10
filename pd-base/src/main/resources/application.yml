@@ -1,0 +1,94 @@
+server:
+  tomcat:
+    uri-encoding: UTF-8
+    max-threads: 1000
+    min-spare-threads: 30
+  port: 8185
+  connection-timeout: 50000ms
+
+spring:
+  application:
+    name: pd-base
+  # 环境 dev|test|prod|docker；容器镜像由 src/main/docker/Dockerfile 的 CMD 显式指定 docker
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  main:
+    allow-bean-definition-overriding: true
+  # 2026-10-10：SB3.5/SCA2025 下 bootstrap 上下文默认关闭，bootstrap*.yml 不再被加载；
+  # 远程配置改由 config.import 接入，姿势对齐已上线的 pd-auth。optional = 远程缺失不阻断启动。
+  config:
+    import:
+      - optional:nacos:pd-base.yml
+  cloud:
+    nacos:
+      # 服务注册
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:192.168.20.130:8848}
+        namespace: 1cb93ce4-dc0e-4730-b759-d35fd7ed93c3
+        group: pinda-tms
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:123456}
+      # 配置中心
+      config:
+        server-addr: ${NACOS_SERVER_ADDR:192.168.20.130:8848}
+        namespace: 1cb93ce4-dc0e-4730-b759-d35fd7ed93c3
+        group: pinda-tms
+        file-extension: yml
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:123456}
+  # jackson 时间格式化（原自引用占位符，值取自 Nacos common.yml 的现网口径）
+  jackson:
+    time-zone: ${JACKSON_TIME_ZONE:GMT+8}
+    date-format: ${JACKSON_DATE_FORMAT:yyyy-MM-dd HH:mm:ss}
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: ${MULTIPART_MAX_FILE_SIZE:100MB}
+      max-request-size: ${MULTIPART_MAX_REQUEST_SIZE:1000MB}
+  # 数据源：单库 pinda_tms（2026-10-10 建库口径 = 八域前缀 + tenant_id 多租户）
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${MYSQL_HOST:192.168.20.130}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:pinda_tms}?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:123456}
+    druid:
+      initial-size: 5
+      min-idle: 5
+      max-active: 20
+      max-wait: 60000
+      pool-prepared-statements: false
+      max-pool-prepared-statement-per-connection-size: 20
+      time-between-eviction-runs-millis: 60000
+      min-evictable-idle-time-millis: 300000
+      test-while-idle: true
+      test-on-borrow: false
+      test-on-return: false
+      stat-view-servlet:
+        enabled: false
+        url-pattern: /druid/*
+      filter:
+        stat:
+          log-slow-sql: true
+          slow-sql-millis: 5000
+          merge-sql: true
+        wall:
+          config:
+            multi-statement-allow: true
+
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: com.itheima.pinda.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: true
+    call-setters-on-nulls: false
+    jdbc-type-for-null: NULL
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    banner: false
+    db-config:
+      id-type: ASSIGN_ID
+      # 逻辑删除口径 = 建表注释 '0未删 1已删'（docs/mysql/重构v2/*.sql）
+      logic-delete-value: 1
+      logic-not-delete-value: 0

@@ -1,23 +1,15 @@
-server:
-  tomcat:
-    uri-encoding: UTF-8
-    max-threads: 1000
-    min-spare-threads: 30
-  port: 8190
-  connection-timeout: 50000ms
-#  servlet:
-#    context-path: /pd-work
-
-spring:
-  application:
-    name: pd-dispatch
-  # 环境 dev|test|prod
-  profiles:
-    active: prod
-  main:
-    allow-bean-definition-overriding: true
-
-
-
-
-
+# ============================================================
+# 本文件已废弃，请勿在此添加配置。
+#
+# Spring Boot 3.5 / Spring Cloud 2025 默认不加载 bootstrap.yml
+# （需额外引入 spring-cloud-starter-bootstrap 兼容桥）。本项目采用
+# 官方新标准：server.port、Nacos discovery/config 等配置统一写在
+# application.yml，远程配置通过 spring.config.import 方式接入。
+#
+# 2026-10-10 迁移说明：本模块原 bootstrap-{dev,test,prod,docker}.yml 的
+# 内容已全部上收至 application.yml（docker 差异见 application-docker.yml）。
+# 旧文件里的 spring.* 自引用占位符（如 datasource.druid.url: ${自身}）
+# 在仓库内没有任何 shared-dataids/ext-config 声明为其供值，是模块启动失败
+# 的直接原因之一，已改为字面默认值 + 环境变量覆写。
+# 姿势对齐已上线的 pd-auth（其 bootstrap.yml 同样为本 stub）。
+# ============================================================

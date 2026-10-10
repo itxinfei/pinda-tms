@@ -1,25 +1,24 @@
 package com.itheima.pinda.future;
 
+import com.itheima.pinda.DTO.AreaDTO;
 import com.itheima.pinda.DTO.OrderCargoDto;
+import com.itheima.pinda.DTO.OrgDTO;
+import com.itheima.pinda.DTO.UserDTO;
 import com.itheima.pinda.DTO.angency.AgencyScopeDto;
 import com.itheima.pinda.DTO.transportline.TransportLineDto;
 import com.itheima.pinda.DTO.transportline.TransportTripsDto;
 import com.itheima.pinda.DTO.truck.TruckDto;
-import com.itheima.pinda.authority.api.AreaApi;
-import com.itheima.pinda.authority.api.OrgApi;
-import com.itheima.pinda.authority.api.UserApi;
-import com.itheima.pinda.authority.entity.auth.User;
-import com.itheima.pinda.authority.entity.common.Area;
-import com.itheima.pinda.authority.entity.core.Org;
-import com.itheima.pinda.authority.enumeration.core.OrgType;
-import com.itheima.pinda.base.R;
+import com.itheima.pinda.enums.org.OrgType;
+import com.itheima.pinda.feign.AreaFeign;
 import com.itheima.pinda.feign.CargoFeign;
+import com.itheima.pinda.feign.OrgFeign;
+import com.itheima.pinda.feign.UserFeign;
 import com.itheima.pinda.feign.agency.AgencyScopeFeign;
 import com.itheima.pinda.feign.transportline.TransportLineFeign;
 import com.itheima.pinda.feign.transportline.TransportTripsFeign;
 import com.itheima.pinda.feign.truck.TruckFeign;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.CollectionUtils;
 
 import java.util.*;
@@ -31,35 +30,37 @@ public class PdCompletableFuture {
     /**
      * 获取机构数据列表
      *
-     * @param api        数据接口
+     * @param feign      数据接口
      * @param agencyType 机构类型
      * @param ids        机构id列表
      * @return 执行结果
      */
-    public static final CompletableFuture<Map<Long, Org>> agencyMapFuture(OrgApi api, Integer agencyType, Set<String> ids, Long countyId) {
+    public static final CompletableFuture<Map<Long, OrgDTO>> agencyMapFuture(OrgFeign feign, Integer agencyType, Set<String> ids, Long countyId) {
         return CompletableFuture.supplyAsync(() -> {
             log.info("agencyMapFuture : {} , {} , {}", agencyType, ids, countyId);
-            List<Long> idList = ids.stream().filter(item -> StringUtils.isNotBlank(item)).mapToLong(id -> Long.valueOf(id)).boxed().collect(Collectors.toList());
+            List<Long> idList = ids.stream().filter(StringUtils::isNotBlank).mapToLong(Long::valueOf).boxed().collect(Collectors.toList());
             if (!CollectionUtils.isEmpty(idList)) {
-                R<List<Org>> result = api.list(agencyType,
+                List<OrgDTO> result = feign.list(agencyType,
                         idList,
                         countyId,
                         null,
                         new ArrayList<>());
-                if (result.getIsSuccess()) {
-                    return result.getData().stream().collect(Collectors.toMap(Org::getId, org -> org));
+                if (result != null) {
+                    return result.stream().collect(Collectors.toMap(OrgDTO::getId, org -> org));
                 }
             }
             return new HashMap<>();
         });
     }
 
-    public static CompletableFuture<Map<Long, Org>> businessHallMapFuture(OrgApi feign, Set<String> set) {
+    public static CompletableFuture<Map<Long, OrgDTO>> businessHallMapFuture(OrgFeign feign, Set<String> set) {
         return CompletableFuture.supplyAsync(() -> {
-            List<Long> list = set.stream().map(item -> Long.parseLong(item)).collect(Collectors.toList());
-            R<List<Org>> orgRs = feign.listByCountyIds(OrgType.BUSINESS_HALL.getType(), list);
-            List<Org> orgs = orgRs.getData();
-            return orgs.stream().collect(Collectors.toMap(Org::getCountyId, value -> value));
+            List<Long> list = set.stream().map(Long::parseLong).collect(Collectors.toList());
+            List<OrgDTO> orgs = feign.listByCountyIds(OrgType.BUSINESS_HALL.getType(), list);
+            if (orgs == null) {
+                return new HashMap<>();
+            }
+            return orgs.stream().collect(Collectors.toMap(OrgDTO::getCountyId, value -> value));
         });
     }
 
@@ -107,21 +108,25 @@ public class PdCompletableFuture {
         });
     }
 
-    public static CompletableFuture<Map<Long, User>> driverMapFuture(UserApi api, Set<String> driverIdSet) {
+    public static CompletableFuture<Map<Long, UserDTO>> driverMapFuture(UserFeign api, Set<String> driverIdSet) {
         return CompletableFuture.supplyAsync(() -> {
-            List<Long> list = driverIdSet.stream().filter(item -> StringUtils.isNotBlank(item)).map(item -> Long.parseLong(item)).collect(Collectors.toList());
+            List<Long> list = driverIdSet.stream().filter(StringUtils::isNotBlank).map(Long::parseLong).collect(Collectors.toList());
 
-            R<List<User>> result = api.list(list, null, null, null);
-            if (result.getIsSuccess()) {
-                return result.getData().stream().collect(Collectors.toMap(User::getId, item -> item));
+            List<UserDTO> result = api.list(list, null, null, null);
+            if (result != null) {
+                return result.stream().collect(Collectors.toMap(UserDTO::getId, item -> item));
             }
             return new HashMap<>();
         });
     }
 
-    public static final CompletableFuture<Map<Long, Area>> areaMapFuture(AreaApi api, Long parentId, Set<Long> areaSet) {
-        R<List<Area>> result = api.findAll(parentId, new ArrayList<>(areaSet));
-        return CompletableFuture.supplyAsync(() ->
-                result.getData().stream().collect(Collectors.toMap(Area::getId, vo -> vo)));
+    public static final CompletableFuture<Map<Long, AreaDTO>> areaMapFuture(AreaFeign api, Long parentId, Set<Long> areaSet) {
+        List<AreaDTO> result = api.findAll(parentId, new ArrayList<>(areaSet));
+        return CompletableFuture.supplyAsync(() -> {
+                    if (result == null) {
+                        return new HashMap<Long, AreaDTO>();
+                    }
+                    return result.stream().collect(Collectors.toMap(AreaDTO::getId, vo -> vo));
+                });
     }
 }

@@ -1,8 +1,8 @@
 package com.itheima.pinda.feign;
 
+import com.itheima.pinda.DTO.MemberDTO;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
-import com.itheima.pinda.entity.Member;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -19,7 +19,7 @@ public interface MemberFeign {
      * @return
      */
     @GetMapping("/member/page")
-    PageResponse<Member> page(@RequestParam("page") Integer page,@RequestParam("pageSize") Integer pageSize);
+    PageResponse<MemberDTO> page(@RequestParam("page") Integer page,@RequestParam("pageSize") Integer pageSize);
 
     /**
      * 新增
@@ -28,7 +28,7 @@ public interface MemberFeign {
      * @return
      */
     @PostMapping("/member")
-    Result save(@RequestBody Member entity);
+    Result save(@RequestBody MemberDTO entity);
 
     /**
      * 修改
@@ -38,7 +38,7 @@ public interface MemberFeign {
      * @return
      */
     @PutMapping("/member/{id}")
-    Result update(@PathVariable(name = "id") String id, @RequestBody Member entity);
+    Result update(@PathVariable(name = "id") String id, @RequestBody MemberDTO entity);
 
     /**
      * 删除
@@ -50,11 +50,11 @@ public interface MemberFeign {
     Result del(@PathVariable(name = "id") String id);
 
     /**
-     * 详情
+     * 详情（鉴权失败/不存在返回 null）
      *
      * @param id
      * @return
      */
     @GetMapping("/member/detail/{id}")
-    Member detail(@PathVariable(name = "id") String id);
+    MemberDTO detail(@PathVariable(name = "id") String id);
 }

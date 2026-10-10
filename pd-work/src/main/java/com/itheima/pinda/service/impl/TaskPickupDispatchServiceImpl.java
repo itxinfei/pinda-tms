@@ -4,35 +4,27 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
-import com.itheima.pinda.common.CustomIdGenerator;
 import com.itheima.pinda.entity.TaskPickupDispatch;
 import com.itheima.pinda.enums.pickuptask.PickupDispatchTaskAssignedStatus;
 import com.itheima.pinda.enums.pickuptask.PickupDispatchTaskStatus;
 import com.itheima.pinda.mapper.TaskPickupDispatchMapper;
 import com.itheima.pinda.service.ITaskPickupDispatchService;
-import org.apache.commons.lang.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * <p>
  * 取件、派件任务信息表 服务实现类
- * </p>
- *
- * @author jpf
- * @since 2019-12-30
  */
 @Service
-public class TaskPickupDispatchServiceImpl extends ServiceImpl<TaskPickupDispatchMapper, TaskPickupDispatch> implements ITaskPickupDispatchService {
-    @Autowired
-    private CustomIdGenerator idGenerator;
+public class TaskPickupDispatchServiceImpl
+        extends ServiceImpl<TaskPickupDispatchMapper, TaskPickupDispatch>
+        implements ITaskPickupDispatchService {
 
     @Override
     public TaskPickupDispatch saveTaskPickupDispatch(TaskPickupDispatch taskPickupDispatch) {
-        taskPickupDispatch.setId(idGenerator.nextId(taskPickupDispatch) + "");
+        // Long 雪花主键由 @TableId(ASSIGN_ID) 自动生成
         taskPickupDispatch.setCreateTime(LocalDateTime.now());
         taskPickupDispatch.setStatus(PickupDispatchTaskStatus.PENDING.getCode());
         taskPickupDispatch.setAssignedStatus(PickupDispatchTaskAssignedStatus.TO_BE_DISTRIBUTED.getCode());
@@ -41,47 +33,49 @@ public class TaskPickupDispatchServiceImpl extends ServiceImpl<TaskPickupDispatc
     }
 
     @Override
-    public IPage<TaskPickupDispatch> findByPage(Integer page, Integer pageSize, TaskPickupDispatch dispatch) {
-        Page<TaskPickupDispatch> iPage = new Page(page, pageSize);
-        LambdaQueryWrapper<TaskPickupDispatch> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        if (StringUtils.isNotBlank(dispatch.getCourierId())) {
-            lambdaQueryWrapper.eq(TaskPickupDispatch::getCourierId, dispatch.getCourierId());
+    public IPage<TaskPickupDispatch> findByPage(Integer page, Integer pageSize,
+                                                TaskPickupDispatch dispatch) {
+        Page<TaskPickupDispatch> iPage = new Page<>(page, pageSize);
+        LambdaQueryWrapper<TaskPickupDispatch> wrapper = new LambdaQueryWrapper<>();
+        if (dispatch.getCourierId() != null) {
+            wrapper.eq(TaskPickupDispatch::getCourierId, dispatch.getCourierId());
         }
         if (dispatch.getAssignedStatus() != null) {
-            lambdaQueryWrapper.eq(TaskPickupDispatch::getAssignedStatus, dispatch.getAssignedStatus());
+            wrapper.eq(TaskPickupDispatch::getAssignedStatus, dispatch.getAssignedStatus());
         }
         if (dispatch.getTaskType() != null) {
-            lambdaQueryWrapper.eq(TaskPickupDispatch::getTaskType, dispatch.getTaskType());
+            wrapper.eq(TaskPickupDispatch::getTaskType, dispatch.getTaskType());
         }
         if (dispatch.getStatus() != null) {
-            lambdaQueryWrapper.eq(TaskPickupDispatch::getStatus, dispatch.getStatus());
+            wrapper.eq(TaskPickupDispatch::getStatus, dispatch.getStatus());
         }
-        lambdaQueryWrapper.orderBy(true, false, TaskPickupDispatch::getId);
-        return page(iPage, lambdaQueryWrapper);
+        wrapper.orderByDesc(TaskPickupDispatch::getId);
+        return page(iPage, wrapper);
     }
 
     @Override
-    public List<TaskPickupDispatch> findAll(List<String> ids, List<String> orderIds, TaskPickupDispatch dispatch) {
-        LambdaQueryWrapper<TaskPickupDispatch> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        if (ids != null && ids.size() > 0) {
-            lambdaQueryWrapper.in(TaskPickupDispatch::getId, ids);
+    public List<TaskPickupDispatch> findAll(List<Long> ids, List<Long> orderIds,
+                                            TaskPickupDispatch dispatch) {
+        LambdaQueryWrapper<TaskPickupDispatch> wrapper = new LambdaQueryWrapper<>();
+        if (ids != null && !ids.isEmpty()) {
+            wrapper.in(TaskPickupDispatch::getId, ids);
         }
-        if (orderIds != null && orderIds.size() > 0) {
-            lambdaQueryWrapper.in(TaskPickupDispatch::getOrderId, orderIds);
+        if (orderIds != null && !orderIds.isEmpty()) {
+            wrapper.in(TaskPickupDispatch::getOrderId, orderIds);
         }
         if (dispatch.getAssignedStatus() != null) {
-            lambdaQueryWrapper.eq(TaskPickupDispatch::getAssignedStatus, dispatch.getAssignedStatus());
+            wrapper.eq(TaskPickupDispatch::getAssignedStatus, dispatch.getAssignedStatus());
         }
         if (dispatch.getTaskType() != null) {
-            lambdaQueryWrapper.eq(TaskPickupDispatch::getTaskType, dispatch.getTaskType());
+            wrapper.eq(TaskPickupDispatch::getTaskType, dispatch.getTaskType());
         }
         if (dispatch.getStatus() != null) {
-            lambdaQueryWrapper.eq(TaskPickupDispatch::getStatus, dispatch.getStatus());
+            wrapper.eq(TaskPickupDispatch::getStatus, dispatch.getStatus());
         }
-        if (StringUtils.isNotEmpty(dispatch.getOrderId())) {
-            lambdaQueryWrapper.like(TaskPickupDispatch::getOrderId, dispatch.getOrderId());
+        if (dispatch.getOrderId() != null) {
+            wrapper.eq(TaskPickupDispatch::getOrderId, dispatch.getOrderId());
         }
-        lambdaQueryWrapper.orderBy(true, false, TaskPickupDispatch::getId);
-        return list(lambdaQueryWrapper);
+        wrapper.orderByDesc(TaskPickupDispatch::getId);
+        return list(wrapper);
     }
 }

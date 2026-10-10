@@ -4,8 +4,8 @@ package com.itheima.pinda.controller;
 import com.itheima.pinda.DTO.base.GoodsTypeDto;
 import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.feign.common.GoodsTypeFeign;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -24,7 +24,7 @@ import java.util.List;
  * @since 2020-03-24
  */
 @Slf4j
-@Api(tags = "物品类型")
+@Tag(name = "物品类型")
 @Controller
 @RequestMapping("goodsType")
 public class GoodsTypeController {
@@ -36,7 +36,7 @@ public class GoodsTypeController {
     }
 
     @SneakyThrows
-    @ApiOperation(value = "全部类型")
+    @Operation(summary = "全部类型")
     @ResponseBody
     @GetMapping("all")
     public Result all() {

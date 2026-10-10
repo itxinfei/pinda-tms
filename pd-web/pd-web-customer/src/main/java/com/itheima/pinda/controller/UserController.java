@@ -4,11 +4,11 @@ package com.itheima.pinda.controller;
 import com.itheima.pinda.DTO.UserProfileDTO;
 import com.itheima.pinda.common.context.RequestContext;
 import com.itheima.pinda.common.utils.Result;
-import com.itheima.pinda.entity.Member;
+import com.itheima.pinda.DTO.MemberDTO;
 import com.itheima.pinda.feign.UserClient;
 import com.itheima.pinda.service.IMemberService;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
  * @since 2020-03-19
  */
 @Slf4j
-@Api(tags = "用户管理")
+@Tag(name = "用户管理")
 @Controller
 @RequestMapping("user")
 public class UserController {
@@ -40,7 +40,7 @@ public class UserController {
     }
 
     @SneakyThrows
-    @ApiOperation(value = "我的信息")
+    @Operation(summary = "我的信息")
     @ResponseBody
     @GetMapping("profile")
     public Result profile() {
@@ -48,7 +48,7 @@ public class UserController {
         //    并放入参数
         String userId = RequestContext.getUserId();
 
-        Member member = memberService.detail(userId);
+        MemberDTO member = memberService.detail(userId);
         if (member != null) {
             return Result.ok().put("data", UserProfileDTO.builder()
                     .id(userId)

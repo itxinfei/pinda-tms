@@ -3,17 +3,12 @@ package com.itheima.pinda.controller;
 
 import com.itheima.pinda.DTO.*;
 import com.itheima.pinda.DTO.base.GoodsTypeDto;
-import com.itheima.pinda.authority.api.AreaApi;
-import com.itheima.pinda.authority.api.OrgApi;
-import com.itheima.pinda.authority.entity.common.Area;
-import com.itheima.pinda.authority.entity.core.Org;
 import com.itheima.pinda.common.context.RequestContext;
 import com.itheima.pinda.common.exception.PdException;
 import com.itheima.pinda.common.utils.IdCardUtils;
 import com.itheima.pinda.common.utils.OwnershipAssert;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
-import com.itheima.pinda.entity.Member;
 import com.itheima.pinda.enums.MemberIdCardVerifyStatus;
 import com.itheima.pinda.enums.OrderStatus;
 import com.itheima.pinda.enums.OrderType;
@@ -32,14 +27,13 @@ import com.itheima.pinda.feign.*;
 import com.itheima.pinda.feign.common.GoodsTypeFeign;
 import com.itheima.pinda.feign.courier.AppCourierFeign;
 import com.itheima.pinda.future.PdCompletableFuture;
-import io.seata.spring.annotation.GlobalTransactional;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiImplicitParam;
-import io.swagger.annotations.ApiImplicitParams;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.*;
@@ -59,7 +53,7 @@ import java.util.stream.Collectors;
  * @since 2020-03-24
  */
 @Slf4j
-@Api(tags = "快递员业务")
+@Tag(name = "快递员业务")
 @Controller
 @RequestMapping("courier")
 public class CourierController {
@@ -70,7 +64,7 @@ public class CourierController {
 
     private final CargoFeign cargoFeign;
 
-    private final AreaApi areaApi;
+    private final AreaFeign areaFeign;
 
     private final GoodsTypeFeign goodsTypeFeign;
 
@@ -78,7 +72,7 @@ public class CourierController {
 
     private final TransportTaskFeign transportTaskFeign;
 
-    private final OrgApi orgApi;
+    private final OrgFeign orgFeign;
 
     private final MemberFeign memberFeign;
 
@@ -88,31 +82,31 @@ public class CourierController {
     private final ExceptionReportFeign exceptionReportFeign;
 
 
-    public CourierController(AppCourierFeign appCourierFeign, MemberFeign memberFeign, OrgApi orgApi, TransportTaskFeign transportTaskFeign, TransportOrderFeign transportOrderFeign, GoodsTypeFeign goodsTypeFeign, PickupDispatchTaskFeign pickupDispatchTaskFeign, OrderFeign orderFeign, CargoFeign cargoFeign, AreaApi areaApi, EventPublisher eventPublisher, ExceptionReportFeign exceptionReportFeign) {
+    public CourierController(AppCourierFeign appCourierFeign, MemberFeign memberFeign, OrgFeign orgFeign, TransportTaskFeign transportTaskFeign, TransportOrderFeign transportOrderFeign, GoodsTypeFeign goodsTypeFeign, PickupDispatchTaskFeign pickupDispatchTaskFeign, OrderFeign orderFeign, CargoFeign cargoFeign, AreaFeign areaFeign, EventPublisher eventPublisher, ExceptionReportFeign exceptionReportFeign) {
         this.appCourierFeign = appCourierFeign;
         this.memberFeign = memberFeign;
         this.pickupDispatchTaskFeign = pickupDispatchTaskFeign;
         this.goodsTypeFeign = goodsTypeFeign;
         this.orderFeign = orderFeign;
         this.cargoFeign = cargoFeign;
-        this.areaApi = areaApi;
+        this.areaFeign = areaFeign;
         this.transportOrderFeign = transportOrderFeign;
         this.transportTaskFeign = transportTaskFeign;
-        this.orgApi = orgApi;
+        this.orgFeign = orgFeign;
         this.eventPublisher = eventPublisher;
         this.exceptionReportFeign = exceptionReportFeign;
     }
 
     @SneakyThrows
-    @ApiOperation(value = "待取件/待妥投")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "page", value = "当前页数", required = true, example = "1"),
-            @ApiImplicitParam(name = "pagesize", value = "每页条数", required = true, example = "10"),
-            @ApiImplicitParam(name = "taskType", value = "类型", required = true, example = ""),
-            @ApiImplicitParam(name = "status", value = "状态", required = true, example = ""),
-            @ApiImplicitParam(name = "keyword", value = "搜索条件", required = false, example = ""),
-            @ApiImplicitParam(name = "date", value = "时间", required = false, example = "")
-            //@ApiImplicitParam(name = "statusArray", value = "批量状态", required = false, example = "")
+    @Operation(summary = "待取件/待妥投")
+    @Parameters({
+            @Parameter(name = "page", description = "当前页数", required = true, example = "1"),
+            @Parameter(name = "pagesize", description = "每页条数", required = true, example = "10"),
+            @Parameter(name = "taskType", description = "类型", required = true, example = ""),
+            @Parameter(name = "status", description = "状态", required = true, example = ""),
+            @Parameter(name = "keyword", description = "搜索条件", required = false, example = ""),
+            @Parameter(name = "date", description = "时间", required = false, example = "")
+            //@Parameter(name = "statusArray", description = "批量状态", required = false, example = "")
     })
     @ResponseBody
     @GetMapping("pickupDispatch")
@@ -142,11 +136,11 @@ public class CourierController {
         }
         log.info("查询到任务信息：{}", result.getItems());
         // 构建orderId集合
-        Set<String> orderSet = result.getItems().stream().map(item -> item.getOrderId()).collect(Collectors.toSet());
+        Set<Long> orderSet = result.getItems().stream().map(TaskPickupDispatchDTO::getOrderId).collect(Collectors.toSet());
         //查询订单信息
         CompletableFuture<Map<String, OrderDTO>> orderMapFuture = PdCompletableFuture.orderMapFuture(orderFeign, orderSet);
         // 查询运单信息
-        CompletableFuture<Map<String, TransportOrderDTO>> tranOrderMapFuture = PdCompletableFuture.tranOrderMapFuture(transportOrderFeign, orderSet);
+        CompletableFuture<Map<Long, TransportOrderDTO>> tranOrderMapFuture = PdCompletableFuture.tranOrderMapFuture(transportOrderFeign, orderSet);
 
         Map<String, OrderDTO> orderMap = orderMapFuture.get();
         log.info("根据任务信息获取订单数据：{}，result:{}", orderSet, orderMap);
@@ -160,11 +154,11 @@ public class CourierController {
         addressSet.addAll(orderDTOs.stream().filter(item -> item.getSenderProvinceId() != null).map(item -> Long.valueOf(item.getSenderProvinceId())).collect(Collectors.toSet()));
         addressSet.addAll(orderDTOs.stream().filter(item -> item.getSenderCityId() != null).map(item -> Long.valueOf(item.getSenderCityId())).collect(Collectors.toSet()));
         addressSet.addAll(orderDTOs.stream().filter(item -> item.getSenderCountyId() != null).map(item -> Long.valueOf(item.getSenderCountyId())).collect(Collectors.toSet()));
-        CompletableFuture<Map<Long, Area>> areaMapFuture = PdCompletableFuture.areaMapFuture(areaApi, null, addressSet);
+        CompletableFuture<Map<Long, AreaDTO>> areaMapFuture = PdCompletableFuture.areaMapFuture(areaFeign, null, addressSet);
 
-        Map<String, TransportOrderDTO> tranOrderMap = tranOrderMapFuture.get();
+        Map<Long, TransportOrderDTO> tranOrderMap = tranOrderMapFuture.get();
         log.info("根据任务信息获取运单数据：{}，result:{}", orderSet, tranOrderMap);
-        Map<Long, Area> areaMap = areaMapFuture.get();
+        Map<Long, AreaDTO> areaMap = areaMapFuture.get();
 
         List<PickupDispatchDTO> pickupDispatchDtos = result.getItems().stream().map(item -> new PickupDispatchDTO(item, tranOrderMap, orderMap, areaMap)).collect(Collectors.toList());
         return Result.ok().put("data", PageResponse.<PickupDispatchDTO>builder()
@@ -175,13 +169,13 @@ public class CourierController {
                 .build());
     }
 
-    @ApiOperation(value = "待取件/待妥投 数量")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "taskType", value = "类型", required = true, example = ""),
-            @ApiImplicitParam(name = "status", value = "状态", required = true, example = ""),
-            @ApiImplicitParam(name = "keyword", value = "搜索条件", required = false, example = ""),
-            @ApiImplicitParam(name = "date", value = "时间", required = false, example = "")
-//            @ApiImplicitParam(name = "statusArray", value = "批量状态", required = false, example = "")
+    @Operation(summary = "待取件/待妥投 数量")
+    @Parameters({
+            @Parameter(name = "taskType", description = "类型", required = true, example = ""),
+            @Parameter(name = "status", description = "状态", required = true, example = ""),
+            @Parameter(name = "keyword", description = "搜索条件", required = false, example = ""),
+            @Parameter(name = "date", description = "时间", required = false, example = "")
+//            @Parameter(name = "statusArray", description = "批量状态", required = false, example = "")
     })
     @ResponseBody
     @GetMapping("count")
@@ -213,8 +207,8 @@ public class CourierController {
     }
 
     @SneakyThrows
-    @ApiOperation(value = "详情页")
-    @ApiImplicitParam(name = "id", value = "主键", required = true, example = "")
+    @Operation(summary = "详情页")
+    @Parameter(name = "id", description = "主键", required = true, example = "")
     @ResponseBody
     @GetMapping("detail")
     public Result detail(String id) {
@@ -222,16 +216,16 @@ public class CourierController {
         if (StringUtils.isBlank(id)) {
             return Result.error("任务ID不能为空");
         }
-        TaskPickupDispatchDTO pickupDispatchTaskDTO = pickupDispatchTaskFeign.findById(id);
-        if (pickupDispatchTaskDTO == null || StringUtils.isBlank(pickupDispatchTaskDTO.getOrderId())) {
+        TaskPickupDispatchDTO pickupDispatchTaskDTO = pickupDispatchTaskFeign.findById(Long.valueOf(id));
+        if (pickupDispatchTaskDTO == null || pickupDispatchTaskDTO.getOrderId() == null) {
             return Result.error("取派件任务不存在");
         }
         // 归属校验：取派任务必须属于当前登录快递员，防止越权查看他人任务详情
-        Result deny = OwnershipAssert.checkEquals(pickupDispatchTaskDTO.getCourierId(), RequestContext.getUserId(), "无权查看他人任务");
+        Result deny = OwnershipAssert.checkEquals(toIdString(pickupDispatchTaskDTO.getCourierId()), RequestContext.getUserId(), "无权查看他人任务");
         if (deny != null) {
             return deny;
         }
-        String orderId = pickupDispatchTaskDTO.getOrderId();
+        String orderId = String.valueOf(pickupDispatchTaskDTO.getOrderId());
         OrderDTO orderDTO = orderFeign.findById(orderId);
         if (orderDTO == null) {
             return Result.error("订单不存在");
@@ -242,7 +236,7 @@ public class CourierController {
         }
         OrderCargoDto orderCargoDto = orderCargoDtos.get(0);
 
-        TransportOrderDTO transportOrder = transportOrderFeign.findByOrderId(orderId);
+        TransportOrderDTO transportOrder = transportOrderFeign.findByOrderId(Long.valueOf(orderId));
         log.info("查询运单信息：{},RESULT:{}", orderId, transportOrder);
 
         Set<Long> addressSet = new HashSet<>();
@@ -264,8 +258,8 @@ public class CourierController {
         if (StringUtils.isNotEmpty(orderDTO.getSenderCountyId())) {
             addressSet.add(Long.valueOf(orderDTO.getSenderCountyId()));
         }
-        CompletableFuture<Map<Long, Area>> areaMapFuture = PdCompletableFuture.areaMapFuture(areaApi, null, addressSet);
-        Map<Long, Area> areaMap = areaMapFuture.get();
+        CompletableFuture<Map<Long, AreaDTO>> areaMapFuture = PdCompletableFuture.areaMapFuture(areaFeign, null, addressSet);
+        Map<Long, AreaDTO> areaMap = areaMapFuture.get();
         log.info("查询物品类型：{}", orderCargoDto.getGoodsTypeId());
         GoodsTypeDto goodsType = null;
         if (StringUtils.isNotBlank(orderCargoDto.getGoodsTypeId())) {
@@ -273,15 +267,14 @@ public class CourierController {
         }
         log.info("查询物品类型：{},RESULT:{}", orderCargoDto.getGoodsTypeId(), goodsType);
 
-        Member member = memberFeign.detail(orderDTO.getMemberId());
+        MemberDTO member = memberFeign.detail(orderDTO.getMemberId());
         log.info("查询发件人信息：{}", member);
         return Result.ok().put("data", new PickupDispatchDetailDTO(pickupDispatchTaskDTO, orderDTO, orderCargoDto, goodsType, areaMap, transportOrder, member));
     }
 
     @SneakyThrows
-    @GlobalTransactional(name = "pickupDispatchDetail", rollbackFor = Exception.class)
-    @ApiOperation(value = "揽收")
-    @ApiImplicitParam(name = "id", value = "主键", required = true, example = "")
+    @Operation(summary = "揽收")
+    @Parameter(name = "id", description = "主键", required = true, example = "")
     @ResponseBody
     @PutMapping("detail/{id}")
     public Result detail(@PathVariable("id") String id, @RequestBody PickupDispatchDetailDTO pickupDispatchDetailDTO) {
@@ -328,7 +321,7 @@ public class CourierController {
         TaskPickupDispatchDTO taskPickupDispatchDTO = new TaskPickupDispatchDTO();
         taskPickupDispatchDTO.setStatus(PickupDispatchTaskStatus.CONFIRM.getCode());
         taskPickupDispatchDTO.setActualStartTime(LocalDateTime.now());
-        TaskPickupDispatchDTO taskUpdateResult = pickupDispatchTaskFeign.updateById(id, taskPickupDispatchDTO);
+        TaskPickupDispatchDTO taskUpdateResult = pickupDispatchTaskFeign.updateById(Long.valueOf(id), taskPickupDispatchDTO);
         if (taskUpdateResult == null) {
             log.error("揽收失败：取派件任务更新未生效 taskId={}", id);
             throw new PdException("取派件任务更新失败", 500);
@@ -338,13 +331,13 @@ public class CourierController {
         // 【P0优化】揽收时更新运单状态
         // 由于下单时已预生成运单，这里应该一定能查询到
         // 如果运单已存在，更新状态为"已装车"；如果不存在（异常情况），则创建
-        TransportOrderDTO transportOrderDTO = transportOrderFeign.findByOrderId(pickupDispatchDetailDTO.getOrderNumber());
+        TransportOrderDTO transportOrderDTO = transportOrderFeign.findByOrderId(Long.valueOf(pickupDispatchDetailDTO.getOrderNumber()));
         log.info("查询运单:{}", transportOrderDTO);
-        if (transportOrderDTO == null || StringUtils.isBlank(transportOrderDTO.getId())) {
+        if (transportOrderDTO == null || transportOrderDTO.getId() == null) {
             // 异常情况：运单不存在（理论上不应该发生，因为下单时已预生成）
             log.warn("订单[{}]未找到运单，创建新运单", pickupDispatchDetailDTO.getOrderNumber());
             TransportOrderDTO transportDTO = new TransportOrderDTO();
-            transportDTO.setOrderId(pickupDispatchDetailDTO.getOrderNumber());
+            transportDTO.setOrderId(Long.valueOf(pickupDispatchDetailDTO.getOrderNumber()));
             transportDTO.setStatus(TransportOrderStatus.CREATED.getCode());
             transportDTO.setSchedulingStatus(TransportOrderSchedulingStatus.TO_BE_SCHEDULED.getCode());
             TransportOrderDTO savedTransportOrder = transportOrderFeign.save(transportDTO);
@@ -372,7 +365,7 @@ public class CourierController {
         try {
             PickupCompletedEvent event = new PickupCompletedEvent(
                 pickupDispatchDetailDTO.getOrderNumber(),
-                transportOrderDTO != null ? transportOrderDTO.getId() : null,
+                toIdString(transportOrderDTO != null ? transportOrderDTO.getId() : null),
                 RequestContext.getUserId(),
                 id,
                 null
@@ -389,21 +382,21 @@ public class CourierController {
 
 
     @SneakyThrows
-    @ApiOperation(value = "交件")
-    @ApiImplicitParam(name = "tranOrderId", value = "运单号", required = true, example = "")
+    @Operation(summary = "交件")
+    @Parameter(name = "tranOrderId", description = "运单号", required = true, example = "")
     @ResponseBody
     @PutMapping("warehousing/{tranOrderId}")
     public Result warehousing(@PathVariable("tranOrderId") String tranOrderId) {
         log.info(" 交件扫描运单号 ：{}", tranOrderId);
 
-        TransportOrderDTO transportOrderDto = transportOrderFeign.findById(tranOrderId);
+        TransportOrderDTO transportOrderDto = transportOrderFeign.findById(Long.valueOf(tranOrderId));
         if (ObjectUtils.isEmpty(transportOrderDto)) {
             return Result.error(400, "运单号未找到");
         }
         log.info(" 交件运单 ：{}", transportOrderDto);
         OrderDTO orderEditDTO = new OrderDTO();
         orderEditDTO.setStatus(OrderStatus.OUTLETS_WAREHOUSE.getCode());
-        OrderDTO orderUpdateResult = orderFeign.updateById(transportOrderDto.getOrderId(), orderEditDTO);
+        OrderDTO orderUpdateResult = orderFeign.updateById(String.valueOf(transportOrderDto.getOrderId()), orderEditDTO);
         if (orderUpdateResult == null) {
             log.error("交件失败：订单状态更新未生效 orderId={}", transportOrderDto.getOrderId());
             return Result.error(500, "订单状态更新失败");
@@ -430,18 +423,18 @@ public class CourierController {
     }
 
     @SneakyThrows
-    @ApiOperation(value = "接件")
-    @ApiImplicitParam(name = "tranOrderId", value = "运单号", required = true, example = "")
+    @Operation(summary = "接件")
+    @Parameter(name = "tranOrderId", description = "运单号", required = true, example = "")
     @ResponseBody
     @PutMapping("handover/{tranOrderId}")
     public Result handover(@PathVariable("tranOrderId") String tranOrderId) {
         log.info("接件：{}", tranOrderId);
         // id 是运单号 扫描到的内容
-        TransportOrderDTO transportOrderDto = transportOrderFeign.findById(tranOrderId);
+        TransportOrderDTO transportOrderDto = transportOrderFeign.findById(Long.valueOf(tranOrderId));
         if (ObjectUtils.isEmpty(transportOrderDto)) {
             return Result.error(400, "运单号未找到");
         }
-        String orderId = transportOrderDto.getOrderId();
+        String orderId = String.valueOf(transportOrderDto.getOrderId());
         log.info("接件 获取运单信息：{} ,{}", tranOrderId, transportOrderDto);
         OrderDTO orderDto = orderFeign.findById(orderId);
         if (orderDto == null) {
@@ -455,7 +448,7 @@ public class CourierController {
             return Result.error(500, "订单状态更新失败");
         }
         log.info("接件 修改订单状态：{} ,{}", orderDto.getId(), orderDTOUpdate);
-        TaskPickupDispatchDTO pickupDispatchTaskDto = pickupDispatchTaskFeign.findByOrderId(orderId, PickupDispatchTaskType.DISPATCH.getCode());
+        TaskPickupDispatchDTO pickupDispatchTaskDto = pickupDispatchTaskFeign.findByOrderId(Long.valueOf(orderId), PickupDispatchTaskType.DISPATCH.getCode());
         if (pickupDispatchTaskDto == null) {
             log.error("接件失败：派件任务不存在 orderId={}", orderId);
             return Result.error(400, "派件任务不存在");
@@ -473,10 +466,10 @@ public class CourierController {
     }
 
     @SneakyThrows
-    @ApiOperation(value = "妥投")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "tranOrderId", value = "运单号", required = true, example = ""),
-            @ApiImplicitParam(name = "status", value = "状态 1签收 0拒收", required = true, example = "")
+    @Operation(summary = "妥投")
+    @Parameters({
+            @Parameter(name = "tranOrderId", description = "运单号", required = true, example = ""),
+            @Parameter(name = "status", description = "状态 1签收 0拒收", required = true, example = "")
     })
     @ResponseBody
     @PutMapping("delivered/{tranOrderId}/{status}")
@@ -484,7 +477,7 @@ public class CourierController {
         log.info("妥投 运单号：{} ，{}", tranOrderId, status);
         boolean state = "1".equals(status); // 1签收 0拒收
         // id 是运单号 扫描到的内容
-        TransportOrderDTO transportOrderDto = transportOrderFeign.findById(tranOrderId);
+        TransportOrderDTO transportOrderDto = transportOrderFeign.findById(Long.valueOf(tranOrderId));
         if (ObjectUtils.isEmpty(transportOrderDto)) {
             return Result.error(400, "运单号未找到");
         }
@@ -496,7 +489,7 @@ public class CourierController {
             return Result.error(500, "运单状态更新失败");
         }
         log.info("妥投 获取运单信息：{} ,{}", transportOrderDto.getId(), transportOrderDtoUpdate);
-        String orderId = transportOrderDto.getOrderId();
+        String orderId = String.valueOf(transportOrderDto.getOrderId());
         if (StringUtils.isBlank(orderId)) {
             return Result.error(400, "运单未关联订单");
         }
@@ -512,7 +505,7 @@ public class CourierController {
             return Result.error(500, "订单状态更新失败");
         }
         log.info("妥投 修改订单状态：{} ,{}", orderDto.getId(), orderDTOUpdate);
-        TaskPickupDispatchDTO pickupDispatchTaskDto = pickupDispatchTaskFeign.findByOrderId(orderId, PickupDispatchTaskType.DISPATCH.getCode());
+        TaskPickupDispatchDTO pickupDispatchTaskDto = pickupDispatchTaskFeign.findByOrderId(Long.valueOf(orderId), PickupDispatchTaskType.DISPATCH.getCode());
         if (ObjectUtils.isEmpty(pickupDispatchTaskDto)) {
             return Result.error(400, "派送任务不存在");
         }
@@ -533,10 +526,10 @@ public class CourierController {
         try {
             OrderDeliveredEvent event = new OrderDeliveredEvent(
                 orderId,
-                transportOrderDto.getId(),
+                toIdString(transportOrderDto.getId()),
                 state,
                 null,
-                pickupDispatchTaskDto.getId(),
+                toIdString(pickupDispatchTaskDto.getId()),
                 RequestContext.getUserId()
             );
             eventPublisher.publishOrderDelivered(event);
@@ -554,10 +547,10 @@ public class CourierController {
      */
     @Deprecated
     @SneakyThrows
-    @ApiOperation(value = "验证身份证号是否合法(旧GET接口，已废弃，请改用POST)")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "orderNumber", value = "订单号", required = true, example = ""),
-            @ApiImplicitParam(name = "code", value = "身份证号", required = true, example = "")
+    @Operation(summary = "验证身份证号是否合法(旧GET接口，已废弃，请改用POST)")
+    @Parameters({
+            @Parameter(name = "orderNumber", description = "订单号", required = true, example = ""),
+            @Parameter(name = "code", description = "身份证号", required = true, example = "")
     })
     @ResponseBody
     @GetMapping("verifyIdCard")
@@ -566,10 +559,10 @@ public class CourierController {
     }
 
     @SneakyThrows
-    @ApiOperation(value = "验证身份证号是否合法")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "orderNumber", value = "订单号", required = true, example = ""),
-            @ApiImplicitParam(name = "code", value = "身份证号", required = true, example = "")
+    @Operation(summary = "验证身份证号是否合法")
+    @Parameters({
+            @Parameter(name = "orderNumber", description = "订单号", required = true, example = ""),
+            @Parameter(name = "code", description = "身份证号", required = true, example = "")
     })
     @ResponseBody
     @PostMapping("verifyIdCard")
@@ -595,7 +588,7 @@ public class CourierController {
 
         // 归属校验：按订单号查全部取派任务，当前快递员必须负责其中一个非取消任务
         TaskPickupDispatchDTO taskQuery = new TaskPickupDispatchDTO();
-        taskQuery.setOrderId(orderNumber);
+        taskQuery.setOrderId(Long.valueOf(orderNumber));
         List<TaskPickupDispatchDTO> orderTasks = pickupDispatchTaskFeign.findAll(taskQuery);
         String currentUserId = RequestContext.getUserId();
         String taskOwner = null;
@@ -604,13 +597,13 @@ public class CourierController {
                 if (PickupDispatchTaskStatus.CANCELLED.getCode().equals(task.getStatus())) {
                     continue;
                 }
-                if (currentUserId != null && currentUserId.equals(task.getCourierId())) {
+                if (currentUserId != null && currentUserId.equals(toIdString(task.getCourierId()))) {
                     // 命中当前用户负责的任务，直接确定归属
                     taskOwner = currentUserId;
                     break;
                 }
                 if (taskOwner == null) {
-                    taskOwner = task.getCourierId();
+                    taskOwner = toIdString(task.getCourierId());
                 }
             }
         }
@@ -625,13 +618,13 @@ public class CourierController {
         }
         String memberId = order.getMemberId();
         // 身份证号仅允许首次写入：已有非空值则拒绝覆盖，防止冒用他人工号篡改
-        Member existingMember = memberFeign.detail(memberId);
+        MemberDTO existingMember = memberFeign.detail(memberId);
         if (existingMember != null && StringUtils.isNotBlank(existingMember.getIdCardNo())) {
             log.warn("身份证号已存在，拒绝重复写入 memberId={}", memberId);
             return Result.error(400, "身份证号已存在，不允许重复写入");
         }
         log.info("身份证号验证MemberId：{} ", memberId);
-        Member member = new Member();
+        MemberDTO member = new MemberDTO();
         member.setId(memberId);
         member.setIdCardNo(code);
         member.setIdCardNoVerify(MemberIdCardVerifyStatus.NONE.getCode());
@@ -664,26 +657,26 @@ public class CourierController {
 
 
     @SneakyThrows
-    @ApiOperation(value = "路由")
-    @ApiImplicitParam(name = "id", value = "主键", required = true, example = "")
+    @Operation(summary = "路由")
+    @Parameter(name = "id", description = "主键", required = true, example = "")
     @ResponseBody
     @GetMapping("route")
     public Result route(String id) {
         log.info("路由信息 ID：{}", id);
         try {
-            TaskPickupDispatchDTO pickupDispatchTaskDTO = pickupDispatchTaskFeign.findById(id);
+            TaskPickupDispatchDTO pickupDispatchTaskDTO = pickupDispatchTaskFeign.findById(Long.valueOf(id));
             log.info("路由信息 TaskPickupDispatchDTO：{}", pickupDispatchTaskDTO);
             if (pickupDispatchTaskDTO == null) {
                 return Result.error(404, "取派件任务不存在");
             }
             // 归属校验：取派任务必须属于当前登录快递员，防止越权拉取他人订单路由
-            Result deny = OwnershipAssert.checkEquals(pickupDispatchTaskDTO.getCourierId(), RequestContext.getUserId(), "无权查看他人任务路由");
+            Result deny = OwnershipAssert.checkEquals(toIdString(pickupDispatchTaskDTO.getCourierId()), RequestContext.getUserId(), "无权查看他人任务路由");
             if (deny != null) {
                 return deny;
             }
-            String orderId = pickupDispatchTaskDTO.getOrderId();
+            String orderId = String.valueOf(pickupDispatchTaskDTO.getOrderId());
 
-            TransportOrderDTO transportOrderDTO = transportOrderFeign.findByOrderId(orderId);
+            TransportOrderDTO transportOrderDTO = transportOrderFeign.findByOrderId(Long.valueOf(orderId));
             log.info("路由信息 TransportOrderDTO：{}", transportOrderDTO);
             if (transportOrderDTO == null) {
                 return Result.error(404, "运单不存在");
@@ -694,28 +687,28 @@ public class CourierController {
                 transportTaskDTOs = new ArrayList<>();
             }
 
-            Set<String> agencySet = new HashSet<>();
-            agencySet.addAll(transportTaskDTOs.stream().map(item -> item.getStartAgencyId()).collect(Collectors.toSet()));
-            agencySet.addAll(transportTaskDTOs.stream().map(item -> item.getEndAgencyId()).collect(Collectors.toSet()));
+            Set<Long> agencySet = new HashSet<>();
+            agencySet.addAll(transportTaskDTOs.stream().map(TaskTransportDTO::getStartOrgId).filter(Objects::nonNull).collect(Collectors.toSet()));
+            agencySet.addAll(transportTaskDTOs.stream().map(TaskTransportDTO::getEndOrgId).filter(Objects::nonNull).collect(Collectors.toSet()));
 
-            CompletableFuture<Map<Long, Org>> orgMapFeture = PdCompletableFuture.agencyMapFuture(orgApi, null, agencySet, null);
-            Map<Long, Org> orgMap = orgMapFeture.get();
+            CompletableFuture<Map<Long, OrgDTO>> orgMapFeture = PdCompletableFuture.agencyMapFuture(orgFeign, null, agencySet, null);
+            Map<Long, OrgDTO> orgMap = orgMapFeture.get();
             log.info("路由信息 AgencyMapFuture：{}", orgMap);
 
             List<RouteDTO> routeArray = new ArrayList<>();
 
             transportTaskDTOs.stream().forEach(item -> {
-                if (null != item.getActualPickUpGoodsTime()) {
+                if (null != item.getActualPickUpTime()) {
                     // 修改点：orgMap 可能不含该机构 id，get 返回 null，先判空避免 NPE
-                    Org startOrg = orgMap.get(Long.valueOf(item.getStartAgencyId()));
+                    OrgDTO startOrg = orgMap.get(item.getStartOrgId());
                     routeArray.add(RouteDTO.builder()
-                            .arrivalTime(item.getActualPickUpGoodsTime())
+                            .arrivalTime(item.getActualPickUpTime())
                             .agencyName("快递在【" + (startOrg != null ? startOrg.getName() : "") + "】已装车，准备发往下一站")
                             .build());
                 }
                 if (null != item.getActualArrivalTime()) {
                     // 修改点：orgMap 可能不含该机构 id，get 返回 null，先判空避免 NPE
-                    Org endOrg = orgMap.get(Long.valueOf(item.getEndAgencyId()));
+                    OrgDTO endOrg = orgMap.get(item.getEndOrgId());
                     routeArray.add(RouteDTO.builder()
                             .arrivalTime(item.getActualArrivalTime())
                             .agencyName("快递已到达【" + (endOrg != null ? endOrg.getName() : "") + "】")
@@ -768,7 +761,7 @@ public class CourierController {
      * @param entity
      * @return
      */
-    @ApiOperation(value = "预估总价")
+    @Operation(summary = "预估总价")
     @PostMapping("totalPrice")
     @ResponseBody
     public Result totalPrice(@RequestBody MailingSaveDTO entity) {
@@ -792,7 +785,7 @@ public class CourierController {
      * @param dto 异常上报入参
      * @return 落库后的告警记录（含 id 供前端追单）
      */
-    @ApiOperation(value = "异常上报（破损/拒收/地址错误）")
+    @Operation(summary = "异常上报（破损/拒收/地址错误）")
     @PostMapping("exception/report")
     public Result reportException(@RequestBody ExceptionReportFeignDTO dto) {
         String courierId = RequestContext.getUserId();
@@ -807,4 +800,10 @@ public class CourierController {
         return result;
     }
 
+    /**
+     * work 实体 ID 为 Long，归属校验/事件等保持 String 签名，在调用边界安全转换（null 透传）。
+     */
+    private static String toIdString(Long id) {
+        return id == null ? null : String.valueOf(id);
+    }
 }

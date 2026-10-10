@@ -1,23 +1,22 @@
 package com.itheima.pinda.future;
 
+import com.itheima.pinda.DTO.OrgDTO;
+import com.itheima.pinda.DTO.UserDTO;
 import com.itheima.pinda.DTO.angency.FleetDto;
 import com.itheima.pinda.DTO.base.GoodsTypeDto;
 import com.itheima.pinda.DTO.transportline.TransportLineDto;
 import com.itheima.pinda.DTO.transportline.TransportLineTypeDto;
 import com.itheima.pinda.DTO.truck.TruckDto;
 import com.itheima.pinda.DTO.truck.TruckTypeDto;
-import com.itheima.pinda.authority.api.OrgApi;
-import com.itheima.pinda.authority.api.UserApi;
-import com.itheima.pinda.authority.entity.auth.User;
-import com.itheima.pinda.authority.entity.core.Org;
-import com.itheima.pinda.authority.enumeration.common.StaticStation;
-import com.itheima.pinda.base.R;
 import com.itheima.pinda.common.utils.Constant;
+import com.itheima.pinda.constant.StaticStation;
+import com.itheima.pinda.feign.OrgFeign;
+import com.itheima.pinda.feign.UserFeign;
 import com.itheima.pinda.feign.agency.FleetFeign;
+import com.itheima.pinda.feign.common.GoodsTypeFeign;
 import com.itheima.pinda.feign.transportline.TransportLineFeign;
 import com.itheima.pinda.feign.transportline.TransportLineTypeFeign;
 import com.itheima.pinda.feign.truck.TruckFeign;
-import com.itheima.pinda.feign.common.GoodsTypeFeign;
 import com.itheima.pinda.feign.truck.TruckTypeFeign;
 import com.itheima.pinda.util.BeanUtil;
 import com.itheima.pinda.vo.base.angency.AgencySimpleVo;
@@ -36,11 +35,11 @@ public class PdCompletableFuture {
     /**
      * 获取map类型用户数据集合
      *
-     * @param api     数据接口
+     * @param userFeign 数据接口
      * @param userSet 用户id列表
      * @return 执行结果
      */
-    public static final CompletableFuture<Map> userMapFuture(UserApi api, Set<String> userSet, Integer station, String name, String agencyId) {
+    public static final CompletableFuture<Map> userMapFuture(UserFeign userFeign, Set<String> userSet, Integer station, String name, String agencyId) {
         return CompletableFuture.supplyAsync(() -> {
             //查询创建者信息列表
             Long stationId = null;
@@ -49,10 +48,10 @@ public class PdCompletableFuture {
             } else if (station != null && station == Constant.UserStation.DRIVER.getStation()) {
                 stationId = StaticStation.DRIVER_ID;
             }
-            List<User> userList = new ArrayList<>();
-            R<List<User>> result = api.list(userSet.stream().mapToLong(id -> Long.valueOf(id)).boxed().collect(Collectors.toList()), stationId, name, StringUtils.isNotEmpty(agencyId) ? Long.valueOf(agencyId) : null);
-            if (result.getIsSuccess() && result.getData() != null) {
-                userList.addAll(result.getData());
+            List<Long> ids = userSet.stream().map(Long::valueOf).collect(Collectors.toList());
+            List<UserDTO> userList = userFeign.list(ids, stationId, name, StringUtils.isNotEmpty(agencyId) ? Long.valueOf(agencyId) : null);
+            if (userList == null) {
+                userList = new ArrayList<>();
             }
             return userList.stream().map(user -> BeanUtil.parseUser2Vo(user, null, null)).collect(Collectors.toMap(SysUserVo::getUserId, vo -> vo));
         });
@@ -61,46 +60,43 @@ public class PdCompletableFuture {
     /**
      * 获取用户信息
      *
-     * @param api 数据接口
+     * @param userFeign 数据接口
      * @param id  用户id
      * @return 执行结果
      */
-    public static final CompletableFuture<SysUserVo> userFuture(UserApi api, String id) {
+    public static final CompletableFuture<SysUserVo> userFuture(UserFeign userFeign, String id) {
         return CompletableFuture.supplyAsync(() -> {
-            SysUserVo userVo = new SysUserVo();
-            R<User> result = api.get(Long.valueOf(id));
-            if (result.getIsSuccess() && result.getData() != null) {
-                userVo = BeanUtil.parseUser2Vo(result.getData(), null, null);
+            UserDTO user = userFeign.get(Long.valueOf(id));
+            if (user == null) {
+                return new SysUserVo();
             }
-            return userVo;
+            return BeanUtil.parseUser2Vo(user, null, null);
         });
     }
 
     /**
      * 获取map类型机构数据集合
      *
-     * @param api       数据接口
+     * @param orgFeign  数据接口
      * @param agencySet 机构id列表
      * @return 执行结果
      */
-    public static final CompletableFuture<Map> agencyMapFuture(OrgApi api, Set<Long> agencySet) {
+    public static final CompletableFuture<Map> agencyMapFuture(OrgFeign orgFeign, Set<Long> agencySet) {
         return CompletableFuture.supplyAsync(() -> {
             //查询所属机构信息列表
-            R<List<Org>> result = api.list(null, new ArrayList<>(agencySet), null, null, null);
-            if (result.getIsSuccess() && result.getData() != null) {
-                List<Org> orgList = result.getData();
-                Map<String, AgencyVo> voMap = new HashMap<>();
+            List<OrgDTO> orgList = orgFeign.list(null, new ArrayList<>(agencySet), null, null, null);
+            Map<String, AgencyVo> voMap = new HashMap<>();
+            if (orgList != null) {
                 orgList.forEach(org -> {
                     AgencyVo agencyVo = new AgencyVo();
-                    agencyVo.setId(org.getId()+"");
+                    agencyVo.setId(org.getId() + "");
                     BeanUtils.copyProperties(org, agencyVo);
                     if (!voMap.containsKey(agencyVo.getId())) {
                         voMap.put(agencyVo.getId(), agencyVo);
                     }
                 });
-                return voMap;
             }
-            return null;
+            return voMap;
         });
     }
 
@@ -222,7 +218,7 @@ public class PdCompletableFuture {
      */
     public static final CompletableFuture<TruckTypeVo> truckTypeFuture(TruckTypeFeign feign, String id) {
         return CompletableFuture.supplyAsync(() -> {
-            //查询角色信息列表
+            //查询车辆类型信息
             TruckTypeDto dto = feign.fineById(id);
             TruckTypeVo vo = new TruckTypeVo();
             BeanUtils.copyProperties(dto, vo);
@@ -239,7 +235,7 @@ public class PdCompletableFuture {
      */
     public static final CompletableFuture<FleetVo> fleetFuture(FleetFeign feign, String id) {
         return CompletableFuture.supplyAsync(() -> {
-            //查询角色信息列表
+            //查询车队信息
             FleetDto dto = feign.fineById(id);
             FleetVo vo = new FleetVo();
             BeanUtils.copyProperties(dto, vo);
@@ -255,18 +251,15 @@ public class PdCompletableFuture {
     /**
      * 获取机构数据列表
      *
-     * @param api        数据接口
+     * @param orgFeign   数据接口
      * @param agencyType 机构类型
      * @param ids        机构id列表
      * @return 执行结果
      */
-    public static final CompletableFuture<List<Org>> agencyListFuture(OrgApi api, Integer agencyType, List<Long> ids, Long countyId) {
+    public static final CompletableFuture<List<OrgDTO>> agencyListFuture(OrgFeign orgFeign, Integer agencyType, List<Long> ids, Long countyId) {
         return CompletableFuture.supplyAsync(() -> {
-            R<List<Org>> result = api.list(agencyType, ids, countyId, null, null);
-            if (result.getIsSuccess()) {
-                return result.getData();
-            }
-            return new ArrayList<>();
+            List<OrgDTO> list = orgFeign.list(agencyType, ids, countyId, null, null);
+            return list != null ? list : new ArrayList<>();
         });
     }
 
@@ -295,19 +288,16 @@ public class PdCompletableFuture {
     /**
      * 获取机构详情
      *
-     * @param api 数据接口
+     * @param orgFeign 数据接口
      * @param id  机构id
      * @return 执行结果
      */
-//    public static final CompletableFuture<AgencyVo> agencyFuture(OrgApi api, Long id) {
+//    public static final CompletableFuture<AgencyVo> agencyFuture(OrgFeign orgFeign, Long id) {
 //        return CompletableFuture.supplyAsync(() -> {
-//            R<Org> result = api.get(id);
-//            if (result.getIsSuccess()&&result.getData()!=null) {
-//                AgencySimpleVo agencyVo = new AgencySimpleVo();
-//                // 说明：数据处理逻辑待补全
-//                return BeanUtil.parseOrg2SimpleVo(result.getData());
-//            }
-//            return null;
+//            UserDTO result = orgFeign.get(id);
+//            AgencySimpleVo agencyVo = new AgencySimpleVo();
+//            // 说明：数据处理逻辑待补全
+//            return BeanUtil.parseOrg2SimpleVo(result);
 //        });
 //    }
 

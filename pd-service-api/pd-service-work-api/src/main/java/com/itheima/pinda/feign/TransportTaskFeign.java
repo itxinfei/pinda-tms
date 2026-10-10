@@ -2,7 +2,7 @@ package com.itheima.pinda.feign;
 
 import com.itheima.pinda.DTO.TaskTransportDTO;
 import com.itheima.pinda.common.utils.PageResponse;
-import com.itheima.pinda.feign.hystrix.TransportTaskFeignFallback;
+import com.itheima.pinda.feign.fallback.TransportTaskFeignFallback;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,7 +29,7 @@ public interface TransportTaskFeign {
      * @return 运输任务信息
      */
     @PutMapping("/transport-task/{id}")
-    TaskTransportDTO updateById(@PathVariable(name = "id") String id, @RequestBody TaskTransportDTO dto);
+    TaskTransportDTO updateById(@PathVariable(name = "id") Long id, @RequestBody TaskTransportDTO dto);
 
     /**
      * 获取运输任务分页数据
@@ -47,7 +47,7 @@ public interface TransportTaskFeign {
      * @return 运输任务信息
      */
     @GetMapping("/transport-task/{id}")
-    TaskTransportDTO findById(@PathVariable(name = "id") String id);
+    TaskTransportDTO findById(@PathVariable(name = "id") Long id);
 
     /**
      * 获取运单列表
@@ -61,9 +61,11 @@ public interface TransportTaskFeign {
     /**
      * 根据运单id或运输任务id获取运输任务列表
      *
+     * @param transportOrderId 运单id
+     * @param taskTransportId  运输任务id
      * @return 运输任务列表
      */
     @GetMapping("/transport-task/listByOrderIdOrTaskId")
-    List<TaskTransportDTO> findAllByOrderIdOrTaskId(@RequestParam(name = "transportOrderId", required = false) String transportOrderId,
-                                                    @RequestParam(name = "taskTransportId", required = false) String taskTransportId);
+    List<TaskTransportDTO> findAllByOrderIdOrTaskId(@RequestParam(name = "transportOrderId", required = false) Long transportOrderId,
+                                                    @RequestParam(name = "taskTransportId", required = false) Long taskTransportId);
 }

@@ -1,16 +1,15 @@
 package com.itheima.pinda.controller;
 
+import com.itheima.pinda.DTO.OrgDTO;
 import com.itheima.pinda.DTO.TaskTransportDTO;
 import com.itheima.pinda.DTO.webManager.TaskTransportQueryDTO;
-import com.itheima.pinda.authority.api.AreaApi;
-import com.itheima.pinda.authority.api.OrgApi;
-import com.itheima.pinda.authority.api.UserApi;
-import com.itheima.pinda.authority.entity.core.Org;
-import com.itheima.pinda.base.R;
 import com.itheima.pinda.common.utils.PageResponse;
+import com.itheima.pinda.feign.AreaFeign;
 import com.itheima.pinda.feign.OrderFeign;
+import com.itheima.pinda.feign.OrgFeign;
 import com.itheima.pinda.feign.TransportOrderFeign;
 import com.itheima.pinda.feign.TransportTaskFeign;
+import com.itheima.pinda.feign.UserFeign;
 import com.itheima.pinda.feign.transportline.TransportTripsFeign;
 import com.itheima.pinda.feign.truck.TruckFeign;
 import com.itheima.pinda.feign.webManager.WebManagerFeign;
@@ -18,10 +17,8 @@ import com.itheima.pinda.util.BeanUtil;
 import com.itheima.pinda.util.Rx;
 import com.itheima.pinda.vo.work.PointDTO;
 import com.itheima.pinda.vo.work.TaskTransportVo;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiImplicitParam;
-import io.swagger.annotations.ApiImplicitParams;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -41,7 +38,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @RestController
-@Api(tags = "运输任务API")
+@Tag(name = "运输任务API")
 @RequestMapping("transport-task-manager")
 public class TransportTaskController {
     @Autowired
@@ -49,9 +46,9 @@ public class TransportTaskController {
     @Autowired
     private TransportTripsFeign transportTripsFeign;
     @Autowired
-    private OrgApi orgApi;
+    private OrgFeign orgFeign;
     @Autowired
-    private UserApi userApi;
+    private UserFeign userFeign;
     @Autowired
     private TruckFeign truckFeign;
     @Autowired
@@ -59,11 +56,11 @@ public class TransportTaskController {
     @Autowired
     private OrderFeign orderFeign;
     @Autowired
-    private AreaApi areaApi;
+    private AreaFeign areaFeign;
     @Autowired
     private WebManagerFeign webManagerFeign;
 
-    @ApiOperation(value = "获取运输任务分页数据")
+    @Operation(summary = "获取运输任务分页数据")
     @PostMapping("/page")
     public PageResponse<TaskTransportVo> findByPage(@RequestBody TaskTransportVo vo) {
         TaskTransportQueryDTO dto = new TaskTransportQueryDTO();
@@ -74,26 +71,23 @@ public class TransportTaskController {
             dto.setId(vo.getId());
             dto.setDriverName(vo.getDriverName());
         }
-        // 修改点：远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
+        // 远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
         PageResponse<TaskTransportDTO> dtoPageResponse = webManagerFeign.findTaskTransportByPage(dto);
         List<TaskTransportDTO> dtoList = Rx.items(dtoPageResponse);
-        List<TaskTransportVo> voList = dtoList.stream().map(taskTransportDTO -> BeanUtil.parseTaskTransportDTO2Vo(taskTransportDTO, transportTripsFeign, orgApi, userApi, truckFeign, transportOrderFeign, orderFeign, areaApi)).collect(Collectors.toList());
+        List<TaskTransportVo> voList = dtoList.stream().map(taskTransportDTO -> BeanUtil.parseTaskTransportDTO2Vo(taskTransportDTO, transportTripsFeign, orgFeign, userFeign, truckFeign, transportOrderFeign, orderFeign, areaFeign)).collect(Collectors.toList());
         return PageResponse.<TaskTransportVo>builder().items(voList).pagesize(vo.getPageSize()).page(vo.getPage())
                 .counts(dtoPageResponse != null ? dtoPageResponse.getCounts() : 0L)
                 .pages(dtoPageResponse != null ? dtoPageResponse.getPages() : 0L).build();
     }
 
-    @ApiOperation(value = "获取运输任务详情")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "id", value = "运输任务id", required = true, example = "1", paramType = "{path}")
-    })
+    @Operation(summary = "获取运输任务详情")
     @GetMapping("/{id}")
     public TaskTransportVo findById(@PathVariable(name = "id") String id) {
-        TaskTransportDTO dto = transportTaskFeign.findById(id);
+        TaskTransportDTO dto = transportTaskFeign.findById(Long.valueOf(id));
         TaskTransportVo vo;
         // 说明：任务实时轨迹已由 GPS 模块提供（pd-netty /trace/replay），此处返回任务基础信息
         if (dto != null) {
-            vo = BeanUtil.parseTaskTransportDTO2Vo(dto, transportTripsFeign, orgApi, userApi, truckFeign, transportOrderFeign, orderFeign, areaApi);
+            vo = BeanUtil.parseTaskTransportDTO2Vo(dto, transportTripsFeign, orgFeign, userFeign, truckFeign, transportOrderFeign, orderFeign, areaFeign);
         } else {
             vo = new TaskTransportVo();
             vo.setId(id);
@@ -101,20 +95,17 @@ public class TransportTaskController {
         return vo;
     }
 
-    @ApiOperation(value = "获取运输任务坐标")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "id", value = "运输任务id", required = true, example = "1", paramType = "{path}")
-    })
+    @Operation(summary = "获取运输任务坐标")
     @GetMapping("point/{id}")
     public LinkedHashSet<PointDTO> findPointById(@PathVariable(name = "id") String id) {
         LinkedHashSet<PointDTO> pointDTOS = new LinkedHashSet<>();
-        TaskTransportDTO dto = transportTaskFeign.findById(id);
+        TaskTransportDTO dto = transportTaskFeign.findById(Long.valueOf(id));
         if (dto == null) {
             return pointDTOS;
         }
-        // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
-        Org startOrg = Rx.data(orgApi.get(Long.parseLong(dto.getStartAgencyId())));
-        Org endOrg = Rx.data(orgApi.get(Long.parseLong(dto.getEndAgencyId())));
+        // 远程调用直接返回 OrgDTO，可能为 null，判空避免 NPE
+        OrgDTO startOrg = orgFeign.get(dto.getStartOrgId());
+        OrgDTO endOrg = orgFeign.get(dto.getEndOrgId());
         if (startOrg == null || endOrg == null) {
             return pointDTOS;
         }
@@ -129,13 +120,10 @@ public class TransportTaskController {
         return pointDTOS;
     }
 
-    @ApiOperation(value = "更新运输任务")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "id", value = "运输任务id", required = true, example = "1", paramType = "{path}")
-    })
+    @Operation(summary = "更新运输任务")
     @PutMapping("/{id}")
     public TaskTransportVo update(@PathVariable(name = "id") String id, @RequestBody TaskTransportVo vo) {
-        TaskTransportDTO dto = transportTaskFeign.updateById(id, BeanUtil.parseTaskTransportVo2DTO(vo));
-        return BeanUtil.parseTaskTransportDTO2Vo(dto, transportTripsFeign, orgApi, userApi, truckFeign, transportOrderFeign, orderFeign, areaApi);
+        TaskTransportDTO dto = transportTaskFeign.updateById(Long.valueOf(id), BeanUtil.parseTaskTransportVo2DTO(vo));
+        return BeanUtil.parseTaskTransportDTO2Vo(dto, transportTripsFeign, orgFeign, userFeign, truckFeign, transportOrderFeign, orderFeign, areaFeign);
     }
 }

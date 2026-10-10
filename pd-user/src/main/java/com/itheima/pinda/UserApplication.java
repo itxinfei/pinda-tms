@@ -1,15 +1,11 @@
 package com.itheima.pinda;
 
-import com.itheima.j2cache.EnableCache;
-import com.itheima.j2cache.aop.CacheMethodInterceptor;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
-import org.springframework.context.annotation.Import;
 
 @SpringBootApplication
 @EnableDiscoveryClient
-@EnableCache//开启声明式缓存功能
 public class UserApplication {
 
     public static void main(String[] args) {

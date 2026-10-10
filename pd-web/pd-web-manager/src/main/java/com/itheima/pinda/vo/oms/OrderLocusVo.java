@@ -1,18 +1,17 @@
 package com.itheima.pinda.vo.oms;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 @Data
-@ApiModel("订单轨迹参数")
+@Schema(description = "订单轨迹参数")
 public class OrderLocusVo {
-    @ApiModelProperty("业务id")
+    @Schema(description = "业务id")
     private String businessId;
-    @ApiModelProperty("开始时间")
+    @Schema(description = "开始时间")
     private String ge___time;
-    @ApiModelProperty("结束时间")
+    @Schema(description = "结束时间")
     private String le___time;
-    @ApiModelProperty("运输任务id")
+    @Schema(description = "运输任务id")
     private String transportTaskId;
 }

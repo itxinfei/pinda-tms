@@ -83,20 +83,8 @@
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 		</dependency>
-		<!-- ===== J2Cache（二级缓存）=====
-		     Boot3 不读 boot2 starter 的 spring.factories 自动配置，CacheChannel bean 缺失，
-		     运行期装配为独立待适配子任务（J2CACHE-BOOT3）；此处先保留构件保证编译。
-		     starter pom 未写死 spring 版本，不会与 Boot3 依赖冲突。 -->
-		<dependency>
-			<groupId>net.oschina.j2cache</groupId>
-			<artifactId>j2cache-core</artifactId>
-			<version>2.8.0-release</version>
-		</dependency>
-		<dependency>
-			<groupId>net.oschina.j2cache</groupId>
-			<artifactId>j2cache-spring-boot2-starter</artifactId>
-			<version>2.8.0-release</version>
-		</dependency>
+		<!-- J2Cache 已移除（2026-10-10 R3）：Boot3 下官方 boot2 starter 自动装配失效、
+		     CacheChannel 无 Bean；原二级缓存仅课程演示用途，主键查询代价低，不再保留。 -->
 	</dependencies>
 
 	<build>

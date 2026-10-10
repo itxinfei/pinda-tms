@@ -11,6 +11,6 @@ public class TransportOrderSearchDTO extends TransportOrderDTO {
     /**
      * 订单ID 集合
      */
-    private List<String> orderIds;
+    private List<Long> orderIds;
 
 }

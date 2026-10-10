@@ -3,7 +3,7 @@ package com.itheima.pinda.common.utils;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.awt.geom.Path2D;
 import java.io.BufferedReader;

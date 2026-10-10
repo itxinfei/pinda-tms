@@ -1,18 +1,11 @@
 package com.itheima.pinda.controller;
 
-import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson2.JSON;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.itheima.pinda.DTO.*;
 import com.itheima.pinda.DTO.angency.AgencyScopeDto;
 import com.itheima.pinda.DTO.user.CourierScopeDto;
-import com.itheima.pinda.authority.api.AreaApi;
-import com.itheima.pinda.authority.api.OrgApi;
-import com.itheima.pinda.authority.api.UserApi;
-import com.itheima.pinda.authority.entity.auth.User;
-import com.itheima.pinda.authority.entity.common.Area;
-import com.itheima.pinda.authority.entity.core.Org;
-import com.itheima.pinda.base.R;
 import com.itheima.pinda.common.context.RequestContext;
 import com.itheima.pinda.common.utils.DateUtils;
 import com.itheima.pinda.common.utils.EntCoordSyncJob;
@@ -20,8 +13,7 @@ import com.itheima.pinda.common.utils.OwnershipAssert;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.util.Rx;
-import com.itheima.pinda.entity.AddressBook;
-import com.itheima.pinda.entity.Member;
+import com.itheima.pinda.DTO.MemberDTO;
 import com.itheima.pinda.enums.OrderPaymentStatus;
 import com.itheima.pinda.enums.OrderStatus;
 import com.itheima.pinda.enums.OrderType;
@@ -37,12 +29,11 @@ import com.itheima.pinda.feign.agency.AgencyScopeFeign;
 import com.itheima.pinda.feign.user.CourierScopeFeign;
 import com.itheima.pinda.future.PdCompletableFuture;
 import com.itheima.pinda.service.IMemberService;
-import io.seata.spring.annotation.GlobalTransactional;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.*;
@@ -61,16 +52,16 @@ import java.util.stream.Collectors;
  * @since 2020-3-30
  */
 @Log4j2
-@Api(tags = "业务接口")
+@Tag(name = "业务接口")
 @RestController
 @RequestMapping("mailing")
 public class MailingController {
     private final AgencyScopeFeign agencyScopeFeign;
-    private final OrgApi orgApi;
+    private final OrgFeign orgFeign;
     private final TransportTaskFeign transportTaskFeign;
     private final TransportOrderFeign transportOrderFeign;
-    private final UserApi userApi;
-    private final AreaApi areaApi;
+    private final UserFeign userFeign;
+    private final AreaFeign areaFeign;
     private final PickupDispatchTaskFeign pickupDispatchTaskFeign;
     private final OrderFeign orderFeign;
     private final PayFeign payFeign;
@@ -80,13 +71,13 @@ public class MailingController {
     private final CourierScopeFeign courierScopeFeign;
     private final EventPublisher eventPublisher;
 
-    public MailingController(AgencyScopeFeign agencyScopeFeign, OrgApi orgApi, TransportTaskFeign transportTaskFeign, TransportOrderFeign transportOrderFeign, UserApi userApi, AreaApi areaApi, PickupDispatchTaskFeign pickupDispatchTaskFeign, OrderFeign orderFeign, PayFeign payFeign, CargoFeign cargoFeign, IMemberService memberService, AddressBookFeign addressBookFeign, CourierScopeFeign courierScopeFeign, EventPublisher eventPublisher) {
+    public MailingController(AgencyScopeFeign agencyScopeFeign, OrgFeign orgFeign, TransportTaskFeign transportTaskFeign, TransportOrderFeign transportOrderFeign, UserFeign userFeign, AreaFeign areaFeign, PickupDispatchTaskFeign pickupDispatchTaskFeign, OrderFeign orderFeign, PayFeign payFeign, CargoFeign cargoFeign, IMemberService memberService, AddressBookFeign addressBookFeign, CourierScopeFeign courierScopeFeign, EventPublisher eventPublisher) {
         this.agencyScopeFeign = agencyScopeFeign;
-        this.orgApi = orgApi;
+        this.orgFeign = orgFeign;
         this.transportTaskFeign = transportTaskFeign;
         this.transportOrderFeign = transportOrderFeign;
-        this.userApi = userApi;
-        this.areaApi = areaApi;
+        this.userFeign = userFeign;
+        this.areaFeign = areaFeign;
         this.pickupDispatchTaskFeign = pickupDispatchTaskFeign;
         this.orderFeign = orderFeign;
         this.payFeign = payFeign;
@@ -102,11 +93,11 @@ public class MailingController {
         if (StringUtils.isBlank(entity.getSendAddress()) || StringUtils.isBlank(entity.getReceiptAddress())) {
             throw new IllegalArgumentException("收发地址不能为空");
         }
-        AddressBook sendAddress = addressBookFeign.detail(entity.getSendAddress());
+        AddressBookDTO sendAddress = addressBookFeign.detail(entity.getSendAddress());
         if (sendAddress == null) {
             throw new IllegalArgumentException("发货地址不存在");
         }
-        AddressBook receiptAddress = addressBookFeign.detail(entity.getReceiptAddress());
+        AddressBookDTO receiptAddress = addressBookFeign.detail(entity.getReceiptAddress());
         if (receiptAddress == null) {
             throw new IllegalArgumentException("收货地址不存在");
         }
@@ -156,7 +147,7 @@ public class MailingController {
      * @param entity
      * @return
      */
-    @ApiOperation("预估总价")
+    @Operation(summary = "预估总价")
     @PostMapping("totalPrice")
     public Result totalPrice(@RequestBody MailingSaveDTO entity) {
         log.info("预估总价：{}", entity);
@@ -173,9 +164,8 @@ public class MailingController {
      * @param entity
      * @return
      */
-    @ApiOperation("下单")
+    @Operation(summary = "下单")
     @PostMapping("")
-    @GlobalTransactional(name = "saveOrder",rollbackFor = Exception.class)
     public Result save(@RequestBody MailingSaveDTO entity) {
         log.info("下单：{}", entity);
         //获取userid
@@ -244,7 +234,7 @@ public class MailingController {
         //       3. 订单和运单状态更同步
         log.info("订单[{}]已创建，预生成运单", orderDTO.getId());
         TransportOrderDTO transportOrder = new TransportOrderDTO();
-        transportOrder.setOrderId(orderDTO.getId());
+        transportOrder.setOrderId(Long.valueOf(orderDTO.getId()));
         transportOrder.setStatus(TransportOrderStatus.CREATED.getCode());                        // 1-新建
         transportOrder.setSchedulingStatus(TransportOrderSchedulingStatus.TO_BE_SCHEDULED.getCode()); // 1-待调度
         transportOrderFeign.save(transportOrder);
@@ -271,14 +261,14 @@ public class MailingController {
         log.info("下单分配网点:{},快递员:{}", agencyId, courierId);
 
         TaskPickupDispatchDTO pickupDispatchTaskDTO = new TaskPickupDispatchDTO();
-        pickupDispatchTaskDTO.setOrderId(orderDTO.getId());
+        pickupDispatchTaskDTO.setOrderId(Long.valueOf(orderDTO.getId()));
         pickupDispatchTaskDTO.setTaskType(PickupDispatchTaskType.PICKUP.getCode());
         pickupDispatchTaskDTO.setStatus(PickupDispatchTaskStatus.PENDING.getCode());
         pickupDispatchTaskDTO.setAssignedStatus(PickupDispatchTaskAssignedStatus.TO_BE_DISTRIBUTED.getCode());
         pickupDispatchTaskDTO.setCreateTime(LocalDateTime.now());
-        pickupDispatchTaskDTO.setAgencyId(agencyId);
-        pickupDispatchTaskDTO.setCourierId(courierId);
-        pickupDispatchTaskDTO.setAgencyId(agencyId);
+        pickupDispatchTaskDTO.setOrgId(parseId(agencyId));
+        pickupDispatchTaskDTO.setCourierId(parseId(courierId));
+        pickupDispatchTaskDTO.setOrgId(parseId(agencyId));
         String[] pickupTimes = entity.getPickUpTime().split("-");
         String[] pickupTimeStrs = pickupTimes[1].split(":");
         LocalDateTime pickupDateTime = LocalDateTime.now().withHour(Integer.parseInt(pickupTimeStrs[0])).withMinute(Integer.parseInt(pickupTimeStrs[1])).withSecond(00);
@@ -311,12 +301,8 @@ public class MailingController {
             return Result.error("根据地图获取区域信息为空");
         }
         String adcode = map.getOrDefault("adcode", "").toString();
-        R<Area> r = areaApi.getByCode(adcode + "000000");
-        // 修改点：远程调用可能返回 null 包装，先判空避免 NPE
-        if (r == null || !r.getIsSuccess()) {
-            return Result.error(r != null ? r.getMsg() : "区域服务调用失败");
-        }
-        Area area = r.getData();
+        // Feign 直接返回裸 AreaDTO，远程失败经 fallback 返回 null
+        AreaDTO area = areaFeign.getByCode(adcode + "000000");
         if (area == null) {
             return Result.error("区域编码:" + adcode + "区域信息未从库中获取到");
         }
@@ -351,8 +337,8 @@ public class MailingController {
         areaIdSet.add(city);
         areaIdSet.add(county);
 
-        CompletableFuture<Map<Long, Area>> areaMapFuture = PdCompletableFuture.areaMapFuture(areaApi, null, areaIdSet);
-        Map<Long, Area> areaMap = areaMapFuture.get();
+        CompletableFuture<Map<Long, AreaDTO>> areaMapFuture = PdCompletableFuture.areaMapFuture(areaFeign, null, areaIdSet);
+        Map<Long, AreaDTO> areaMap = areaMapFuture.get();
 
         stringBuffer.append(areaMap.get(province).getName());
         stringBuffer.append(areaMap.get(city).getName());
@@ -396,7 +382,7 @@ public class MailingController {
      * @return
      */
     private Result calcuateCourier(String location, List<CourierScopeDto> courierScopeDtoList) {
-        log.info("循环计算包含发件地址的快递员:{}  {}", location, JSONArray.toJSONString(courierScopeDtoList));
+        log.info("循环计算包含发件地址的快递员:{}  {}", location, JSON.toJSONString(courierScopeDtoList));
         try {
             for (CourierScopeDto courierScopeDto : courierScopeDtoList) {
                 List<List<Map>> mutiPoints = courierScopeDto.getMutiPoints();
@@ -439,12 +425,8 @@ public class MailingController {
             return Result.error("根据地图获取区域信息为空");
         }
         String adcode = map.getOrDefault("adcode", "").toString();
-        R<Area> r = areaApi.getByCode(adcode + "000000");
-        // 修改点：远程调用可能返回 null 包装，先判空避免 NPE
-        if (r == null || !r.getIsSuccess()) {
-            return Result.error(r != null ? r.getMsg() : "区域服务调用失败");
-        }
-        Area area = r.getData();
+        // Feign 直接返回裸 AreaDTO，远程失败经 fallback 返回 null
+        AreaDTO area = areaFeign.getByCode(adcode + "000000");
         if (area == null) {
             return Result.error("区域编码:" + adcode + "区域信息未从库中获取到");
         }
@@ -535,8 +517,8 @@ public class MailingController {
         areaIdSet.add(city);
         areaIdSet.add(county);
 
-        CompletableFuture<Map<Long, Area>> areaMapFuture = PdCompletableFuture.areaMapFuture(areaApi, null, areaIdSet);
-        Map<Long, Area> areaMap = areaMapFuture.get();
+        CompletableFuture<Map<Long, AreaDTO>> areaMapFuture = PdCompletableFuture.areaMapFuture(areaFeign, null, areaIdSet);
+        Map<Long, AreaDTO> areaMap = areaMapFuture.get();
 
         stringBuffer.append(areaMap.get(province).getName());
         stringBuffer.append(areaMap.get(city).getName());
@@ -554,7 +536,7 @@ public class MailingController {
      * @return
      */
     private Result calcuate(String location, List<AgencyScopeDto> agencyScopes) {
-        log.info("循环计算包含发件地址的网点:{}  {}", location, JSONArray.toJSONString(agencyScopes));
+        log.info("循环计算包含发件地址的网点:{}  {}", location, JSON.toJSONString(agencyScopes));
         try {
             for (AgencyScopeDto agencyScopeDto : agencyScopes) {
                 List<List<Map>> mutiPoints = agencyScopeDto.getMutiPoints();
@@ -593,7 +575,7 @@ public class MailingController {
      * @param entity
      * @return
      */
-    @ApiOperation("修改订单")
+    @Operation(summary = "修改订单")
     @PutMapping("/{id}")
     public Result update(@PathVariable("id") String id, @RequestBody MailingSaveDTO entity) {
         log.info("修改订单 id:{} params：{}", id, entity);
@@ -698,13 +680,13 @@ public class MailingController {
         orderLocationDtoUpdate.setReceiveAgentId(receiveAgencyId);
         orderFeign.saveOrUpdateLoccation(orderLocationDtoUpdate);
 
-        TaskPickupDispatchDTO taskPickupDispatchDTO = pickupDispatchTaskFeign.findByOrderId(id, PickupDispatchTaskType.PICKUP.getCode());
+        TaskPickupDispatchDTO taskPickupDispatchDTO = pickupDispatchTaskFeign.findByOrderId(Long.valueOf(id), PickupDispatchTaskType.PICKUP.getCode());
         log.info("查询取件任务 id:{} result:{}", id, taskPickupDispatchDTO);
 
 //        if (!oldSenderCountId.equals(orderDTO.getSenderCountyId())) {
         if (!oldSendAdress.equals(orderDTO.getSenderAddress())) {
             log.info("发件地址不一致 需要重新匹配快递员 id:{}", id);
-            if (taskPickupDispatchDTO != null && StringUtils.isNotBlank(taskPickupDispatchDTO.getId())) {
+            if (taskPickupDispatchDTO != null && taskPickupDispatchDTO.getId() != null) {
                 TaskPickupDispatchDTO taskPickupDispatchEditDTO = new TaskPickupDispatchDTO();
                 taskPickupDispatchEditDTO.setStatus(PickupDispatchTaskStatus.CANCELLED.getCode());
                 taskPickupDispatchEditDTO.setCancelTime(LocalDateTime.now());
@@ -715,14 +697,14 @@ public class MailingController {
             if (!CollectionUtils.isEmpty(agencyScope)) {
                 log.info("下单分配网点:{},快递员:{}", agencyId, courierId);
                 TaskPickupDispatchDTO pickupDispatchTaskDTO = new TaskPickupDispatchDTO();
-                pickupDispatchTaskDTO.setOrderId(order.getId());
+                pickupDispatchTaskDTO.setOrderId(Long.valueOf(order.getId()));
                 pickupDispatchTaskDTO.setTaskType(PickupDispatchTaskType.PICKUP.getCode());
                 pickupDispatchTaskDTO.setStatus(PickupDispatchTaskStatus.PENDING.getCode());
                 pickupDispatchTaskDTO.setAssignedStatus(PickupDispatchTaskAssignedStatus.TO_BE_DISTRIBUTED.getCode());
                 pickupDispatchTaskDTO.setCreateTime(LocalDateTime.now());
-                pickupDispatchTaskDTO.setAgencyId(agencyId);
-                pickupDispatchTaskDTO.setCourierId(courierId);
-                pickupDispatchTaskDTO.setAgencyId(agencyId);
+                pickupDispatchTaskDTO.setOrgId(parseId(agencyId));
+                pickupDispatchTaskDTO.setCourierId(parseId(courierId));
+                pickupDispatchTaskDTO.setOrgId(parseId(agencyId));
                 String[] pickupTimes = entity.getPickUpTime().split("-");
                 String[] pickupTimeStrs = pickupTimes[1].split(":");
                 LocalDateTime pickupDateTime = LocalDateTime.now().withHour(Integer.parseInt(pickupTimeStrs[0])).withMinute(Integer.parseInt(pickupTimeStrs[1])).withSecond(00);
@@ -743,14 +725,14 @@ public class MailingController {
             log.info("修改订单更新网点:{},快递员:{}", agencyId, courierId);
 
             TaskPickupDispatchDTO pickupDispatchTaskDTO = new TaskPickupDispatchDTO();
-            pickupDispatchTaskDTO.setOrderId(order.getId());
+            pickupDispatchTaskDTO.setOrderId(Long.valueOf(order.getId()));
             pickupDispatchTaskDTO.setTaskType(PickupDispatchTaskType.PICKUP.getCode());
             pickupDispatchTaskDTO.setStatus(PickupDispatchTaskStatus.PENDING.getCode());
             pickupDispatchTaskDTO.setAssignedStatus(PickupDispatchTaskAssignedStatus.TO_BE_DISTRIBUTED.getCode());
             pickupDispatchTaskDTO.setCreateTime(LocalDateTime.now());
-            pickupDispatchTaskDTO.setAgencyId(agencyId);
-            pickupDispatchTaskDTO.setCourierId(courierId);
-            pickupDispatchTaskDTO.setAgencyId(agencyId);
+            pickupDispatchTaskDTO.setOrgId(parseId(agencyId));
+            pickupDispatchTaskDTO.setCourierId(parseId(courierId));
+            pickupDispatchTaskDTO.setOrgId(parseId(agencyId));
             String[] pickupTimes = entity.getPickUpTime().split("-");
             String[] pickupTimeStrs = pickupTimes[1].split(":");
             LocalDateTime pickupDateTime = LocalDateTime.now().withHour(Integer.parseInt(pickupTimeStrs[0])).withMinute(Integer.parseInt(pickupTimeStrs[1])).withSecond(00);
@@ -774,7 +756,7 @@ public class MailingController {
      *
      * @return
      */
-    @ApiOperation("支付")
+    @Operation(summary = "支付")
     @PutMapping("/pay/{id}")
     public Result pay(@PathVariable("id") String id) {
         try {
@@ -803,7 +785,7 @@ public class MailingController {
      *
      * @return
      */
-    @ApiOperation("取消")
+    @Operation(summary = "取消")
     @PutMapping("/cancel/{id}")
     public Result cancel(@PathVariable("id") String id) {
         log.info("客户取消订单：{}", id);
@@ -818,7 +800,7 @@ public class MailingController {
             }
             if (userId == null || existing.getMemberId() == null
                     || !userId.equals(String.valueOf(existing.getMemberId()))) {
-                log.warn("[订单] 越权取消被拒绝: id={}, userId={}, orderMemberId={}", id, userId, existing.getMemberId());
+                log.warn("[订单] 越权取消被拒绝: id={}, userId={}, existing.getMemberId={}", id, userId, existing.getMemberId());
                 return Result.error(403, "无权操作他人订单");
             }
             // 获取地址详细信息
@@ -831,8 +813,8 @@ public class MailingController {
             orderLocationDto.setOrderId(id);
             orderFeign.deleteOrderLocation(orderLocationDto);
 
-            TaskPickupDispatchDTO taskPickupDispatchDTO = pickupDispatchTaskFeign.findByOrderId(id, PickupDispatchTaskType.PICKUP.getCode());
-            if (taskPickupDispatchDTO != null && StringUtils.isNotBlank(taskPickupDispatchDTO.getId())) {
+            TaskPickupDispatchDTO taskPickupDispatchDTO = pickupDispatchTaskFeign.findByOrderId(Long.valueOf(id), PickupDispatchTaskType.PICKUP.getCode());
+            if (taskPickupDispatchDTO != null && taskPickupDispatchDTO.getId() != null) {
                 TaskPickupDispatchDTO taskPickupDispatchEditDTO = new TaskPickupDispatchDTO();
                 taskPickupDispatchEditDTO.setStatus(PickupDispatchTaskStatus.CANCELLED.getCode());
                 taskPickupDispatchEditDTO.setCancelTime(LocalDateTime.now());
@@ -847,7 +829,7 @@ public class MailingController {
     }
 
 
-    @ApiOperation("待处理数量查询")
+    @Operation(summary = "待处理数量查询")
     @GetMapping("count")
     public Result count(MailingQueryDTO dto) {
         //获取userid
@@ -862,7 +844,7 @@ public class MailingController {
             orderSearchDto.setMemberId(userId);
         } else {
             // 我收的 通过收件人手机号查询
-            Member member = memberService.detail(userId);
+            MemberDTO member = memberService.detail(userId);
             if (member == null || StringUtils.isEmpty(member.getPhone())) {
                 return Result.ok().put("count", 0);
             }
@@ -881,7 +863,7 @@ public class MailingController {
      * @param dto
      * @return
      */
-    @ApiOperation("分页查询")
+    @Operation(summary = "分页查询")
     @SneakyThrows
     @GetMapping("page")
     public Result page(MailingQueryDTO dto) {
@@ -897,14 +879,14 @@ public class MailingController {
             orderSearchDto.setMemberId(userId);
         } else {
             // 我收的 通过收件人手机号查询
-            Member member = memberService.detail(userId);
+            MemberDTO member = memberService.detail(userId);
             if (member == null || StringUtils.isEmpty(member.getPhone())) {
                 return new Result().ok().put("data", PageResponse.<CustomerOrderDTO>builder().page(dto.getPage()).pagesize(dto.getPagesize()).pages(0L).counts(0L).build());
             }
             String phone = member.getPhone();
             orderSearchDto.setReceiverPhone(phone);
         }
-        // 修改点：远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
+        // 远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
         PageResponse<OrderDTO> result = orderFeign.pageLikeForCustomer(orderSearchDto);
         List<OrderDTO> items = Rx.items(result);
         if (items.size() > 0) {
@@ -916,7 +898,7 @@ public class MailingController {
             addressSet.addAll(items.stream().filter(item -> item.getSenderProvinceId() != null).map(item -> Long.valueOf(item.getSenderProvinceId())).collect(Collectors.toSet()));
             addressSet.addAll(items.stream().filter(item -> item.getSenderCityId() != null).map(item -> Long.valueOf(item.getSenderCityId())).collect(Collectors.toSet()));
             addressSet.addAll(items.stream().filter(item -> item.getSenderCountyId() != null).map(item -> Long.valueOf(item.getSenderCountyId())).collect(Collectors.toSet()));
-            CompletableFuture<Map<Long, Area>> areaMapFuture = PdCompletableFuture.areaMapFuture(areaApi, null, addressSet);
+            CompletableFuture<Map<Long, AreaDTO>> areaMapFuture = PdCompletableFuture.areaMapFuture(areaFeign, null, addressSet);
 
             // 物品详细  数量
             Set<String> cargoSet = items.stream().map(item -> item.getId()).collect(Collectors.toSet());
@@ -929,10 +911,11 @@ public class MailingController {
             Set<String> iPickupDispatchTaskSet = items.stream().map(item -> item.getId()).collect(Collectors.toSet());
             // 任务类型，1为取件任务，2为派件任务
             CompletableFuture<Map<String, TaskPickupDispatchDTO>> taskPickupDispatchPullMapFuture = PdCompletableFuture.taskTranSportMapFuture(pickupDispatchTaskFeign, iPickupDispatchTaskSet, PickupDispatchTaskType.PICKUP.getCode());
-            CompletableFuture<Map<String, TaskPickupDispatchDTO>> taskPickupDispatchPushMapFuture = PdCompletableFuture.taskTranSportMapFuture(pickupDispatchTaskFeign, iPickupDispatchTaskSet, PickupDispatchTaskType.DISPATCH.getCode());
+            CompletableFuture<Map<String, TaskPickupDispatchDTO>> taskPickupDispatchPushMapFuture = PdCompletableFuture.
+                    taskTranSportMapFuture(pickupDispatchTaskFeign, iPickupDispatchTaskSet, PickupDispatchTaskType.DISPATCH.getCode());
 
             // 统一获取
-            Map<Long, Area> areaMap = areaMapFuture.get();
+            Map<Long, AreaDTO> areaMap = areaMapFuture.get();
             Map<String, OrderCargoDto> cargoMap = cargoMapFuture.get();
             Map<String, TransportOrderDTO> transportOrderMap = transportOrderMapFuture.get();
             Map<String, TaskPickupDispatchDTO> taskPickupDispatchPullMap = taskPickupDispatchPullMapFuture.get();
@@ -976,7 +959,7 @@ public class MailingController {
      * @param id 订单id
      * @return
      */
-    @ApiOperation("明细")
+    @Operation(summary = "明细")
     @SneakyThrows
     @GetMapping("detail")
     public Result detail(String id) {
@@ -997,7 +980,7 @@ public class MailingController {
         builder.status(orderDTO.getStatus());
         //快递员信息
         TaskPickupDispatchDTO queryDTO = new TaskPickupDispatchDTO();
-        queryDTO.setOrderId(id);
+        queryDTO.setOrderId(Long.valueOf(id));
         List<TaskPickupDispatchDTO> pickupDispatchTasks = pickupDispatchTaskFeign.findAll(queryDTO);
         log.info("根据订单id查询取件任务：{}", pickupDispatchTasks);
         if (orderDTO.getStatus().equals(OrderStatus.CANCELLED.getCode())) {
@@ -1026,10 +1009,10 @@ public class MailingController {
             builder.cancelTime(taskPickupDispatchCurrentDTO.getCancelTime());
 
             //快递员id
-            String courierId = taskPickupDispatchCurrentDTO.getCourierId();
+            Long courierId = taskPickupDispatchCurrentDTO.getCourierId();
             if (courierId != null) {
-                // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
-                User user = Rx.data(userApi.get(Long.valueOf(courierId)));
+                // Feign 直接返回裸 UserDTO，可能为 null
+                UserDTO user = userFeign.get(courierId);
                 if (user != null) {
                     builder.name(user.getName());
                     builder.mobile(user.getMobile());
@@ -1038,8 +1021,10 @@ public class MailingController {
             }
         }
         // 运单号
-        TransportOrderDTO transportOrderDTO = transportOrderFeign.findByOrderId(orderDTO.getId());
-        builder.tranOrderId(transportOrderDTO != null ? transportOrderDTO.getId() : "");
+        TransportOrderDTO transportOrderDTO = transportOrderFeign.findByOrderId(Long.valueOf(orderDTO.getId()));
+        // 运单号面向 App 保持 String，避免 JS 精度丢失
+        builder.tranOrderId(transportOrderDTO != null && transportOrderDTO.getId() != null
+                ? String.valueOf(transportOrderDTO.getId()) : "");
         CustomerOrderDetailDTO data = builder.build();
         log.info("result:{}", data);
         return Result.ok().put("data", data);
@@ -1052,7 +1037,7 @@ public class MailingController {
      * @return
      */
     @SneakyThrows
-    @ApiOperation("路由")
+    @Operation(summary = "路由")
     @GetMapping("route")
     public Result route(String id) {
         //订单信息
@@ -1080,7 +1065,7 @@ public class MailingController {
         OrderDTO orderDTO = orderFeign.findById(id);
         //快递员信息
         TaskPickupDispatchDTO queryDTO = new TaskPickupDispatchDTO();
-        queryDTO.setOrderId(id);
+        queryDTO.setOrderId(Long.valueOf(id));
 
         List<TaskPickupDispatchDTO> pickupDispatchTasks = pickupDispatchTaskFeign.findAll(queryDTO);
         log.info("根据订单id查询取件任务：{}", pickupDispatchTasks);
@@ -1127,7 +1112,7 @@ public class MailingController {
         /**
          * 构建运送阶段路由
          */
-        TransportOrderDTO transportOrderDTO = transportOrderFeign.findByOrderId(orderDTO.getId());
+        TransportOrderDTO transportOrderDTO = transportOrderFeign.findByOrderId(Long.valueOf(orderDTO.getId()));
         if (transportOrderDTO == null) {
             Collections.reverse(result);
             return Result.ok().put("data", result);
@@ -1135,20 +1120,23 @@ public class MailingController {
 
         List<TaskTransportDTO> transportTaskDTOs = transportTaskFeign.findAllByOrderIdOrTaskId(transportOrderDTO.getId(), null);
         if (transportTaskDTOs != null && transportTaskDTOs.size() > 0) {
+            // agencySet 供 agencyMapFuture（形参 Set<String>），work 机构 ID 已 Long，转 String 并过滤空值
             Set<String> agencySet = new HashSet<>();
-            agencySet.addAll(transportTaskDTOs.stream().map(item -> item.getStartAgencyId()).collect(Collectors.toSet()));
-            agencySet.addAll(transportTaskDTOs.stream().map(item -> item.getEndAgencyId()).collect(Collectors.toSet()));
+            agencySet.addAll(transportTaskDTOs.stream().map(TaskTransportDTO::getStartOrgId)
+                    .filter(Objects::nonNull).map(String::valueOf).collect(Collectors.toSet()));
+            agencySet.addAll(transportTaskDTOs.stream().map(TaskTransportDTO::getEndOrgId)
+                    .filter(Objects::nonNull).map(String::valueOf).collect(Collectors.toSet()));
 
-            CompletableFuture<Map<Long, Org>> orgMapFeture = PdCompletableFuture.agencyMapFuture(orgApi, null, agencySet, null);
-            Map<Long, Org> orgMap = orgMapFeture.get();
+            CompletableFuture<Map<Long, OrgDTO>> orgMapFeture = PdCompletableFuture.agencyMapFuture(orgFeign, null, agencySet, null);
+            Map<Long, OrgDTO> orgMap = orgMapFeture.get();
             for (TaskTransportDTO taskTranSport : transportTaskDTOs) {
-                if (null != taskTranSport.getActualPickUpGoodsTime()) {
+                if (null != taskTranSport.getActualPickUpTime()) {
                     //实际提货时间 不为空证明已提货
                     builder = RouteDTO.builder();
                     builder.status(OrderStatus.IN_TRANSIT.getCode());
-                    builder.time(taskTranSport.getActualPickUpGoodsTime());
+                    builder.time(taskTranSport.getActualPickUpTime());
                     // 获取发车机构
-                    Org org = orgMap.get(Long.valueOf(taskTranSport.getStartAgencyId()));
+                    OrgDTO org = orgMap.get(taskTranSport.getStartOrgId());
                     builder.msg("快递在【" + org.getName() + "】已装车，准备发往下一站");
                     result.add(builder.build());
                 }
@@ -1167,7 +1155,7 @@ public class MailingController {
                     builder.status(OrderStatus.IN_TRANSIT.getCode());
                     builder.time(taskTranSport.getActualArrivalTime());
                     // 获取发车机构
-                    Org org = orgMap.get(Long.valueOf(taskTranSport.getEndAgencyId()));
+                    OrgDTO org = orgMap.get(taskTranSport.getEndOrgId());
                     builder.msg("快递已到达【" + org.getName() + "】");
                     result.add(builder.build());
                 }
@@ -1184,10 +1172,10 @@ public class MailingController {
                 builder = RouteDTO.builder();
                 builder.time(taskPickupDispatchPushDTO.getActualStartTime());
                 builder.status(OrderStatus.DISPATCHING.getCode());
-                String userId = taskPickupDispatchPushDTO.getCourierId();
-                if (StringUtils.isNotEmpty(userId)) {
-                    // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
-                    User user = Rx.data(userApi.get(Long.valueOf(userId)));
+                Long userId = taskPickupDispatchPushDTO.getCourierId();
+                if (userId != null) {
+                    // Feign 直接返回裸 UserDTO，可能为 null
+                    UserDTO user = userFeign.get(userId);
                     if (user != null) {
                         String mobile = user.getMobile();
                         String name = user.getName();
@@ -1223,5 +1211,12 @@ public class MailingController {
             log.info("路由信息：{}", item);
         });
         return Result.ok().put("data", result);
+    }
+
+    /**
+     * 前端入参/旧服务返回的 ID 为 String，work Feign 已 Long 化；空白返回 null，避免 NumberFormatException。
+     */
+    private static Long parseId(String id) {
+        return StringUtils.isBlank(id) ? null : Long.parseLong(id.trim());
     }
 }

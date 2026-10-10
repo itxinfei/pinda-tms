@@ -1,9 +1,7 @@
 package com.itheima.pinda.DTO;
 
 import com.itheima.pinda.DTO.base.GoodsTypeDto;
-import com.itheima.pinda.authority.entity.common.Area;
-import com.itheima.pinda.entity.Member;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -18,87 +16,87 @@ public class PickupDispatchDetailDTO implements Serializable {
     /**
      * 取件任务主键
      */
-    @ApiModelProperty("主键")
+    @Schema(description = "主键")
     private String id;
     /**
      * 订单号
      */
-    @ApiModelProperty("订单号")
+    @Schema(description = "订单号")
     private String orderNumber;
     /**
      * 运单号
      */
-    @ApiModelProperty("运单号")
+    @Schema(description = "运单号")
     private String tranOrderId;
 
     /**
      * 物品类型
      */
-    @ApiModelProperty("物品类型")
+    @Schema(description = "物品类型")
     private String goodsTypeId;
 
     /**
      * 物品类型名称
      */
-    @ApiModelProperty("物品类型名称")
+    @Schema(description = "物品类型名称")
     private String goodsTypeName;
 
     /**
      * 收件人
      */
-    @ApiModelProperty("收件人")
+    @Schema(description = "收件人")
     private AddressInfoDTO receiver;
 
     /**
      * 发件人
      */
-    @ApiModelProperty("发件人")
+    @Schema(description = "发件人")
     private AddressInfoDTO sender;
 
     /**
      * 寄托物
      */
-    @ApiModelProperty("寄托物")
+    @Schema(description = "寄托物")
     private String sustenance;
 
     /**
      * 重量
      */
-    @ApiModelProperty("重量")
+    @Schema(description = "重量")
     private BigDecimal weight;
 
     /**
      * 体积
      */
-    @ApiModelProperty("体积")
+    @Schema(description = "体积")
     private BigDecimal volume;
 
     /**
      * 数量
      */
-    @ApiModelProperty("数量")
+    @Schema(description = "数量")
     private Integer quantity;
 
     /**
      * 付款方式
      */
-    @ApiModelProperty("付款方式")
+    @Schema(description = "付款方式")
     private Integer paymentMethod;
 
     /**
      *
      */
-    @ApiModelProperty("运费合计")
+    @Schema(description = "运费合计")
     private String amount;
 
-    @ApiModelProperty("身份证号是否验证  1 已验证 其他未验证")
+    @Schema(description = "身份证号是否验证  1 已验证 其他未验证")
     private int idCardNoVerify;
 
-    public PickupDispatchDetailDTO(TaskPickupDispatchDTO pickupDispatchTaskDTO, OrderDTO orderInfoDTO, OrderCargoDto orderCargoDto, GoodsTypeDto goodsType, Map<Long, Area> areaMap, TransportOrderDTO transportOrder, Member member) {
-        this.id = pickupDispatchTaskDTO.getId();
+    public PickupDispatchDetailDTO(TaskPickupDispatchDTO pickupDispatchTaskDTO, OrderDTO orderInfoDTO, OrderCargoDto orderCargoDto, GoodsTypeDto goodsType, Map<Long, AreaDTO> areaMap, TransportOrderDTO transportOrder, MemberDTO member) {
+        this.id = String.valueOf(pickupDispatchTaskDTO.getId());
         this.amount = orderInfoDTO.getAmount() == null ? "0.00" : orderInfoDTO.getAmount().toString();
-        this.orderNumber = pickupDispatchTaskDTO.getOrderId();
-        this.tranOrderId = transportOrder == null ? "" : transportOrder.getId();
+        this.orderNumber = String.valueOf(pickupDispatchTaskDTO.getOrderId());
+        this.tranOrderId = transportOrder == null ? "" : String.valueOf(transportOrder.getId());
         this.goodsTypeId = orderCargoDto.getGoodsTypeId();
         this.goodsTypeName = goodsType != null ? goodsType.getName() : "";
         this.sustenance = orderCargoDto.getName();

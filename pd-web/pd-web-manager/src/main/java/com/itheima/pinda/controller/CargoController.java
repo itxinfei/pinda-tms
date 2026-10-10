@@ -9,12 +9,10 @@ import com.itheima.pinda.vo.oms.OrderCargoVo;
 import com.itheima.pinda.vo.oms.OrderVo;
 import com.itheima.pinda.vo.base.businessHall.GoodsTypeVo;
 import com.itheima.pinda.util.Rx;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiImplicitParam;
-import io.swagger.annotations.ApiImplicitParams;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -24,7 +22,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("order-manager/cargo")
-@Api(tags = "货品管理")
+@Tag(name = "货品管理")
 @Slf4j
 public class CargoController {
     @Autowired
@@ -32,10 +30,10 @@ public class CargoController {
     @Autowired
     private GoodsTypeFeign goodsTypeFeign;
 
-    @ApiOperation(value = "添加货物")
+    @Operation(summary = "添加货物")
     @PostMapping("")
     public OrderCargoVo saveOrderCargo(@RequestBody OrderCargoVo vo) {
-        // 修改点：远程保存可能返回 null，避免 copyProperties NPE
+        // 远程保存可能返回 null，避免 copyProperties NPE
         OrderCargoDto resultDto = cargoFeign.save(parseOderCargoVo2Dto(vo));
         if (resultDto != null) {
             BeanUtils.copyProperties(resultDto, vo);
@@ -43,13 +41,10 @@ public class CargoController {
         return vo;
     }
 
-    @ApiOperation(value = "获取货物列表")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "orderId", value = "订单id", required = true, example = "0")
-    })
+    @Operation(summary = "获取货物列表")
     @GetMapping(value = "")
     public List<OrderCargoVo> findAll(@RequestParam(value = "orderId") String orderId) {
-        // 修改点：Feign 直接返回 List 可能为 null，统一通过 Rx 安全取值
+        // Feign 直接返回 List 可能为 null，统一通过 Rx 安全取值
         List<OrderCargoDto> cargoDtoList = Rx.list(cargoFeign.findAll(null, orderId));
         return cargoDtoList.stream().map(orderCargoDto -> {
             OrderCargoVo vo = new OrderCargoVo();
@@ -71,14 +66,11 @@ public class CargoController {
         }).collect(Collectors.toList());
     }
 
-    @ApiOperation(value = "更新货物信息")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "id", value = "货物id", required = true, example = "1", paramType = "{path}")
-    })
+    @Operation(summary = "更新货物信息")
     @PutMapping("/{id}")
     public OrderCargoVo updateOrderCargo(@PathVariable(name = "id") String id, @RequestBody OrderCargoVo vo) {
         vo.setId(id);
-        // 修改点：远程更新可能返回 null，避免 copyProperties NPE
+        // 远程更新可能返回 null，避免 copyProperties NPE
         OrderCargoDto resultDto = cargoFeign.update(id, parseOderCargoVo2Dto(vo));
         if (resultDto != null) {
             BeanUtils.copyProperties(resultDto, vo);
@@ -86,10 +78,7 @@ public class CargoController {
         return vo;
     }
 
-    @ApiOperation(value = "删除货物")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "id", value = "货物id", required = true, example = "1", paramType = "{path}")
-    })
+    @Operation(summary = "删除货物")
     @DeleteMapping("/{id}")
     public Result delete(@PathVariable(name = "id") String id) {
         cargoFeign.del(id);

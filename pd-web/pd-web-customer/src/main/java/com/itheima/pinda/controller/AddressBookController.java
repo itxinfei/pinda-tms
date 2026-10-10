@@ -2,22 +2,18 @@ package com.itheima.pinda.controller;
 
 
 import com.itheima.pinda.DTO.AddressBookDTO;
-import com.itheima.pinda.authority.api.AreaApi;
-import com.itheima.pinda.authority.entity.common.Area;
+import com.itheima.pinda.DTO.AreaDTO;
 import com.itheima.pinda.common.context.RequestContext;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.util.Rx;
 import com.itheima.pinda.common.utils.Result;
-import com.itheima.pinda.entity.AddressBook;
 import com.itheima.pinda.feign.AddressBookFeign;
+import com.itheima.pinda.feign.AreaFeign;
 import com.itheima.pinda.future.PdCompletableFuture;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiImplicitParam;
-import io.swagger.annotations.ApiImplicitParams;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashSet;
@@ -36,18 +32,18 @@ import java.util.stream.Collectors;
  * @since 2020-3-30
  */
 @Log4j2
-@Api(tags = "地址簿")
+@Tag(name = "地址簿")
 @RestController
 @RequestMapping("address")
 public class AddressBookController {
 
     private final AddressBookFeign addressBookFeign;
 
-    private final AreaApi areaApi;
+    private final AreaFeign areaFeign;
 
-    public AddressBookController(AddressBookFeign addressBookFeign, AreaApi areaApi) {
+    public AddressBookController(AddressBookFeign addressBookFeign, AreaFeign areaFeign) {
         this.addressBookFeign = addressBookFeign;
-        this.areaApi = areaApi;
+        this.areaFeign = areaFeign;
     }
 
     /**
@@ -58,29 +54,23 @@ public class AddressBookController {
      * @return
      */
     @SneakyThrows
-    @ApiOperation(value = "地址簿分页查询")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "page", value = "当前页数", required = true, example = "1"),
-            @ApiImplicitParam(name = "pageSize", value = "每页条数", required = true, example = "10"),
-            @ApiImplicitParam(name = "keyword", value = "搜索条件", required = false, example = "")
-    })
+    @Operation(summary = "地址簿分页查询")
     @GetMapping("page")
     public Result page(Integer page, Integer pageSize, String keyword) {
         //获取userid
         String userId = RequestContext.getUserId();
-        // 修改点：远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
-        PageResponse<AddressBook> result = addressBookFeign.page(page, pageSize, userId, keyword);
-        List<AddressBook> items = Rx.items(result);
+        // 远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
+        PageResponse<AddressBookDTO> result = addressBookFeign.page(page, pageSize, userId, keyword);
+        List<AddressBookDTO> items = Rx.items(result);
         Set<Long> areaSet = new HashSet<>();
         areaSet.addAll(items.stream().map(item -> item.getProvinceId()).collect(Collectors.toSet()));
         areaSet.addAll(items.stream().map(item -> item.getCityId()).collect(Collectors.toSet()));
         areaSet.addAll(items.stream().map(item -> item.getCountyId()).collect(Collectors.toSet()));
-        CompletableFuture<Map<Long, Area>> areaMapFuture = PdCompletableFuture.areaMapFuture(areaApi, null, areaSet);
-        Map<Long, Area> areaMap = areaMapFuture.get();
+        CompletableFuture<Map<Long, AreaDTO>> areaMapFuture = PdCompletableFuture.areaMapFuture(areaFeign, null, areaSet);
+        Map<Long, AreaDTO> areaMap = areaMapFuture.get();
 
-        List<AddressBookDTO> newItems = items.stream().map(item -> {
-            AddressBookDTO addressBookDTO = new AddressBookDTO();
-            BeanUtils.copyProperties(item, addressBookDTO);
+        // R2④：Feign 已直接返回 DTO，只需就地补齐省市区展示字段，不再反射拷贝
+        List<AddressBookDTO> newItems = items.stream().map(addressBookDTO -> {
             addressBookDTO.setProvince(areaMap.containsKey(addressBookDTO.getProvinceId()) ? areaMap.get(addressBookDTO.getProvinceId()).getName() : "");
             addressBookDTO.setCity(areaMap.containsKey(addressBookDTO.getCityId()) ? areaMap.get(addressBookDTO.getCityId()).getName() : "");
             addressBookDTO.setCounty(areaMap.containsKey(addressBookDTO.getCountyId()) ? areaMap.get(addressBookDTO.getCountyId()).getName() : "");
@@ -104,8 +94,8 @@ public class AddressBookController {
      * @return
      */
     @PostMapping("")
-    @ApiOperation(value = "新增")
-    public Result save(@RequestBody AddressBook entity) {
+    @Operation(summary = "新增")
+    public Result save(@RequestBody AddressBookDTO entity) {
         //获取userid
         String userId = RequestContext.getUserId();
         entity.setUserId(userId);
@@ -119,10 +109,9 @@ public class AddressBookController {
      * @param entity
      * @return
      */
-    @ApiImplicitParam(name = "id", value = "主键", required = true)
     @PutMapping("/{id}")
-    @ApiOperation(value = "修改")
-    public Result update(@PathVariable(name = "id") String id, @RequestBody AddressBook entity) {
+    @Operation(summary = "修改")
+    public Result update(@PathVariable(name = "id") String id, @RequestBody AddressBookDTO entity) {
         //获取userid
         String userId = RequestContext.getUserId();
         entity.setUserId(userId);
@@ -135,9 +124,8 @@ public class AddressBookController {
      * @param id
      * @return
      */
-    @ApiImplicitParam(name = "id", value = "主键", required = true)
     @DeleteMapping("/{id}")
-    @ApiOperation(value = "删除")
+    @Operation(summary = "删除")
     public Result del(@PathVariable(name = "id") String id) {
         return addressBookFeign.del(id);
     }
@@ -149,11 +137,10 @@ public class AddressBookController {
      * @return
      */
     @SneakyThrows
-    @ApiOperation(value = "明细")
-    @ApiImplicitParam(name = "id", value = "主键", required = true)
+    @Operation(summary = "明细")
     @GetMapping("detail/{id}")
     public Result detail(@PathVariable(name = "id") String id) {
-        AddressBook addressBook = addressBookFeign.detail(id);
+        AddressBookDTO addressBook = addressBookFeign.detail(id);
         if (addressBook == null) {
             return Result.error();
         }
@@ -161,17 +148,16 @@ public class AddressBookController {
         areaSet.add(addressBook.getProvinceId());
         areaSet.add(addressBook.getCityId());
         areaSet.add(addressBook.getCountyId());
-        CompletableFuture<Map<Long, Area>> areaMapFuture = PdCompletableFuture.areaMapFuture(areaApi, null, areaSet);
-        Map<Long, Area> areaMap = areaMapFuture.get();
+        CompletableFuture<Map<Long, AreaDTO>> areaMapFuture = PdCompletableFuture.areaMapFuture(areaFeign, null, areaSet);
+        Map<Long, AreaDTO> areaMap = areaMapFuture.get();
 
-        AddressBookDTO addressBookDTO = new AddressBookDTO();
-        BeanUtils.copyProperties(addressBook, addressBookDTO);
-        addressBookDTO.setProvince(areaMap.containsKey(addressBookDTO.getProvinceId()) ? areaMap.get(addressBookDTO.getProvinceId()).getName() : "");
-        addressBookDTO.setCity(areaMap.containsKey(addressBookDTO.getCityId()) ? areaMap.get(addressBookDTO.getCityId()).getName() : "");
-        addressBookDTO.setCounty(areaMap.containsKey(addressBookDTO.getCountyId()) ? areaMap.get(addressBookDTO.getCountyId()).getName() : "");
-        addressBookDTO.setFullAddress(addressBookDTO.getProvince() + addressBookDTO.getCity() + addressBookDTO.getCounty() + addressBookDTO.getAddress());
+        // R2④：Feign 已直接返回 DTO，就地补齐省市区展示字段，不再反射拷贝
+        addressBook.setProvince(areaMap.containsKey(addressBook.getProvinceId()) ? areaMap.get(addressBook.getProvinceId()).getName() : "");
+        addressBook.setCity(areaMap.containsKey(addressBook.getCityId()) ? areaMap.get(addressBook.getCityId()).getName() : "");
+        addressBook.setCounty(areaMap.containsKey(addressBook.getCountyId()) ? areaMap.get(addressBook.getCountyId()).getName() : "");
+        addressBook.setFullAddress(addressBook.getProvince() + addressBook.getCity() + addressBook.getCounty() + addressBook.getAddress());
 
-        return Result.ok().put("data",addressBookDTO);
+        return Result.ok().put("data",addressBook);
 
 
     }

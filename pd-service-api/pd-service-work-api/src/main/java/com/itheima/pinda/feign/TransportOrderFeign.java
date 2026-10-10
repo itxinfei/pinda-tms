@@ -3,7 +3,7 @@ package com.itheima.pinda.feign;
 import com.itheima.pinda.DTO.TransportOrderDTO;
 import com.itheima.pinda.DTO.TransportOrderSearchDTO;
 import com.itheima.pinda.common.utils.PageResponse;
-import com.itheima.pinda.feign.hystrix.TransportOrderFeignFallback;
+import com.itheima.pinda.feign.fallback.TransportOrderFeignFallback;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,7 +34,7 @@ public interface TransportOrderFeign {
      * @return 运单信息
      */
     @PutMapping("/transport-order/{id}")
-    TransportOrderDTO updateById(@PathVariable(name = "id") String id, @RequestBody TransportOrderDTO dto);
+    TransportOrderDTO updateById(@PathVariable(name = "id") Long id, @RequestBody TransportOrderDTO dto);
 
     /**
      * 获取运单分页数据
@@ -49,7 +49,7 @@ public interface TransportOrderFeign {
     @GetMapping("/transport-order/page")
     PageResponse<TransportOrderDTO> findByPage(@RequestParam(name = "page") Integer page,
                                                @RequestParam(name = "pageSize") Integer pageSize,
-                                               @RequestParam(name = "orderId", required = false) String orderId,
+                                               @RequestParam(name = "orderId", required = false) Long orderId,
                                                @RequestParam(name = "status", required = false) Integer status,
                                                @RequestParam(name = "schedulingStatus", required = false) Integer schedulingStatus);
 
@@ -60,7 +60,7 @@ public interface TransportOrderFeign {
      * @return 运单信息
      */
     @GetMapping("/transport-order/{id}")
-    TransportOrderDTO findById(@PathVariable(name = "id") String id);
+    TransportOrderDTO findById(@PathVariable(name = "id") Long id);
 
     /**
      * 根据订单id获取运单信息
@@ -69,22 +69,22 @@ public interface TransportOrderFeign {
      * @return 运单信息
      */
     @GetMapping("/transport-order/orderId/{orderId}")
-    TransportOrderDTO findByOrderId(@PathVariable(name = "orderId") String orderId);
+    TransportOrderDTO findByOrderId(@PathVariable(name = "orderId") Long orderId);
 
     /**
      * 根据多个订单id批量获取运单信息
      *
-     * @param ids
-     * @return
+     * @param ids 订单id集合
+     * @return 运单集合
      */
     @GetMapping("/transport-order/orderIds")
-    List<TransportOrderDTO> findByOrderIds(@RequestParam(name = "ids", required = false) List<String> ids);
+    List<TransportOrderDTO> findByOrderIds(@RequestParam(name = "ids", required = false) List<Long> ids);
 
     /**
      * 根据多个参数获取运单信息
      *
-     * @param transportOrderSearchDTO
-     * @return
+     * @param transportOrderSearchDTO 查询条件
+     * @return 运单集合
      */
     @PostMapping("/transport-order/list")
     List<TransportOrderDTO> list(@RequestBody TransportOrderSearchDTO transportOrderSearchDTO);

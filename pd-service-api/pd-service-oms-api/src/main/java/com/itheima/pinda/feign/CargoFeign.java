@@ -2,7 +2,7 @@ package com.itheima.pinda.feign;
 
 import com.itheima.pinda.DTO.OrderCargoDto;
 import com.itheima.pinda.common.utils.Result;
-import com.itheima.pinda.feign.hystrix.CargoFeignFallback;
+import com.itheima.pinda.feign.fallback.CargoFeignFallback;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Hidden;

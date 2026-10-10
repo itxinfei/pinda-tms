@@ -13,11 +13,6 @@
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
-    <properties>
-        <!-- commons-lang 旧坐标（2.x）Spring Boot 不托管，需显式版本 -->
-        <commons.lang.version>2.6</commons.lang.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -51,10 +46,10 @@
             <groupId>io.swagger.core.v3</groupId>
             <artifactId>swagger-annotations-jakarta</artifactId>
         </dependency>
+        <!-- commons-lang3：版本由 Spring Boot 托管；StringUtils 已从 commons-lang 2.x 统一至此（2026-10-10 R3） -->
         <dependency>
-            <groupId>commons-lang</groupId>
-            <artifactId>commons-lang</artifactId>
-            <version>${commons.lang.version}</version>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
@@ -74,6 +69,11 @@
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
+        <!-- MapStruct：编译期对象映射（处理器由根 pom 统一配置，全栈模块经 pd-common 共享） -->
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
@@ -87,10 +87,10 @@
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpcore</artifactId>
         </dependency>
-        <!-- Seata：TxXidFilter / RequestHeaderInterceptor 仅用 RootContext（xid 传播） -->
+        <!-- Google Guava：业务代码直接使用 com.google.common.collect（原经 seata-core 传递） -->
         <dependency>
-            <groupId>io.seata</groupId>
-            <artifactId>seata-core</artifactId>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
         </dependency>
         <dependency>
             <groupId>io.github.openfeign</groupId>
@@ -100,6 +100,13 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-amqp</artifactId>
+        </dependency>
+        <!-- MyBatis-Plus 核心：仅编译期需要，用于实现 IdentifierGenerator 雪花 ID 适配；
+             optional=true 不向下传递，gateway/auth 等无 MP 模块不引入（配合条件自动装配） -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-core</artifactId>
+            <optional>true</optional>
         </dependency>
     </dependencies>
 </project>

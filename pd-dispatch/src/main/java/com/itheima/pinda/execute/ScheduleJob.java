@@ -1,10 +1,12 @@
 package com.itheima.pinda.execute;
 
+import com.itheima.pinda.common.context.TenantContextHolder;
 import com.itheima.pinda.common.utils.SpringContextUtils;
 import com.itheima.pinda.config.ScheduleRetryProperties;
 import com.itheima.pinda.entity.ScheduleJobEntity;
 import com.itheima.pinda.entity.ScheduleJobLogEntity;
 import com.itheima.pinda.service.IScheduleJobLogService;
+import com.itheima.pinda.tenant.OrgTenantResolver;
 import com.itheima.pinda.utils.ExceptionUtils;
 import com.itheima.pinda.utils.IdUtils;
 import com.itheima.pinda.utils.ScheduleUtils;
@@ -30,72 +32,90 @@ public class ScheduleJob extends QuartzJobBean {
                         get(ScheduleUtils.JOB_PARAM_KEY);
         logger.info("{}定时任务开始执行...,定时任务id：{}", new Date(), scheduleJob.getId());
 
-        //记录定时任务相关的日志信息
-        //封装日志对象
-        ScheduleJobLogEntity logEntity = new ScheduleJobLogEntity();
-        logEntity.setId(IdUtils.get());
-        logEntity.setJobId(scheduleJob.getId());
-        logEntity.setBeanName(scheduleJob.getBeanName());
-        logEntity.setParams(scheduleJob.getParams());
-        logEntity.setCreateDate(new Date());
+        // 系统态租户绑定：Quartz 线程无登录态与请求头，按机构ID反查租户并写入当前线程上下文，
+        // 供出站 Feign 拦截器读取透传给 pd-auth；执行结束在 finally 中清理，避免线程复用串租户。
+        Long tenantId = 0L;
+        try {
+            String businessId = scheduleJob.getBusinessId();
+            if (businessId != null && !businessId.trim().isEmpty()) {
+                OrgTenantResolver resolver = SpringContextUtils.getBean(OrgTenantResolver.class);
+                tenantId = resolver.resolve(Long.valueOf(businessId.trim()));
+            }
+        } catch (Exception e) {
+            logger.warn("定时任务解析租户失败，回落租户0，任务id：" + scheduleJob.getId(), e);
+        }
+        TenantContextHolder.setTenantId(tenantId);
 
-        long startTime = System.currentTimeMillis();
+        try {
+            //记录定时任务相关的日志信息
+            //封装日志对象
+            ScheduleJobLogEntity logEntity = new ScheduleJobLogEntity();
+            logEntity.setId(IdUtils.get());
+            logEntity.setJobId(scheduleJob.getId());
+            logEntity.setBeanName(scheduleJob.getBeanName());
+            logEntity.setParams(scheduleJob.getParams());
+            logEntity.setCreateDate(new Date());
 
-        // 失败重试参数：从配置中心读取（schedule.retry.*），支持运行时调整
-        ScheduleRetryProperties retryProps = SpringContextUtils.getBean(ScheduleRetryProperties.class);
-        int maxAttempts = Math.max(retryProps.getMaxAttempts(), 1); // 至少执行 1 次
-        long retryIntervalMs = Math.max(retryProps.getIntervalMs(), 0); // 间隔非负
+            long startTime = System.currentTimeMillis();
 
-        Exception lastException = null;
-        boolean success = false;
-        int attempt = 0;
-        while (attempt < maxAttempts) {
-            try {
-                //通过反射调用目标对象，在目标对象中封装智能调度核心逻辑
-                logger.info("定时任务准备执行（第{}次尝试，共{}次），任务id为：{}", attempt + 1, maxAttempts, scheduleJob.getId());
+            // 失败重试参数：从配置中心读取（schedule.retry.*），支持运行时调整
+            ScheduleRetryProperties retryProps = SpringContextUtils.getBean(ScheduleRetryProperties.class);
+            int maxAttempts = Math.max(retryProps.getMaxAttempts(), 1); // 至少执行 1 次
+            long retryIntervalMs = Math.max(retryProps.getIntervalMs(), 0); // 间隔非负
 
-                //获得目标对象
-                Object target = SpringContextUtils.getBean(scheduleJob.getBeanName());
-                //获得目标方法对象
-                Method method = target.getClass().getDeclaredMethod("run", String.class, String.class, String.class, String.class);
+            Exception lastException = null;
+            boolean success = false;
+            int attempt = 0;
+            while (attempt < maxAttempts) {
+                try {
+                    //通过反射调用目标对象，在目标对象中封装智能调度核心逻辑
+                    logger.info("定时任务准备执行（第{}次尝试，共{}次），任务id为：{}", attempt + 1, maxAttempts, scheduleJob.getId());
 
-                //通过反射调用目标对象的方法
-                method.invoke(target, scheduleJob.getBusinessId(), scheduleJob.getParams(), scheduleJob.getId(), logEntity.getId());
+                    //获得目标对象
+                    Object target = SpringContextUtils.getBean(scheduleJob.getBeanName());
+                    //获得目标方法对象
+                    Method method = target.getClass().getDeclaredMethod("run", String.class, String.class, String.class, String.class);
 
-                logEntity.setStatus(1);//成功
-                success = true;
-                break;
-            } catch (Exception ex) {
-                lastException = ex;
-                logger.error("定时任务执行失败（第{}次尝试），任务id为：{}，将{}重试",
-                    attempt + 1, scheduleJob.getId(), attempt + 1 < maxAttempts ? "进行" : "不再");
-                attempt++;
-                if (attempt < maxAttempts) {
-                    try {
-                        Thread.sleep(retryIntervalMs);
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                        break;
+                    //通过反射调用目标对象的方法
+                    method.invoke(target, scheduleJob.getBusinessId(), scheduleJob.getParams(), scheduleJob.getId(), logEntity.getId());
+
+                    logEntity.setStatus(1);//成功
+                    success = true;
+                    break;
+                } catch (Exception ex) {
+                    lastException = ex;
+                    logger.error("定时任务执行失败（第{}次尝试），任务id为：{}，将{}重试",
+                        attempt + 1, scheduleJob.getId(), attempt + 1 < maxAttempts ? "进行" : "不再");
+                    attempt++;
+                    if (attempt < maxAttempts) {
+                        try {
+                            Thread.sleep(retryIntervalMs);
+                        } catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
+                            break;
+                        }
                     }
                 }
             }
+
+            if (!success) {
+                logEntity.setStatus(0);//失败
+                // 记录完整重试信息，便于排查
+                int retryCount = maxAttempts - 1;
+                logEntity.setError("重试" + retryCount + "次后仍失败。最后一次异常：" + ExceptionUtils.getErrorStackTrace(lastException));
+                logger.error("定时任务执行失败（已重试{}次），任务id为：{}", retryCount, scheduleJob.getId());
+            } else if (attempt > 0) {
+                logger.info("定时任务第{}次尝试执行成功，任务id为：{}", attempt + 1, scheduleJob.getId());
+            }
+
+            // 无论成功失败，统一记录执行耗时与日志
+            int times = (int) (System.currentTimeMillis() - startTime);
+            logEntity.setTimes(times);//耗时
+
+            IScheduleJobLogService scheduleJobLogService = SpringContextUtils.getBean(IScheduleJobLogService.class);
+            scheduleJobLogService.save(logEntity);
+        } finally {
+            TenantContextHolder.clear();
         }
-
-        if (!success) {
-            logEntity.setStatus(0);//失败
-            // 记录完整重试信息，便于排查
-            int retryCount = maxAttempts - 1;
-            logEntity.setError("重试" + retryCount + "次后仍失败。最后一次异常：" + ExceptionUtils.getErrorStackTrace(lastException));
-            logger.error("定时任务执行失败（已重试{}次），任务id为：{}", retryCount, scheduleJob.getId());
-        } else if (attempt > 0) {
-            logger.info("定时任务第{}次尝试执行成功，任务id为：{}", attempt + 1, scheduleJob.getId());
-        }
-
-        // 无论成功失败，统一记录执行耗时与日志
-        int times = (int) (System.currentTimeMillis() - startTime);
-        logEntity.setTimes(times);//耗时
-
-        IScheduleJobLogService scheduleJobLogService = SpringContextUtils.getBean(IScheduleJobLogService.class);
-        scheduleJobLogService.save(logEntity);
     }
 }

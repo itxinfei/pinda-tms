@@ -49,7 +49,7 @@ public class DriverJobController {
      * @return 司机作业单信息
      */
     @PutMapping("/{id}")
-    public DriverJobDTO updateById(@PathVariable(name = "id") String id, @RequestBody DriverJobDTO dto) {
+    public DriverJobDTO updateById(@PathVariable(name = "id") Long id, @RequestBody DriverJobDTO dto) {
         dto.setId(id);
         DriverJob driverJob = new DriverJob();
         BeanUtils.copyProperties(dto, driverJob);
@@ -97,7 +97,7 @@ public class DriverJobController {
      * @return 司机作业单信息
      */
     @GetMapping("/{id}")
-    public DriverJobDTO findById(@PathVariable(name = "id") String id) {
+    public DriverJobDTO findById(@PathVariable(name = "id") Long id) {
         DriverJobDTO dto = new DriverJobDTO();
         DriverJob driverJob = driverJobService.getById(id);
         if (driverJob != null) {
@@ -113,7 +113,7 @@ public class DriverJobController {
         List<DriverJobDTO> dtos = new ArrayList<>();
         List<DriverJob> driverJobs = driverJobService.findAll(null, dto.getId(), dto.getDriverId(), dto.getStatus(), dto.getTaskTransportId());
         if (driverJobs != null) {
-            for (DriverJob driverJob : driverJobs) {
+            for (DriverJob driverJob: driverJobs) {
                 DriverJobDTO resultDto = new DriverJobDTO();
                 BeanUtils.copyProperties(driverJob, resultDto);
                 dtos.add(resultDto);

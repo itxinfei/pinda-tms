@@ -1,23 +1,22 @@
 package com.itheima.pinda.controller;
 
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.itheima.pinda.authority.api.AreaApi;
-import com.itheima.pinda.authority.api.OrgApi;
-import com.itheima.pinda.authority.entity.common.Area;
-import com.itheima.pinda.base.R;
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONWriter;
+import com.itheima.pinda.DTO.AreaDTO;
+import com.itheima.pinda.DTO.OrgDTO;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
+import com.itheima.pinda.feign.AreaFeign;
+import com.itheima.pinda.feign.OrgFeign;
 import com.itheima.pinda.future.PdCompletableFuture;
 import com.itheima.pinda.util.Rx;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiImplicitParam;
-import io.swagger.annotations.ApiImplicitParams;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.ObjectUtils;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -35,18 +34,18 @@ import java.util.stream.Collectors;
  * @since 2020-3-30
  */
 @Log4j2
-@Api(tags = "网点自寄")
+@Tag(name = "网点自寄")
 @RestController
 @RequestMapping("agency")
 public class AgencyController {
 
-    private final OrgApi orgApi;
+    private final OrgFeign orgFeign;
 
-    private final AreaApi areaApi;
+    private final AreaFeign areaFeign;
 
-    public AgencyController(OrgApi orgApi, AreaApi areaApi) {
-        this.orgApi = orgApi;
-        this.areaApi = areaApi;
+    public AgencyController(OrgFeign orgFeign, AreaFeign areaFeign) {
+        this.orgFeign = orgFeign;
+        this.areaFeign = areaFeign;
     }
 
     /**
@@ -57,58 +56,54 @@ public class AgencyController {
      * @return
      */
     @SneakyThrows
-    @ApiOperation(value = "网点自寄分页")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "page", value = "当前页数", required = true, example = "1"),
-            @ApiImplicitParam(name = "pagesize", value = "每页条数", required = true, example = "10"),
-            @ApiImplicitParam(name = "cityId", value = "市id", required = false, example = ""),
-            @ApiImplicitParam(name = "keyword", value = "搜索条件", required = false, example = ""),
-            @ApiImplicitParam(name = "latitude", value = "维度", required = false, example = ""),
-            @ApiImplicitParam(name = "longitude", value = "精度", required = false, example = "")
-    })
+    @Operation(summary = "网点自寄分页")
     @GetMapping("page")
     public Result page(Integer page, Integer pagesize, Long cityId, String keyword, String latitude, String longitude) {
 
-        // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
-        Page pageResult = Rx.data(orgApi.pageLike(pagesize, page, keyword, cityId, latitude, longitude));
-        if (pageResult == null) {
-            pageResult = new Page();
-        }
-        List<Map> records = pageResult.getRecords();
-        if (records == null) {
-            records = new ArrayList<>();
-        }
+        // 远程调用返回 PageResponse<OrgDTO>，可能为 null；统一通过 Rx 取 items，避免 NPE
+        PageResponse<OrgDTO> pageResult = orgFeign.pageLike(pagesize, page, keyword, cityId, latitude, longitude);
+        List<OrgDTO> records = Rx.items(pageResult);
 
         Set<Long> areaSet = new HashSet<>();
-        areaSet.addAll(records.stream().filter(item -> !ObjectUtils.isEmpty(item.get("provinceId"))).map(item -> Long.valueOf(item.get("provinceId").toString())).collect(Collectors.toSet()));
-        areaSet.addAll(records.stream().filter(item -> !ObjectUtils.isEmpty(item.get("cityId"))).map(item -> Long.valueOf(item.get("cityId").toString())).collect(Collectors.toSet()));
-        areaSet.addAll(records.stream().filter(item -> !ObjectUtils.isEmpty(item.get("countyId"))).map(item -> Long.valueOf(item.get("countyId").toString())).collect(Collectors.toSet()));
-        CompletableFuture<Map<Long, Area>> areaMapFuture = PdCompletableFuture.areaMapFuture(areaApi, null, areaSet);
-        Map<Long, Area> areaMap = areaMapFuture.get();
+        records.stream().filter(item -> !ObjectUtils.isEmpty(item.getProvinceId())).forEach(item -> areaSet.add(item.getProvinceId()));
+        records.stream().filter(item -> !ObjectUtils.isEmpty(item.getCityId())).forEach(item -> areaSet.add(item.getCityId()));
+        records.stream().filter(item -> !ObjectUtils.isEmpty(item.getCountyId())).forEach(item -> areaSet.add(item.getCountyId()));
+        CompletableFuture<Map<Long, AreaDTO>> areaMapFuture = PdCompletableFuture.areaMapFuture(areaFeign, null, areaSet);
+        Map<Long, AreaDTO> areaMap = areaMapFuture.get();
 
-        records = records.stream().map(item -> {
-            Map newItem = writeMapNullToEmpty(item);
-            newItem.put("province", (item.get("provinceId") != null && areaMap.get(Long.valueOf(item.get("provinceId").toString())) != null) ? areaMap.get(Long.valueOf(item.get("provinceId").toString())).getName() : "");
-            newItem.put("city", (item.get("cityId") != null && areaMap.get(Long.valueOf(item.get("cityId").toString())) != null) ? areaMap.get(Long.valueOf(item.get("cityId").toString())).getName() : "");
-            newItem.put("county", (item.get("countyId") != null && areaMap.get(Long.valueOf(item.get("countyId").toString())) != null) ? areaMap.get(Long.valueOf(item.get("countyId").toString())).getName() : "");
-            newItem.put("fullAddress", (String) newItem.get("province") + newItem.get("city") + newItem.get("county") + newItem.get("address"));
+        List<Map> newRecords = records.stream().map(item -> {
+            Map newItem = writeOrgToMap(item);
+            newItem.put("province", (item.getProvinceId() != null && areaMap.get(item.getProvinceId()) != null) ? areaMap.get(item.getProvinceId()).getName() : "");
+            newItem.put("city", (item.getCityId() != null && areaMap.get(item.getCityId()) != null) ? areaMap.get(item.getCityId()).getName() : "");
+            newItem.put("county", (item.getCountyId() != null && areaMap.get(item.getCountyId()) != null) ? areaMap.get(item.getCountyId()).getName() : "");
+            newItem.put("fullAddress", newItem.get("province") + "" + newItem.get("city") + newItem.get("county") + newItem.get("address"));
             return newItem;
         }).collect(Collectors.toList());
 
-        return Result.ok().put("data",PageResponse.<Map>builder()
-                .items(records)
+        return Result.ok().put("data", PageResponse.<Map>builder()
+                .items(newRecords)
                 .pagesize(pagesize)
                 .page(page)
-                .pages(pageResult.getPages())
-                .counts(pageResult.getTotal())
+                .pages(pageResult != null ? pageResult.getPages() : 0L)
+                .counts(pageResult != null ? pageResult.getCounts() : 0L)
                 .build());
+    }
+
+    /**
+     * 把 OrgDTO 转成与旧 ORM records 同构的 Map。
+     * 开启 WriteMapNullValue 保证 null 字段 key 不丢，再由 writeMapNullToEmpty 统一落为 ""。
+     */
+    private Map writeOrgToMap(OrgDTO org) {
+        Map<String, Object> params = JSON.parseObject(JSON.toJSONString(org, JSONWriter.Feature.WriteMapNullValue));
+        return writeMapNullToEmpty(params);
     }
 
     private Map writeMapNullToEmpty(Map params) {
         Map map = new HashMap();
         params.keySet().forEach(key -> {
-            if (params.get(key) != null && !StringUtils.isEmpty(params.get(key))) {
-                map.put(key, params.get(key));
+            Object value = params.get(key);
+            if (value != null && !StringUtils.isEmpty(value.toString())) {
+                map.put(key, value);
             } else {
                 map.put(key, "");
             }

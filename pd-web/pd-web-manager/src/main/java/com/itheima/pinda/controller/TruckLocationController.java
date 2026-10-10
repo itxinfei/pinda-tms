@@ -1,23 +1,19 @@
 package com.itheima.pinda.controller;
 
 import com.itheima.pinda.DTO.TaskTransportDTO;
+import com.itheima.pinda.DTO.UserDTO;
 import com.itheima.pinda.DTO.transportline.TransportTripsTruckDriverDto;
 import com.itheima.pinda.DTO.truck.TruckDto;
 import com.itheima.pinda.DTO.truck.TruckTypeDto;
-import com.itheima.pinda.authority.api.UserApi;
-import com.itheima.pinda.authority.entity.auth.User;
-import com.itheima.pinda.base.R;
 import com.itheima.pinda.enums.transporttask.TransportTaskStatus;
 import com.itheima.pinda.feign.TransportTaskFeign;
+import com.itheima.pinda.feign.UserFeign;
 import com.itheima.pinda.feign.transportline.TransportTripsFeign;
 import com.itheima.pinda.feign.truck.TruckFeign;
 import com.itheima.pinda.feign.truck.TruckTypeFeign;
-import com.itheima.pinda.util.Rx;
 import com.itheima.pinda.vo.base.transforCenter.business.TruckLocationVo;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiImplicitParam;
-import io.swagger.annotations.ApiImplicitParams;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.CollectionUtils;
@@ -31,11 +27,11 @@ import java.util.List;
 
 @RestController
 @RequestMapping("transfor-center")
-@Api(tags = "位置查询")
+@Tag(name = "位置查询")
 @Slf4j
 public class TruckLocationController {
     @Autowired
-    private UserApi userApi;
+    private UserFeign userFeign;
     @Autowired
     private TruckFeign truckFeign;
     @Autowired
@@ -46,10 +42,7 @@ public class TruckLocationController {
     private TransportTripsFeign transportTripsFeign;
 
 
-    @ApiOperation(value = "获取车辆位置详情")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "id", value = "车辆id", required = true, example = "1", paramType = "{path}")
-    })
+    @Operation(summary = "获取车辆位置详情")
     @GetMapping("truck-place-info/{id}")
     public TruckLocationVo findTruckById(@PathVariable(name = "id") String id) {
         TruckLocationVo truckLocationVo = new TruckLocationVo();
@@ -65,7 +58,7 @@ public class TruckLocationController {
         }
 
         TaskTransportDTO taskTransportDto = new TaskTransportDTO();
-        taskTransportDto.setTruckId(truck.getId());
+        taskTransportDto.setTruckId(Long.valueOf(truck.getId()));
         taskTransportDto.setStatus(TransportTaskStatus.PROCESSING.getCode());
         List<TaskTransportDTO> transportTaskDtos = transportTaskFeign.findAll(taskTransportDto);
         if (CollectionUtils.isEmpty(transportTaskDtos)) {
@@ -73,15 +66,17 @@ public class TruckLocationController {
         }
 
         taskTransportDto = transportTaskDtos.get(0);
-        List<TransportTripsTruckDriverDto> transportTripsTruckDriverDtos = transportTripsFeign.findAllTruckDriverTransportTrips(taskTransportDto.getTransportTripsId(), truck.getId(), null);
+        Long currentTripsId = taskTransportDto.getTripsId();
+        List<TransportTripsTruckDriverDto> transportTripsTruckDriverDtos = transportTripsFeign.findAllTruckDriverTransportTrips(
+                currentTripsId == null ? null : String.valueOf(currentTripsId), truck.getId(), null);
         if (CollectionUtils.isEmpty(transportTripsTruckDriverDtos)) {
             return truckLocationVo;
         }
 
         TransportTripsTruckDriverDto transportTripsTruckDriverDto = transportTripsTruckDriverDtos.get(0);
         String userId = transportTripsTruckDriverDto.getUserId();
-        // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
-        User user = Rx.data(userApi.get(Long.valueOf(userId)));
+        // 远程调用可能返回 null，直接判空，避免 NPE
+        UserDTO user = userFeign.get(Long.valueOf(userId));
         if (user != null) {
             truckLocationVo.setName(user.getName());
             truckLocationVo.setMobile(user.getMobile());
