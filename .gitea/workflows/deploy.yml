@@ -26,10 +26,9 @@ jobs:
     env:
       # workflow_dispatch 传入要部署的端；默认 all
       DEPLOY_TARGET: ${{ github.event.inputs.target || 'all' }}
-      # Dockerfile.admin-h5 的 pnpm install 用 RUN --mount（BuildKit 语法）；
-      # runner 内 docker build 默认 legacy builder 会报
-      # "the --mount option requires BuildKit"（2026-10-10 实测失败根因），显式开启。
-      DOCKER_BUILDKIT: "1"
+      # BuildKit 不在此处开：job 镜像 ci/pinda-ci 已内置 docker-buildx 插件，
+      # docker 29 默认走 BuildKit；若设 DOCKER_BUILDKIT=1 反而强制 buildx 硬失败
+      # （2026-10-10 实测 "Install the buildx component"）。
 
     steps:
       - name: 检出代码
