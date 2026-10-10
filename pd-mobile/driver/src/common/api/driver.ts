@@ -13,7 +13,7 @@ import {
 import { get, post, put } from '../request'
 import { enqueueOffline } from '../utils/offline'
 
-// ============ 鉴权（三端共用 pd-auth-server）============
+// ============ 鉴权（三端共用 pd-auth）============
 export function captchaSrc(key: string): string {
   return CAPTCHA_URL + '?key=' + key
 }
@@ -42,13 +42,11 @@ export function cargoHistory(params: any) {
 }
 // 司机作业单详情（id 是 DriverJobId）
 export function cargoDetail(id: string) {
-  return get(BASE_URL + '/business/cargo/detail?id=' + id)
+  return get(BASE_URL + '/business/cargo/detail', { id })
 }
 // 关联订单列表（id 是 DriverJobId）
 export function cargoOrders(id: string, keyword?: string) {
-  let url = BASE_URL + '/business/cargo/orders?id=' + id
-  if (keyword) url += '&keyword=' + keyword
-  return get(url)
+  return get(BASE_URL + '/business/cargo/orders', { id, ...(keyword ? { keyword } : {}) })
 }
 
 // ============ 附件上传（multipart，业务标识 businessType=driver）============
@@ -105,7 +103,7 @@ export function cargoFinish(data: {
 // ============ 车辆 / 用户 ============
 // 车辆信息（id 是车辆 id）
 export function carInfo(id: string) {
-  return get(BASE_URL + '/business/car/info?id=' + id)
+  return get(BASE_URL + '/business/car/info', { id })
 }
 // 个人资料
 export function userProfile() {
@@ -125,10 +123,10 @@ export function exceptionReport(data: {
 
 // ============ 轨迹（免鉴权 /netty-service，只认 businessId+type，无 orderId）============
 export function traceLatest(businessId: string, type = 'truck') {
-  return get(NETTY_BASE + '/trace/latest?businessId=' + businessId + '&type=' + type)
+  return get(NETTY_BASE + '/trace/latest', { businessId, type })
 }
 export function traceReplay(businessId: string, type = 'truck') {
-  return get(NETTY_BASE + '/trace/replay?businessId=' + businessId + '&type=' + type)
+  return get(NETTY_BASE + '/trace/replay', { businessId, type })
 }
 
 // ============ 后台定位上报（免鉴权，无网入离线队列）============
@@ -161,5 +159,5 @@ export function locationPush(data: any) {
 
 // ============ 基础数据 ============
 export function areaSimple(parentId: number) {
-  return get(BASE_URL + '/common/area/simple?parentId=' + parentId)
+  return get(BASE_URL + '/common/area/simple', { parentId })
 }

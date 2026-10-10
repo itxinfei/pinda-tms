@@ -16,22 +16,22 @@
     <!-- 功能入口 -->
     <view class="home-entries">
       <view class="entry-card" @click="goMailing">
-        <view class="entry-icon icon-mail">寄</view>
+        <view class="entry-icon"><u-icon name="box" color="#E15536" size="40" /></view>
         <view class="entry-name">我要寄件</view>
         <view class="entry-desc">在线下单 · 运费即时试算</view>
       </view>
       <view class="entry-card" @click="goList">
-        <view class="entry-icon icon-list">查</view>
+        <view class="entry-icon"><u-icon name="search" color="#E15536" size="40" /></view>
         <view class="entry-name">查快递</view>
         <view class="entry-desc">运单列表 · 轨迹查询</view>
       </view>
       <view class="entry-card" @click="goAddress">
-        <view class="entry-icon icon-addr">址</view>
+        <view class="entry-icon"><u-icon name="map" color="#E15536" size="40" /></view>
         <view class="entry-name">地址簿</view>
         <view class="entry-desc">常用地址管理</view>
       </view>
       <view class="entry-card" @click="goAgency">
-        <view class="entry-icon icon-ag">网</view>
+        <view class="entry-icon"><u-icon name="location" color="#E15536" size="40" /></view>
         <view class="entry-name">网点查询</view>
         <view class="entry-desc">附近网点自寄参考</view>
       </view>
@@ -64,11 +64,11 @@ const loadCount = async () => {
 };
 
 const goMailing = () => uni.navigateTo({ url: '/pages/customer/mailing/create' });
-const goList = () => uni.navigateTo({ url: '/pages/customer/mailing/list' });
+const goList = () => uni.reLaunch({ url: '/pages/customer/mailing/list' });
 const goAddress = () => uni.navigateTo({ url: '/pages/customer/address/list' });
 const goAgency = () => uni.navigateTo({ url: '/pages/customer/agency/list' });
-const goHome = () => uni.navigateTo({ url: '/pages/customer/home/index' });
-const goProfile = () => uni.navigateTo({ url: '/pages/customer/profile/index' });
+const goHome = () => uni.reLaunch({ url: '/pages/customer/home/index' });
+const goProfile = () => uni.reLaunch({ url: '/pages/customer/profile/index' });
 
 onShow(() => {
   if (!userStore.isLogin) {

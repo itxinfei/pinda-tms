@@ -15,7 +15,11 @@ const BASE_URL = (import.meta.env && import.meta.env.VITE_API_BASE) || '/prod-ap
  */
 export function request(options) {
   return new Promise((resolve, reject) => {
-    const token = uni.getStorageSync('token') || '';
+    const token = uni.getStorageSync('pd_token') || '';
+    // loading 参数：调用方传 { loading: true } 时统一提示（finally 兜底关闭）
+    const loading = !!(options && options.loading);
+    if (loading) uni.showLoading({ title: '加载中...' });
+    const hideLoading = () => { if (loading) uni.hideLoading(); };
     uni.request({
       url: BASE_URL + options.url,
       method: options.method || 'GET',
@@ -30,9 +34,10 @@ export function request(options) {
         const body = res.data;
         // 401：清登录态跳登录
         if (res.statusCode === 401 || (body && body.code === 401)) {
-          uni.removeStorageSync('token');
+          uni.removeStorageSync('pd_token');
           uni.removeStorageSync('userInfo');
           uni.reLaunch({ url: '/pages/customer/login/index' });
+          hideLoading();
           reject(body || { code: 401, msg: '登录已过期' });
           return;
         }
@@ -41,10 +46,12 @@ export function request(options) {
         } else {
           const msg = (body && body.msg) || '请求失败，请稍后重试';
           uni.showToast({ title: msg, icon: 'none', duration: 2500 });
+          hideLoading();
           reject(body || { code: -1, msg });
         }
       },
       fail: (err) => {
+        hideLoading();
         uni.showToast({ title: '网络异常，请重试', icon: 'none' });
         reject(err);
       }
