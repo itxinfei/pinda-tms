@@ -55,6 +55,7 @@ import {
   attachmentUpload,
 } from '@/common/api/driver'
 import { DRIVER_EXCEPTION_TYPES } from '@/common/constants'
+import { onLoad } from '@dcloudio/uni-app'
 
 const types = DRIVER_EXCEPTION_TYPES
 const id = ref('')

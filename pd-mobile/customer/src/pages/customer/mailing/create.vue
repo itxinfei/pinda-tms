@@ -92,6 +92,7 @@ import {
   mailingTotalPrice,
   createMailing,
 } from '@/common/api/customer'
+import { onShow } from '@dcloudio/uni-app'
 
 const form = reactive({
   sendAddress: '',

@@ -43,16 +43,16 @@
     <!-- 路由时间轴 -->
     <view class="card route-card" v-if="routeList.length">
       <text class="addr-title">路由轨迹</text>
-      <u-time-line>
-        <u-time-line-item v-for="(node, idx) in routeList" :key="idx">
-          <template #content>
-            <view class="route-node">
-              <text class="route-agency">{{ node.agencyName || '—' }}</text>
-              <text class="route-time">{{ node.arrivalTime || '' }}</text>
-            </view>
-          </template>
-        </u-time-line-item>
-      </u-time-line>
+      <!-- 修改点：uview-plus 无 u-time-line 组件，改用普通 view + CSS 时间轴 -->
+      <view class="tl">
+        <view class="tl-row" v-for="(node, idx) in routeList" :key="idx">
+          <view class="tl-dot"></view>
+          <view class="route-node">
+            <text class="route-agency">{{ node.agencyName || '—' }}</text>
+            <text class="route-time">{{ node.arrivalTime || '' }}</text>
+          </view>
+        </view>
+      </view>
     </view>
   </view>
 
@@ -71,6 +71,7 @@ import { ref, computed } from 'vue'
 import { taskDetail, taskRoute } from '@/common/api/courier'
 import { taskStatusView, taskTypeView } from '@/common/constants'
 import { maskName, maskPhone } from '@/common/utils/desensitive'
+import { onLoad } from '@dcloudio/uni-app'
 
 const id = ref('')
 const detail = ref<any>(null)
@@ -199,6 +200,21 @@ onLoad((options: any) => {
 .route-node {
   display: flex;
   justify-content: space-between;
+  flex: 1;
+  padding-bottom: var(--s-3);
+  border-bottom: 1rpx solid var(--c-border);
+}
+.tl-row {
+  display: flex;
+  align-items: flex-start;
+}
+.tl-dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: var(--c-primary);
+  margin: 8rpx var(--s-3) 0 0;
+  flex-shrink: 0;
 }
 .route-agency {
   font-size: var(--f-aux);

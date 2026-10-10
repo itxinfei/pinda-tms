@@ -18,6 +18,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { agencyPage } from '@/common/api/customer'
+import { onShow } from '@dcloudio/uni-app'
 
 const list = ref<any[]>([])
 const loading = ref(false)

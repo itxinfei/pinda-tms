@@ -51,6 +51,7 @@ import { ref } from 'vue'
 import { mailingPage } from '@/common/api/customer'
 import { orderStatusView } from '@/common/constants'
 import { maskName, maskPhone } from '@/common/utils/desensitive'
+import { onShow } from '@dcloudio/uni-app'
 
 const tabs = [{ name: '全部' }, { name: '寄出' }, { name: '寄入' }]
 const tabIndex = ref(0)

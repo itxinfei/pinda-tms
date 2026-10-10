@@ -60,6 +60,7 @@ import {
   DELIVERED_REJECT,
 } from '@/common/api/courier'
 import { wgs84ToGcj02 } from '@/common/utils/coord'
+import { onLoad, onUnload } from '@dcloudio/uni-app'
 
 const tranOrderId = ref('')
 const orderNumber = ref('')
