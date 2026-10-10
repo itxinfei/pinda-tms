@@ -22,6 +22,13 @@
         "distribute" : {
             /* android打包配置 */
             "android" : {
+                "icons" : {
+                    "mdpi" : "static/logo-app.png",
+                    "hdpi" : "static/logo-app.png",
+                    "xhdpi" : "static/logo-app.png",
+                    "xxhdpi" : "static/logo-app.png",
+                    "xxxhdpi" : "static/logo-app.png"
+                },
                 "permissions" : [
                     "<uses-permission android:name=\"android.permission.CHANGE_NETWORK_STATE\"/>",
                     "<uses-permission android:name=\"android.permission.MOUNT_UNMOUNT_FILESYSTEMS\"/>",
@@ -41,7 +48,14 @@
                 ]
             },
             /* ios打包配置 */
-            "ios" : {},
+            "ios" : {
+                "icons" : {
+                    "appstore" : "static/logo-app.png",
+                    "ipad" : "static/logo-app.png",
+                    "ipadpro" : "static/logo-app.png",
+                    "iphone" : "static/logo-app.png"
+                }
+            },
             /* SDK配置 */
             "sdkConfigs" : {}
         }
