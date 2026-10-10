@@ -87,7 +87,11 @@ pd-admin-ui/
 *.bak
 
 # 内部运维/安全处置文档（含凭据盘点与处置记录，不入库）
+# docs 下全部 md 为内部文档（含内网IP/口令等部署信息），仅本地与内网保留；
+# 保留 README.md 引用的 docs/ 图片与 sql 脚本，不匹配 md
 docs/凭据泄露处置方案.md
+docs/**/*.md
+CLAUDE.md
 
 # 本地调试脚本（含服务器操作，防误提交）
 .seata-*.sh
