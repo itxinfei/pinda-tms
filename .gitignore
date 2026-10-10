@@ -54,6 +54,10 @@ Thumbs.db
 **/.env
 **/.env.*
 !.env.example
+# 构建必需：VITE_API_BASE 等构建期变量，Docker 构建从 git 拉代码时必须存在，
+# 否则产物 baseURL 为 undefined、/api/* 落进 SPA fallback（2026-10-10 线上故障根因）。
+# 仅放行生产构建所需文件；.env / .env.development 仍禁止入库。
+!pd-admin-ui-vue3/.env.production
 
 # IDE/工具配置（本地个人工具，非项目代码）
 .codebuddy/
@@ -118,7 +122,10 @@ deploy/ci/docker-compose.ci.yml
 .claude/
 .atomcode/
 .creative-design/
-.gitea/
+# .gitea 下仅放行 CI workflow（Gitea Actions 必须在默认分支才有流水线可手动 Run）；
+# 其余（操作配置等）仍忽略。注意：不能写 .gitea/ 整目录排除，否则无法再放行子目录。
+.gitea/*
+!.gitea/workflows/
 # 本地构建日志
 mvn_build*
 

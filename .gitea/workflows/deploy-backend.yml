@@ -1,0 +1,219 @@
+# ============================================
+# 品达TMS 后端自动构建与部署（Gitea Actions）
+#
+# 当前迁移阶段（2026-10-09）：pd-auth、pd-gateway 已迁到 JDK21 + Spring Boot 3.3，
+# 本流水线「打包两个模块 -> 构建两个镜像 -> 分批灰度部署」。
+# ⚠️ 旧模块（pd-oms/pd-base/...）仍是 javax + Spring Boot 2.2，不能进构建；
+#    每迁完一个模块，就在下面 paths、Maven、上下文、compose/端口清单中同步追加。
+#
+# 2026-10-10 P0-8a（上线差距清单 D6）增强：
+#   - DB 变更脚本门禁：diff 含 *.sql 须 workflow_dispatch(db_approved=true) 人工放行
+#   - 回滚基线：部署前记录当前容器镜像 TAG（PREV_*）
+#   - 分批灰度：先 pd-auth-server，健康后再上 pd-gateway（网关最后切）
+#   - 失败自动回滚：任一批次失败自动恢复 PREV 基线并复检健康（D6 验收）
+#   - 演练开关：workflow_dispatch(simulate_failure=true) 人为失败，验证回滚
+#
+# 前置条件（服务器侧，2026-10-09 已就绪）：
+#   - ci/pinda-ci:latest     = JDK21 + Maven3.9 + Docker CLI + Compose v2
+#   - /data/ci/maven-settings.xml = 仓库凭据（挂载为 /ci，只读）
+#   - /data/ci/apps.env      = 密钥（NACOS_USERNAME/PASSWORD/REDIS_PASSWORD，0600）
+#   - pinda/jre21-fontconfig:1    = 运行时基础镜像
+# ============================================
+name: deploy-backend
+
+on:
+  # 2026-10-10 起仅手动触发（用户拍板）：push 自动构建曾把服务器打满；
+  # 且 .gitea/ 曾被移出跟踪导致 push 无流水线可跑，本次随 workflows 恢复入库一并收口。
+  # 手动方式：Gitea → Actions → deploy-backend → Run workflow。
+  workflow_dispatch:
+    inputs:
+      db_approved:
+        description: "DB 变更门禁放行（diff 含 *.sql 时须人工审核后置 true）"
+        type: boolean
+        default: false
+      simulate_failure:
+        description: "演练：批1健康后人为失败，验证失败自动回滚（D6 验收）"
+        type: boolean
+        default: false
+
+jobs:
+  deploy-backend:
+    runs-on: ubuntu-latest
+    env:
+      # Dockerfile.admin-h5 等使用 RUN --mount（BuildKit 语法）；runner 内 docker build
+      # 默认走 legacy builder 会直接报 "the --mount option requires BuildKit"（2026-10-10 实测）。
+      DOCKER_BUILDKIT: "1"
+    steps:
+      - name: 检出代码
+        # 不用 actions/checkout（避免从 GitHub 下载），直接 clone 内网 Gitea
+        run: |
+          rm -rf ./* ./.??*
+          git clone --depth 50 -b "${GITHUB_REF_NAME:-master}" \
+            "http://192.168.20.130:3000/pinda/pinda-tms.git" .
+
+      - name: DB 变更脚本门禁
+        # push 用 before SHA 比对；workflow_dispatch / 首次 push（全 0）回退 HEAD~1。
+        # diff 含 *.sql（排除 codeback 备份区）= DDL 变更：未经人工审核不进部署。
+        run: |
+          BEFORE="${{ github.event.before }}"
+          if [ -z "$BEFORE" ] || echo "$BEFORE" | grep -qE '^0{40}$'; then
+            BEFORE=$(git rev-parse HEAD~1 2>/dev/null || true)
+          fi
+          SQL_CHANGES=""
+          if [ -n "$BEFORE" ] && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            SQL_CHANGES=$(git diff --name-only "$BEFORE" HEAD -- \
+              '*.sql' ':(exclude)codeback' 2>/dev/null || true)
+          fi
+          if [ -n "$SQL_CHANGES" ]; then
+            echo "检测到 SQL 变更："
+            echo "$SQL_CHANGES"
+            if [ "${{ github.event.inputs.db_approved }}" = "true" ]; then
+              echo "db_approved=true，人工审核放行"
+            else
+              echo "::error::DB 门禁拦截：diff 含 *.sql，须人工审核后以 workflow_dispatch(db_approved=true) 放行"
+              exit 1
+            fi
+          else
+            echo "无 SQL 变更，门禁通过"
+          fi
+
+      - name: 计算镜像 TAG（git 短提交号）
+        run: |
+          TAG=$(echo "${GITHUB_SHA}" | cut -c1-7)
+          echo "本次构建 TAG=$TAG"
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+
+      - name: 记录回滚基线（当前在跑的镜像 TAG）
+        # 回滚目标 = 部署前容器所用镜像；首次部署无容器则 PREV 为空（失败时跳过回滚）
+        run: |
+          for pair in pd-auth-server:PREV_PD_AUTH_SERVER_TAG pd-gateway:PREV_PD_GATEWAY_TAG; do
+            c="${pair%%:*}"; v="${pair##*:}"
+            img=$(docker inspect -f '{{.Config.Image}}' "$c" 2>/dev/null || true)
+            if [ -n "$img" ]; then tag="${img##*:}"; else tag=""; fi
+            echo "$v=$tag" >> "$GITHUB_ENV"
+            echo "基线 $c -> ${tag:-（无容器，首次部署）}"
+          done
+
+      - name: Maven 打包已迁移模块（JDK21，跳过测试）
+        # -f 子模块 pom + -am（also make）：从父 pom 解析依赖链，自动先把
+        # pd-common / pd-service-api 等依赖模块构建进 /root/.m2（挂载 /data/m2 缓存），
+        # 再打包目标模块。不加 -am 时 CI 全新 .m2 会报依赖 SNAPSHOT 无法解析。
+        run: |
+          mvn -B -f pd-auth/pom.xml -am package -Dmaven.test.skip=true -s /ci/maven-settings.xml
+          mvn -B -f pd-gateway/pom.xml -am package -Dmaven.test.skip=true -s /ci/maven-settings.xml
+        timeout-minutes: 25
+
+      - name: 准备镜像构建上下文（硬链接 jar，每目录只放一个 jar）
+        run: |
+          set -e
+          # 镜像名 -> 模块目录
+          declare -A MODS=(
+            [pd-auth-server]=pd-auth
+            [pd-gateway]=pd-gateway
+          )
+          for svc in "${!MODS[@]}"; do
+            JAR=$(find "${MODS[$svc]}/target" -maxdepth 1 -type f -name '*.jar' \
+              ! -name '*sources*' ! -name '*javadoc*' ! -name '*.original' 2>/dev/null | head -1)
+            if [ -z "$JAR" ]; then
+              echo "::error::未找到 ${MODS[$svc]} 的 fat jar"
+              exit 1
+            fi
+            mkdir -p ".ctx/$svc"
+            ln -f "$JAR" ".ctx/$svc/app.jar"
+            echo ">> $svc <- $(basename "$JAR") ($(du -h "$JAR" | cut -f1))"
+          done
+
+      - name: 构建服务镜像
+        run: |
+          set -e
+          for svc in pd-auth-server pd-gateway; do
+            echo ">> docker build $svc:$TAG"
+            docker build -f deploy/apps/Dockerfile -t "pinda/$svc:${TAG}" ".ctx/$svc"
+          done
+        timeout-minutes: 15
+
+      - name: 灰度批 1：部署 pd-auth-server
+        run: |
+          export TAG
+          # 显式列出服务、不加 --remove-orphans：其他容器原样不动
+          # /ci 由 runner 容器挂载（-v /data/ci:/ci:ro）
+          docker compose --env-file /ci/apps.env -f deploy/apps/docker-compose.app.yml up -d \
+            pd-auth-server
+          docker compose --env-file /ci/apps.env -f deploy/apps/docker-compose.app.yml ps pd-auth-server
+        timeout-minutes: 10
+
+      - name: 批 1 健康检查（pd-auth-server，最长 4 分钟）
+        # 健康检查统一看 compose healthcheck（deploy/apps/docker-compose.app.yml 已配置），
+        # 经 docker.sock 执行 docker inspect，不走容器网络（act job 容器独立网络，curl 宿主不可靠）
+        run: |
+          ok=0
+          for i in $(seq 1 48); do
+            st=$(docker inspect -f '{{.State.Health.Status}}' pd-auth-server 2>/dev/null || echo missing)
+            [ "$st" = "healthy" ] && { ok=1; break; }
+            sleep 5
+          done
+          docker inspect -f '{{.Name}} health={{.State.Health.Status}}' pd-auth-server || true
+          [ "$ok" = "1" ] || { echo "::error::pd-auth-server 未健康"; exit 1; }
+          if [ "${{ github.event.inputs.simulate_failure }}" = "true" ]; then
+            echo "::warning::simulate_failure=true，批 1 健康后人为失败（演练自动回滚）"
+            exit 1
+          fi
+
+      - name: 灰度批 2：部署 pd-gateway
+        run: |
+          export TAG
+          docker compose --env-file /ci/apps.env -f deploy/apps/docker-compose.app.yml up -d \
+            pd-gateway
+          docker compose --env-file /ci/apps.env -f deploy/apps/docker-compose.app.yml ps pd-gateway
+        timeout-minutes: 10
+
+      - name: 批 2 健康检查（pd-gateway，最长 4 分钟）
+        run: |
+          ok=0
+          for i in $(seq 1 48); do
+            st=$(docker inspect -f '{{.State.Health.Status}}' pd-gateway 2>/dev/null || echo missing)
+            [ "$st" = "healthy" ] && { ok=1; break; }
+            sleep 5
+          done
+          docker inspect -f '{{.Name}} health={{.State.Health.Status}}' pd-gateway || true
+          [ "$ok" = "1" ] || { echo "::error::pd-gateway 未健康"; exit 1; }
+
+      - name: 失败自动回滚到上一版本
+        # 任一批次失败：两个服务按 PREV 基线恢复（TAG 为空=首次部署，无可回滚，保持失败退出）
+        # compose 支持按服务覆盖：PD_*_TAG 优先于全局 ${TAG}（见 docker-compose.app.yml image 行）
+        if: failure()
+        run: |
+          rb=0
+          if [ -n "${PREV_PD_AUTH_SERVER_TAG:-}" ]; then
+            PD_AUTH_SERVER_TAG="$PREV_PD_AUTH_SERVER_TAG" docker compose --env-file /ci/apps.env \
+              -f deploy/apps/docker-compose.app.yml up -d pd-auth-server && rb=1
+          fi
+          if [ -n "${PREV_PD_GATEWAY_TAG:-}" ]; then
+            PD_GATEWAY_TAG="$PREV_PD_GATEWAY_TAG" docker compose --env-file /ci/apps.env \
+              -f deploy/apps/docker-compose.app.yml up -d pd-gateway && rb=1
+          fi
+          if [ "$rb" = "0" ]; then
+            echo "::warning::无可回滚基线（首次部署），保持失败"
+            exit 0
+          fi
+          # 复检旧版健康（最长 4 分钟）；只检查「基线非空」即真实存在的容器
+          ok=0
+          for i in $(seq 1 48); do
+            ok=1
+            for pair in pd-auth-server:PREV_PD_AUTH_SERVER_TAG pd-gateway:PREV_PD_GATEWAY_TAG; do
+              c="${pair%%:*}"; v="${pair##*:}"
+              [ -n "${!v:-}" ] || continue
+              st=$(docker inspect -f '{{.State.Health.Status}}' "$c" 2>/dev/null || echo missing)
+              [ "$st" = "healthy" ] || ok=0
+            done
+            [ "$ok" = "1" ] && break
+            sleep 5
+          done
+          echo "::error::部署失败，已回滚：auth=$PREV_PD_AUTH_SERVER_TAG gateway=$PREV_PD_GATEWAY_TAG（复检 ok=$ok）"
+          exit 0
+
+      - name: 清理悬空镜像
+        if: always()
+        run: |
+          # 只删无 tag 的悬空层（不带 -a），不影响在用镜像
+          docker image prune -f
