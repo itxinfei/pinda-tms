@@ -43,8 +43,9 @@ COPY ${APP_PATH}/.npmrc ./.npmrc
 COPY ${APP_PATH}/driver/package.json ./driver/package.json
 COPY ${APP_PATH}/courier/package.json ./courier/package.json
 COPY ${APP_PATH}/customer/package.json ./customer/package.json
+# 增加 fetch 重试参数：内网服务器对外 npm 源偶发 DNS/网络抖动（EAI_AGAIN）
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile
+    pnpm install --frozen-lockfile --fetch-retries=5 --fetch-retry-factor=2 --fetch-retry-mintimeout=20000 --fetch-timeout=120000
 
 # 再拷整个 workspace 源码（node_modules 由 .dockerignore 排除）
 COPY ${APP_PATH}/ ./
