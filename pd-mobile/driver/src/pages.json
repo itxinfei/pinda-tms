@@ -1,0 +1,21 @@
+{
+	"easycom": {
+		"^u--(.*)": "uview-plus/components/u-$1/u-$1.vue",
+		"^up-(.*)": "uview-plus/components/u-$1/u-$1.vue",
+		"^u-([^-].*)": "uview-plus/components/u-$1/u-$1.vue"
+	},
+	"pages": [
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationBarTitleText": "品达物流 · 司机端"
+			}
+		}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "white",
+		"navigationBarTitleText": "品达物流 · 司机端",
+		"navigationBarBackgroundColor": "#2B6CFF",
+		"backgroundColor": "#F5F7FA"
+	}
+}
