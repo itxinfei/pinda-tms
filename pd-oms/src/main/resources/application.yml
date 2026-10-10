@@ -75,6 +75,19 @@ spring:
         wall:
           config:
             multi-statement-allow: true
+  # RabbitMQ：消费订单交付事件 ORDER_DELIVERED 触发结算。rabbitmq 在 pinda-infra 网络，
+  # 与 pd-oms 的 pinda-apps 网络隔离、无法用服务名，故走宿主机 IP（同 MySQL/Redis）；
+  # 账号密码由环境变量注入，密码不入库
+  rabbitmq:
+    host: ${RABBITMQ_HOST:192.168.20.130}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:pinda}
+    password: ${RABBITMQ_PASSWORD:}
+    virtual-host: ${RABBITMQ_VHOST:/}
+    listener:
+      simple:
+        # 消费失败不重回队列，防止消息无限重投；与监听器内部 catch 不抛异常一致
+        default-requeue-rejected: false
 
 mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml
