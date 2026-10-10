@@ -1,0 +1,24 @@
+/* ============================================
+   品达TMS 移动端 · 业务设计 Token（唯一真源）
+   规范来源：docs/需求文档/13-UI设计规范与页面模板.md
+   ============================================ */
+page {
+  --c-primary:#2B6CFF; --c-primary-dark:#1A4FD6; --c-primary-light:#E8F0FF;
+  --c-success:#00B42A; --c-warning:#FF7D00; --c-error:#F53F3F;
+  --c-text-1:#1D2129; --c-text-2:#4E5969; --c-text-3:#86909C; --c-text-4:#C9CDD4;
+  --c-bg:#F5F6F8; --c-surface:#FFFFFF; --c-border:#E5E6EB; --c-mask:rgba(0,0,0,.45);
+  --s-1:4rpx; --s-2:8rpx; --s-3:12rpx; --s-4:16rpx; --s-5:20rpx; --s-6:24rpx; --s-8:32rpx;
+  --f-title:32rpx; --f-sub:28rpx; --f-body:28rpx; --f-aux:24rpx; --f-tip:22rpx;
+  --r-sm:8rpx; --r-md:16rpx; --r-lg:24rpx; --r-round:999rpx;
+  --shadow-card:0 2rpx 12rpx rgba(0,0,0,.04);
+  background: var(--c-bg); color: var(--c-text-2);
+}
+.page { min-height: 100vh; background: var(--c-bg); padding: var(--s-4); }
+.action-bar { position: fixed; left: 0; right: 0; bottom: 0; padding: var(--s-3) var(--s-4);
+  background: var(--c-surface); border-top: 1rpx solid var(--c-border); z-index: 99; }
+.card { background: var(--c-surface); border-radius: var(--r-md); box-shadow: var(--shadow-card);
+  padding: var(--s-4); margin-bottom: var(--s-3); }
+.text-1 { color: var(--c-text-1); }
+.text-2 { color: var(--c-text-2); }
+.text-3 { color: var(--c-text-3); }
+.text-4 { color: var(--c-text-4); }
