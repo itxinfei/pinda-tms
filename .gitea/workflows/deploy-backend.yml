@@ -39,10 +39,9 @@ on:
 jobs:
   deploy-backend:
     runs-on: ubuntu-latest
-    env:
-      # Dockerfile.admin-h5 等使用 RUN --mount（BuildKit 语法）；runner 内 docker build
-      # 默认走 legacy builder 会直接报 "the --mount option requires BuildKit"（2026-10-10 实测）。
-      DOCKER_BUILDKIT: "1"
+    # 不设 DOCKER_BUILDKIT：job 镜像 ci/pinda-ci 已内置 docker-buildx 插件，
+    # docker 29 默认走 BuildKit；DOCKER_BUILDKIT=1 反而强制 buildx 硬失败
+    # （2026-10-10 实测 "Install the buildx component"）。
     steps:
       - name: 检出代码
         # 不用 actions/checkout（避免从 GitHub 下载），直接 clone 内网 Gitea
