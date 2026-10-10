@@ -1,6 +1,5 @@
 package com.itheima.pinda.DTO;
 
-import com.itheima.pinda.entity.Order;
 import lombok.Builder;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
@@ -33,6 +32,6 @@ public class OrderClassifyDTO {
     /**
      * 原订单
      */
-    private Order order;
+    private OrderDTO order;
 
 }

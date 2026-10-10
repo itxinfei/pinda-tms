@@ -18,17 +18,17 @@ public class DriverJobDTO implements Serializable {
     /**
      * id
      */
-    private String id;
+    private Long id;
 
     /**
      * 起始机构id
      */
-    private String startAgencyId;
+    private Long startOrgId;
 
     /**
      * 目的机构id
      */
-    private String endAgencyId;
+    private Long endOrgId;
 
     /**
      * 作业状态，1为待执行（对应 待提货）、2为进行中（对应在途）、3为改派（对应 已交付）、4为已完成（对应 已交付）、5为已作废
@@ -38,12 +38,12 @@ public class DriverJobDTO implements Serializable {
     /**
      * 司机id
      */
-    private String driverId;
+    private Long driverId;
 
     /**
      * 运输任务id
      */
-    private String taskTransportId;
+    private Long taskTransportId;
 
     /**
      * 提货对接人

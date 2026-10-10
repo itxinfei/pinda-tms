@@ -2,8 +2,8 @@ package com.itheima.pinda.controller;
 
 
 import com.itheima.pinda.feign.AttachmentClient;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,7 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
  * @since 2020-03-19
  */
 @Slf4j
-@Api(tags = "文件上传")
+@Tag(name = "文件上传")
 @Controller
 @RequestMapping("attachment")
 public class AttachmentController {
@@ -33,7 +33,7 @@ public class AttachmentController {
         this.attachmentClient = attachmentClient;
     }
 
-    @ApiOperation(value = "文件上传")
+    @Operation(summary = "文件上传")
     @ResponseBody
     @PostMapping("upload")
     public Object upload(@RequestParam(value = "file") MultipartFile file) {

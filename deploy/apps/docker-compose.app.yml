@@ -44,7 +44,7 @@ x-ulimits: &app-ulimits
 
 # JVM 档位
 x-jvm-core: &jvm-core
-  JAVA_OPTS: "-Xms128m -Xmx256m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:MaxMetaspaceSize=256m -XX:MaxDirectMemorySize=256m -Xss512k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -Dmybatis-plus.mapper-locations=classpath*:/mapper/**/*.xml -Dmybatis-plus.typeAliasesPackage=com.itheima.pinda.entity -Dmybatis-plus.configuration.map-underscore-to-camel-case=true -Dmybatis-plus.configuration.cache-enabled=true -Dmybatis-plus.configuration.call-setters-on-nulls=false -Dmybatis-plus.configuration.jdbc-type-for-null=NULL -Dmybatis-plus.global-config.db-config.id-type=ASSIGN_ID -Dmybatis-plus.global-config.db-config.field-strategy=NOT_NULL -Dmybatis-plus.global-config.db-config.column-underline=true -Dmybatis-plus.global-config.db-config.logic-delete-value=0 -Dmybatis-plus.global-config.db-config.logic-not-delete-value=1 -Dmybatis-plus.global-config.banner=false"
+  JAVA_OPTS: "-Xms128m -Xmx256m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:MaxMetaspaceSize=256m -XX:MaxDirectMemorySize=256m -Xss512k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -Dmybatis-plus.mapper-locations=classpath*:/mapper/**/*.xml -Dmybatis-plus.typeAliasesPackage=com.itheima.pinda.entity -Dmybatis-plus.configuration.map-underscore-to-camel-case=true -Dmybatis-plus.configuration.cache-enabled=true -Dmybatis-plus.configuration.call-setters-on-nulls=false -Dmybatis-plus.configuration.jdbc-type-for-null=NULL -Dmybatis-plus.global-config.db-config.id-type=ASSIGN_ID -Dmybatis-plus.global-config.banner=false"
   # JVM 系统属性（JAVA_TOOL_OPTIONS，优先级高于 Nacos 与 jar 内 druid.properties）：
   # 修复 druid-spring-boot-starter 1.1.x 的 druid.properties 自引用占位符导致的
   # "Circular placeholder reference"（Nacos 配置覆盖无效，优先级低于 druid.properties 的 @PropertySource）。
@@ -53,18 +53,20 @@ x-jvm-core: &jvm-core
   # 也是自引用占位符（${mybatis-plus.mapper-locations}），Nacos 未提供，jar 内也无默认值 → Circular。
   # 业务服务的 mapper 资源在 classpath:/mapper/**，实体包统一为 com.itheima.pinda.entity（aggregation 的
   # mapper 用 FQN DTO，给该包名仅用于占位符破环，不影响功能）。pd-gateway 因显式覆写 JAVA_TOOL_OPTIONS 不受本锚点影响。
-  JAVA_TOOL_OPTIONS: "-Dbaidu.map.ak=${BAIDU_MAP_AK:-} -Dspring.datasource.druid.stat-view-servlet.enabled=false -Dspring.datasource.druid.web-stat-filter.enabled=false -Dspring.servlet.multipart.enabled=true -Dspring.servlet.multipart.max-file-size=100MB -Dspring.servlet.multipart.max-request-size=1000MB -Dspring.jackson.time-zone=GMT+8 -Dmybatis-plus.configuration.map-underscore-to-camel-case=true -Dmybatis-plus.configuration.cache-enabled=true -Dmybatis-plus.configuration.call-setters-on-nulls=false -Dmybatis-plus.configuration.jdbc-type-for-null=NULL -Dmybatis-plus.global-config.db-config.id-type=ASSIGN_ID -Dmybatis-plus.global-config.db-config.field-strategy=NOT_NULL -Dmybatis-plus.global-config.db-config.column-underline=true -Dmybatis-plus.global-config.db-config.logic-delete-value=0 -Dmybatis-plus.global-config.db-config.logic-not-delete-value=1 -Dmybatis-plus.global-config.banner=false -Dmybatis-plus.mapper-locations=classpath*:/mapper/**/*.xml -Dmybatis-plus.typeAliasesPackage=com.itheima.pinda.entity -Dspring.datasource.druid.type=com.alibaba.druid.pool.DruidDataSource -Dspring.datasource.druid.driver-class-name=com.mysql.cj.jdbc.Driver -Dspring.datasource.druid.username=root -Dspring.datasource.druid.password=123456 -Dspring.datasource.druid.initial-size=5 -Dspring.datasource.druid.min-idle=5 -Dspring.datasource.druid.max-active=20 -Dspring.datasource.druid.max-wait=60000 -Dspring.datasource.druid.pool-prepared-statements=false -Dspring.datasource.druid.max-pool-prepared-statement-per-connection-size=20 -Dspring.datasource.druid.time-between-eviction-runs-millis=60000 -Dspring.datasource.druid.min-evictable-idle-time-millis=300000 -Dspring.datasource.druid.test-while-idle=true -Dspring.datasource.druid.test-on-borrow=false -Dspring.datasource.druid.test-on-return=false -Dspring.datasource.druid.stat-view-servlet.url-pattern=/druid/* -Dspring.datasource.druid.filter.stat.log-slow-sql=true -Dspring.datasource.druid.filter.stat.slow-sql-millis=5000 -Dspring.datasource.druid.filter.stat.merge-sql=true -Dspring.datasource.druid.filter.wall.config.multi-statement-allow=true"
+  JAVA_TOOL_OPTIONS: "-Dbaidu.map.ak=${BAIDU_MAP_AK:-} -Dspring.datasource.druid.stat-view-servlet.enabled=false -Dspring.datasource.druid.web-stat-filter.enabled=false -Dspring.servlet.multipart.enabled=true -Dspring.servlet.multipart.max-file-size=100MB -Dspring.servlet.multipart.max-request-size=1000MB -Dspring.jackson.time-zone=GMT+8 -Dmybatis-plus.configuration.map-underscore-to-camel-case=true -Dmybatis-plus.configuration.cache-enabled=true -Dmybatis-plus.configuration.call-setters-on-nulls=false -Dmybatis-plus.configuration.jdbc-type-for-null=NULL -Dmybatis-plus.global-config.db-config.id-type=ASSIGN_ID -Dmybatis-plus.global-config.banner=false -Dmybatis-plus.mapper-locations=classpath*:/mapper/**/*.xml -Dmybatis-plus.typeAliasesPackage=com.itheima.pinda.entity -Dspring.datasource.druid.type=com.alibaba.druid.pool.DruidDataSource -Dspring.datasource.druid.driver-class-name=com.mysql.cj.jdbc.Driver -Dspring.datasource.druid.initial-size=5 -Dspring.datasource.druid.min-idle=5 -Dspring.datasource.druid.max-active=20 -Dspring.datasource.druid.max-wait=60000 -Dspring.datasource.druid.pool-prepared-statements=false -Dspring.datasource.druid.max-pool-prepared-statement-per-connection-size=20 -Dspring.datasource.druid.time-between-eviction-runs-millis=60000 -Dspring.datasource.druid.min-evictable-idle-time-millis=300000 -Dspring.datasource.druid.test-while-idle=true -Dspring.datasource.druid.test-on-borrow=false -Dspring.datasource.druid.test-on-return=false -Dspring.datasource.druid.stat-view-servlet.url-pattern=/druid/* -Dspring.datasource.druid.filter.stat.log-slow-sql=true -Dspring.datasource.druid.filter.stat.slow-sql-millis=5000 -Dspring.datasource.druid.filter.stat.merge-sql=true -Dspring.datasource.druid.filter.wall.config.multi-statement-allow=true"
   # 含空格的值（如日期格式）不能放进 JAVA_TOOL_OPTIONS（JVM 按空白切分参数会断裂），
   # 改用环境变量注入，Spring 松弛绑定 SPRINT_JACKSON_DATE_FORMAT -> spring.jackson.date-format，且不触发占位符死循环。
   SPRING_JACKSON_DATE_FORMAT: "yyyy-MM-dd HH:mm:ss"
   # 占位符破环（双保险）：JAVA_TOOL_OPTIONS 的 -D 串过长时，早期参数（如
   # stat-view-servlet.enabled / multipart.enabled / web-stat-filter.enabled / jackson.time-zone /
   # mybatis-plus.configuration.* / global-config.*）实测偶发未生效（仍 Circular placeholder）。
-  # 这里再用环境变量松弛绑定兜一层，与已验证可用的 SPRING_DATASOURCE_DRUID_URL / CLIENT_USER_URL 同一机制。
+  # 这里再用环境变量松弛绑定兜一层，与 CLIENT_USER_URL 同一机制。
   SPRING_DATASOURCE_DRUID_TYPE: "com.alibaba.druid.pool.DruidDataSource"
   SPRING_DATASOURCE_DRUID_DRIVER_CLASS_NAME: "com.mysql.cj.jdbc.Driver"
-  SPRING_DATASOURCE_DRUID_USERNAME: "root"
-  SPRING_DATASOURCE_DRUID_PASSWORD: "123456"
+  # 凭据从宿主 .env 的 MYSQL_USERNAME / MYSQL_PASSWORD 取，未设置时保持原值；
+  # 写成 env 派生而不是字面量，否则 spring.datasource.druid.* 会以环境变量优先级压住 jar 内的 ${MYSQL_*}。
+  SPRING_DATASOURCE_DRUID_USERNAME: "${MYSQL_USERNAME:-root}"
+  SPRING_DATASOURCE_DRUID_PASSWORD: "${MYSQL_PASSWORD:-123456}"
   SPRING_DATASOURCE_DRUID_INITIAL_SIZE: "5"
   SPRING_DATASOURCE_DRUID_MIN_IDLE: "5"
   SPRING_DATASOURCE_DRUID_MAX_ACTIVE: "20"
@@ -100,8 +102,8 @@ x-jvm-core: &jvm-core
   MYBATIS_PLUS_GLOBAL_CONFIG_DB_CONFIG_LOGIC_NOT_DELETE_VALUE: "1"
   MYBATIS_PLUS_GLOBAL_CONFIG_BANNER: "false"
 x-jvm-small: &jvm-small
-  JAVA_OPTS: "-Xms96m -Xmx192m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:MaxMetaspaceSize=192m -XX:MaxDirectMemorySize=128m -Xss512k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -Dmybatis-plus.mapper-locations=classpath*:/mapper/**/*.xml -Dmybatis-plus.typeAliasesPackage=com.itheima.pinda.entity -Dmybatis-plus.configuration.map-underscore-to-camel-case=true -Dmybatis-plus.configuration.cache-enabled=true -Dmybatis-plus.configuration.call-setters-on-nulls=false -Dmybatis-plus.configuration.jdbc-type-for-null=NULL -Dmybatis-plus.global-config.db-config.id-type=ASSIGN_ID -Dmybatis-plus.global-config.db-config.field-strategy=NOT_NULL -Dmybatis-plus.global-config.db-config.column-underline=true -Dmybatis-plus.global-config.db-config.logic-delete-value=0 -Dmybatis-plus.global-config.db-config.logic-not-delete-value=1 -Dmybatis-plus.global-config.banner=false"
-  JAVA_TOOL_OPTIONS: "-Dbaidu.map.ak=${BAIDU_MAP_AK:-} -Dspring.datasource.druid.stat-view-servlet.enabled=false -Dspring.datasource.druid.web-stat-filter.enabled=false -Dspring.servlet.multipart.enabled=true -Dspring.servlet.multipart.max-file-size=100MB -Dspring.servlet.multipart.max-request-size=1000MB -Dspring.jackson.time-zone=GMT+8 -Dmybatis-plus.configuration.map-underscore-to-camel-case=true -Dmybatis-plus.configuration.cache-enabled=true -Dmybatis-plus.configuration.call-setters-on-nulls=false -Dmybatis-plus.configuration.jdbc-type-for-null=NULL -Dmybatis-plus.global-config.db-config.id-type=ASSIGN_ID -Dmybatis-plus.global-config.db-config.field-strategy=NOT_NULL -Dmybatis-plus.global-config.db-config.column-underline=true -Dmybatis-plus.global-config.db-config.logic-delete-value=0 -Dmybatis-plus.global-config.db-config.logic-not-delete-value=1 -Dmybatis-plus.global-config.banner=false"
+  JAVA_OPTS: "-Xms96m -Xmx192m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:MaxMetaspaceSize=192m -XX:MaxDirectMemorySize=128m -Xss512k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -Dmybatis-plus.mapper-locations=classpath*:/mapper/**/*.xml -Dmybatis-plus.typeAliasesPackage=com.itheima.pinda.entity -Dmybatis-plus.configuration.map-underscore-to-camel-case=true -Dmybatis-plus.configuration.cache-enabled=true -Dmybatis-plus.configuration.call-setters-on-nulls=false -Dmybatis-plus.configuration.jdbc-type-for-null=NULL -Dmybatis-plus.global-config.db-config.id-type=ASSIGN_ID -Dmybatis-plus.global-config.banner=false"
+  JAVA_TOOL_OPTIONS: "-Dbaidu.map.ak=${BAIDU_MAP_AK:-} -Dspring.datasource.druid.stat-view-servlet.enabled=false -Dspring.datasource.druid.web-stat-filter.enabled=false -Dspring.servlet.multipart.enabled=true -Dspring.servlet.multipart.max-file-size=100MB -Dspring.servlet.multipart.max-request-size=1000MB -Dspring.jackson.time-zone=GMT+8 -Dmybatis-plus.configuration.map-underscore-to-camel-case=true -Dmybatis-plus.configuration.cache-enabled=true -Dmybatis-plus.configuration.call-setters-on-nulls=false -Dmybatis-plus.configuration.jdbc-type-for-null=NULL -Dmybatis-plus.global-config.db-config.id-type=ASSIGN_ID -Dmybatis-plus.global-config.banner=false"
   # 含空格的值（如日期格式）不能放进 JAVA_TOOL_OPTIONS（JVM 按空白切分参数会断裂），
   # 改用环境变量注入，Spring 松弛绑定 SPRINT_JACKSON_DATE_FORMAT -> spring.jackson.date-format，且不触发占位符死循环。
   SPRING_JACKSON_DATE_FORMAT: "yyyy-MM-dd HH:mm:ss"
@@ -109,8 +111,10 @@ x-jvm-small: &jvm-small
   # druid.* / servlet.multipart.* / jackson.time-zone / mybatis-plus.* 的自引用占位符。
   SPRING_DATASOURCE_DRUID_TYPE: "com.alibaba.druid.pool.DruidDataSource"
   SPRING_DATASOURCE_DRUID_DRIVER_CLASS_NAME: "com.mysql.cj.jdbc.Driver"
-  SPRING_DATASOURCE_DRUID_USERNAME: "root"
-  SPRING_DATASOURCE_DRUID_PASSWORD: "123456"
+  # 凭据从宿主 .env 的 MYSQL_USERNAME / MYSQL_PASSWORD 取，未设置时保持原值；
+  # 写成 env 派生而不是字面量，否则 spring.datasource.druid.* 会以环境变量优先级压住 jar 内的 ${MYSQL_*}。
+  SPRING_DATASOURCE_DRUID_USERNAME: "${MYSQL_USERNAME:-root}"
+  SPRING_DATASOURCE_DRUID_PASSWORD: "${MYSQL_PASSWORD:-123456}"
   SPRING_DATASOURCE_DRUID_INITIAL_SIZE: "5"
   SPRING_DATASOURCE_DRUID_MIN_IDLE: "5"
   SPRING_DATASOURCE_DRUID_MAX_ACTIVE: "20"
@@ -243,7 +247,7 @@ services:
       # spring.datasource.type=com.alibaba.druid.pool.DruidDataSource 而触发 DataSourceAutoConfiguration
       # 绑定失败（classpath 缺类，Nacos 覆写救不了）。网关本就不连库，排除该自动配置。
       # 同时保留上面 jvm-core 继承来的 druid 占位符修复，避免网关未来若恢复 druid 时再踩坑。
-      JAVA_TOOL_OPTIONS: "-Dbaidu.map.ak=${BAIDU_MAP_AK:-} -Dspring.datasource.druid.stat-view-servlet.enabled=false -Dspring.datasource.druid.web-stat-filter.enabled=false -Dspring.servlet.multipart.enabled=true -Dspring.servlet.multipart.max-file-size=100MB -Dspring.servlet.multipart.max-request-size=1000MB -Dspring.jackson.time-zone=GMT+8 -Dmybatis-plus.configuration.map-underscore-to-camel-case=true -Dmybatis-plus.configuration.cache-enabled=true -Dmybatis-plus.configuration.call-setters-on-nulls=false -Dmybatis-plus.configuration.jdbc-type-for-null=NULL -Dmybatis-plus.global-config.db-config.id-type=ASSIGN_ID -Dmybatis-plus.global-config.db-config.field-strategy=NOT_NULL -Dmybatis-plus.global-config.db-config.column-underline=true -Dmybatis-plus.global-config.db-config.logic-delete-value=0 -Dmybatis-plus.global-config.db-config.logic-not-delete-value=1 -Dmybatis-plus.global-config.banner=false -Dspring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration"
+      JAVA_TOOL_OPTIONS: "-Dbaidu.map.ak=${BAIDU_MAP_AK:-} -Dspring.datasource.druid.stat-view-servlet.enabled=false -Dspring.datasource.druid.web-stat-filter.enabled=false -Dspring.servlet.multipart.enabled=true -Dspring.servlet.multipart.max-file-size=100MB -Dspring.servlet.multipart.max-request-size=1000MB -Dspring.jackson.time-zone=GMT+8 -Dmybatis-plus.configuration.map-underscore-to-camel-case=true -Dmybatis-plus.configuration.cache-enabled=true -Dmybatis-plus.configuration.call-setters-on-nulls=false -Dmybatis-plus.configuration.jdbc-type-for-null=NULL -Dmybatis-plus.global-config.db-config.id-type=ASSIGN_ID -Dmybatis-plus.global-config.banner=false -Dspring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration"
     volumes:
       - ${PINDA_JWT_HOST_DIR:-/data/pinda-jwt}:/data/pinda-jwt:ro
 
@@ -285,9 +289,6 @@ services:
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8185' || exit 1"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
-      # 各微服务 bootstrap 的 spring.datasource.druid.url 为自引用占位符，Nacos 无法覆盖；
-      # 用环境变量给字面量（Spring 松弛绑定 SPRING_DATASOURCE_DRUID_URL -> spring.datasource.druid.url），破环。
-      SPRING_DATASOURCE_DRUID_URL: "jdbc:mysql://192.168.20.130:3306/pd_base?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true"
 
   pd-oms:
     <<: *app-core
@@ -300,7 +301,6 @@ services:
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8186' || exit 1"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
-      SPRING_DATASOURCE_DRUID_URL: "jdbc:mysql://192.168.20.130:3306/pd_oms?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true"
 
   pd-work:
     <<: *app-core
@@ -313,7 +313,6 @@ services:
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8187' || exit 1"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
-      SPRING_DATASOURCE_DRUID_URL: "jdbc:mysql://192.168.20.130:3306/pd_work?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true"
 
   pd-user:
     <<: *app-core
@@ -326,7 +325,6 @@ services:
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8189' || exit 1"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
-      SPRING_DATASOURCE_DRUID_URL: "jdbc:mysql://192.168.20.130:3306/pd_users?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true"
 
   pd-dispatch:
     <<: *app-core
@@ -339,7 +337,6 @@ services:
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8190' || exit 1"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
-      SPRING_DATASOURCE_DRUID_URL: "jdbc:mysql://192.168.20.130:3306/pd_dispatch?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true"
 
   pd-aggregation:
     <<: *app-core
@@ -352,7 +349,8 @@ services:
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8191' || exit 1"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
-      SPRING_DATASOURCE_DRUID_URL: "jdbc:mysql://192.168.20.130:3306/pd_aggregation?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true"
+      # 2026-10-10：原破环变量 SPRING_DATASOURCE_DRUID_URL 指向已删除的 pd_aggregation 库，
+      # 库名统一走单库 pinda_tms，URL 由 jar 内 application.yml 的 ${MYSQL_DATABASE} 给出。
 
   # netty 承载长连接与直接内存，按 core 档给足堆外额度
   pd-netty:
@@ -366,8 +364,7 @@ services:
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8192' || exit 1"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
-      # netty 实体表(pd_alarm_record/pd_truck_location/pd_truck_location_archive)实际落在 pd_oms 库
-      SPRING_DATASOURCE_DRUID_URL: "jdbc:mysql://192.168.20.130:3306/pd_oms?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true"
+      # 单库 pinda_tms 后 netty 的 pd_alarm_record/pd_truck_location* 与其他表同库，URL 由 jar 内 application.yml 给出
 
   pd-druid:
     <<: *app-small
@@ -380,12 +377,10 @@ services:
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8193' || exit 1"]
     environment:
       <<: [*jvm-small, *nacos-env, *redis-env]
-      # 兜底：pd-druid 的 bootstrap 引用 spring.datasource.url（flat 段），其 Nacos mysql.yml 模板
-      # 依赖 spring.datasource.db-name，而 db-name 注入（JVM/系统属性）实测未破环。这里直接给字面量 URL
-      # （连现存库 pinda_tms），优先级最高且不含 ${...}，彻底打断 Circular placeholder。
-      SPRING_DATASOURCE_URL: "jdbc:mysql://192.168.20.130:3306/pinda_tms?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true"
-      # pd-druid bootstrap 还自引用 spring.datasource.driver-class-name，同样用环境变量破环
-      SPRING_DATASOURCE_DRIVER_CLASS_NAME: "com.mysql.cj.jdbc.Driver"
+      # 2026-10-10：pd-druid 的 spring.datasource.url / driver-class-name 已落到 jar 内 application.yml
+      # （库名走单库 pinda_tms，可用 MYSQL_HOST/MYSQL_PORT/MYSQL_DATABASE 环境变量覆写），
+      # 原用于打断 bootstrap 自引用占位符的 SPRING_DATASOURCE_URL 字面量已删除——
+      # 它以系统属性优先级压住文件里的 ${MYSQL_*}，留着会让环境变量改库失效。
 
   # ---------- Web 聚合层 ----------
   pd-web-manager:

@@ -2,45 +2,44 @@ package com.itheima.pinda.vo.base.userCenter;
 
 import com.itheima.pinda.vo.base.angency.AgencySimpleVo;
 import com.itheima.pinda.vo.base.angency.RoleVo;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serializable;
 import java.util.List;
 
 @Data
-@ApiModel(value = "用户信息")
+@Schema(description = "用户信息")
 public class SysUserVo implements Serializable {
     private static final long serialVersionUID = -3424962804442674755L;
-    @ApiModelProperty(value = "用户id")
+    @Schema(description = "用户id")
     private String userId;
-    @ApiModelProperty(value = "员工账号")
+    @Schema(description = "员工账号")
     private String username;
-    @ApiModelProperty(value = "员工姓名")
+    @Schema(description = "员工姓名")
     private String name;
-    @ApiModelProperty(value = "密码")
+    @Schema(description = "密码")
     private String password;
-    @ApiModelProperty(value = "工号")
+    @Schema(description = "工号")
     private String workNumber;
-    @ApiModelProperty(value = "邮箱")
+    @Schema(description = "邮箱")
     private String email;
-    @ApiModelProperty(value = "所属机构信息")
+    @Schema(description = "所属机构信息")
     private AgencySimpleVo agency;
-    @ApiModelProperty(value = "手机号")
+    @Schema(description = "手机号")
     private String mobile;
-    @ApiModelProperty(value = "岗位 1为员工 2为快递员 3为司机")
+    @Schema(description = "岗位 1为员工 2为快递员 3为司机")
     private Integer station;
-    @ApiModelProperty(value = "岗位名称")
+    @Schema(description = "岗位名称")
     private String stationName;
-    @ApiModelProperty(value = "头像")
+    @Schema(description = "头像")
     private String avatar;
-    @ApiModelProperty(value = "账号状态 0：禁用   1：正常")
+    @Schema(description = "账号状态 0：禁用   1：正常")
     private Integer status;
-    @ApiModelProperty(value = "创建者信息")
+    @Schema(description = "创建者信息")
     private SysUserVo creator;
-    @ApiModelProperty(value = "创建时间,格式: yyyy-MM-dd HH:mm:ss")
+    @Schema(description = "创建时间,格式: yyyy-MM-dd HH:mm:ss")
     private String createTime;
-    @ApiModelProperty(value = "角色信息")
+    @Schema(description = "角色信息")
     private List<RoleVo> roles;
 }

@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -20,16 +21,16 @@ public class TaskTransportDTO implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "id")
-    private String id;
+    private Long id;
 
     @Schema(description = "车次id")
-    private String transportTripsId;
+    private Long tripsId;
 
     @Schema(description = "起始机构id")
-    private String startAgencyId;
+    private Long startOrgId;
 
     @Schema(description = "目的机构id")
-    private String endAgencyId;
+    private Long endOrgId;
 
     @Schema(description = "任务状态，1为待执行（对应 待提货）、2为进行中（对应在途）、3为待确认（保留状态）、4为已完成（对应 已交付）、5为已取消")
     private Integer status;
@@ -41,16 +42,16 @@ public class TaskTransportDTO implements Serializable {
     private Integer loadingStatus;
 
     @Schema(description = "车辆id")
-    private String truckId;
+    private Long truckId;
 
     @Schema(description = "提货凭证")
-    private String cargoPickUpPicture;
+    private String pickupPicture;
 
     @Schema(description = "货物照片")
     private String cargoPicture;
 
     @Schema(description = "运回单凭证")
-    private String transportCertificate;
+    private String certificatePicture;
 
     @Schema(description = "计划发车时间")
     @JsonFormat(
@@ -80,13 +81,13 @@ public class TaskTransportDTO implements Serializable {
     @JsonFormat(
             pattern = "yyyy-MM-dd HH:mm:ss"
     )
-    private LocalDateTime planPickUpGoodsTime;
+    private LocalDateTime planPickUpTime;
 
     @Schema(description = "实际提货时间")
     @JsonFormat(
             pattern = "yyyy-MM-dd HH:mm:ss"
     )
-    private LocalDateTime actualPickUpGoodsTime;
+    private LocalDateTime actualPickUpTime;
 
     @Schema(description = "计划交付时间")
     @JsonFormat(
@@ -102,14 +103,15 @@ public class TaskTransportDTO implements Serializable {
 
     @Schema(description = "交付货物照片")
     private String deliverPicture;
+
     @Schema(description = "提货纬度")
-    private String deliveryLatitude;
+    private BigDecimal pickupLatitude;
     @Schema(description = "提货经度")
-    private String deliveryLongitude;
+    private BigDecimal pickupLongitude;
     @Schema(description = "交付纬度")
-    private String deliverLatitude;
+    private BigDecimal deliverLatitude;
     @Schema(description = "交付经度")
-    private String deliverLongitude;
+    private BigDecimal deliverLongitude;
 
     @Schema(description = "任务创建时间")
     @JsonFormat(
@@ -118,7 +120,7 @@ public class TaskTransportDTO implements Serializable {
     private LocalDateTime createTime;
 
     @Schema(description = "运单id列表")
-    private List<String> transportOrderIds;
+    private List<Long> transportOrderIds;
 
     @Schema(description = "运单数量")
     private Integer transportOrderCount;
@@ -130,5 +132,5 @@ public class TaskTransportDTO implements Serializable {
     private Integer pageSize;
 
     @Schema(description = "id列表")
-    List<String> ids;
+    List<Long> ids;
 }

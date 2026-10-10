@@ -134,13 +134,33 @@ public class RabbitGpsTraceConsumer {
         CLEANUP_EXECUTOR.shutdown();
     }
 
-    private static final double SPEED_LIMIT = 120.0;
-    private static final long STAY_THRESHOLD_MINUTES = 30;
-    private static final int STAY_CHECK_WINDOW = 10;
-    private static final double STAY_POSITION_THRESHOLD = 0.001;
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
-    private static final double GEO_FENCE_DEVIATE_KM = 2.0;
-    private static final long HEARTBEAT_TIMEOUT_MINUTES = 5;
+
+    // ===== 以下阈值全部外部化到 gps.alert.* 配置（2026-10-10 P0-5：红线"禁止硬编码阈值"） =====
+
+    /** 超速阈值（km/h） */
+    @Value("${gps.alert.speed-limit-kmh:120}")
+    private double speedLimitKmh;
+
+    /** 长时间停留判定阈值（分钟） */
+    @Value("${gps.alert.stay-threshold-minutes:30}")
+    private long stayThresholdMinutes;
+
+    /** 停留检测取最近轨迹点个数（检测窗口） */
+    @Value("${gps.alert.stay-check-window:10}")
+    private int stayCheckWindow;
+
+    /** 停留位置漂移容差（度，经纬度差小于该值视为未移动） */
+    @Value("${gps.alert.stay-position-threshold:0.001}")
+    private double stayPositionThreshold;
+
+    /** 偏航距离阈值（km，距历史轨迹点线段超过该值告警） */
+    @Value("${gps.alert.deviate-threshold-km:2.0}")
+    private double deviateThresholdKm;
+
+    /** 心跳超时判定（分钟，早于该值未心跳的在线车辆置离线） */
+    @Value("${gps.alert.heartbeat-timeout-minutes:5}")
+    private long heartbeatTimeoutMinutes;
 
     /**
      * 消费GPS轨迹数据
@@ -254,15 +274,20 @@ public class RabbitGpsTraceConsumer {
                 && java.util.Objects.equals(a.getCurrentTime(), b.getCurrentTime());
     }
 
-    @Scheduled(fixedDelay = 60_000)
+    @Scheduled(fixedDelayString = "${gps.alert.offline-scan-interval-ms:60000}")
     public void scanOfflineTrucks() {
         try {
-            LocalDateTime threshold = LocalDateTime.now().minusMinutes(HEARTBEAT_TIMEOUT_MINUTES);
+            LocalDateTime threshold = LocalDateTime.now().minusMinutes(heartbeatTimeoutMinutes);
             int affected = truckBaseClient.markOffline(threshold);
             if (affected < 0) {
                 log.debug("[GPS心跳扫描] 调用 pd-base 失败（已降级）");
             } else if (affected > 0) {
                 log.info("[GPS心跳扫描] 离线车辆更新: {} 辆", affected);
+                // P0-5 新增规则：心跳超时置离线落告警记录（无具体车辆明细，按批量记一条；
+                // 去重由 AlarmRecordServiceImpl 的"无业务主体时间窗兜底"承担，防止每分钟刷屏）
+                gpsAlertService.alert("VEHICLE_OFFLINE", (String) null,
+                    String.format("车辆离线提醒: %d 辆车心跳超过 %d 分钟未上报，已置离线",
+                        affected, heartbeatTimeoutMinutes));
             }
         } catch (Exception e) {
             log.warn("[GPS心跳扫描] 扫描失败（已降级，不影响主流程）", e);
@@ -293,10 +318,10 @@ public class RabbitGpsTraceConsumer {
             long timeDiffSeconds = parseTimeDiffSeconds(current.getCurrentTime(), previous.getCurrentTime());
             if (timeDiffSeconds > 0 && timeDiffSeconds < 300) {
                 double speedKmh = (distanceKm / timeDiffSeconds) * 3600;
-                if (speedKmh > SPEED_LIMIT) {
+                if (speedKmh > speedLimitKmh) {
                     gpsAlertService.alert("SPEED_OVER", current,
                         String.format("超速提醒: 速度=%.1fkm/h, 阈值=%.0fkm/h, 位置=(%s, %s)",
-                            speedKmh, SPEED_LIMIT, current.getLng(), current.getLat()));
+                            speedKmh, speedLimitKmh, current.getLng(), current.getLat()));
                 }
             }
         } catch (NumberFormatException e) {
@@ -305,7 +330,7 @@ public class RabbitGpsTraceConsumer {
     }
 
     private void checkStayTooLong(LocationEntity current, String cacheKey, List<LocationEntity> tracePoints) {
-        int checkSize = Math.min(STAY_CHECK_WINDOW, tracePoints.size());
+        int checkSize = Math.min(stayCheckWindow, tracePoints.size());
         if (checkSize < 2) {
             return;
         }
@@ -319,9 +344,9 @@ public class RabbitGpsTraceConsumer {
             );
             double lngDiff = Math.abs(Double.parseDouble(last.getLng()) - Double.parseDouble(first.getLng()));
             double latDiff = Math.abs(Double.parseDouble(last.getLat()) - Double.parseDouble(first.getLat()));
-            if (stayMinutes > STAY_THRESHOLD_MINUTES
-                    && lngDiff < STAY_POSITION_THRESHOLD
-                    && latDiff < STAY_POSITION_THRESHOLD) {
+            if (stayMinutes > stayThresholdMinutes
+                    && lngDiff < stayPositionThreshold
+                    && latDiff < stayPositionThreshold) {
                 gpsAlertService.alert("STAY_TOO_LONG", current,
                     String.format("长时间停留提醒: 停留时长=%d分钟, 位置=(%s, %s)",
                         stayMinutes, current.getLng(), current.getLat()));
@@ -350,10 +375,10 @@ public class RabbitGpsTraceConsumer {
             return;
         }
         double deviateKm = distancePointToSegmentKm(curLng, curLat, p1Lng, p1Lat, p2Lng, p2Lat);
-        if (deviateKm > GEO_FENCE_DEVIATE_KM) {
+        if (deviateKm > deviateThresholdKm) {
             gpsAlertService.alert("DEVIATE_ROUTE", location,
                 String.format("偏离路线提醒: 距历史轨迹%.1fkm, 阈值%.1fkm, 位置=(%s, %s), 运输任务=%s",
-                    deviateKm, GEO_FENCE_DEVIATE_KM, location.getLng(), location.getLat(),
+                    deviateKm, deviateThresholdKm, location.getLng(), location.getLat(),
                     location.getTransportTaskId()));
         }
     }

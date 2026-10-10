@@ -1,7 +1,7 @@
 package com.itheima.pinda.feign;
 
 import com.itheima.pinda.common.utils.Result;
-import com.itheima.pinda.feign.hystrix.PayFeignFallback;
+import com.itheima.pinda.feign.fallback.PayFeignFallback;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;

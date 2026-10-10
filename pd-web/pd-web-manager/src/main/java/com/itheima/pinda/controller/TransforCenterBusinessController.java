@@ -1,21 +1,16 @@
 package com.itheima.pinda.controller;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.itheima.pinda.DTO.OrgDTO;
+import com.itheima.pinda.DTO.UserDTO;
 import com.itheima.pinda.DTO.transportline.TransportLineDto;
 import com.itheima.pinda.DTO.transportline.TransportLineTypeDto;
 import com.itheima.pinda.DTO.transportline.TransportTripsDto;
 import com.itheima.pinda.DTO.transportline.TransportTripsTruckDriverDto;
-import com.itheima.pinda.authority.api.OrgApi;
-import com.itheima.pinda.authority.api.UserApi;
-import com.itheima.pinda.authority.entity.auth.User;
-import com.itheima.pinda.authority.entity.core.Org;
-import com.itheima.pinda.authority.enumeration.common.StaticStation;
-import com.itheima.pinda.authority.enumeration.core.OrgType;
-import com.itheima.pinda.base.R;
 import com.itheima.pinda.common.utils.Constant;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
-import com.itheima.pinda.context.BaseContextHandler;
+import com.itheima.pinda.constant.StaticStation;
+import com.itheima.pinda.common.context.RequestContext;
 import com.itheima.pinda.DTO.angency.FleetDto;
 import com.itheima.pinda.DTO.base.GoodsTypeDto;
 import com.itheima.pinda.DTO.truck.TruckDto;
@@ -24,7 +19,10 @@ import com.itheima.pinda.DTO.truck.TruckTypeDto;
 import com.itheima.pinda.DTO.user.TruckDriverDto;
 import com.itheima.pinda.DTO.user.TruckDriverLicenseDto;
 import com.itheima.pinda.DTO.TaskTransportDTO;
+import com.itheima.pinda.enums.org.OrgType;
 import com.itheima.pinda.enums.transporttask.TransportTaskStatus;
+import com.itheima.pinda.feign.OrgFeign;
+import com.itheima.pinda.feign.UserFeign;
 import com.itheima.pinda.feign.agency.FleetFeign;
 import com.itheima.pinda.feign.common.GoodsTypeFeign;
 import com.itheima.pinda.feign.transportline.TransportLineFeign;
@@ -43,10 +41,8 @@ import com.itheima.pinda.vo.base.angency.AgencyVo;
 import com.itheima.pinda.vo.base.businessHall.GoodsTypeVo;
 import com.itheima.pinda.vo.base.transforCenter.business.*;
 import com.itheima.pinda.vo.base.userCenter.SysUserVo;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiImplicitParam;
-import io.swagger.annotations.ApiImplicitParams;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
@@ -65,7 +61,7 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("transfor-center/bussiness")
-@Api(tags = "转运中心管理-业务信息管理")
+@Tag(name = "转运中心管理-业务信息管理")
 @Slf4j
 public class TransforCenterBusinessController {
     @Autowired
@@ -77,7 +73,7 @@ public class TransforCenterBusinessController {
     @Autowired
     private FleetFeign fleetFeign;
     @Autowired
-    private OrgApi orgApi;
+    private OrgFeign orgFeign;
     @Autowired
     private TruckFeign truckFeign;
     @Autowired
@@ -89,11 +85,11 @@ public class TransforCenterBusinessController {
     @Autowired
     private TransportTripsFeign transportTripsFeign;
     @Autowired
-    private UserApi userApi;
+    private UserFeign userFeign;
     @Autowired
     private DriverFeign driverFeign;
 
-    @ApiOperation(value = "添加车辆类型")
+    @Operation(summary = "添加车辆类型")
     @PostMapping("/truckType")
     public TruckTypeVo saveTruckType(@RequestBody TruckTypeVo vo) {
         TruckTypeDto dto = new TruckTypeDto();
@@ -106,8 +102,7 @@ public class TransforCenterBusinessController {
         return vo;
     }
 
-    @ApiOperation(value = "更新车辆类型")
-    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "车辆类型id", required = true, example = "1", paramType = "{path}")})
+    @Operation(summary = "更新车辆类型")
     @PutMapping("/truckType/{id}")
     public TruckTypeVo updateTruckType(@PathVariable(name = "id") String id, @RequestBody TruckTypeVo vo) {
         vo.setId(id);
@@ -121,14 +116,13 @@ public class TransforCenterBusinessController {
         return vo;
     }
 
-    @ApiOperation(value = "获取车辆类型分页数据")
-    @ApiImplicitParams({@ApiImplicitParam(name = "page", value = "页码", required = true, example = "1"), @ApiImplicitParam(name = "pageSize", value = "页尺寸", required = true, example = "10"), @ApiImplicitParam(name = "name", value = "车辆类型名称"), @ApiImplicitParam(name = "allowableLoad", value = "车型载重"), @ApiImplicitParam(name = "allowableVolume", value = "车型体积")})
+    @Operation(summary = "获取车辆类型分页数据")
     @GetMapping("/truckType/page")
     public PageResponse<TruckTypeVo> findTruckTypeByPage(@RequestParam(name = "page") Integer page, @RequestParam(name = "pageSize") Integer pageSize, @RequestParam(name = "name", required = false) String name, @RequestParam(name = "allowableLoad", required = false) BigDecimal allowableLoad, @RequestParam(name = "allowableVolume", required = false) BigDecimal allowableVolume) {
         // 说明：当前按载重/体积精确匹配查询；如需上下区间浮动查询可在 service 层扩展 between 条件
         PageResponse<TruckTypeDto> truckTypeDtoPage = truckTypeFeign.findByPage(page, pageSize, name, allowableLoad, allowableVolume);
         Set<String> goodsTypeSet = new HashSet<>();
-        // 修改点：远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
+        // 远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
         List<TruckTypeDto> truckTypeDtoList = Rx.items(truckTypeDtoPage);
         truckTypeDtoList.forEach(dto -> {
             if (dto.getGoodsTypeIds() != null) {
@@ -165,8 +159,7 @@ public class TransforCenterBusinessController {
                 .counts(truckTypeDtoPage != null ? truckTypeDtoPage.getCounts() : 0L).build();
     }
 
-    @ApiOperation(value = "获取车辆类型详情")
-    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "车辆类型id", required = true, example = "1", paramType = "{path}")})
+    @Operation(summary = "获取车辆类型详情")
     @GetMapping("/truckType/{id}")
     public TruckTypeVo findTruckTypeById(@PathVariable(name = "id") String id) {
         TruckTypeDto dto = truckTypeFeign.fineById(id);
@@ -190,8 +183,7 @@ public class TransforCenterBusinessController {
         return vo;
     }
 
-    @ApiOperation(value = "删除车辆类型")
-    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "车辆类型id", required = true, example = "1", paramType = "{path}")})
+    @Operation(summary = "删除车辆类型")
     @DeleteMapping("/truckType/{id}")
     public Result deleteTruckType(@PathVariable(name = "id") String id) {
         // 说明：车辆类型关联校验（存在关联车辆/货物类型时禁止删除）已在 pd-base disable 侧实现
@@ -199,20 +191,20 @@ public class TransforCenterBusinessController {
         return Result.ok();
     }
 
-    @ApiOperation(value = "添加线路类型")
+    @Operation(summary = "添加线路类型")
     @PostMapping("/transportLineType")
     public TransportLineTypeVo saveTransportLineType(@RequestBody TransportLineTypeVo vo) {
         TransportLineTypeDto dto = new TransportLineTypeDto();
         BeanUtils.copyProperties(vo, dto);
-        // 更新人信息从 token 上下文获取（BaseContextHandler）
-        dto.setUpdater(BaseContextHandler.getUserId() != null ? String.valueOf(BaseContextHandler.getUserId()) : "system");
+        // 更新人信息从网关透传的 userid 请求头获取（RequestContext）
+        String currentUserId = RequestContext.getUserId();
+        dto.setUpdater(currentUserId != null ? currentUserId : "system");
         TransportLineTypeDto resultDto = transportLineTypeFeign.saveTransportLineType(dto);
         BeanUtils.copyProperties(resultDto, vo);
         return vo;
     }
 
-    @ApiOperation(value = "更新线路类型")
-    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "线路类型id", required = true, example = "1", paramType = "{path}")})
+    @Operation(summary = "更新线路类型")
     @PutMapping("/transportLineType/{id}")
     public TransportLineTypeVo updateTransportLineType(@PathVariable(name = "id") String id, @RequestBody TransportLineTypeVo vo) {
         vo.setId(id);
@@ -223,13 +215,12 @@ public class TransforCenterBusinessController {
         return vo;
     }
 
-    @ApiOperation(value = "获取线路类型分页数据")
-    @ApiImplicitParams({@ApiImplicitParam(name = "page", value = "页码", required = true, example = "1"), @ApiImplicitParam(name = "pageSize", value = "页尺寸", required = true, example = "10"), @ApiImplicitParam(name = "typeNumber", value = "类型编号"), @ApiImplicitParam(name = "name", value = "类型名称"), @ApiImplicitParam(name = "agencyType", value = "机构类型")})
+    @Operation(summary = "获取线路类型分页数据")
     @GetMapping("/transportLineType/page")
     public PageResponse<TransportLineTypeVo> findTransportLineTypeByPage(@RequestParam(name = "page") Integer page, @RequestParam(name = "pageSize") Integer pageSize, @RequestParam(name = "typeNumber", required = false) String typeNumber, @RequestParam(name = "name", required = false) String name, @RequestParam(name = "agencyType", required = false) Integer agencyType) {
         PageResponse<TransportLineTypeDto> transportLineTypeDtoPage = transportLineTypeFeign.findByPage(page, pageSize, typeNumber, name, agencyType);
         //加工数据
-        // 修改点：远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
+        // 远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
         List<TransportLineTypeDto> transportLineTypeDtoList = Rx.items(transportLineTypeDtoPage);
         Set<String> userSet = new HashSet<>();
         transportLineTypeDtoList.forEach(transportLineTypeDto -> {
@@ -237,7 +228,7 @@ public class TransforCenterBusinessController {
                 userSet.add(transportLineTypeDto.getUpdater());
             }
         });
-        CompletableFuture<Map> userFuture = PdCompletableFuture.userMapFuture(userApi, userSet, null, null, null);
+        CompletableFuture<Map> userFuture = PdCompletableFuture.userMapFuture(userFeign, userSet, null, null, null);
         CompletableFuture.allOf(userFuture).join();
         List<TransportLineTypeVo> transportLineTypeVoList = transportLineTypeDtoList.stream().map(transportLineTypeDto -> {
             TransportLineTypeVo vo = new TransportLineTypeVo();
@@ -254,10 +245,12 @@ public class TransforCenterBusinessController {
                 vo.setLastUpdateTime(transportLineTypeDto.getLastUpdateTime().format(DateTimeFormatter.ofPattern(Constant.STAND_DATE_TIME_FORMAT)));
             }
             if (transportLineTypeDto.getStartAgencyType() != null) {
-                vo.setStartAgencyTypeName(OrgType.getEnumByType(transportLineTypeDto.getStartAgencyType()).getName());
+                OrgType startType = OrgType.getEnumByType(transportLineTypeDto.getStartAgencyType());
+                vo.setStartAgencyTypeName(startType == null ? null : startType.getName());
             }
             if (transportLineTypeDto.getEndAgencyType() != null) {
-                vo.setEndAgencyTypeName(OrgType.getEnumByType(transportLineTypeDto.getEndAgencyType()).getName());
+                OrgType endType = OrgType.getEnumByType(transportLineTypeDto.getEndAgencyType());
+                vo.setEndAgencyTypeName(endType == null ? null : endType.getName());
             }
             return vo;
         }).collect(Collectors.toList());
@@ -268,8 +261,7 @@ public class TransforCenterBusinessController {
                 .pages(transportLineTypeDtoPage != null ? transportLineTypeDtoPage.getPages() : 0L).build();
     }
 
-    @ApiOperation(value = "获取线路类型详情")
-    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "线路类型id", required = true, example = "1", paramType = "{path}")})
+    @Operation(summary = "获取线路类型详情")
     @GetMapping("/transportLineType/{id}")
     public TransportLineTypeVo findTransportLineTypeById(@PathVariable(name = "id") String id) {
         TransportLineTypeDto dto = transportLineTypeFeign.fineById(id);
@@ -279,14 +271,16 @@ public class TransforCenterBusinessController {
             vo.setLastUpdateTime(dto.getLastUpdateTime().format(DateTimeFormatter.ofPattern(Constant.STAND_DATE_TIME_FORMAT)));
         }
         if (dto.getStartAgencyType() != null) {
-            vo.setStartAgencyTypeName(OrgType.getEnumByType(dto.getStartAgencyType()).getName());
+            OrgType startType = OrgType.getEnumByType(dto.getStartAgencyType());
+            vo.setStartAgencyTypeName(startType == null ? null : startType.getName());
         }
         if (dto.getEndAgencyType() != null) {
-            vo.setEndAgencyTypeName(OrgType.getEnumByType(dto.getEndAgencyType()).getName());
+            OrgType endType = OrgType.getEnumByType(dto.getEndAgencyType());
+            vo.setEndAgencyTypeName(endType == null ? null : endType.getName());
         }
         if (dto.getUpdater() != null) {
-            // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
-            User updater = Rx.data(userApi.get(Long.valueOf(dto.getUpdater())));
+            // 远程调用直接返回 UserDTO，可能为 null，判空避免 NPE
+            UserDTO updater = userFeign.get(Long.valueOf(dto.getUpdater()));
             if (updater != null) {
                 vo.setUpdater(BeanUtil.parseUser2Vo(updater, null, null));
             }
@@ -294,8 +288,7 @@ public class TransforCenterBusinessController {
         return vo;
     }
 
-    @ApiOperation(value = "删除线路类型")
-    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "线路类型id", required = true, example = "1", paramType = "{path}")})
+    @Operation(summary = "删除线路类型")
     @DeleteMapping("/transportLineType/{id}")
     public Result deleteGoodsType(@PathVariable(name = "id") String id) {
         // 说明：线路类型关联校验（存在关联线路时禁止删除）已在 pd-base disable 侧实现
@@ -303,7 +296,7 @@ public class TransforCenterBusinessController {
         return Result.ok();
     }
 
-    @ApiOperation(value = "添加车队")
+    @Operation(summary = "添加车队")
     @PostMapping("/fleet")
     public FleetVo saveFleet(@RequestBody FleetVo vo) {
         FleetDto dto = new FleetDto();
@@ -319,8 +312,7 @@ public class TransforCenterBusinessController {
         return vo;
     }
 
-    @ApiOperation(value = "更新车队信息")
-    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "车队id", required = true, example = "1", paramType = "{path}")})
+    @Operation(summary = "更新车队信息")
     @PutMapping("/fleet/{id}")
     public FleetVo updateFleet(@PathVariable(name = "id") String id, @RequestBody FleetVo vo) {
         vo.setId(id);
@@ -337,13 +329,12 @@ public class TransforCenterBusinessController {
         return vo;
     }
 
-    @ApiOperation(value = "获取车队分页数据")
-    @ApiImplicitParams({@ApiImplicitParam(name = "page", value = "页码", required = true, example = "1"), @ApiImplicitParam(name = "pageSize", value = "页尺寸", required = true, example = "10"), @ApiImplicitParam(name = "name", value = "车队名称"), @ApiImplicitParam(name = "fleetNumber", value = "车队编号"), @ApiImplicitParam(name = "manager", value = "负责人id")})
+    @Operation(summary = "获取车队分页数据")
     @GetMapping("/fleet/page")
     public PageResponse<FleetVo> findFleetByPage(@RequestParam(name = "page") Integer page, @RequestParam(name = "pageSize") Integer pageSize, @RequestParam(name = "name", required = false) String name, @RequestParam(name = "manager", required = false) String manager, @RequestParam(name = "fleetNumber", required = false) String fleetNumber) {
         PageResponse<FleetDto> fleetDtoPage = fleetFeign.findByPage(page, pageSize, name, fleetNumber, manager);
         //加工数据
-        // 修改点：远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
+        // 远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
         List<FleetDto> fleetDtoList = Rx.items(fleetDtoPage);
         Set<Long> agencySet = new HashSet<>();
         Set<String> userSet = new HashSet<>();
@@ -355,8 +346,8 @@ public class TransforCenterBusinessController {
                 userSet.add(fleetDto.getManager());
             }
         });
-        CompletableFuture<Map> agencyFuture = PdCompletableFuture.agencyMapFuture(orgApi, agencySet);
-        CompletableFuture<Map> userFuture = PdCompletableFuture.userMapFuture(userApi, userSet, null, null, null);
+        CompletableFuture<Map> agencyFuture = PdCompletableFuture.agencyMapFuture(orgFeign, agencySet);
+        CompletableFuture<Map> userFuture = PdCompletableFuture.userMapFuture(userFeign, userSet, null, null, null);
         CompletableFuture.allOf(agencyFuture, userFuture).join();
         List<FleetVo> fleetVoList = fleetDtoList.stream().map(fleetDto -> {
             FleetVo vo = new FleetVo();
@@ -381,8 +372,7 @@ public class TransforCenterBusinessController {
                 .pages(fleetDtoPage != null ? fleetDtoPage.getPages() : 0L).build();
     }
 
-    @ApiOperation(value = "获取车队详情")
-    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "车队id", required = true, example = "1", paramType = "{path}")})
+    @Operation(summary = "获取车队详情")
     @GetMapping("/fleet/{id}")
     public FleetVo findFleetById(@PathVariable(name = "id") String id) {
         FleetDto dto = fleetFeign.fineById(id);
@@ -390,16 +380,16 @@ public class TransforCenterBusinessController {
         BeanUtils.copyProperties(dto, vo);
         //负责人信息
         if (StringUtils.isNotEmpty(dto.getManager())) {
-            // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
-            User manager = Rx.data(userApi.get(Long.valueOf(dto.getManager())));
+            // 远程调用直接返回 UserDTO，可能为 null，判空避免 NPE
+            UserDTO manager = userFeign.get(Long.valueOf(dto.getManager()));
             if (manager != null) {
                 vo.setManager(BeanUtil.parseUser2Vo(manager, null, null));
             }
         }
         //机构信息
         if (StringUtils.isNotEmpty(dto.getAgencyId())) {
-            // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
-            Org agency = Rx.data(orgApi.get(Long.valueOf(dto.getAgencyId())));
+            // 远程调用直接返回 OrgDTO，可能为 null，判空避免 NPE
+            OrgDTO agency = orgFeign.get(Long.valueOf(dto.getAgencyId()));
             if (agency != null) {
                 vo.setAgency(BeanUtil.parseOrg2SimpleVo(agency));
             }
@@ -409,15 +399,14 @@ public class TransforCenterBusinessController {
         return vo;
     }
 
-    @ApiOperation(value = "删除车队")
-    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "车队id", required = true, example = "1", paramType = "{path}")})
+    @Operation(summary = "删除车队")
     @DeleteMapping("/fleet/{id}")
     public Result deleteFleet(@PathVariable(name = "id") String id) {
         fleetFeign.disable(id);
         return Result.ok();
     }
 
-    @ApiOperation(value = "添加车辆")
+    @Operation(summary = "添加车辆")
     @PostMapping("/truck")
     public TruckVo saveTruck(@RequestBody TruckVo vo) {
         TruckDto dto = new TruckDto();
@@ -434,8 +423,7 @@ public class TransforCenterBusinessController {
         return vo;
     }
 
-    @ApiOperation(value = "更新车辆信息")
-    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "车辆id", required = true, example = "1", paramType = "{path}")})
+    @Operation(summary = "更新车辆信息")
     @PutMapping("/truck/{id}")
     public TruckVo updateTruck(@PathVariable(name = "id") String id, @RequestBody TruckVo vo) {
         vo.setId(id);
@@ -453,13 +441,12 @@ public class TransforCenterBusinessController {
         return vo;
     }
 
-    @ApiOperation(value = "获取车辆分页数据")
-    @ApiImplicitParams({@ApiImplicitParam(name = "page", value = "页码", required = true, example = "1"), @ApiImplicitParam(name = "pageSize", value = "页尺寸", required = true, example = "10"), @ApiImplicitParam(name = "truckTypeId", value = "车辆类型id"), @ApiImplicitParam(name = "licensePlate", value = "车牌号码"), @ApiImplicitParam(name = "fleetId", value = "所属车队id")})
+    @Operation(summary = "获取车辆分页数据")
     @GetMapping("/truck/page")
     public PageResponse<TruckVo> findTruckByPage(@RequestParam(name = "page") Integer page, @RequestParam(name = "pageSize") Integer pageSize, @RequestParam(name = "truckTypeId", required = false) String truckTypeId, @RequestParam(name = "licensePlate", required = false) String licensePlate, @RequestParam(name = "fleetId", required = false) String fleetId) {
         PageResponse<TruckDto> truckDtoPage = truckFeign.findByPage(page, pageSize, truckTypeId, licensePlate, fleetId);
         //加工数据
-        // 修改点：远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
+        // 远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
         List<TruckDto> truckDtoList = Rx.items(truckDtoPage);
         Set<String> truckTypeSet = new HashSet<>();
         Set<String> fleetSet = new HashSet<>();
@@ -482,7 +469,6 @@ public class TransforCenterBusinessController {
                     vo.setTruckType((TruckTypeVo) truckTypeFuture.get().get(dto.getTruckTypeId()));
                 }
                 if (dto.getFleetId() != null) {
-                    Map tmpMap = fleetFuture.get();
                     vo.setFleet((FleetVo) fleetFuture.get().get(dto.getFleetId()));
                 }
             } catch (Exception e) {
@@ -496,8 +482,7 @@ public class TransforCenterBusinessController {
                 .pages(truckDtoPage != null ? truckDtoPage.getPages() : 0L).build();
     }
 
-    @ApiOperation(value = "获取车辆详情")
-    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "车辆id", required = true, example = "1", paramType = "{path}")})
+    @Operation(summary = "获取车辆详情")
     @GetMapping("/truck/{id}")
     public TruckVo findTruckById(@PathVariable(name = "id") String id) {
         TruckDto dto = truckFeign.fineById(id);
@@ -520,8 +505,8 @@ public class TransforCenterBusinessController {
                 if (future.get() instanceof FleetVo) {
                     vo.setFleet((FleetVo) future.get());
                     if (vo.getFleet() != null && vo.getFleet().getAgency() != null && StringUtils.isNotEmpty(vo.getFleet().getAgency().getId())) {
-                        // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
-                        Org fleetAgency = Rx.data(orgApi.get(Long.valueOf(vo.getFleet().getAgency().getId())));
+                        // 远程调用直接返回 OrgDTO，可能为 null，判空避免 NPE
+                        OrgDTO fleetAgency = orgFeign.get(Long.valueOf(vo.getFleet().getAgency().getId()));
                         if (fleetAgency != null) {
                             vo.setAgency(BeanUtil.parseOrg2Vo(fleetAgency, null, null));
                         }
@@ -540,13 +525,12 @@ public class TransforCenterBusinessController {
         return vo;
     }
 
-    @ApiOperation(value = "删除车辆")
-    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "车辆id", required = true, example = "1", paramType = "{path}")})
+    @Operation(summary = "删除车辆")
     @DeleteMapping("/truck/{id}")
     public Result deleteTruck(@PathVariable(name = "id") String id) {
         // 在途任务校验：车辆存在进行中/待确认的运输任务时禁止删除，防止运力数据不一致
         TaskTransportDTO query = new TaskTransportDTO();
-        query.setTruckId(id);
+        query.setTruckId(Long.valueOf(id));
         List<TaskTransportDTO> taskList = transportTaskFeign.findAll(query);
         if (taskList != null) {
             for (TaskTransportDTO task : taskList) {
@@ -564,8 +548,7 @@ public class TransforCenterBusinessController {
         return Result.ok();
     }
 
-    @ApiOperation(value = "保存车辆行驶证信息")
-    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "车辆id", required = true, example = "1", paramType = "{path}")})
+    @Operation(summary = "保存车辆行驶证信息")
     @PostMapping("/truck/{id}/license")
     public TruckLicenseVo saveTruckLicense(@PathVariable(name = "id") String id, @RequestBody TruckLicenseVo vo) {
         TruckLicenseDto dto = new TruckLicenseDto();
@@ -591,8 +574,7 @@ public class TransforCenterBusinessController {
         return vo;
     }
 
-    @ApiOperation(value = "获取车辆行驶证详情")
-    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "车辆id", required = true, example = "1", paramType = "{path}")})
+    @Operation(summary = "获取车辆行驶证详情")
     @GetMapping("/truck/{id}/license")
     public TruckLicenseVo findTruckLicenseById(@PathVariable(name = "id") String id) {
         TruckDto dto = truckFeign.fineById(id);
@@ -619,8 +601,7 @@ public class TransforCenterBusinessController {
         return vo;
     }
 
-    @ApiOperation(value = "获取车辆车次信息")
-    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "车辆id", required = true, example = "1", paramType = "{path}")})
+    @Operation(summary = "获取车辆车次信息")
     @GetMapping("/truck/{id}/transportTrips")
     public List<TruckDriverVo> findTruckTransportTrips(@PathVariable(name = "id") String id) {
         List<TruckDriverVo> voList = new ArrayList<>();
@@ -647,7 +628,7 @@ public class TransforCenterBusinessController {
         return voList;
     }
 
-    @ApiOperation(value = "添加线路")
+    @Operation(summary = "添加线路")
     @PostMapping("/transportLine")
     public TransportLineVo saveTransportLine(@RequestBody TransportLineVo vo) {
         TransportLineDto dto = new TransportLineDto();
@@ -664,17 +645,24 @@ public class TransforCenterBusinessController {
         if (vo.getTransportLineType() != null) {
             dto.setTransportLineTypeId(vo.getTransportLineType().getId());
         }
-        // 所属机构从 token 上下文获取（BaseContextHandler），缺省回退为 1
+        // 所属机构：新栈网关不透传 orgId 头，按当前登录用户反查所属机构，缺省回退为 1
         if (dto.getAgencyId() == null) {
-            dto.setAgencyId(BaseContextHandler.getOrgId() != null ? String.valueOf(BaseContextHandler.getOrgId()) : "1");
+            String currentUserId = RequestContext.getUserId();
+            String currentAgencyId = "1";
+            if (currentUserId != null) {
+                UserDTO currentUser = userFeign.get(Long.valueOf(currentUserId));
+                if (currentUser != null && currentUser.getOrgId() != null) {
+                    currentAgencyId = String.valueOf(currentUser.getOrgId());
+                }
+            }
+            dto.setAgencyId(currentAgencyId);
         }
         TransportLineDto resultDto = transportLineFeign.saveTransportLine(dto);
         BeanUtils.copyProperties(resultDto, vo);
         return vo;
     }
 
-    @ApiOperation(value = "更新线路")
-    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "线路id", required = true, example = "1", paramType = "{path}")})
+    @Operation(summary = "更新线路")
     @PutMapping("/transportLine/{id}")
     public TransportLineVo updateTransportLine(@PathVariable(name = "id") String id, @RequestBody TransportLineVo vo) {
         vo.setId(id);
@@ -697,13 +685,12 @@ public class TransforCenterBusinessController {
         return vo;
     }
 
-    @ApiOperation(value = "获取线路分页数据")
-    @ApiImplicitParams({@ApiImplicitParam(name = "page", value = "页码", required = true, example = "1"), @ApiImplicitParam(name = "pageSize", value = "页尺寸", required = true, example = "10"), @ApiImplicitParam(name = "name", value = "线路名称"), @ApiImplicitParam(name = "lineNumber", value = "线路编号"), @ApiImplicitParam(name = "transportLineTypeId", value = "线路类型id")})
+    @Operation(summary = "获取线路分页数据")
     @GetMapping("/transportLine/page")
     public PageResponse<TransportLineVo> findTransportLineByPage(@RequestParam(name = "page") Integer page, @RequestParam(name = "pageSize") Integer pageSize, @RequestParam(name = "name", required = false) String name, @RequestParam(name = "transportLineTypeId", required = false) String transportLineTypeId, @RequestParam(name = "lineNumber", required = false) String lineNumber) {
         PageResponse<TransportLineDto> transportLineDtoPage = transportLineFeign.findByPage(page, pageSize, lineNumber, name, transportLineTypeId);
         //加工数据
-        // 修改点：远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
+        // 远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
         List<TransportLineDto> transportLineDtoList = Rx.items(transportLineDtoPage);
         Set<Long> agencySet = new HashSet<>();
         Set<String> transportLineTypeSet = new HashSet<>();
@@ -721,7 +708,7 @@ public class TransforCenterBusinessController {
                 transportLineTypeSet.add(dto.getTransportLineTypeId());
             }
         });
-        CompletableFuture<Map> agencyFuture = PdCompletableFuture.agencyMapFuture(orgApi, agencySet);
+        CompletableFuture<Map> agencyFuture = PdCompletableFuture.agencyMapFuture(orgFeign, agencySet);
         CompletableFuture<Map> transportLineTypeFuture = PdCompletableFuture.transportLineTypeMapFuture(transportLineTypeFeign, transportLineTypeSet);
         CompletableFuture.allOf(agencyFuture, transportLineTypeFuture).join();
         List<TransportLineVo> transportLineVoList = transportLineDtoList.stream().map(dto -> {
@@ -751,8 +738,7 @@ public class TransforCenterBusinessController {
                 .counts(transportLineDtoPage != null ? transportLineDtoPage.getCounts() : 0L).build();
     }
 
-    @ApiOperation(value = "获取线路详情")
-    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "线路id", required = true, example = "1", paramType = "{path}")})
+    @Operation(summary = "获取线路详情")
     @GetMapping("/transportLine/{id}")
     public TransportLineVo findTransportLineById(@PathVariable(name = "id") String id) {
         TransportLineDto dto = transportLineFeign.fineById(id);
@@ -771,7 +757,7 @@ public class TransforCenterBusinessController {
             agencySet.add(Long.valueOf(dto.getEndAgencyId()));
         }
         if (agencySet != null && agencySet.size() > 0) {
-            futureList.add(PdCompletableFuture.agencyMapFuture(orgApi, agencySet));
+            futureList.add(PdCompletableFuture.agencyMapFuture(orgFeign, agencySet));
         }
         if (dto.getTransportLineTypeId() != null) {
             futureList.add(PdCompletableFuture.transportLineTypeFuture(transportLineTypeFeign, dto.getTransportLineTypeId()));
@@ -801,8 +787,7 @@ public class TransforCenterBusinessController {
         return vo;
     }
 
-    @ApiOperation(value = "删除线路")
-    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "线路id", required = true, example = "1", paramType = "{path}")})
+    @Operation(summary = "删除线路")
     @DeleteMapping("/transportLine/{id}")
     public Result deleteTransportLine(@PathVariable(name = "id") String id) {
         // 关联校验：线路下存在车次时禁止删除；远程校验失败(null)时 fail-closed 拒绝删除
@@ -819,7 +804,7 @@ public class TransforCenterBusinessController {
         return Result.ok();
     }
 
-    @ApiOperation(value = "添加车次")
+    @Operation(summary = "添加车次")
     @PostMapping("/transportLine/trips")
     public TransportTripsVo saveTransportTrips(@RequestBody TransportTripsVo vo) {
         TransportTripsDto dto = new TransportTripsDto();
@@ -833,8 +818,7 @@ public class TransforCenterBusinessController {
         return vo;
     }
 
-    @ApiOperation(value = "更新车次")
-    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "车次id", required = true, example = "1", paramType = "{path}")})
+    @Operation(summary = "更新车次")
     @PutMapping("/transportLine/trips/{id}")
     public TransportTripsVo updateTransportTrips(@PathVariable(name = "id") String id, @RequestBody TransportTripsVo vo) {
         vo.setId(id);
@@ -849,8 +833,7 @@ public class TransforCenterBusinessController {
         return vo;
     }
 
-    @ApiOperation(value = "获取车次列表")
-    @ApiImplicitParams({@ApiImplicitParam(name = "transportLineId", value = "线路id")})
+    @Operation(summary = "获取车次列表")
     @GetMapping("/transportLine/trips")
     public List<TransportTripsVo> findAllTransportLineTrips(@RequestParam(name = "transportLineId", required = false) String transportLineId) {
         List<TransportTripsDto> transportTripsDtoList = transportTripsFeign.findAll(transportLineId, null);
@@ -887,7 +870,7 @@ public class TransforCenterBusinessController {
             }
         });
         CompletableFuture<Map> transportLineFuture = PdCompletableFuture.transportLineMapFuture(transportLineFeign, transportLineSet, null, null);
-        CompletableFuture<Map> userFuture = PdCompletableFuture.userMapFuture(userApi, userSet, null, null, null);
+        CompletableFuture<Map> userFuture = PdCompletableFuture.userMapFuture(userFeign, userSet, null, null, null);
         CompletableFuture<Map> truckFuture = PdCompletableFuture.truckMapFuture(truckFeign, truckSet, null);
         CompletableFuture.allOf(transportLineFuture, userFuture, truckFuture).join();
         return transportTripsDtoList.stream().map(dto -> {
@@ -906,7 +889,7 @@ public class TransforCenterBusinessController {
                         if (StringUtils.isNotEmpty(transportTripsTruckDriverDto.getUserId())) {
                             TruckDriverDto driverDto = driverFeign.findOneDriver(transportTripsTruckDriverDto.getUserId());
                             if (driverDto != null) {
-                                truckDriverVo.setDriver(BeanUtil.parseTruckDriverDto2Vo(driverDto, userApi, fleetFeign, orgApi));
+                                truckDriverVo.setDriver(BeanUtil.parseTruckDriverDto2Vo(driverDto, userFeign, fleetFeign, orgFeign));
                             }
                         }
                         if (truckDriverVo.getTruck() != null || truckDriverVo.getDriver() != null) {
@@ -924,8 +907,7 @@ public class TransforCenterBusinessController {
         }).collect(Collectors.toList());
     }
 
-    @ApiOperation(value = "获取车次详情")
-    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "车次id", required = true, example = "1", paramType = "{path}")})
+    @Operation(summary = "获取车次详情")
     @GetMapping("/transportLine/trips/{id}")
     public TransportTripsVo findTransportLineTripsById(@PathVariable(name = "id") String id) {
         TransportTripsDto dto = transportTripsFeign.fineById(id);
@@ -951,7 +933,7 @@ public class TransforCenterBusinessController {
                 }
             });
         }
-        CompletableFuture<Map> userFuture = PdCompletableFuture.userMapFuture(userApi, userSet, null, null, null);
+        CompletableFuture<Map> userFuture = PdCompletableFuture.userMapFuture(userFeign, userSet, null, null, null);
         futureList.add(userFuture);
         CompletableFuture<Map> truckFuture = PdCompletableFuture.truckMapFuture(truckFeign, truckSet, null);
         futureList.add(truckFuture);
@@ -970,7 +952,7 @@ public class TransforCenterBusinessController {
                     if (StringUtils.isNotEmpty(transportTripsTruckDriverDto.getUserId())) {
                         TruckDriverDto driverDto = driverFeign.findOneDriver(transportTripsTruckDriverDto.getUserId());
                         if (driverDto != null) {
-                            truckDriverVo.setDriver(BeanUtil.parseTruckDriverDto2Vo(driverDto, userApi, fleetFeign, orgApi));
+                            truckDriverVo.setDriver(BeanUtil.parseTruckDriverDto2Vo(driverDto, userFeign, fleetFeign, orgFeign));
                         }
                     }
                     if (truckDriverVo.getTruck() != null || truckDriverVo.getDriver() != null) {
@@ -987,8 +969,7 @@ public class TransforCenterBusinessController {
         return vo;
     }
 
-    @ApiOperation(value = "删除车次")
-    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "车次id", required = true, example = "1", paramType = "{path}")})
+    @Operation(summary = "删除车次")
     @DeleteMapping("/transportLine/trips/{id}")
     public Result deleteTransportLineTrips(@PathVariable(name = "id") String id) {
         // 关联校验：车次已安排车辆/司机时禁止删除；远程校验失败(null)时 fail-closed 拒绝删除
@@ -1005,8 +986,7 @@ public class TransforCenterBusinessController {
         return Result.ok();
     }
 
-    @ApiOperation(value = "车次-安排车辆和司机")
-    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "车次id", required = true, example = "1", paramType = "{path}")})
+    @Operation(summary = "车次-安排车辆和司机")
     @PostMapping("/transportLine/trips/{id}/truckDriver")
     public Result saveTransportTripsTruck(@PathVariable(name = "id") String id, @RequestBody List<TruckDriverVo> truckDriverVoList) {
         //保存车辆安排信息
@@ -1023,8 +1003,7 @@ public class TransforCenterBusinessController {
         return Result.ok();
     }
 
-    @ApiOperation(value = "获取司机分页数据")
-    @ApiImplicitParams({@ApiImplicitParam(name = "page", value = "页码", required = true, example = "1"), @ApiImplicitParam(name = "pageSize", value = "页尺寸", required = true, example = "10"), @ApiImplicitParam(name = "name", value = "司机名称"), @ApiImplicitParam(name = "username", value = "司机账号"), @ApiImplicitParam(name = "fleetId", value = "车队id")})
+    @Operation(summary = "获取司机分页数据")
     @GetMapping("/driver/page")
     public PageResponse<DriverVo> findDriverByPage(@RequestParam(name = "page") Integer page, @RequestParam(name = "pageSize") Integer pageSize, @RequestParam(name = "name", required = false) String name, @RequestParam(name = "username", required = false) String username, @RequestParam(name = "fleetId", required = false) String fleetId) {
         List<DriverVo> driverVoList = new ArrayList<>();
@@ -1033,17 +1012,17 @@ public class TransforCenterBusinessController {
         //判断是否存在车队id
         if (StringUtils.isNotEmpty(fleetId)) {
             //当车队id存在时，以tms truckDriver为主
-            // 修改点：远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
+            // 远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
             PageResponse<TruckDriverDto> truckDriverDtoPage = driverFeign.findByPage(page, pageSize, fleetId);
             List<TruckDriverDto> driverDtoList = Rx.items(truckDriverDtoPage);
             total = truckDriverDtoPage != null ? truckDriverDtoPage.getCounts() : 0L;
             pages = truckDriverDtoPage != null ? truckDriverDtoPage.getPages() : 0L;
             driverDtoList.forEach(driverDto -> {
-                // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
-                User driverUser = Rx.data(userApi.get(Long.valueOf(driverDto.getUserId())));
+                // 远程调用直接返回 UserDTO，可能为 null，判空避免 NPE
+                UserDTO driverUser = userFeign.get(Long.valueOf(driverDto.getUserId()));
                 if (driverUser != null) {
                     DriverVo driverVo = new DriverVo();
-                    BeanUtils.copyProperties(BeanUtil.parseUser2Vo(driverUser, null, orgApi), driverVo);
+                    BeanUtils.copyProperties(BeanUtil.parseUser2Vo(driverUser, null, orgFeign), driverVo);
                     if (driverDto.getFleetId() != null) {
                         FleetDto fleetDto = fleetFeign.fineById(driverDto.getFleetId());
                         FleetVo fleetVo = new FleetVo();
@@ -1055,29 +1034,34 @@ public class TransforCenterBusinessController {
             });
         } else {
             //否则以权限系统用户表为主
-            R<Page<User>> result = userApi.page(page.longValue(), pageSize.longValue(), null, StaticStation.DRIVER_ID, name, username, null);
-            if (result.getIsSuccess() && result.getData() != null) {
-                total = result.getData().getTotal();
-                pages = result.getData().getPages();
-                // 修改点：records 可能为 null，统一通过 Rx 安全取值
-                List<String> userIds = Rx.list(result.getData().getRecords()).stream().map(user -> String.valueOf(user.getId())).collect(Collectors.toList());
-                Map<String, TruckDriverDto> driverDtoMap = driverFeign.findAllDriver(userIds, null).stream().collect(Collectors.toMap(TruckDriverDto::getUserId, dto -> dto));
-                Rx.list(result.getData().getRecords()).forEach(user -> {
-                    DriverVo driverVo = new DriverVo();
-                    BeanUtils.copyProperties(BeanUtil.parseUser2Vo(user, null, orgApi), driverVo);
-                    TruckDriverDto driverDto = driverDtoMap.get(String.valueOf(user.getId()));
-                    if (driverDto != null) {
-                        BeanUtils.copyProperties(driverDto, driverVo);
-                        //处理所属车队
-                        if (driverDto.getFleetId() != null) {
-                            FleetDto fleetDto = fleetFeign.fineById(driverDto.getFleetId());
-                            FleetVo fleetVo = new FleetVo();
-                            BeanUtils.copyProperties(fleetDto, fleetVo);
-                            driverVo.setFleet(fleetVo);
+            PageResponse<UserDTO> result = userFeign.page(page.longValue(), pageSize.longValue(), null, StaticStation.DRIVER_ID, name, username, null);
+            if (result != null) {
+                List<UserDTO> records = Rx.items(result);
+                if (!records.isEmpty()) {
+                    total = result.getCounts();
+                    pages = result.getPages();
+                    List<String> userIds = records.stream().map(user -> String.valueOf(user.getId())).collect(Collectors.toList());
+                    List<TruckDriverDto> allDrivers = driverFeign.findAllDriver(userIds, null);
+                    Map<String, TruckDriverDto> driverDtoMap = allDrivers == null
+                            ? new HashMap<>()
+                            : allDrivers.stream().collect(Collectors.toMap(TruckDriverDto::getUserId, dto -> dto));
+                    records.forEach(user -> {
+                        DriverVo driverVo = new DriverVo();
+                        BeanUtils.copyProperties(BeanUtil.parseUser2Vo(user, null, orgFeign), driverVo);
+                        TruckDriverDto driverDto = driverDtoMap.get(String.valueOf(user.getId()));
+                        if (driverDto != null) {
+                            BeanUtils.copyProperties(driverDto, driverVo);
+                            //处理所属车队
+                            if (driverDto.getFleetId() != null) {
+                                FleetDto fleetDto = fleetFeign.fineById(driverDto.getFleetId());
+                                FleetVo fleetVo = new FleetVo();
+                                BeanUtils.copyProperties(fleetDto, fleetVo);
+                                driverVo.setFleet(fleetVo);
+                            }
                         }
-                    }
-                    driverVoList.add(driverVo);
-                });
+                        driverVoList.add(driverVo);
+                    });
+                }
             }
         }
         //实现获取车辆线路等信息
@@ -1119,18 +1103,17 @@ public class TransforCenterBusinessController {
         return PageResponse.<DriverVo>builder().items(driverVoList).page(page).pagesize(pageSize).counts(total).pages(pages).build();
     }
 
-    @ApiOperation(value = "获取司机基本信息详情")
-    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "司机id", required = true, example = "1", paramType = "{path}")})
+    @Operation(summary = "获取司机基本信息详情")
     @GetMapping("/driver/{id}")
     public DriverVo findDriverById(@PathVariable(name = "id") String id) {
         DriverVo vo = new DriverVo();
-        // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
-        User driverUser = Rx.data(userApi.get(Long.valueOf(id)));
+        // 远程调用直接返回 UserDTO，可能为 null，判空避免 NPE
+        UserDTO driverUser = userFeign.get(Long.valueOf(id));
         if (driverUser != null) {
             BeanUtils.copyProperties(BeanUtil.parseUser2Vo(driverUser, null, null), vo);
             if (driverUser.getOrgId() != null) {
-                // 修改点：远程调用可能返回 null 包装，统一通过 Rx 安全取值，避免 NPE
-                Org driverOrg = Rx.data(orgApi.get(driverUser.getOrgId()));
+                // 远程调用直接返回 OrgDTO，可能为 null，判空避免 NPE
+                OrgDTO driverOrg = orgFeign.get(driverUser.getOrgId());
                 if (driverOrg != null) {
                     vo.setAgency(BeanUtil.parseOrg2SimpleVo(driverOrg));
                 }
@@ -1150,8 +1133,7 @@ public class TransforCenterBusinessController {
         return vo;
     }
 
-    @ApiOperation(value = "保存司机信息")
-    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "司机id", required = true, example = "1", paramType = "{path}")})
+    @Operation(summary = "保存司机信息")
     @PutMapping("/driver/{id}")
     public DriverVo saveDriver(@PathVariable(name = "id") String id, @RequestBody DriverVo vo) {
         TruckDriverDto driverDto = driverFeign.findOneDriver(id);
@@ -1167,8 +1149,7 @@ public class TransforCenterBusinessController {
         return vo;
     }
 
-    @ApiOperation(value = "获取司机车辆安排")
-    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "司机id", required = true, example = "1", paramType = "{path}")})
+    @Operation(summary = "获取司机车辆安排")
     @GetMapping("/driver/{id}/truck")
     public List<TruckDriverVo> findDriverTruckById(@PathVariable(name = "id") String id) {
         List<TruckDriverVo> voList = new ArrayList<>();
@@ -1201,7 +1182,7 @@ public class TransforCenterBusinessController {
         return voList;
     }
 
-    @ApiOperation(value = "保存司机驾驶证信息")
+    @Operation(summary = "保存司机驾驶证信息")
     @PostMapping("/driverLicense")
     public DriverLicenseVo saveDriverLicense(@RequestBody DriverLicenseVo vo) {
         TruckDriverLicenseDto dto = new TruckDriverLicenseDto();
@@ -1214,8 +1195,7 @@ public class TransforCenterBusinessController {
         return vo;
     }
 
-    @ApiOperation(value = "获取司机驾驶证信息")
-    @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "司机id", required = true, example = "1", paramType = "{path}")})
+    @Operation(summary = "获取司机驾驶证信息")
     @GetMapping("/driverLicense/{id}")
     public DriverLicenseVo findDriverLicenseById(@PathVariable(name = "id") String id) {
         TruckDriverLicenseDto dto = driverFeign.findOneDriverLicense(id);

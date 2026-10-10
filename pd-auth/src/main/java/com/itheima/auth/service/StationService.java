@@ -48,7 +48,7 @@ public class StationService {
      */
     public Long save(CoreStation station) {
         station.setId(null);
-        station.setCreateUser(StpUtil.getLoginIdAsLong());
+        station.setCreateBy(StpUtil.getLoginIdAsLong());
         station.setCreateTime(LocalDateTime.now());
         stationMapper.insert(station);
         return station.getId();
@@ -65,7 +65,7 @@ public class StationService {
             throw new BizException("岗位不存在");
         }
         // tenantId 不在此更新
-        station.setUpdateUser(StpUtil.getLoginIdAsLong());
+        station.setUpdateBy(StpUtil.getLoginIdAsLong());
         station.setUpdateTime(LocalDateTime.now());
         stationMapper.updateById(station);
     }

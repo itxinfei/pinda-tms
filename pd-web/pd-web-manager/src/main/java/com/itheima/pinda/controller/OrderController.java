@@ -3,23 +3,21 @@ package com.itheima.pinda.controller;
 import com.itheima.pinda.DTO.OrderDTO;
 import com.itheima.pinda.DTO.TaskPickupDispatchDTO;
 import com.itheima.pinda.DTO.TransportOrderDTO;
-import com.itheima.pinda.authority.api.AreaApi;
-import com.itheima.pinda.authority.api.OrgApi;
-import com.itheima.pinda.authority.api.UserApi;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.enums.pickuptask.PickupDispatchTaskType;
+import com.itheima.pinda.feign.AreaFeign;
 import com.itheima.pinda.feign.OrderFeign;
+import com.itheima.pinda.feign.OrgFeign;
 import com.itheima.pinda.feign.PickupDispatchTaskFeign;
 import com.itheima.pinda.feign.TransportOrderFeign;
+import com.itheima.pinda.feign.UserFeign;
 import com.itheima.pinda.util.BeanUtil;
 import com.itheima.pinda.vo.oms.OrderVo;
 import com.itheima.pinda.util.Rx;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiImplicitParam;
-import io.swagger.annotations.ApiImplicitParams;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,7 +34,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @RestController
-@Api(tags = "订单相关API")
+@Tag(name = "订单相关API")
 @RequestMapping("order-manager/order")
 public class OrderController {
     @Autowired
@@ -44,57 +42,53 @@ public class OrderController {
     @Autowired
     private PickupDispatchTaskFeign pickupDispatchTaskFeign;
     @Autowired
-    private AreaApi areaApi;
+    private AreaFeign areaFeign;
     @Autowired
-    private OrgApi orgApi;
+    private OrgFeign orgFeign;
     @Autowired
-    private UserApi userApi;
+    private UserFeign userFeign;
     @Autowired
     private TransportOrderFeign transportOrderFeign;
 
-    @ApiOperation(value = "获取订单分页数据")
+    @Operation(summary = "获取订单分页数据")
     @PostMapping("/page")
     public PageResponse<OrderVo> findByPage(@RequestBody OrderVo vo) {
         PageResponse<OrderDTO> orderPage = orderFeign.findByPage(BeanUtil.parseOrderVo2DTO(vo));
         //加工数据
-        // 修改点：分页 items 可能为 null，统一通过 Rx 安全取值
+        // 分页 items 可能为 null，统一通过 Rx 安全取值
         List<OrderDTO> orderDTOList = Rx.items(orderPage);
-        List<OrderVo> orderVoList = orderDTOList.stream().map(orderDTO -> BeanUtil.parseOrderDTO2Vo(orderDTO, areaApi)).collect(Collectors.toList());
+        List<OrderVo> orderVoList = orderDTOList.stream().map(orderDTO -> BeanUtil.parseOrderDTO2Vo(orderDTO, areaFeign)).collect(Collectors.toList());
         return PageResponse.<OrderVo>builder().items(orderVoList).pagesize(vo.getPageSize()).page(vo.getPage()).counts(orderPage.getCounts()).pages(orderPage.getPages()).build();
     }
 
-    @ApiOperation(value = "获取订单详情")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "id", value = "订单id", required = true, example = "1", paramType = "{path}")
-    })
+    @Operation(summary = "获取订单详情")
     @GetMapping("/{id}")
     public OrderVo findOrderById(@PathVariable(name = "id") String id) {
-        // 修改点：远程查询可能返回 null，避免后续 NPE
+        // 远程查询可能返回 null，避免后续 NPE
         OrderDTO orderDTO = orderFeign.findById(id);
         if (orderDTO == null) {
             return new OrderVo();
         }
-        OrderVo vo = BeanUtil.parseOrderDTO2Vo(orderDTO, areaApi);
+        OrderVo vo = BeanUtil.parseOrderDTO2Vo(orderDTO, areaFeign);
         if (StringUtils.isNotEmpty(vo.getId())) {
             //查询取派件任务信息
             TaskPickupDispatchDTO taskPickupDispatchQueryDTO = new TaskPickupDispatchDTO();
-            taskPickupDispatchQueryDTO.setOrderId(vo.getId());
+            taskPickupDispatchQueryDTO.setOrderId(Long.valueOf(vo.getId()));
             List<TaskPickupDispatchDTO> taskPickupDispatchDTOList = pickupDispatchTaskFeign.findAll(taskPickupDispatchQueryDTO);
             if (taskPickupDispatchDTOList != null && taskPickupDispatchDTOList.size() > 0) {
                 taskPickupDispatchDTOList.forEach(taskPickupDispatchDTO -> {
-                    // 修改点：getOrderId() 可能为 null，改写为常量在前避免 NPE
-                    if (vo.getId().equals(taskPickupDispatchDTO.getOrderId()) && taskPickupDispatchDTO.getTaskType() == PickupDispatchTaskType.PICKUP.getCode()) {
+                    if (String.valueOf(taskPickupDispatchDTO.getOrderId()).equals(vo.getId()) && taskPickupDispatchDTO.getTaskType() == PickupDispatchTaskType.PICKUP.getCode()) {
                         //取件信息
-                        vo.setTaskPickup(BeanUtil.parseTaskPickupDispatchDTO2Vo(taskPickupDispatchDTO, orderFeign, areaApi, orgApi, userApi));
+                        vo.setTaskPickup(BeanUtil.parseTaskPickupDispatchDTO2Vo(taskPickupDispatchDTO, orderFeign, areaFeign, orgFeign, userFeign));
                     }
-                    if (vo.getId().equals(taskPickupDispatchDTO.getOrderId()) && taskPickupDispatchDTO.getTaskType() == PickupDispatchTaskType.DISPATCH.getCode()) {
+                    if (String.valueOf(taskPickupDispatchDTO.getOrderId()).equals(vo.getId()) && taskPickupDispatchDTO.getTaskType() == PickupDispatchTaskType.DISPATCH.getCode()) {
                         //派件信息
-                        vo.setTaskDispatch(BeanUtil.parseTaskPickupDispatchDTO2Vo(taskPickupDispatchDTO, orderFeign, areaApi, orgApi, userApi));
+                        vo.setTaskDispatch(BeanUtil.parseTaskPickupDispatchDTO2Vo(taskPickupDispatchDTO, orderFeign, areaFeign, orgFeign, userFeign));
                     }
                 });
             }
             //查询运单信息
-            TransportOrderDTO transportOrderDTO = transportOrderFeign.findByOrderId(vo.getId());
+            TransportOrderDTO transportOrderDTO = transportOrderFeign.findByOrderId(Long.valueOf(vo.getId()));
             if (transportOrderDTO != null) {
                 vo.setTransportOrder(BeanUtil.parseTransportOrderDTO2Vo(transportOrderDTO, null, null));
             }
@@ -102,14 +96,11 @@ public class OrderController {
         return vo;
     }
 
-    @ApiOperation(value = "更新订单")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "id", value = "订单id", required = true, example = "1", paramType = "{path}")
-    })
+    @Operation(summary = "更新订单")
     @PostMapping("/{id}")
     public OrderVo updateOrder(@PathVariable(name = "id") String id, @RequestBody OrderVo vo) {
         OrderDTO dto = BeanUtil.parseOrderVo2DTO(vo);
-        // 金额/支付状态已由通用更新端点屏蔽，改由专用端点管理（/{id}/reprice 重算运费、/{id}/pay 支付确认）。
+        // 金额/支付状态已由通用更新端点屏蔽，改由专用端点管理（/{id}/pay 支付确认、/{id}/reprice 重算运费）。
         // 编辑表单回显时会携带这两个字段，这里置空并继续更新其余字段，避免整个编辑被静默丢弃；
         // 如需修改金额/支付状态请走对应专用端点。
         if (vo.getAmount() != null || vo.getPaymentStatus() != null) {

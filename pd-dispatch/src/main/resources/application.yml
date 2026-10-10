@@ -1,0 +1,157 @@
+server:
+  tomcat:
+    uri-encoding: UTF-8
+    max-threads: 1000
+    min-spare-threads: 30
+  port: 8190
+  connection-timeout: 50000ms
+
+spring:
+  application:
+    name: pd-dispatch
+  # 环境 dev|test|prod|docker；容器镜像由 src/main/docker/Dockerfile 的 CMD 显式指定 docker
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  main:
+    allow-bean-definition-overriding: true
+  # JDK 21 虚拟线程：Tomcat 请求处理与阻塞式 Feign 调用改跑虚拟线程，免调平台线程池
+  threads:
+    virtual:
+      enabled: true
+  # 2026-10-10：SB3.5/SCA2025 下 bootstrap 上下文默认关闭，bootstrap*.yml 不再被加载；
+  # 远程配置改由 config.import 接入，姿势对齐已上线的 pd-auth。optional = 远程缺失不阻断启动。
+  config:
+    import:
+      - optional:nacos:pd-dispatch.yml
+  cloud:
+    openfeign:
+      circuitbreaker:
+        # Feign 熔断降级总开关（实现为 Resilience4j；各 XxxFeignFallback 由此生效）
+        enabled: true
+    nacos:
+      # 服务注册
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:192.168.20.130:8848}
+        namespace: 1cb93ce4-dc0e-4730-b759-d35fd7ed93c3
+        group: pinda-tms
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:123456}
+      # 配置中心
+      config:
+        server-addr: ${NACOS_SERVER_ADDR:192.168.20.130:8848}
+        namespace: 1cb93ce4-dc0e-4730-b759-d35fd7ed93c3
+        group: pinda-tms
+        file-extension: yml
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:123456}
+  # jackson 时间格式化（原自引用占位符，值取自 Nacos common.yml 的现网口径）
+  jackson:
+    time-zone: ${JACKSON_TIME_ZONE:GMT+8}
+    date-format: ${JACKSON_DATE_FORMAT:yyyy-MM-dd HH:mm:ss}
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: ${MULTIPART_MAX_FILE_SIZE:100MB}
+      max-request-size: ${MULTIPART_MAX_REQUEST_SIZE:1000MB}
+  # 数据源：单库 pinda_tms（2026-10-10 建库口径 = 八域前缀 + tenant_id 多租户）
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${MYSQL_HOST:192.168.20.130}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:pinda_tms}?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:123456}
+    druid:
+      initial-size: 5
+      min-idle: 5
+      max-active: 20
+      max-wait: 60000
+      pool-prepared-statements: false
+      max-pool-prepared-statement-per-connection-size: 20
+      time-between-eviction-runs-millis: 60000
+      min-evictable-idle-time-millis: 300000
+      test-while-idle: true
+      test-on-borrow: false
+      test-on-return: false
+      stat-view-servlet:
+        enabled: false
+        url-pattern: /druid/*
+      filter:
+        stat:
+          log-slow-sql: true
+          slow-sql-millis: 5000
+          merge-sql: true
+        wall:
+          config:
+            multi-statement-allow: true
+  # Redis（本模块引入 sa-token-redis-jackson，登录态与会话需落 Redis）
+  # 口径对齐已上线的 pd-auth / pd-gateway；Boot3 下键名为 spring.data.redis.*
+  data:
+    redis:
+      host: ${REDIS_HOST:192.168.20.130}
+      port: ${REDIS_PORT:6379}
+      database: ${REDIS_DATABASE:0}
+      password: ${REDIS_PASSWORD:123456}
+
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: com.itheima.pinda.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: true
+    call-setters-on-nulls: false
+    jdbc-type-for-null: NULL
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    banner: false
+    db-config:
+      id-type: ASSIGN_ID
+      # 逻辑删除口径 = 建表注释 '0未删 1已删'（docs/mysql/重构v2/*.sql）
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+# 定时任务失败重试参数（原 bootstrap-dev.yml；可用环境变量或 Nacos 覆写）
+# 注：原 bootstrap-dev.yml 中根键 schedule: 出现两次（retry 段 + exception 段），
+#     此处按 SnakeYAML 重复根键风险合并为单一根键，键路径与取值逐字不变。
+schedule:
+  retry:
+    # 最大尝试次数（含首次），3 表示首次 + 2 次重试
+    max-attempts: ${SCHEDULE_RETRY_MAX_ATTEMPTS:3}
+    # 重试间隔（毫秒）
+    interval-ms: ${SCHEDULE_RETRY_INTERVAL_MS:2000}
+  exception:
+    retry:
+      # 重试开关
+      enabled: ${SCHEDULE_EXCEPTION_RETRY_ENABLED:true}
+      # 重试 cron 表达式（默认每10分钟）
+      cron: ${SCHEDULE_EXCEPTION_RETRY_CRON:0 */10 * * * ?}
+
+# 短信通知网关（可选，配置后推送订单通知到外部短信网关）
+sms:
+  # 启用渠道: http-通用网关 aliyun-阿里云 tencent-腾讯云 huawei-华为云 device-设备接口
+  active-channel: ${SMS_CHANNEL:http}
+  # 通用 HTTP 网关地址（默认通道，兼容原 webhook-url 配置）
+  webhook-url: ${SMS_WEBHOOK_URL:}
+  channel:
+    http:
+      # 通用 HTTP 短信网关地址（自建网关/第三方聚合）
+      url: ${SMS_HTTP_URL:${SMS_WEBHOOK_URL:}}
+    aliyun:
+      access-key-id: ${SMS_ALIYUN_ACCESS_KEY_ID:}
+      access-key-secret: ${SMS_ALIYUN_ACCESS_KEY_SECRET:}
+      sign-name: ${SMS_ALIYUN_SIGN_NAME:品达物流}
+      template-code: ${SMS_ALIYUN_TEMPLATE_CODE:}
+    tencent:
+      secret-id: ${SMS_TENCENT_SECRET_ID:}
+      secret-key: ${SMS_TENCENT_SECRET_KEY:}
+      sdk-app-id: ${SMS_TENCENT_SDK_APP_ID:}
+      sign-name: ${SMS_TENCENT_SIGN_NAME:品达物流}
+      template-id: ${SMS_TENCENT_TEMPLATE_ID:}
+    huawei:
+      app-key: ${SMS_HUAWEI_APP_KEY:}
+      app-secret: ${SMS_HUAWEI_APP_SECRET:}
+      sign-name: ${SMS_HUAWEI_SIGN_NAME:品达物流}
+      template-id: ${SMS_HUAWEI_TEMPLATE_ID:}
+    device:
+      # 通用设备短信接口地址（短信猫/短信池）
+      url: ${SMS_DEVICE_URL:}
+      token: ${SMS_DEVICE_TOKEN:}

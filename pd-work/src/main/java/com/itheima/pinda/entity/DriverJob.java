@@ -2,26 +2,18 @@ package com.itheima.pinda.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.experimental.Accessors;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * <p>
- * 运输任务表
- * </p>
- *
- * @author jpf
- * @since 2020-01-10
+ * 司机作业单（司机视角，改派产生新单 status=3）
  */
 @Data
-@EqualsAndHashCode(callSuper = false)
-@Accessors(chain = true)
-@TableName("pd_driver_job")
+@TableName("work_driver_job")
 public class DriverJob implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -29,33 +21,38 @@ public class DriverJob implements Serializable {
     /**
      * id
      */
-    @TableId(value = "id", type = IdType.INPUT)
-    private String id;
+    @TableId(value = "id", type = IdType.ASSIGN_ID)
+    private Long id;
 
     /**
-     * 起始机构id
+     * 租户ID
      */
-    private String startAgencyId;
+    private Long tenantId;
 
     /**
-     * 目的机构id
+     * 司机 base_truck_driver.id
      */
-    private String endAgencyId;
+    private Long driverId;
 
     /**
-     * 作业状态，1为待执行（对应 待提货）、2为进行中（对应在途）、3为改派（对应 已交付）、4为已完成（对应 已交付）、5为已作废
+     * 运输任务ID
+     */
+    private Long taskTransportId;
+
+    /**
+     * 起始机构
+     */
+    private Long startOrgId;
+
+    /**
+     * 目的机构
+     */
+    private Long endOrgId;
+
+    /**
+     * 作业状态：1待执行 2进行中 3改派 4已完成 5已作废
      */
     private Integer status;
-
-    /**
-     * 司机id
-     */
-    private String driverId;
-
-    /**
-     * 运输任务id
-     */
-    private String taskTransportId;
 
     /**
      * 提货对接人
@@ -87,8 +84,14 @@ public class DriverJob implements Serializable {
      */
     private LocalDateTime actualArrivalTime;
 
-    /**
-     * 创建时间
-     */
+    private Long createBy;
     private LocalDateTime createTime;
+    private Long updateBy;
+    private LocalDateTime updateTime;
+
+    /**
+     * 逻辑删除：0 未删 1 已删
+     */
+    @TableLogic
+    private Integer deleted;
 }

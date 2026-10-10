@@ -3,7 +3,7 @@ package com.itheima.pinda.feign.common;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.DTO.base.GoodsTypeDto;
-import com.itheima.pinda.feign.common.hystrix.GoodsTypeFeignFallback;
+import com.itheima.pinda.feign.common.fallback.GoodsTypeFeignFallback;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Hidden;

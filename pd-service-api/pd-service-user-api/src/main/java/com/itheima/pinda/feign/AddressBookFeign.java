@@ -1,8 +1,8 @@
 package com.itheima.pinda.feign;
 
+import com.itheima.pinda.DTO.AddressBookDTO;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
-import com.itheima.pinda.entity.AddressBook;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,7 +19,7 @@ public interface AddressBookFeign {
      * @return
      */
     @GetMapping("/addressBook/page")
-    PageResponse<AddressBook> page(@RequestParam("page") Integer page,@RequestParam("pageSize") Integer pageSize, @RequestParam("userId")String userId,@RequestParam("keyword") String keyword);
+    PageResponse<AddressBookDTO> page(@RequestParam("page") Integer page,@RequestParam("pageSize") Integer pageSize, @RequestParam("userId")String userId,@RequestParam("keyword") String keyword);
 
     /**
      * 新增
@@ -28,7 +28,7 @@ public interface AddressBookFeign {
      * @return
      */
     @PostMapping("/addressBook")
-    Result save(@RequestBody AddressBook entity);
+    Result save(@RequestBody AddressBookDTO entity);
 
     /**
      * 修改
@@ -38,7 +38,7 @@ public interface AddressBookFeign {
      * @return
      */
     @PutMapping("/addressBook/{id}")
-    Result update(@PathVariable(name = "id") String id, @RequestBody AddressBook entity);
+    Result update(@PathVariable(name = "id") String id, @RequestBody AddressBookDTO entity);
 
     /**
      * 删除
@@ -50,11 +50,11 @@ public interface AddressBookFeign {
     Result del(@PathVariable(name = "id") String id);
 
     /**
-     * 详情
+     * 详情（鉴权失败/不存在返回 null）
      *
      * @param id
      * @return
      */
     @GetMapping("/addressBook/detail/{id}")
-    AddressBook detail(@PathVariable(name = "id") String id);
+    AddressBookDTO detail(@PathVariable(name = "id") String id);
 }

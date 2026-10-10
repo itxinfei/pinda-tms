@@ -9,7 +9,7 @@
 package com.itheima.pinda.DTO;
 
 import com.itheima.pinda.entity.ScheduleJobEntity;
-import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -19,7 +19,7 @@ import lombok.Data;
  * @since 1.0.0
  */
 @Data
-@ApiModel(value = "定时任务")
+@Schema(description = "定时任务")
 public class ScheduleJobDTO extends ScheduleJobEntity {
 
 }

@@ -21,7 +21,7 @@ import com.itheima.pinda.feign.transportline.TransportLineFeign;
 import com.itheima.pinda.feign.transportline.TransportTripsFeign;
 import com.itheima.pinda.service.IBusinessOperationService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -63,13 +63,13 @@ public class BusinessOperationServiceImpl implements IBusinessOperationService {
             CacheLineDetailEntity cacheLineDetail = orderLineSimpleDTO.getCacheLineDetailEntity();
             List<OrderClassifyGroupDTO> orderClassifys = orderLineSimpleDTO.getOrderClassifyGroupDTOS();
             log.info("当前线路：{} ,分组订单：{}", cacheLineDetail, orderClassifys);
-            List<String> transportOrderIds = new ArrayList<>();
+            List<Long> transportOrderIds = new ArrayList<>();
             orderClassifys.forEach(orderClassify -> {
                 if (orderClassify.isNew()) {
                     // 新订单 更新运单信息
                     for (String orderId : orderClassify.getOrders()) {
                         // 【P0优化】查询运单（下单时已预生成，理论上应该存在）
-                        TransportOrderDTO transportOrderDto = transportOrderFeign.findByOrderId(orderId);
+                        TransportOrderDTO transportOrderDto = transportOrderFeign.findByOrderId(toLong(orderId));
                         if (transportOrderDto == null) {
                             // 【健壮性】单个订单缺失运单不应中断整轮调度，
                             // 记录错误并跳过该订单，避免影响其它线路/订单的正常调度。
@@ -85,8 +85,10 @@ public class BusinessOperationServiceImpl implements IBusinessOperationService {
                         log.info("更新订单状态为待装车: {}", orderId);
                     }
                 }
-                //  查询运单信息构建运单集合
-                List<String> orderIds = new ArrayList<>(orderClassify.getOrders());
+                //  查询运单信息构建运单集合（work Feign 已 Long 化，订单 ID 在此边界转换）
+                List<Long> orderIds = orderClassify.getOrders().stream()
+                        .map(BusinessOperationServiceImpl::toLong)
+                        .collect(Collectors.toList());
                 List<TransportOrderDTO> transportOrders = transportOrderFeign.findByOrderIds(orderIds);
                 transportOrderIds.addAll(transportOrders.stream()
                         .map(TransportOrderDTO::getId)
@@ -95,8 +97,8 @@ public class BusinessOperationServiceImpl implements IBusinessOperationService {
 
             // 创建运输任务
             TaskTransportDTO taskTranSportDto = new TaskTransportDTO();
-            taskTranSportDto.setStartAgencyId(cacheLineDetail.getStartAgencyId());
-            taskTranSportDto.setEndAgencyId(cacheLineDetail.getEndAgencyId());
+            taskTranSportDto.setStartOrgId(toLong(cacheLineDetail.getStartAgencyId()));
+            taskTranSportDto.setEndOrgId(toLong(cacheLineDetail.getEndAgencyId()));
             taskTranSportDto.setStatus(TransportTaskStatus.PENDING.getCode());
             taskTranSportDto.setAssignedStatus(TransportTaskAssignedStatus.TO_BE_DISTRIBUTED.getCode());
             taskTranSportDto.setLoadingStatus(TransportTaskLoadingStatus.HALF.getCode());
@@ -124,16 +126,23 @@ public class BusinessOperationServiceImpl implements IBusinessOperationService {
     /**
      * 调度成功后批量回写运单 schedulingStatus=已调度。
      */
-    private void markTransportOrdersScheduled(List<String> transportOrderIds) {
+    private void markTransportOrdersScheduled(List<Long> transportOrderIds) {
         if (transportOrderIds == null || transportOrderIds.isEmpty()) {
             return;
         }
-        for (String transportOrderId : transportOrderIds) {
+        for (Long transportOrderId : transportOrderIds) {
             TransportOrderDTO update = new TransportOrderDTO();
             update.setId(transportOrderId);
             update.setSchedulingStatus(TransportOrderSchedulingStatus.SCHEDULED.getCode());
             transportOrderFeign.updateById(transportOrderId, update);
         }
+    }
+
+    /**
+     * 调度内部旧表 ID 为 String，work Feign 已 Long 化，在调用边界安全转换；空串/空白返回 null。
+     */
+    private static Long toLong(String id) {
+        return StringUtils.isBlank(id) ? null : Long.parseLong(id);
     }
 
     @Override
@@ -169,10 +178,10 @@ public class BusinessOperationServiceImpl implements IBusinessOperationService {
 
             // 创建司机任务
             DriverJobDTO driverJobDto = new DriverJobDTO();
-            driverJobDto.setStartAgencyId(taskTransportDTO.getStartAgencyId());
-            driverJobDto.setEndAgencyId(taskTransportDTO.getEndAgencyId());
+            driverJobDto.setStartOrgId(taskTransportDTO.getStartOrgId());
+            driverJobDto.setEndOrgId(taskTransportDTO.getEndOrgId());
             driverJobDto.setStatus(DriverJobStatus.PENDING.getCode());
-            driverJobDto.setDriverId(tripsTruckDriver.getDriverId());
+            driverJobDto.setDriverId(toLong(tripsTruckDriver.getDriverId()));
             driverJobDto.setTaskTransportId(taskTransportDTO.getId());
             driverJobDto.setPlanDepartureTime(DateUtils.getUTCTime(departureDate));
             driverJobDto.setPlanArrivalTime(DateUtils.getUTCTime(arrivalTime));
@@ -187,11 +196,11 @@ public class BusinessOperationServiceImpl implements IBusinessOperationService {
             TaskTransportDTO taskTransportDTOUpdate = new TaskTransportDTO();
             taskTransportDTOUpdate.setTransportOrderIds(taskTransportDTO.getTransportOrderIds());
             taskTransportDTOUpdate.setAssignedStatus(TransportTaskAssignedStatus.DISTRIBUTED.getCode());
-            taskTransportDTOUpdate.setTransportTripsId(tripsTruckDriver.getTripsId());
-            taskTransportDTOUpdate.setTruckId(tripsTruckDriver.getTruckId());
+            taskTransportDTOUpdate.setTripsId(toLong(tripsTruckDriver.getTripsId()));
+            taskTransportDTOUpdate.setTruckId(toLong(tripsTruckDriver.getTruckId()));
             taskTransportDTOUpdate.setPlanDepartureTime(departureDate);// 计划发车时间
             taskTransportDTOUpdate.setPlanArrivalTime(arrivalTime);// 计划到达时间
-            taskTransportDTOUpdate.setPlanPickUpGoodsTime(departureDate);// 计划提货
+            taskTransportDTOUpdate.setPlanPickUpTime(departureDate);// 计划提货
             taskTransportDTOUpdate.setPlanDeliveryTime(arrivalTime);// 计划交付
             transportTaskFeign.updateById(taskTransportDTO.getId(), taskTransportDTOUpdate);
             log.info("更新运输任务信息:{}", taskTransportDTOUpdate);

@@ -6,29 +6,25 @@ import com.itheima.pinda.DTO.*;
 import com.itheima.pinda.DTO.transportline.TransportLineDto;
 import com.itheima.pinda.DTO.transportline.TransportTripsDto;
 import com.itheima.pinda.DTO.truck.TruckDto;
-import com.itheima.pinda.authority.api.OrgApi;
-import com.itheima.pinda.authority.api.UserApi;
-import com.itheima.pinda.authority.entity.auth.User;
-import com.itheima.pinda.authority.entity.core.Org;
 import com.itheima.pinda.common.exception.PdException;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.entity.*;
+import com.itheima.pinda.feign.OrgFeign;
+import com.itheima.pinda.feign.UserFeign;
 import com.itheima.pinda.feign.transportline.TransportLineFeign;
 import com.itheima.pinda.feign.transportline.TransportTripsFeign;
 import com.itheima.pinda.feign.truck.TruckFeign;
 import com.itheima.pinda.future.PdCompletableFuture;
 import com.itheima.pinda.service.*;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiImplicitParam;
-import io.swagger.annotations.ApiImplicitParams;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import springfox.documentation.annotations.ApiIgnore;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -42,7 +38,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @RestController
 @RequestMapping("/scheduleLog")
-@Api(tags = "定时任务日志")
+@Tag(name = "定时任务日志")
 public class ScheduleJobLogController {
     @Autowired
     private IScheduleJobLogService scheduleJobLogService;
@@ -50,7 +46,7 @@ public class ScheduleJobLogController {
     private IScheduleJobService scheduleJobService;
 
     @Autowired
-    private OrgApi orgApi;
+    private OrgFeign orgFeign;
     @Autowired
     private IOrderClassifyService orderClassifyService;
     @Autowired
@@ -67,18 +63,14 @@ public class ScheduleJobLogController {
     @Autowired
     private TransportTripsFeign transportTripsFeign;
     @Autowired
-    private UserApi userApi;
+    private UserFeign userFeign;
     @Autowired
     private TruckFeign truckFeign;
 
 
     @GetMapping("page")
-    @ApiOperation("分页")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "jobId", value = "jobId", paramType = "query", dataType = "String"),
-            @ApiImplicitParam(name = "orgId", value = "orgId", paramType = "query", dataType = "String")
-    })
-    public PageResponse<ScheduleJobLogDTO> page(@ApiIgnore @RequestParam Map<String, Object> params) {
+    @Operation(summary = "分页")
+    public PageResponse<ScheduleJobLogDTO> page(@Parameter(hidden = true) @RequestParam Map<String, Object> params) {
         if (!params.containsKey("page")) {
             params.put("page", 1);
         }
@@ -118,7 +110,7 @@ public class ScheduleJobLogController {
 
     @SneakyThrows
     @GetMapping("{id}")
-    @ApiOperation("信息")
+    @Operation(summary = "信息")
     public ScheduleJobLogDTO info(@PathVariable("id") Long id) {
         ScheduleJobLogDTO logDto = scheduleJobLogService.get(id);
         if (logDto == null) {
@@ -127,23 +119,23 @@ public class ScheduleJobLogController {
         // 组合 订单分组等信息
         List<OrderClassifyEntity> orderClassifyEntities = orderClassifyService.findByJobLogId(logDto.getId());
         Set<String> agencySet = new HashSet<>();
-        agencySet.addAll(orderClassifyEntities.stream().map(item -> item.getStartAgencyId()).collect(Collectors.toSet()));
-        agencySet.addAll(orderClassifyEntities.stream().map(item -> item.getEndAgencyId()).collect(Collectors.toSet()));
+        agencySet.addAll(orderClassifyEntities.stream().map(OrderClassifyEntity::getStartAgencyId).collect(Collectors.toSet()));
+        agencySet.addAll(orderClassifyEntities.stream().map(OrderClassifyEntity::getEndAgencyId).collect(Collectors.toSet()));
 
-        CompletableFuture<Map<Long, Org>> agnecyMapFuture = PdCompletableFuture.agencyMapFuture(orgApi, null, agencySet, null);
-        Map<Long, Org> agencyMap = agnecyMapFuture.get();
+        CompletableFuture<Map<Long, OrgDTO>> agnecyMapFuture = PdCompletableFuture.agencyMapFuture(orgFeign, null, agencySet, null);
+        Map<Long, OrgDTO> agencyMap = agnecyMapFuture.get();
 
         List<OrderClassifyLogDTO> orderClassifyLogDTOS = orderClassifyEntities.stream().map(item -> {
             OrderClassifyLogDTO orderClassifyLogDTO = new OrderClassifyLogDTO();
             BeanUtils.copyProperties(item, orderClassifyLogDTO);
             if (StringUtils.isNotEmpty(orderClassifyLogDTO.getStartAgencyId())) {
-                Org startAgency = agencyMap.get(Long.parseLong(orderClassifyLogDTO.getStartAgencyId()));
+                OrgDTO startAgency = agencyMap.get(Long.parseLong(orderClassifyLogDTO.getStartAgencyId()));
                 if (startAgency != null) {
                     orderClassifyLogDTO.setStartAgency(startAgency.getName());
                 }
             }
             if (StringUtils.isNotBlank(orderClassifyLogDTO.getEndAgencyId())) {
-                Org endAgency = agencyMap.get(Long.parseLong(orderClassifyLogDTO.getEndAgencyId()));
+                OrgDTO endAgency = agencyMap.get(Long.parseLong(orderClassifyLogDTO.getEndAgencyId()));
                 if (endAgency != null) {
                     orderClassifyLogDTO.setEndAgency(endAgency.getName());
                 }
@@ -179,14 +171,14 @@ public class ScheduleJobLogController {
 
         CompletableFuture<Map<String, TransportTripsDto>> tripsMapFuture = PdCompletableFuture.tripsMapFuture(transportTripsFeign, tripsIdSet);
         CompletableFuture<Map<String, TruckDto>> truckMapFuture = PdCompletableFuture.truckMapFuture(truckFeign, truckIdSet);
-        CompletableFuture<Map<Long, User>> driverMapFuture = PdCompletableFuture.driverMapFuture(userApi, driverIdSet);
+        CompletableFuture<Map<Long, UserDTO>> driverMapFuture = PdCompletableFuture.driverMapFuture(userFeign, driverIdSet);
 
         Set<String> tripsSet = new LinkedHashSet<>();
         Set<String> truckSet = new LinkedHashSet<>();
         Set<String> driverSet = new LinkedHashSet<>();
         Map<String, TransportTripsDto> tripsMap = tripsMapFuture.get();
         Map<String, TruckDto> truckMap = truckMapFuture.get();
-        Map<Long, User> driverMap = driverMapFuture.get();
+        Map<Long, UserDTO> driverMap = driverMapFuture.get();
         for (OrderClassifyAttachEntity orderClassifyAttach : orderClassifyAttachs) {
             tripsSet.add(tripsMap.get(orderClassifyAttach.getTripsId()).getName());
             truckSet.add(truckMap.get(orderClassifyAttach.getTruckId()).getLicensePlate());
@@ -220,9 +212,9 @@ public class ScheduleJobLogController {
             agencySet.addAll(cacheLineDetailEntities.stream().map(cacheLineDetailEntity -> cacheLineDetailEntity.getStartAgencyId()).collect(Collectors.toSet()));
             agencySet.addAll(cacheLineDetailEntities.stream().map(cacheLineDetailEntity -> cacheLineDetailEntity.getEndAgencyId()).collect(Collectors.toSet()));
 
-            CompletableFuture<Map<Long, Org>> agnecyMapFu = PdCompletableFuture.agencyMapFuture(orgApi, null, agencySet, null);
+            CompletableFuture<Map<Long, OrgDTO>> agnecyMapFu = PdCompletableFuture.agencyMapFuture(orgFeign, null, agencySet, null);
             Map<String, TransportLineDto> transportLineMap = transportLineMapFuture.get();
-            Map<Long, Org> agency = agnecyMapFu.get();
+            Map<Long, OrgDTO> agency = agnecyMapFu.get();
 
             cacheLineDetailEntities.forEach(cacheLineDetailEntity -> {
                 CacheLineDetailDTO cacheLineDetailDTO = new CacheLineDetailDTO();

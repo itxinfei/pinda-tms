@@ -1,7 +1,7 @@
 package com.itheima.pinda.service;
 
-import com.itheima.pinda.entity.Member;
+import com.itheima.pinda.DTO.MemberDTO;
 
 public interface IMemberService {
-    Member detail(String userId);
+    MemberDTO detail(String userId);
 }

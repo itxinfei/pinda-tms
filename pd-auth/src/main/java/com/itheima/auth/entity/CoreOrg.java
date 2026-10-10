@@ -3,9 +3,11 @@ package com.itheima.auth.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -13,7 +15,7 @@ import java.util.List;
  * 组织（部门）。租户内树形结构，tree_path 以逗号包裹记录所有祖先，便于子孙查询。
  */
 @Data
-@TableName("pd_core_org")
+@TableName("sys_org")
 public class CoreOrg {
 
     @TableId(type = IdType.ASSIGN_ID)
@@ -34,14 +36,14 @@ public class CoreOrg {
     /** 部门类型 1分公司 2一级转运中心 3二级转运中心 4网点 */
     private Integer orgType;
 
-    /** 省行政区划ID */
-    private Long provinceId;
+    /** 省行政区划ID（dict_area.id） */
+    private Integer provinceId;
 
-    /** 市行政区划ID */
-    private Long cityId;
+    /** 市行政区划ID（dict_area.id） */
+    private Integer cityId;
 
-    /** 区县行政区划ID */
-    private Long countyId;
+    /** 区县行政区划ID（dict_area.id） */
+    private Integer countyId;
 
     /** 详细地址 */
     private String address;
@@ -58,18 +60,17 @@ public class CoreOrg {
     /** 排序值，升序 */
     private Integer sortValue;
 
-    /** 启用状态：true 启用 false 禁用 */
-    private Boolean status;
+    /** 启用状态：1 启用 0 禁用 */
+    private Integer status;
 
-    /** 描述（数据库列 describe_，避开 SQL 保留字 DESCRIBE） */
-    @TableField("describe_")
-    private String describe;
-
-    /** 纬度 */
-    private String latitude;
+    /** 描述 */
+    private String description;
 
     /** 经度 */
-    private String longitude;
+    private BigDecimal longitude;
+
+    /** 纬度 */
+    private BigDecimal latitude;
 
     /** 营业时间 */
     private String businessHours;
@@ -78,8 +79,12 @@ public class CoreOrg {
     @TableField(exist = false)
     private List<CoreOrg> children;
 
+    private Long createBy;
     private LocalDateTime createTime;
-    private Long createUser;
+    private Long updateBy;
     private LocalDateTime updateTime;
-    private Long updateUser;
+
+    /** 逻辑删除：0 未删 1 已删 */
+    @TableLogic
+    private Integer deleted;
 }

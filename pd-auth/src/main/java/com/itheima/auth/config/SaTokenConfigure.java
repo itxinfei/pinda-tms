@@ -22,9 +22,9 @@ public class SaTokenConfigure implements WebMvcConfigurer {
                 .addPathPatterns("/**")
                 .excludePathPatterns("/favicon.ico");
 
-        // 登录校验
+        // 登录校验：匿名接口与内部 Feign 端点放行（/internal 仍受上一道 Same-Token 保护，外部无法直达）
         registry.addInterceptor(new SaInterceptor(handle -> StpUtil.checkLogin()))
                 .addPathPatterns("/**")
-                .excludePathPatterns("/anno/**");
+                .excludePathPatterns("/anno/**", "/internal/**");
     }
 }

@@ -2,7 +2,7 @@ package com.itheima.pinda.feign;
 
 import com.itheima.pinda.DTO.TaskPickupDispatchDTO;
 import com.itheima.pinda.common.utils.PageResponse;
-import com.itheima.pinda.feign.hystrix.PickupDispatchTaskFeignFallback;
+import com.itheima.pinda.feign.fallback.PickupDispatchTaskFeignFallback;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,12 +28,12 @@ public interface PickupDispatchTaskFeign {
      * @return 取派件任务信息
      */
     @PutMapping("/pickup-dispatch-task/{id}")
-    TaskPickupDispatchDTO updateById(@PathVariable(name = "id") String id, @RequestBody TaskPickupDispatchDTO dto);
+    TaskPickupDispatchDTO updateById(@PathVariable(name = "id") Long id, @RequestBody TaskPickupDispatchDTO dto);
 
     /**
      * 获取取派件任务分页数据
      *
-     * @param dto 查询条件
+     * @param dto 查询参数
      * @return 取派件分页数据
      */
     @PostMapping("/pickup-dispatch-task/page")
@@ -46,7 +46,7 @@ public interface PickupDispatchTaskFeign {
      * @return 任务详情
      */
     @GetMapping("/pickup-dispatch-task/{id}")
-    TaskPickupDispatchDTO findById(@PathVariable(name = "id") String id);
+    TaskPickupDispatchDTO findById(@PathVariable(name = "id") Long id);
 
     /**
      * 获取取派件任务列表
@@ -60,9 +60,10 @@ public interface PickupDispatchTaskFeign {
     /**
      * 根据订单id获取取派件任务信息
      *
-     * @param orderId 订单Id
+     * @param orderId  订单Id
+     * @param taskType 任务类型
      * @return 任务详情
      */
     @GetMapping("/pickup-dispatch-task/orderId/{orderId}/{taskType}")
-    TaskPickupDispatchDTO findByOrderId(@PathVariable("orderId") String orderId, @PathVariable("taskType") Integer taskType);
+    TaskPickupDispatchDTO findByOrderId(@PathVariable("orderId") Long orderId, @PathVariable("taskType") Integer taskType);
 }

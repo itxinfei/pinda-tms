@@ -1,7 +1,6 @@
 package com.itheima.pinda.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.itheima.pinda.entity.Order;
 import com.itheima.pinda.entity.ScheduleJobEntity;
 import org.apache.ibatis.annotations.Mapper;
 import org.springframework.stereotype.Component;

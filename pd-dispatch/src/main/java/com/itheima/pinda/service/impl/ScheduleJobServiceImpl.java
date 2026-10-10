@@ -13,10 +13,9 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.itheima.pinda.DTO.OrgJobTreeDTO;
+import com.itheima.pinda.DTO.OrgTreeDTO;
 import com.itheima.pinda.DTO.ScheduleJobDTO;
-import com.itheima.pinda.authority.api.OrgApi;
-import com.itheima.pinda.authority.dto.core.OrgTreeDTO;
-import com.itheima.pinda.base.R;
+import com.itheima.pinda.feign.OrgFeign;
 import com.itheima.pinda.entity.ScheduleJobEntity;
 import com.itheima.pinda.enums.ScheduleStatus;
 import com.itheima.pinda.mapper.ScheduleJobMapper;
@@ -38,12 +37,14 @@ public class ScheduleJobServiceImpl extends ServiceImpl<ScheduleJobMapper, Sched
     @Autowired
     private Scheduler scheduler;
     @Autowired
-    private OrgApi orgApi;
+    private OrgFeign orgFeign;
 
     @Override
     public List<OrgJobTreeDTO> page(Map<String, Object> params) {
-        R<List<OrgTreeDTO>> orgTree = orgApi.tree("", true);
-        List<OrgTreeDTO> orgTreeDTOS = orgTree.getData();
+        List<OrgTreeDTO> orgTreeDTOS = orgFeign.tree("", true);
+        if (orgTreeDTOS == null) {
+            orgTreeDTOS = new ArrayList<>();
+        }
         List<ScheduleJobEntity> schedulerEntity = baseMapper.selectList(null);
         Map<String, ScheduleJobEntity> schedulerMap = schedulerEntity.stream().collect(Collectors.toMap(ScheduleJobEntity::getBusinessId, item -> item));
 

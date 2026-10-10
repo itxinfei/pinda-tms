@@ -89,6 +89,12 @@
             <artifactId>mybatis-plus-extension</artifactId>
             <version>${mybatis-plus.version}</version>
         </dependency>
+        <!-- 内部 Feign 契约 DTO（供 /internal 端点返回） -->
+        <dependency>
+            <groupId>com.itheima</groupId>
+            <artifactId>pd-service-auth-domain</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 
     <build>

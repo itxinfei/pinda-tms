@@ -1,0 +1,13 @@
+# Docker 网络专用 profile
+# 生效路径：src/main/docker/Dockerfile 的 CMD ["--spring.profiles.active=docker"]
+# 容器内 192.168.20.130 是宿主机映射地址，容器网络里 Nacos 的服务名是 nacos:8848。
+# 注意：远程配置的拉取发生在 application.yml 的 config.import 解析时，
+#       该时刻读到的 server-addr 来自环境变量 NACOS_SERVER_ADDR（compose 已显式注入）
+#       或 application.yml 的默认值；本文件覆写的是运行期注册与后续配置访问的地址。
+spring:
+  cloud:
+    nacos:
+      discovery:
+        server-addr: nacos:8848
+      config:
+        server-addr: nacos:8848

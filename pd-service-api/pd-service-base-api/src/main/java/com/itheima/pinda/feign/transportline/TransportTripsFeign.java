@@ -3,7 +3,7 @@ package com.itheima.pinda.feign.transportline;
 import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.DTO.transportline.TransportTripsDto;
 import com.itheima.pinda.DTO.transportline.TransportTripsTruckDriverDto;
-import com.itheima.pinda.feign.transportline.hystrix.TransportTripsFeignFallback;
+import com.itheima.pinda.feign.transportline.fallback.TransportTripsFeignFallback;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Hidden;

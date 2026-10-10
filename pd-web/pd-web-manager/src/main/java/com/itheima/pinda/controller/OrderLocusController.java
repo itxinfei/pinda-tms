@@ -11,14 +11,13 @@ package com.itheima.pinda.controller;
 import com.itheima.pinda.DTO.TaskPickupDispatchDTO;
 import com.itheima.pinda.DTO.TaskTransportDTO;
 import com.itheima.pinda.DTO.TransportOrderDTO;
-import com.itheima.pinda.authority.api.OrgApi;
 import com.itheima.pinda.enums.pickuptask.PickupDispatchTaskType;
 import com.itheima.pinda.feign.PickupDispatchTaskFeign;
 import com.itheima.pinda.feign.TransportOrderFeign;
 import com.itheima.pinda.feign.TransportTaskFeign;
 import com.itheima.pinda.vo.oms.OrderLocusVo;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,13 +31,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 定时任务
+ * 订单轨迹
  *
  * @author
  */
 @RestController
 @RequestMapping("/orderLocus")
-@Api(tags = "订单轨迹")
+@Tag(name = "订单轨迹")
 @Slf4j
 public class OrderLocusController {
 
@@ -54,16 +53,18 @@ public class OrderLocusController {
     private PickupDispatchTaskFeign pickupDispatchTaskFeign;
 
     @GetMapping("{id}")
-    @ApiOperation("查询订单轨迹参数")
+    @Operation(summary = "查询订单轨迹参数")
     public List<OrderLocusVo> findLocusByOrderId(@PathVariable("id") String id) {
         List<OrderLocusVo> orderLocusVos = new ArrayList<>();
         // 根据订单号查询快递员取件任务
-        TaskPickupDispatchDTO pickupDispatchTaskDto = pickupDispatchTaskFeign.findByOrderId(id, PickupDispatchTaskType.PICKUP.getCode());
+        TaskPickupDispatchDTO pickupDispatchTaskDto = pickupDispatchTaskFeign.findByOrderId(Long.valueOf(id), PickupDispatchTaskType.PICKUP.getCode());
         log.info("订单轨迹-取件任务：{}", pickupDispatchTaskDto);
         if (pickupDispatchTaskDto != null) {
             OrderLocusVo orderLocusVo = new OrderLocusVo();
 
-            orderLocusVo.setBusinessId(pickupDispatchTaskDto.getCourierId());
+            if (pickupDispatchTaskDto.getCourierId() != null) {
+                orderLocusVo.setBusinessId(String.valueOf(pickupDispatchTaskDto.getCourierId()));
+            }
             orderLocusVo.setGe___time(dtf.format(pickupDispatchTaskDto.getCreateTime())); // 起始时间设置成任务创建时间
             if (pickupDispatchTaskDto.getActualEndTime() == null) {
                 orderLocusVo.setLe___time(dtf.format(LocalDateTime.now()));
@@ -75,25 +76,29 @@ public class OrderLocusController {
 
 
         // 根据订单号 查询运单信息
-        TransportOrderDTO transportOrderDto = transportOrderFeign.findByOrderId(id);
+        TransportOrderDTO transportOrderDto = transportOrderFeign.findByOrderId(Long.valueOf(id));
         log.info("订单轨迹-运输任务：{}", transportOrderDto);
         if (transportOrderDto != null) {
             List<TaskTransportDTO> transportTaskDto = transportTaskFeign.findAllByOrderIdOrTaskId(transportOrderDto.getId(), null);
 
-            for (TaskTransportDTO taskTransportDTO : transportTaskDto) {
-                OrderLocusVo orderLocusVo = new OrderLocusVo();
-                orderLocusVo.setTransportTaskId(taskTransportDTO.getId());
-                orderLocusVos.add(orderLocusVo);
+            if (transportTaskDto != null) {
+                for (TaskTransportDTO taskTransportDTO : transportTaskDto) {
+                    OrderLocusVo orderLocusVo = new OrderLocusVo();
+                    orderLocusVo.setTransportTaskId(String.valueOf(taskTransportDTO.getId()));
+                    orderLocusVos.add(orderLocusVo);
+                }
             }
         }
 
         // 根据订单号查询快递员派件任务
-        TaskPickupDispatchDTO pickupDispatchTaskPushDto = pickupDispatchTaskFeign.findByOrderId(id, PickupDispatchTaskType.DISPATCH.getCode());
+        TaskPickupDispatchDTO pickupDispatchTaskPushDto = pickupDispatchTaskFeign.findByOrderId(Long.valueOf(id), PickupDispatchTaskType.DISPATCH.getCode());
         log.info("订单轨迹-派件任务：{}", pickupDispatchTaskPushDto);
         if (pickupDispatchTaskPushDto != null) {
             OrderLocusVo orderLocusVo = new OrderLocusVo();
 
-            orderLocusVo.setBusinessId(pickupDispatchTaskPushDto.getCourierId());
+            if (pickupDispatchTaskPushDto.getCourierId() != null) {
+                orderLocusVo.setBusinessId(String.valueOf(pickupDispatchTaskPushDto.getCourierId()));
+            }
             orderLocusVo.setGe___time(dtf.format(pickupDispatchTaskPushDto.getCreateTime())); // 起始时间设置成任务创建时间
             if (pickupDispatchTaskPushDto.getActualEndTime() == null) {
                 orderLocusVo.setLe___time(dtf.format(LocalDateTime.now()));

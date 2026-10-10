@@ -9,14 +9,12 @@ import com.itheima.pinda.common.exception.PdException;
 import com.itheima.pinda.enums.pickuptask.PickupDispatchTaskAssignedStatus;
 import com.itheima.pinda.service.ITaskPickupDispatchService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.stream.Collectors;
 
 /**
@@ -56,7 +54,7 @@ public class PickupDispatchTaskController {
      * @return 取派件任务信息
      */
     @PutMapping("/{id}")
-    public TaskPickupDispatchDTO updateById(@PathVariable(name = "id") String id, @RequestBody TaskPickupDispatchDTO dto) {
+    public TaskPickupDispatchDTO updateById(@PathVariable(name = "id") Long id, @RequestBody TaskPickupDispatchDTO dto) {
         dto.setId(id);
         TaskPickupDispatch existing = taskPickupDispatchService.getById(id);
         if (existing == null) {
@@ -64,7 +62,7 @@ public class PickupDispatchTaskController {
         }
         TaskPickupDispatch dispatch = new TaskPickupDispatch();
         BeanUtils.copyProperties(dto, dispatch);
-        if (StringUtils.isNotEmpty(dispatch.getCourierId())) {
+        if (dispatch.getCourierId() != null) {
             dispatch.setAssignedStatus(PickupDispatchTaskAssignedStatus.DISTRIBUTED.getCode());
         }
         taskPickupDispatchService.updateById(dispatch);
@@ -122,7 +120,7 @@ public class PickupDispatchTaskController {
      * @return 任务详情
      */
     @GetMapping("/{id}")
-    public TaskPickupDispatchDTO findById(@PathVariable(name = "id") String id) {
+    public TaskPickupDispatchDTO findById(@PathVariable(name = "id") Long id) {
         TaskPickupDispatchDTO dto = new TaskPickupDispatchDTO();
         TaskPickupDispatch dispatch = taskPickupDispatchService.getById(id);
         if (dispatch != null) {
@@ -136,11 +134,12 @@ public class PickupDispatchTaskController {
     /**
      * 根据订单id获取取派件任务信息
      *
-     * @param orderId 订单Id
+     * @param orderId  订单Id
+     * @param taskType 任务类型
      * @return 任务详情
      */
     @GetMapping("/orderId/{orderId}/{taskType}")
-    public TaskPickupDispatchDTO findByOrderId(@PathVariable("orderId") String orderId, @PathVariable("taskType") Integer taskType) {
+    public TaskPickupDispatchDTO findByOrderId(@PathVariable("orderId") Long orderId, @PathVariable("taskType") Integer taskType) {
         TaskPickupDispatchDTO dto = new TaskPickupDispatchDTO();
 
         LambdaQueryWrapper<TaskPickupDispatch> wrapper = new LambdaQueryWrapper<>();

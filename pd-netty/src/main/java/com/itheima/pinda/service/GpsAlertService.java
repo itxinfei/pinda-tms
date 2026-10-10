@@ -57,7 +57,7 @@ public class GpsAlertService {
     /**
      * 发出告警（带轨迹上下文，推荐使用）
      *
-     * @param alertType 告警类型（SPEED_OVER、STAY_TOO_LONG、DEVIATE_ROUTE）
+     * @param alertType 告警类型（SPEED_OVER、STAY_TOO_LONG、DEVIATE_ROUTE、VEHICLE_OFFLINE）
      * @param location  触发告警的轨迹点（提供运输任务、车辆/司机、经纬度上下文）
      * @param message   告警内容
      */

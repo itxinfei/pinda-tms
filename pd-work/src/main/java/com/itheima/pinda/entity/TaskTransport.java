@@ -2,26 +2,19 @@ package com.itheima.pinda.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.experimental.Accessors;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * <p>
- * 运输任务表
- * </p>
- *
- * @author jpf
- * @since 2020-01-10
+ * 干线运输任务（两机构间一段，绑定车次/车辆）
  */
 @Data
-@EqualsAndHashCode(callSuper = false)
-@Accessors(chain = true)
-@TableName("pd_task_transport")
+@TableName("work_task_transport")
 public class TaskTransport implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -29,48 +22,53 @@ public class TaskTransport implements Serializable {
     /**
      * id
      */
-    @TableId(value = "id", type = IdType.INPUT)
-    private String id;
+    @TableId(value = "id", type = IdType.ASSIGN_ID)
+    private Long id;
 
     /**
-     * 车次id
+     * 租户ID
      */
-    private String transportTripsId;
+    private Long tenantId;
 
     /**
-     * 起始机构id
+     * 车次 base_transport_trips.id
      */
-    private String startAgencyId;
+    private Long tripsId;
 
     /**
-     * 目的机构id
+     * 起始机构
      */
-    private String endAgencyId;
+    private Long startOrgId;
 
     /**
-     * 任务状态，1为待执行（对应 待提货）、2为进行中（对应在途）、3为待确认（保留状态）、4为已完成（对应 已交付）、5为已取消
+     * 目的机构
+     */
+    private Long endOrgId;
+
+    /**
+     * 任务状态：1待执行 2进行中 3待确认 4已完成 5已取消
      */
     private Integer status;
 
     /**
-     * 任务分配状态(1未分配2已分配3待人工分配)
+     * 分配状态：1未分配 2已分配 3待人工分配
      */
     private Integer assignedStatus;
 
     /**
-     * 满载状态(1.半载2.满载3.空载)
+     * 满载状态：1半载 2满载 3空载
      */
     private Integer loadingStatus;
 
     /**
-     * 车辆id
+     * 车辆 base_truck.id
      */
-    private String truckId;
+    private Long truckId;
 
     /**
      * 提货凭证
      */
-    private String cargoPickUpPicture;
+    private String pickupPicture;
 
     /**
      * 货物照片
@@ -78,9 +76,34 @@ public class TaskTransport implements Serializable {
     private String cargoPicture;
 
     /**
-     * 运回单凭证
+     * 回单凭证
      */
-    private String transportCertificate;
+    private String certificatePicture;
+
+    /**
+     * 交付照片
+     */
+    private String deliverPicture;
+
+    /**
+     * 提货经度
+     */
+    private BigDecimal pickupLongitude;
+
+    /**
+     * 提货纬度
+     */
+    private BigDecimal pickupLatitude;
+
+    /**
+     * 交付经度
+     */
+    private BigDecimal deliverLongitude;
+
+    /**
+     * 交付纬度
+     */
+    private BigDecimal deliverLatitude;
 
     /**
      * 计划发车时间
@@ -105,12 +128,12 @@ public class TaskTransport implements Serializable {
     /**
      * 计划提货时间
      */
-    private LocalDateTime planPickUpGoodsTime;
+    private LocalDateTime planPickUpTime;
 
     /**
      * 实际提货时间
      */
-    private LocalDateTime actualPickUpGoodsTime;
+    private LocalDateTime actualPickUpTime;
 
     /**
      * 计划交付时间
@@ -122,34 +145,14 @@ public class TaskTransport implements Serializable {
      */
     private LocalDateTime actualDeliveryTime;
 
-    /**
-     * 交付货物照片
-     */
-    private String deliverPicture;
-    /**
-     * 提货纬度
-     */
-    private String deliveryLatitude;
-    /**
-     * 提货经度
-     */
-    private String deliveryLongitude;
-    /**
-     * 交付纬度
-     */
-    private String deliverLatitude;
-    /**
-     * 交付经度
-     */
-    private String deliverLongitude;
-
-    /**
-     * 任务创建时间
-     */
+    private Long createBy;
     private LocalDateTime createTime;
+    private Long updateBy;
+    private LocalDateTime updateTime;
 
     /**
-     * 任务更新时间
+     * 逻辑删除：0 未删 1 已删
      */
-    private LocalDateTime updateTime;
+    @TableLogic
+    private Integer deleted;
 }

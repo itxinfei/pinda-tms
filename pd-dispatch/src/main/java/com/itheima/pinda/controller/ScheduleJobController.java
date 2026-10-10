@@ -2,26 +2,22 @@ package com.itheima.pinda.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.google.common.collect.ImmutableList;
+import com.itheima.pinda.DTO.OrgDTO;
 import com.itheima.pinda.DTO.OrgJobTreeDTO;
 import com.itheima.pinda.DTO.ScheduleJobDTO;
-import com.itheima.pinda.authority.api.OrgApi;
-import com.itheima.pinda.authority.entity.core.Org;
-import com.itheima.pinda.authority.enumeration.core.OrgType;
-import com.itheima.pinda.base.R;
 import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.entity.ScheduleJobEntity;
+import com.itheima.pinda.enums.org.OrgType;
+import com.itheima.pinda.feign.OrgFeign;
 import com.itheima.pinda.service.IScheduleJobService;
-import com.itheima.pinda.utils.DateUtils;
 import com.itheima.pinda.utils.IdUtils;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiImplicitParam;
-import io.swagger.annotations.ApiImplicitParams;
-import io.swagger.annotations.ApiOperation;
-import org.apache.commons.lang.StringUtils;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import springfox.documentation.annotations.ApiIgnore;
 
 import java.util.Date;
 import java.util.List;
@@ -34,7 +30,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/schedule")
-@Api(tags = "定时任务")
+@Tag(name = "定时任务")
 public class ScheduleJobController {
     private static final List<Integer> ORG_TYPE = ImmutableList.of(OrgType.BUSINESS_HALL.getType(), OrgType.TOP_TRANSFER_CENTER.getType()).asList();
 
@@ -42,32 +38,25 @@ public class ScheduleJobController {
     private IScheduleJobService scheduleJobService;
 
     @Autowired
-    private OrgApi orgApi;
+    private OrgFeign orgFeign;
 
 
     @GetMapping("page")
-    @ApiOperation("分页")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "page", paramType = "query", dataType = "String"),
-            @ApiImplicitParam(name = "pageSize", paramType = "query", dataType = "String"),
-            @ApiImplicitParam(name = "name", value = "name", paramType = "query", dataType = "String")
-    })
-    public R<List<OrgJobTreeDTO>> page(@ApiIgnore @RequestParam Map<String, Object> params) {
+    @Operation(summary = "分页")
+    public List<OrgJobTreeDTO> page(@Parameter(hidden = true) @RequestParam Map<String, Object> params) {
 
-        List<OrgJobTreeDTO> tree = scheduleJobService.page(params);
-
-        return R.success(tree);
+        return scheduleJobService.page(params);
     }
 
     @GetMapping("{id}")
-    @ApiOperation("信息")
+    @Operation(summary = "信息")
     public ScheduleJobDTO info(@PathVariable("id") String id) {
         ScheduleJobDTO schedule = scheduleJobService.get(id);
         return schedule;
     }
 
     @GetMapping("dispatch/{id}")
-    @ApiOperation("调度信息")
+    @Operation(summary = "调度信息")
     public Result dispatchInfo(@PathVariable("id") String id) {
 
         LambdaQueryWrapper<ScheduleJobEntity> wrapper = new LambdaQueryWrapper<>();
@@ -83,7 +72,7 @@ public class ScheduleJobController {
     }
 
     @PostMapping
-    @ApiOperation("保存")
+    @Operation(summary = "保存")
     public Result save(@RequestBody ScheduleJobDTO dto) {
 
         scheduleJobService.save(dto);
@@ -92,18 +81,18 @@ public class ScheduleJobController {
     }
 
     @PostMapping("dispatch")
-    @ApiOperation("保存或修改")
+    @Operation(summary = "保存或修改")
     public Result dispatch(@RequestBody ScheduleJobDTO dto) {
 
         String businessId = dto.getBusinessId();
         if (StringUtils.isBlank(businessId)) {
             return Result.error(400, "机构ID不能为空");
         }
-        R<Org> orgR = orgApi.get(Long.valueOf(businessId));
-        if (orgR == null || !orgR.getIsSuccess() || orgR.getData() == null) {
+        OrgDTO org = orgFeign.get(Long.valueOf(businessId));
+        if (org == null) {
             return Result.error(404, "机构不存在");
         }
-        Integer orgType = orgR.getData().getOrgType();
+        Integer orgType = org.getOrgType();
         if (!ORG_TYPE.contains(orgType)) {
             return Result.error(400, "无法给转运中心以上的机构增加调度任务");
         }
@@ -123,7 +112,7 @@ public class ScheduleJobController {
     }
 
     @PutMapping
-    @ApiOperation("修改")
+    @Operation(summary = "修改")
     public Result update(@RequestBody ScheduleJobDTO dto) {
 
         scheduleJobService.update(dto);
@@ -132,7 +121,7 @@ public class ScheduleJobController {
     }
 
     @DeleteMapping
-    @ApiOperation("删除")
+    @Operation(summary = "删除")
     public Result delete(@RequestBody String[] ids) {
         scheduleJobService.deleteBatch(ids);
 
@@ -140,7 +129,7 @@ public class ScheduleJobController {
     }
 
     @PutMapping("/run/{id}")
-    @ApiOperation("立即执行")
+    @Operation(summary = "立即执行")
     public Result run(@PathVariable String id) {
         scheduleJobService.run(new String[]{id});
 
@@ -148,7 +137,7 @@ public class ScheduleJobController {
     }
 
     @PutMapping("/run")
-    @ApiOperation("立即执行")
+    @Operation(summary = "立即执行")
     public Result run(@RequestBody String[] ids) {
         scheduleJobService.run(ids);
 
@@ -156,7 +145,7 @@ public class ScheduleJobController {
     }
 
     @PutMapping("/pause/{id}")
-    @ApiOperation("暂停")
+    @Operation(summary = "暂停")
     public Result pause(@PathVariable String id) {
         scheduleJobService.pause(new String[]{id});
 
@@ -164,7 +153,7 @@ public class ScheduleJobController {
     }
 
     @PutMapping("/pause")
-    @ApiOperation("暂停")
+    @Operation(summary = "暂停")
     public Result pause(@RequestBody String[] ids) {
         scheduleJobService.pause(ids);
 
@@ -172,7 +161,7 @@ public class ScheduleJobController {
     }
 
     @PutMapping("/resume/{id}")
-    @ApiOperation("恢复")
+    @Operation(summary = "恢复")
     public Result resume(@PathVariable String id) {
         scheduleJobService.resume(new String[]{id});
 
@@ -180,7 +169,7 @@ public class ScheduleJobController {
     }
 
     @PutMapping("/resume")
-    @ApiOperation("恢复")
+    @Operation(summary = "恢复")
     public Result resume(@RequestBody String[] ids) {
         scheduleJobService.resume(ids);
 

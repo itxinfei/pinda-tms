@@ -1,0 +1,133 @@
+server:
+  tomcat:
+    uri-encoding: UTF-8
+    max-threads: 1000
+    min-spare-threads: 30
+  port: 8192
+  connection-timeout: 50000ms
+
+spring:
+  application:
+    name: pd-netty
+  # 环境 dev|test|prod|docker；容器镜像由 src/main/docker/Dockerfile 的 CMD 显式指定 docker
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  main:
+    allow-bean-definition-overriding: true
+  # RabbitMQ 配置（轨迹消费；口令由 Nacos pd-netty.yml / 环境变量提供，不在此写死）
+  rabbitmq:
+    host: ${RABBITMQ_HOST:192.168.20.130}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:pinda}
+    password: ${RABBITMQ_PASSWORD:}
+    virtual-host: ${RABBITMQ_VHOST:/}
+    listener:
+      simple:
+        acknowledge-mode: manual
+  # 2026-10-10：SB3.5/SCA2025 下 bootstrap 上下文默认关闭，bootstrap*.yml 不再被加载；
+  # 远程配置改由 config.import 接入，姿势对齐已上线的 pd-auth。optional = 远程缺失不阻断启动。
+  config:
+    import:
+      - optional:nacos:pd-netty.yml
+  cloud:
+    nacos:
+      # 服务注册
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:192.168.20.130:8848}
+        namespace: 1cb93ce4-dc0e-4730-b759-d35fd7ed93c3
+        group: pinda-tms
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:123456}
+      # 配置中心
+      config:
+        server-addr: ${NACOS_SERVER_ADDR:192.168.20.130:8848}
+        namespace: 1cb93ce4-dc0e-4730-b759-d35fd7ed93c3
+        group: pinda-tms
+        file-extension: yml
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:123456}
+  # jackson 时间格式化（原自引用占位符，值取自 Nacos common.yml 的现网口径）
+  jackson:
+    time-zone: ${JACKSON_TIME_ZONE:GMT+8}
+    date-format: ${JACKSON_DATE_FORMAT:yyyy-MM-dd HH:mm:ss}
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: ${MULTIPART_MAX_FILE_SIZE:100MB}
+      max-request-size: ${MULTIPART_MAX_REQUEST_SIZE:1000MB}
+  # 数据源：单库 pinda_tms（2026-10-10 建库口径 = 八域前缀 + tenant_id 多租户）
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${MYSQL_HOST:192.168.20.130}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:pinda_tms}?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:123456}
+    druid:
+      initial-size: 5
+      min-idle: 5
+      max-active: 20
+      max-wait: 60000
+      pool-prepared-statements: false
+      max-pool-prepared-statement-per-connection-size: 20
+      time-between-eviction-runs-millis: 60000
+      min-evictable-idle-time-millis: 300000
+      test-while-idle: true
+      test-on-borrow: false
+      test-on-return: false
+      stat-view-servlet:
+        enabled: false
+        url-pattern: /druid/*
+      filter:
+        stat:
+          log-slow-sql: true
+          slow-sql-millis: 5000
+          merge-sql: true
+        wall:
+          config:
+            multi-statement-allow: true
+
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: com.itheima.pinda.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: true
+    call-setters-on-nulls: false
+    jdbc-type-for-null: NULL
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    banner: false
+    db-config:
+      id-type: ASSIGN_ID
+      # 逻辑删除口径 = 建表注释 '0未删 1已删'（docs/mysql/重构v2/*.sql）
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+# GPS 异常告警与轨迹保留配置（2026-10-10 P0-5 阈值外部化，禁硬编码红线）
+# 取 dev 段的完整键集合作为全 profile 共同基线；prod/docker 段原有的 8 个阈值逐字一致，
+# 各阈值与 RabbitGpsTraceConsumer 里 @Value 的默认值一一对应，未设环境变量时行为不变。
+gps:
+  alert:
+    # 告警开关
+    enabled: ${GPS_ALERT_ENABLED:true}
+    # Webhook 通知地址（可选，配置后推送超速/停留等告警到外部网关）
+    webhook-url: ${GPS_ALERT_WEBHOOK_URL:}
+    # 超速阈值 km/h
+    speed-limit-kmh: ${GPS_ALERT_SPEED_LIMIT_KMH:120}
+    # 长时间停留判定阈值（分钟）
+    stay-threshold-minutes: ${GPS_ALERT_STAY_THRESHOLD_MINUTES:30}
+    # 停留检测取最近轨迹点个数
+    stay-check-window: ${GPS_ALERT_STAY_CHECK_WINDOW:10}
+    # 停留位置漂移容差（度）
+    stay-position-threshold: ${GPS_ALERT_STAY_POSITION_THRESHOLD:0.001}
+    # 偏航距离阈值（km）
+    deviate-threshold-km: ${GPS_ALERT_DEVIATE_THRESHOLD_KM:2.0}
+    # 心跳超时判定（分钟）
+    heartbeat-timeout-minutes: ${GPS_ALERT_HEARTBEAT_TIMEOUT_MINUTES:5}
+    # 离线扫描间隔（毫秒）
+    offline-scan-interval-ms: ${GPS_ALERT_OFFLINE_SCAN_INTERVAL_MS:60000}
+    # 无业务主体告警（如批量离线）时间窗去重（分钟）
+    global-dedupe-window-minutes: ${GPS_ALERT_GLOBAL_DEDUPE_WINDOW_MINUTES:10}
+  trace:
+    # 轨迹数据保留天数（超过该天数的落库数据将被定时清理；<=0 表示不清理）
+    retention-days: ${GPS_TRACE_RETENTION_DAYS:30}

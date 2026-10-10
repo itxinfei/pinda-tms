@@ -10,10 +10,10 @@ import com.itheima.pinda.feign.OrderFeign;
 import com.itheima.pinda.feign.TraceFeign;
 import com.itheima.pinda.feign.TransportOrderFeign;
 import com.itheima.pinda.feign.TransportTaskFeign;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
  * 任何一环缺失都返回空轨迹，不报错，保证小程序在下单后、调度前也能正常展示状态。</p>
  */
 @Slf4j
-@Api(tags = "客户订单轨迹")
+@Tag(name = "客户订单轨迹")
 @RestController
 @RequestMapping("orderTrace")
 public class OrderTraceController {
@@ -52,7 +52,7 @@ public class OrderTraceController {
         this.traceFeign = traceFeign;
     }
 
-    @ApiOperation("按订单查轨迹")
+    @Operation(summary = "按订单查轨迹")
     @GetMapping("trace")
     public Result trace(String orderId) {
         if (StringUtils.isBlank(orderId)) {
@@ -75,9 +75,11 @@ public class OrderTraceController {
 
         // 运单可能尚未生成（下单后、调度前），此时轨迹为空属正常
         List<TaskTransportDTO> tasks = Collections.emptyList();
-        TransportOrderDTO transportOrder = transportOrderFeign.findByOrderId(orderId);
+        TransportOrderDTO transportOrder = transportOrderFeign.findByOrderId(Long.valueOf(orderId));
         if (transportOrder != null) {
-            data.put("transportOrderId", transportOrder.getId());
+            // 雪花 ID 下发 App 保持 String，避免 JS 精度丢失
+            data.put("transportOrderId",
+                    transportOrder.getId() == null ? null : String.valueOf(transportOrder.getId()));
             data.put("transportOrderStatus", transportOrder.getStatus());
             List<TaskTransportDTO> queried =
                     transportTaskFeign.findAllByOrderIdOrTaskId(transportOrder.getId(), null);
@@ -89,10 +91,12 @@ public class OrderTraceController {
             data.put("transportOrderStatus", null);
         }
 
+        // traceFeign.byTasks 形参为 List<String>；运输任务 ID 在此转 String
         List<String> taskIds = tasks.stream()
                 .map(TaskTransportDTO::getId)
-                .filter(StringUtils::isNotBlank)
+                .filter(id -> id != null)
                 .distinct()
+                .map(String::valueOf)
                 .collect(Collectors.toList());
 
         Object tracks = Collections.emptyList();

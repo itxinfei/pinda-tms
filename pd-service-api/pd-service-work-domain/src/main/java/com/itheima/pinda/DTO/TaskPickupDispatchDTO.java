@@ -19,12 +19,12 @@ public class TaskPickupDispatchDTO implements Serializable {
     /**
      * id
      */
-    private String id;
+    private Long id;
 
     /**
      * 关联订单id
      */
-    private String orderId;
+    private Long orderId;
 
     /**
      * 任务类型，1为取件任务，2为派件任务
@@ -44,12 +44,12 @@ public class TaskPickupDispatchDTO implements Serializable {
     /**
      * 网点ID
      */
-    private String agencyId;
+    private Long orgId;
 
     /**
      * 快递员ID
      */
-    private String courierId;
+    private Long courierId;
 
     /**
      * 预计开始时间
@@ -128,12 +128,12 @@ public class TaskPickupDispatchDTO implements Serializable {
     private Integer pageSize;
 
     /**
-     * 发件人省份id
+     * 发件人省份id（列表展示用，来源于订单区域，沿用 String 透传）
      */
     private String senderProvinceId;
 
     /**
-     * 发件人城市id
+     * 发件人城市id（列表展示用，来源于订单区域，沿用 String 透传）
      */
     private String senderCityId;
 
@@ -143,12 +143,12 @@ public class TaskPickupDispatchDTO implements Serializable {
     private String senderName;
 
     /**
-     * 收件人省份id
+     * 收件人省份id（列表展示用，来源于订单区域，沿用 String 透传）
      */
     private String receiverProvinceId;
 
     /**
-     * 收件人城市id
+     * 收件人城市id（列表展示用，来源于订单区域，沿用 String 透传）
      */
     private String receiverCityId;
 
@@ -160,9 +160,9 @@ public class TaskPickupDispatchDTO implements Serializable {
     /**
      * id列表
      */
-    private List<String> ids;
+    private List<Long> ids;
     /**
      * orderId 列表
      */
-    private List<String> orderIds;
+    private List<Long> orderIds;
 }

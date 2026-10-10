@@ -65,7 +65,7 @@ public class AuthLoginService {
         // 3. 定位租户
         AuthTenant tenant = tenantMapper.selectOne(Wrappers.<AuthTenant>lambdaQuery()
                 .eq(AuthTenant::getCode, param.getTenantCode()));
-        if (tenant == null || !Boolean.TRUE.equals(tenant.getStatus())) {
+        if (tenant == null || !Integer.valueOf(1).equals(tenant.getStatus())) {
             throw BizException.validFail("企业编码不存在或已停用，请核对后重试");
         }
         if (tenant.getExpireTime() != null && LocalDateTime.now().isAfter(tenant.getExpireTime())) {
@@ -86,7 +86,7 @@ public class AuthLoginService {
         }
 
         // 6. 用户状态与密码有效期
-        if (!Boolean.TRUE.equals(user.getStatus())) {
+        if (!Integer.valueOf(1).equals(user.getStatus())) {
             throw BizException.validFail("账号已被禁用，请联系企业管理员");
         }
         if (user.getPasswordExpireTime() != null && LocalDateTime.now().isAfter(user.getPasswordExpireTime())) {

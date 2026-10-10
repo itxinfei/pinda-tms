@@ -1,15 +1,15 @@
 package com.itheima.pinda.service;
 
 import com.itheima.pinda.service.sms.SmsChannel;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * 短信通知服务单元测试
@@ -73,7 +73,7 @@ public class SmsNotificationServiceTest {
         setField("smsChannels", channels);
 
         service.sendSms("13812345678", "测试短信");
-        assertTrue("配置的渠道应被调用", called.get());
+        assertTrue(called.get(), "配置的渠道应被调用");
     }
 
     /**

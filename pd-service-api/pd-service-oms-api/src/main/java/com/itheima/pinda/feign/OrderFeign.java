@@ -5,8 +5,8 @@ import com.itheima.pinda.DTO.OrderLocationDto;
 import com.itheima.pinda.DTO.OrderSearchDTO;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
-import com.itheima.pinda.entity.Order;
-import com.itheima.pinda.feign.hystrix.OrderFeignFallback;
+// R2④：list 返回类型已改为 OrderDTO，不再依赖 entity 包
+import com.itheima.pinda.feign.fallback.OrderFeignFallback;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -92,7 +92,7 @@ public interface OrderFeign {
     List<OrderDTO> findByIds(@RequestParam("ids") List<String> ids);
 
     @PostMapping("list")
-    List<Order> list(@RequestBody OrderSearchDTO orderSearchDTO);
+    List<OrderDTO> list(@RequestBody OrderSearchDTO orderSearchDTO);
 
     @PostMapping("orderMsg")
     Map getOrderMsg(@RequestBody OrderDTO orderAddDto);
@@ -105,8 +105,5 @@ public interface OrderFeign {
 
     @PostMapping("del")
     int deleteOrderLocation(@RequestBody OrderLocationDto orderLocationDto);
-
-    @PostMapping("omsSeataTest")
-    OrderDTO omsSeataTest(@RequestBody OrderDTO orderDTO);
 
 }

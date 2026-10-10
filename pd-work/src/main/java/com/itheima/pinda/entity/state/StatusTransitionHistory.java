@@ -4,24 +4,17 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.experimental.Accessors;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 状态流转历史表
+ * 状态流转历史（横切审计）
  *
- * 记录所有状态变更历史，用于审计和追踪
- *
- * @author Claude Code
- * @since 2026-07-01
+ * 记录干线运输任务的状态变更历史，用于审计和追踪
  */
 @Data
-@EqualsAndHashCode(callSuper = false)
-@Accessors(chain = true)
-@TableName("pd_status_transition_history")
+@TableName("work_status_transition_history")
 public class StatusTransitionHistory implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -29,26 +22,31 @@ public class StatusTransitionHistory implements Serializable {
     /**
      * id
      */
-    @TableId(value = "id", type = IdType.INPUT)
-    private String id;
+    @TableId(value = "id", type = IdType.ASSIGN_ID)
+    private Long id;
 
     /**
-     * 业务类型（1-订单，2-运单，3-运输任务）
+     * 租户ID
+     */
+    private Long tenantId;
+
+    /**
+     * 业务类型：1运输任务（可扩展）
      */
     private Integer businessType;
 
     /**
-     * 业务ID（订单ID/运单ID/运输任务ID）
+     * 业务主体ID
      */
-    private String businessId;
+    private Long businessId;
 
     /**
-     * 业务编号（订单编号/运单编号/运输任务编号）
+     * 业务单号
      */
     private String businessNo;
 
     /**
-     * 操作类型（1-状态变更，2-取消，3-删除）
+     * 操作类型：1状态变更
      */
     private Integer operationType;
 
@@ -65,20 +63,20 @@ public class StatusTransitionHistory implements Serializable {
     /**
      * 操作人ID
      */
-    private String operatorId;
+    private Long operatorId;
 
     /**
-     * 操作人名称
+     * 操作人姓名
      */
     private String operatorName;
 
     /**
-     * 操作人类型（1-客户，2-快递员，3-司机，4-系统，5-管理员）
+     * 操作人类型：1后台 2司机 3快递员
      */
     private Integer operatorType;
 
     /**
-     * 操作备注
+     * 备注
      */
     private String remark;
 
@@ -88,7 +86,7 @@ public class StatusTransitionHistory implements Serializable {
     private LocalDateTime operateTime;
 
     /**
-     * 创建时间
+     * 落库时间
      */
     private LocalDateTime createTime;
 }

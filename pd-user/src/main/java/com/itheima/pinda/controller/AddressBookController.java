@@ -1,10 +1,10 @@
 package com.itheima.pinda.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.itheima.j2cache.annotation.Cache;
-import com.itheima.j2cache.annotation.CacheEvictor;
+import com.itheima.pinda.DTO.AddressBookDTO;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
+import com.itheima.pinda.converter.AddressBookConverter;
 import com.itheima.pinda.entity.AddressBook;
 import com.itheima.pinda.service.IAddressBookService;
 import lombok.extern.log4j.Log4j2;
@@ -12,7 +12,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-import net.oschina.j2cache.CacheChannel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -28,9 +27,7 @@ public class AddressBookController {
     private IAddressBookService addressBookService;
 
     @Autowired
-    private CacheChannel cacheChannel;
-
-    private String region = "addressBook";
+    private AddressBookConverter addressBookConverter;
 
     /**
      * 新增地址簿
@@ -40,8 +37,8 @@ public class AddressBookController {
      */
     @PostMapping("")
     @Transactional(rollbackFor = Exception.class)
-    public Result save(@RequestBody AddressBook entity) {
-        if (entity == null || StringUtils.isBlank(entity.getUserId())) {
+    public Result save(@RequestBody AddressBookDTO dto) {
+        if (dto == null || StringUtils.isBlank(dto.getUserId())) {
             return Result.error("用户ID不能为空");
         }
         // 归属只能是自己：否则任意调用方可以给他人塞地址，再用别人的 addressBookId 下单
@@ -49,18 +46,17 @@ public class AddressBookController {
         if (StringUtils.isBlank(callerId)) {
             return Result.error(401, "缺少身份信息，拒绝写入地址簿");
         }
-        if (!callerId.equals(entity.getUserId())) {
-            log.warn("地址簿越权写入拦截: 声称归属={}, 调用方={}", entity.getUserId(), callerId);
+        if (!callerId.equals(dto.getUserId())) {
+            log.warn("地址簿越权写入拦截: 声称归属={}, 调用方={}", dto.getUserId(), callerId);
             return Result.error(403, "只能给自己的账号新增地址");
         }
+        AddressBook entity = addressBookConverter.toEntity(dto);
         if (isDefault(entity)) {
             addressBookService.lambdaUpdate().set(AddressBook::getIsDefault, 0).eq(AddressBook::getUserId, entity.getUserId()).update();
         }
 
         boolean result = addressBookService.save(entity);
-        if (result && entity.getId() != null) {
-            //载入缓存
-            cacheChannel.set(region, entity.getId(), entity);
+        if (result) {
             return Result.ok();
         }
         return Result.error();
@@ -78,16 +74,14 @@ public class AddressBookController {
      * @return 地址详情（仅本人）
      */
     @GetMapping("detail/{id}")
-    public Result detail(@PathVariable(name = "id") String id) {
+    public AddressBookDTO detail(@PathVariable(name = "id") String id) {
+        // R2④：直接返回 DTO（修复原 Feign 声明与 Result 包裹不一致导致消费方拿到空对象的缺陷）。
+        // 鉴权失败/不存在一律返回 null，不泄露数据；调用方判空处理。
         Result ownerCheck = checkOwner(id);
         if (ownerCheck != null) {
-            return ownerCheck;
+            return null;
         }
-        AddressBook addressBook = addressBookService.getById(id);
-        if (addressBook != null) {
-            return Result.ok().put("data", addressBook);
-        }
-        return Result.error("地址不存在");
+        return addressBookConverter.toDto(addressBookService.getById(id));
     }
 
     /**
@@ -99,7 +93,7 @@ public class AddressBookController {
      * @return
      */
     @GetMapping("page")
-    public PageResponse<AddressBook> page(Integer page, Integer pageSize, String userId, String keyword) {
+    public PageResponse<AddressBookDTO> page(Integer page, Integer pageSize, String userId, String keyword) {
         Page<AddressBook> iPage = new Page(page, pageSize);
         Page<AddressBook> pageResult = addressBookService.lambdaQuery()
                 .eq(StringUtils.isNotEmpty(userId), AddressBook::getUserId, userId)
@@ -109,8 +103,8 @@ public class AddressBookController {
                                 .like(AddressBook::getCompanyName, keyword))
                 .page(iPage);
 
-        return PageResponse.<AddressBook>builder()
-                .items(pageResult.getRecords())
+        return PageResponse.<AddressBookDTO>builder()
+                .items(addressBookConverter.toDtoList(pageResult.getRecords()))
                 .page(page)
                 .pagesize(pageSize)
                 .pages(pageResult.getPages())
@@ -126,21 +120,21 @@ public class AddressBookController {
      * @return
      */
     @PutMapping("/{id}")
-    @CacheEvictor(value = {@Cache(region = "addressBook",key = "ab",params = "1.id")})
     @Transactional(rollbackFor = Exception.class)
-    public Result update(@PathVariable(name = "id") String id, @RequestBody AddressBook entity) {
-        if (entity == null) {
+    public Result update(@PathVariable(name = "id") String id, @RequestBody AddressBookDTO dto) {
+        if (dto == null) {
             return Result.error("请求数据不能为空");
         }
         Result ownerCheck = checkOwner(id);
         if (ownerCheck != null) {
             return ownerCheck;
         }
-        entity.setId(id);
+        dto.setId(id);
         // 请求体里的 userId 一律丢弃：updateById 会把 body 的 userId 写进行，
         // 等于谁拿到 id 都能把这条地址改成自己的（或改成别人的）
         String ownerUserId = addressBookService.getById(id).getUserId();
-        entity.setUserId(ownerUserId);
+        dto.setUserId(ownerUserId);
+        AddressBook entity = addressBookConverter.toEntity(dto);
         if (isDefault(entity)) {
             addressBookService.lambdaUpdate().set(AddressBook::getIsDefault, 0).eq(AddressBook::getUserId, ownerUserId).update();
         }
@@ -166,7 +160,6 @@ public class AddressBookController {
      * @return
      */
     @DeleteMapping("/{id}")
-    @CacheEvictor({@Cache(region = "addressBook",key = "ab",params = "id")})
     public Result del(@PathVariable(name = "id") String id) {
         Result ownerCheck = checkOwner(id);
         if (ownerCheck != null) {

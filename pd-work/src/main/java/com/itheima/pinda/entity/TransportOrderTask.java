@@ -4,21 +4,14 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.experimental.Accessors;
 
 import java.io.Serializable;
-import java.time.LocalDateTime;
 
 /**
- * <p>
- * 运单与运输任务关联表
- * </p>
+ * 运单与运输任务关联表（多段中转）
  */
 @Data
-@EqualsAndHashCode(callSuper = false)
-@Accessors(chain = true)
-@TableName("pd_transport_order_task")
+@TableName("work_transport_order_task")
 public class TransportOrderTask implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -26,16 +19,21 @@ public class TransportOrderTask implements Serializable {
     /**
      * id
      */
-    @TableId(value = "id", type = IdType.INPUT)
-    private String id;
+    @TableId(value = "id", type = IdType.ASSIGN_ID)
+    private Long id;
 
     /**
-     * 运单Id
+     * 租户ID
      */
-    private String transportOrderId;
+    private Long tenantId;
 
     /**
-     * 运输任务Id
+     * 运单ID
      */
-    private String transportTaskId;
+    private Long transportOrderId;
+
+    /**
+     * 运输任务ID（work_task_transport.id）
+     */
+    private Long taskId;
 }

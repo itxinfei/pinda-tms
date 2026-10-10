@@ -1,9 +1,11 @@
 package com.itheima.pinda.DTO;
 
-import com.itheima.pinda.authority.dto.core.OrgTreeDTO;
+import com.itheima.pinda.DTO.OrgTreeDTO;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
+@EqualsAndHashCode(callSuper = true)
 public class OrgJobTreeDTO extends OrgTreeDTO {
 
     /**

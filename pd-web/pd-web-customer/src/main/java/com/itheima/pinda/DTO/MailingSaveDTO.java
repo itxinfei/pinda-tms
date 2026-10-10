@@ -1,24 +1,25 @@
 package com.itheima.pinda.DTO;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 @Data
+@Schema(description = "寄件保存入参")
 public class MailingSaveDTO {
-    @ApiModelProperty("发件方地址簿id")
+    @Schema(description = "发件方地址簿id")
     private String sendAddress;
-    @ApiModelProperty("收件方地址簿id")
+    @Schema(description = "收件方地址簿id")
     private String receiptAddress;
-    @ApiModelProperty("取件时间")
+    @Schema(description = "取件时间")
     private String pickUpTime;
-    @ApiModelProperty("取件方式")
+    @Schema(description = "取件方式")
     private Integer pickupType;
-    @ApiModelProperty("付款方式,1.预结2到付")
+    @Schema(description = "付款方式,1.预结2到付")
     private Integer payMethod;
-    @ApiModelProperty("物品类型")
+    @Schema(description = "物品类型")
     private String goodsType;
-    @ApiModelProperty("物品名称")
+    @Schema(description = "物品名称")
     private String goodsName;
-    @ApiModelProperty("物品重量")
+    @Schema(description = "物品重量")
     private String goodsWeight;
 }

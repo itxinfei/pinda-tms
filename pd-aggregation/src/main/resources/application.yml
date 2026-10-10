@@ -1,0 +1,50 @@
+server:
+  tomcat:
+    uri-encoding: UTF-8
+    max-threads: 1000
+    min-spare-threads: 30
+  port: 8191
+  connection-timeout: 50000ms
+
+spring:
+  application:
+    name: pd-aggregation
+  # 环境 dev|test|prod|docker
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  main:
+    allow-bean-definition-overriding: true
+  # Spring Cloud 标准接入方式（2026-10-10 R6 演练迁移，取代旧 bootstrap.yml）；
+  # SB3/SCA 2025 下 bootstrap 上下文默认关闭，远程配置改由 config.import 拉取；
+  # optional 表示远程配置缺失不阻断启动。
+  config:
+    import:
+      - optional:nacos:pd-aggregation.yml
+  cloud:
+    nacos:
+      # 服务注册
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:192.168.20.130:8848}
+        namespace: 1cb93ce4-dc0e-4730-b759-d35fd7ed93c3
+        group: pinda-tms
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:123456}
+      # 配置中心
+      config:
+        server-addr: ${NACOS_SERVER_ADDR:192.168.20.130:8848}
+        namespace: 1cb93ce4-dc0e-4730-b759-d35fd7ed93c3
+        group: pinda-tms
+        file-extension: yml
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:123456}
+  # 数据源由 pd-druid 共享 starter 配置提供（2026-10-10 R6 终验实测：生效 URL=pinda_tms，
+  # 对齐单库多租户架构；库名走 MYSQL_DATABASE 默认 pinda_tms，凭据走 MYSQL_PASSWORD 环境变量，
+  # 本地无凭据时数据链路仅部署环境可完整验证）——此处不再重复声明 datasource。
+
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      id-type: ASSIGN_ID
