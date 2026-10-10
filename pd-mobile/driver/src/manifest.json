@@ -1,7 +1,7 @@
 {
-    "name" : "",
+    "name" : "品达物流 · 司机端",
     "appid" : "",
-    "description" : "",
+    "description" : "品达TMS 司机端：运输任务、实时定位、轨迹回放",
     "versionName" : "1.0.0",
     "versionCode" : "100",
     "transformPx" : false,
@@ -23,11 +23,11 @@
             /* android打包配置 */
             "android" : {
                 "icons" : {
-                    "mdpi" : "static/logo-app.png",
-                    "hdpi" : "static/logo-app.png",
-                    "xhdpi" : "static/logo-app.png",
-                    "xxhdpi" : "static/logo-app.png",
-                    "xxxhdpi" : "static/logo-app.png"
+                    "mdpi" : "static/logo-48.png",
+                    "hdpi" : "static/logo-72.png",
+                    "xhdpi" : "static/logo-96.png",
+                    "xxhdpi" : "static/logo-144.png",
+                    "xxxhdpi" : "static/logo-192.png"
                 },
                 "permissions" : [
                     "<uses-permission android:name=\"android.permission.CHANGE_NETWORK_STATE\"/>",
@@ -50,10 +50,10 @@
             /* ios打包配置 */
             "ios" : {
                 "icons" : {
-                    "appstore" : "static/logo-app.png",
-                    "ipad" : "static/logo-app.png",
-                    "ipadpro" : "static/logo-app.png",
-                    "iphone" : "static/logo-app.png"
+                    "appstore" : "static/logo-1024.png",
+                    "ipad" : "static/logo-76.png",
+                    "ipadpro" : "static/logo-167.png",
+                    "iphone" : "static/logo-120.png"
                 }
             },
             /* SDK配置 */

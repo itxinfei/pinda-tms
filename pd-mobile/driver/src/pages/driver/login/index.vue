@@ -108,13 +108,14 @@ async function onLogin() {
 .login-brand {
   position: relative;
   z-index: 1;
-  padding-top: 130rpx;
+  padding-top: 96rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 .login-logo {
-  width: 280rpx;
+  width: 840rpx;
+  max-width: 90vw;
   height: auto;
   filter: drop-shadow(0 6rpx 18rpx rgba(0, 0, 0, 0.35));
 }

@@ -9,7 +9,7 @@ import { profile as fetchProfile } from '../common/api/index.js';
 
 export const useUserStore = defineStore('user', {
   state: () => ({
-    token: uni.getStorageSync('token') || '',
+    token: uni.getStorageSync('pd_token') || '',
     userInfo: uni.getStorageSync('userInfo') || null,
     profile: null,
   }),
@@ -20,9 +20,9 @@ export const useUserStore = defineStore('user', {
     setToken(token) {
       this.token = token || '';
       if (token) {
-        uni.setStorageSync('token', token);
+        uni.setStorageSync('pd_token', token);
       } else {
-        uni.removeStorageSync('token');
+        uni.removeStorageSync('pd_token');
       }
     },
     setUserInfo(info) {
@@ -43,7 +43,7 @@ export const useUserStore = defineStore('user', {
       this.token = '';
       this.userInfo = null;
       this.profile = null;
-      uni.removeStorageSync('token');
+      uni.removeStorageSync('pd_token');
       uni.removeStorageSync('userInfo');
       uni.reLaunch({ url: '/pages/customer/login/index' });
     },
