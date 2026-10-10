@@ -133,7 +133,9 @@ import { AuthStorage } from "@/utils/auth";
 import ResetPwd from "./components/ResetPwd.vue";
 import logoMark from "@/assets/images/logo-mark.png";
 import loginHero from "@/assets/images/login-hero.png";
+import { useI18n } from "vue-i18n";
 
+const { t } = useI18n();
 const userStore = useUserStore();
 const route = useRoute();
 const component = ref<"login" | "resetPwd">("login");
