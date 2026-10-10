@@ -11,7 +11,7 @@
 
 ## 0. 硬约束（不可违反）
 
-- 后端按**全栈升级基线**推进（JDK 21 LTS + Spring Boot 3.3 + Spring Cloud 2023；依赖锁定在基线之上不擅自再加升级，安全 CVE 随升级解决）。（**2026-10-08 修订**：原"JDK1.8/不升级任何依赖/CVE不处理"已废止，以全栈升级为准。）
+- 后端按**全栈升级基线**推进（JDK 21 LTS + Spring Boot 3.5 + Spring Cloud 2025.0；依赖锁定在基线之上不擅自再加升级，安全 CVE 随升级解决）。（**2026-10-08 修订**：原"JDK1.8/不升级任何依赖/CVE不处理"已废止，以全栈升级为准。）
 - **不引新中间件**：不用 MongoDB / Redis Stream / MQTT / XXL-JOB / ES / 专用求解器（如 OR-Tools）。
 - **新建 MySQL 表允许**；能查询算出的一律不建表。
 - IoT 设备上报**复用现有通道**：`pd-netty` 的 Netty + HTTP（`POST /netty/push`），**不引 MQTT**。
@@ -323,7 +323,7 @@ CREATE TABLE pd_payment_record (
 | 多点取送 | `OrderLocation` / 订单收发地址 |
 | 司机资质 | `PdTruckDriverLicense`、`PdTruckDriver.drivingAge` |
 
-**算法建议（JDK8 纯 Java，零新依赖）**：
+**算法建议（JDK21 纯 Java，零新依赖；2026-10-10 修订：随全栈升级基线由 JDK8 改为 JDK21）**：
 1. 先按约束做**可行性剪枝**（车型/载重/体积/时效不达标直接排除）。
 2. DFS/贪心构造初始解 → **局部搜索改进**：2-opt（路径内换位）+ 插入法（订单换线）。
 3. **保留可解释性**：每一步决策记录原因。

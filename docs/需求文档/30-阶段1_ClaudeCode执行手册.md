@@ -29,7 +29,7 @@
 
 【目标技术栈】
 - JDK 21 LTS（Eclipse Temurin）
-- Spring Boot 3.3.x + Spring Cloud 2023.0.x + Spring Cloud Alibaba 2023.0.x
+- Spring Boot 3.5.x + Spring Cloud 2025.0.x + Spring Cloud Alibaba 2025.0.0.0（2026-10-10 修订，原 3.3.x/2023.0.x）
 - 网关：Spring Cloud Gateway（WebFlux 响应式）
 - ORM：MyBatis Plus 3.5.x（jakarta 版本）
 - 连接池：Druid 1.2.23（jakarta 版本）
@@ -76,7 +76,7 @@
 
 ---
 
-### T-002：Spring Boot 3.3 + Spring Cloud 2023 + Alibaba 2023 版本对齐
+### T-002：Spring Boot 3.5 + Spring Cloud 2025.0 + Alibaba 2025.0.0.0 版本对齐
 
 **粘贴 prompt**：
 ```
@@ -84,17 +84,17 @@
 
 操作：
 1. 读根 pom.xml，找到 <parent> 里的 spring-boot-starter-parent
-2. 版本从 2.2.5.RELEASE 改成 3.3.5（或最新 3.3.x）
-3. 找到 <properties> 里的 spring-cloud.version，从 Hoxton.SR3 改成 2023.0.3（或最新 2023.0.x）
-4. 找到 spring-cloud-alibaba.version，从 2.2.1.RELEASE 改成 2023.0.3.2（或最新 2023.0.x 对应版本）
-5. 检查 dependencyManagement 里有没有硬编码的 Spring Boot 版本，对齐到 3.3.x
+2. 版本从 2.2.5.RELEASE 改成 3.5.x（用最新 3.5.x 补丁版）
+3. 找到 <properties> 里的 spring-cloud.version，从 Hoxton.SR3 改成 2025.0.x（或最新 2025.0.x）
+4. 找到 spring-cloud-alibaba.version，从 2.2.1.RELEASE 改成 2025.0.0.0
+5. 检查 dependencyManagement 里有没有硬编码的 Spring Boot 版本，对齐到 3.5.x
 
-注意：版本号要互相兼容——Spring Boot 3.3.x 对应 Spring Cloud 2023.0.x，Spring Cloud Alibaba 2023.0.x。
+注意：版本号要互相兼容——Spring Boot 3.5.x 对应 Spring Cloud 2025.0.x，Spring Cloud Alibaba 2025.0.0.0（官方适配 Boot 3.5.x）。
 
 验收：
-- spring-boot-starter-parent = 3.3.x
-- spring-cloud.version = 2023.0.x
-- spring-cloud-alibaba.version = 2023.0.x
+- spring-boot-starter-parent = 3.5.x
+- spring-cloud.version = 2025.0.x
+- spring-cloud-alibaba.version = 2025.0.0.0
 ```
 
 ---
@@ -283,7 +283,7 @@
 任务：把 Seata 从 1.2.0 升到 2.x。
 
 操作：
-1. 找 Seata 依赖（spring-cloud-starter-alibaba-seata），版本对齐到 Spring Cloud Alibaba 2023.0.x 对应的 Seata 版本
+1. 找 Seata 依赖（spring-cloud-starter-alibaba-seata），版本对齐到 Spring Cloud Alibaba 2025.0.0.0 对应的 Seata 版本
 2. 检查 @GlobalTransactional 注解的 import，应该还是 io.seata.spring.annotation.GlobalTransactional
 3. 检查 seata 配置文件（registry.conf / file.conf / application.yml 里的 seata.*），对齐到 2.x 格式
 
