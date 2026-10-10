@@ -26,6 +26,7 @@ import { ref, computed } from 'vue'
 import { userProfile, logoutApi } from '@/common/api/customer'
 import { useUserStore } from '@/common/store/user'
 import { maskName, maskPhone } from '@/common/utils/desensitive'
+import { onShow } from '@dcloudio/uni-app'
 
 const userStore = useUserStore()
 const userInfo = ref<any>(null)

@@ -51,6 +51,7 @@
 // 任务大厅：hero + 待执行/进行中计数 + 取派双标签 + 扫码接单 + 我的任务入口
 import { ref, computed } from 'vue'
 import { courierCount } from '@/common/api/courier'
+import { onShow } from '@dcloudio/uni-app'
 
 const tabs = [{ name: '取件' }, { name: '派件' }]
 const tabIndex = ref(0)

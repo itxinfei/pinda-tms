@@ -47,6 +47,7 @@ import { userProfile } from '@/common/api/driver'
 import { useUserStore } from '@/common/store/user'
 import { LOGIN_PAGE } from '@/common/config'
 import { maskName, maskPhone } from '@/common/utils/desensitive'
+import { onShow } from '@dcloudio/uni-app'
 
 const userStore = useUserStore()
 const userInfo = computed(() => userStore.userInfo)

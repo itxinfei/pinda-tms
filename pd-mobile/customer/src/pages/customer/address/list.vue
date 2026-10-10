@@ -30,6 +30,7 @@
 import { ref } from 'vue'
 import { addressList, deleteAddress } from '@/common/api/customer'
 import { maskPhone } from '@/common/utils/desensitive'
+import { onShow, onLoad } from '@dcloudio/uni-app'
 
 const list = ref<any[]>([])
 const loading = ref(false)

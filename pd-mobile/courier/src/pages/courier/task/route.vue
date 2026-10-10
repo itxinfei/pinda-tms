@@ -31,6 +31,7 @@ import { ref } from 'vue'
 import { taskRoute, traceLatest } from '@/common/api/courier'
 import { wgs84ToGcj02 } from '@/common/utils/coord'
 import { useUserStore } from '@/common/store/user'
+import { onLoad, onUnload } from '@dcloudio/uni-app'
 
 const id = ref('')
 const userStore = useUserStore()

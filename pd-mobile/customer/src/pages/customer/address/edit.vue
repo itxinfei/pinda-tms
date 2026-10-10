@@ -39,6 +39,7 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { areaSimple, createAddress, updateAddress, addressDetail } from '@/common/api/customer'
+import { onLoad } from '@dcloudio/uni-app'
 
 const id = ref('')
 const form = reactive({

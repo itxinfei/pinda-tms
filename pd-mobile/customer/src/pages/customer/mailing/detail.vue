@@ -20,16 +20,16 @@
 
       <view class="card">
         <text class="section-title">物流轨迹</text>
-        <u-time-line v-if="routeList.length">
-          <u-time-line-item v-for="(r, i) in routeList" :key="i">
-            <template #content>
-              <view class="tl-item">
-                <text class="tl-msg">{{ r.msg }}</text>
-                <text class="tl-time">{{ r.time || '' }}</text>
-              </view>
-            </template>
-          </u-time-line-item>
-        </u-time-line>
+        <!-- 修改点：uview-plus 无 u-time-line 组件，改用普通 view + CSS 时间轴 -->
+        <view class="tl" v-if="routeList.length">
+          <view class="tl-row" v-for="(r, i) in routeList" :key="i">
+            <view class="tl-dot"></view>
+            <view class="tl-item">
+              <text class="tl-msg">{{ r.msg }}</text>
+              <text class="tl-time">{{ r.time || '' }}</text>
+            </view>
+          </view>
+        </view>
         <u-empty v-else mode="list" text="暂无轨迹"></u-empty>
       </view>
 
@@ -66,6 +66,7 @@ import {
 } from '@/common/api/customer'
 import { orderStatusView } from '@/common/constants'
 import { maskName, maskPhone } from '@/common/utils/desensitive'
+import { onLoad } from '@dcloudio/uni-app'
 
 const order = ref<any>(null)
 const routeList = ref<any[]>([])
@@ -134,9 +135,23 @@ onLoad((opt: any) => {
   font-weight: bold;
   margin-bottom: var(--s-3);
 }
+.tl-row {
+  display: flex;
+  align-items: flex-start;
+}
+.tl-dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: var(--c-primary);
+  margin: 8rpx var(--s-3) 0 0;
+  flex-shrink: 0;
+}
 .tl-item {
   display: flex;
   flex-direction: column;
+  padding-bottom: var(--s-3);
+  border-bottom: 1rpx solid var(--c-border);
 }
 .tl-msg {
   font-size: var(--f-body);

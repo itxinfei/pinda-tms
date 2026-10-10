@@ -10,16 +10,16 @@
     ></map>
     <view class="card" v-if="trace">
       <text class="section-title">轨迹节点</text>
-      <u-time-line v-if="trace.tracks && trace.tracks.length">
-        <u-time-line-item v-for="(t, i) in trace.tracks" :key="i">
-          <template #content>
-            <view class="tl-item">
-              <text class="tl-msg">{{ t.msg || t.status || '' }}</text>
-              <text class="tl-time">{{ t.time || '' }}</text>
-            </view>
-          </template>
-        </u-time-line-item>
-      </u-time-line>
+      <!-- 修改点：uview-plus 无 u-time-line 组件，改用普通 view + CSS 时间轴 -->
+      <view class="tl" v-if="trace.tracks && trace.tracks.length">
+        <view class="tl-row" v-for="(t, i) in trace.tracks" :key="i">
+          <view class="tl-dot"></view>
+          <view class="tl-item">
+            <text class="tl-msg">{{ t.msg || t.status || '' }}</text>
+            <text class="tl-time">{{ t.time || '' }}</text>
+          </view>
+        </view>
+      </view>
       <u-empty v-else mode="list" text="暂无轨迹节点"></u-empty>
     </view>
     <u-empty v-if="!trace" mode="list" text="暂无轨迹"></u-empty>
@@ -30,6 +30,7 @@
 import { ref } from 'vue'
 import { orderTrace } from '@/common/api/customer'
 import { wgs84ToGcj02 } from '@/common/utils/coord'
+import { onLoad } from '@dcloudio/uni-app'
 
 const orderId = ref('')
 const trace = ref<any>(null)
@@ -77,9 +78,23 @@ async function load() {
   font-weight: bold;
   margin-bottom: var(--s-3);
 }
+.tl-row {
+  display: flex;
+  align-items: flex-start;
+}
+.tl-dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: var(--c-primary);
+  margin: 8rpx var(--s-3) 0 0;
+  flex-shrink: 0;
+}
 .tl-item {
   display: flex;
   flex-direction: column;
+  padding-bottom: var(--s-4);
+  border-bottom: 1rpx solid var(--c-border);
 }
 .tl-msg {
   font-size: var(--f-body);

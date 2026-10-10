@@ -48,6 +48,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { mailingCount } from '@/common/api/customer'
+import { onShow } from '@dcloudio/uni-app'
 
 const stat = ref<any>(null)
 const inProgress = computed(() => stat.value?.inProgress ?? stat.value?.progress ?? 0)

@@ -56,6 +56,7 @@
 // 异常类型用 COURIER_EXCEPTION_TYPES 三选一；附件至少 1 张；remark 必填；reporterId 由 token 取，前端不传
 import { ref } from 'vue'
 import { attachmentUpload, exceptionReport, COURIER_EXCEPTION_TYPES } from '@/common/api/courier'
+import { onLoad } from '@dcloudio/uni-app'
 
 const tranOrderId = ref('')
 const orderNumber = ref('')

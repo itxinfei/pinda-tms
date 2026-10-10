@@ -57,6 +57,7 @@ import {
 } from '@/common/api/driver'
 import { useUserStore } from '@/common/store/user'
 import { maskName } from '@/common/utils/desensitive'
+import { onShow } from '@dcloudio/uni-app'
 
 const userStore = useUserStore()
 const userInfo = computed(() => userStore.userInfo)
