@@ -9,7 +9,7 @@
           :key="t.value"
           :label="t.text"
           :name="t.value"
-          activeColor="#2B6CFF"
+          activeColor="#E15536"
         ></u-radio>
       </u-radio-group>
     </view>

@@ -1,6 +1,6 @@
 <template>
   <view class="page home-page">
-    <u-navbar :title="'品达物流'" :back="false" :borderBottom="false" bgColor="#2B6CFF" placeholder>
+    <u-navbar :title="'品达物流'" :back="false" :borderBottom="false" bgColor="#E15536" placeholder>
       <template #left><view /></template>
     </u-navbar>
 
@@ -84,7 +84,7 @@ onShow(() => {
   padding: 0;
 }
 .home-hero {
-  background: linear-gradient(160deg, #2B6CFF 0%, #1A4FD6 100%);
+  background: linear-gradient(160deg, #E15536 0%, #B53D22 100%);
   padding: 40rpx 48rpx 64rpx;
   color: #fff;
 }
