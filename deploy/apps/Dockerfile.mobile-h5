@@ -50,9 +50,15 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
 COPY ${APP_PATH}/ ./
 
 # 只构建目标端 H5
-RUN pnpm -F ${APP_NAME} run build:h5 \
- && test -f ${APP_SUBDIR}/dist/build/h5/index.html \
- || (echo "=== 构建失败，产物目录内容如下 ==="; ls -laR ${APP_SUBDIR}/dist 2>/dev/null; echo "=== workspace 根 ==="; ls -la; exit 1)
+# [诊断版] set -x 暴露实际执行的命令与参数；build 输出落盘便于失败时回看；并先确认源码/COPY 是否就位。
+# 定位到根因后需移除 set -x 与本段诊断回看，恢复为正常构建。
+RUN set -x; \
+    echo "APP_PATH=$APP_PATH APP_SUBDIR=$APP_SUBDIR APP_NAME=$APP_NAME"; \
+    ls -la /build; \
+    ls -la /build/${APP_SUBDIR}; \
+    pnpm -F ${APP_NAME} run build:h5 2>&1 | tee /tmp/build.log; \
+    test -f ${APP_SUBDIR}/dist/build/h5/index.html \
+ || (echo "=== 构建失败！build.log 尾部 ==="; tail -50 /tmp/build.log; echo "=== ${APP_SUBDIR} 产物目录 ==="; ls -laR ${APP_SUBDIR}/dist 2>/dev/null; echo "=== workspace 根 ==="; ls -la; exit 1)
 
 # ---------- 运行阶段 ----------
 FROM nginx:1.27-alpine
