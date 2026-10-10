@@ -129,7 +129,7 @@
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
   },
-  "repository": "https://gitee.com/youlaiorg/vue3-element-admin.git",
+  "repository": "https://gitee.com/itxinfei/pinda-tms.git",
   "author": "有来开源组织",
   "license": "MIT"
 }
