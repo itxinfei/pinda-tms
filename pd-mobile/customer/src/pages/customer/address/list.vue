@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <u-navbar :title="'地址簿'" :back="true" :borderBottom="false" bgColor="#2B6CFF" placeholder />
+    <u-navbar :title="'地址簿'" :back="true" :borderBottom="false" bgColor="#E15536" placeholder />
 
     <!-- 搜索 -->
     <view class="filter-bar">
@@ -23,7 +23,7 @@
             <u-tag v-if="item.isDefault === 1" text="默认" type="success" :plain="true" size="mini" />
           </view>
           <view v-if="!selectMode" class="addr-ops">
-            <u-icon name="edit-pen" color="#2B6CFF" size="20" @click.stop="goEdit(item.id)" />
+            <u-icon name="edit-pen" color="#E15536" size="20" @click.stop="goEdit(item.id)" />
             <u-icon name="trash" color="#F53F3F" size="20" @click.stop="handleDelete(item)" />
           </view>
         </view>

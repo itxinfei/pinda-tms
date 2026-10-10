@@ -1,6 +1,6 @@
 <template>
   <view class="page login-page">
-    <u-navbar :title="'客户登录'" :back="false" :borderBottom="false" bgColor="#2B6CFF" placeholder>
+    <u-navbar :title="'客户登录'" :back="false" :borderBottom="false" bgColor="#E15536" placeholder>
       <template #left><view /></template>
     </u-navbar>
 
@@ -92,8 +92,8 @@ const handleLogin = async () => {
       code: form.code,
       tenantCode: TENANT_CODE,
     });
-    // JWT 在 data.token.token（两层）
-    const jwt = data && data.token && data.token.token;
+    // JWT 在 data.token（后端返回字符串；兼容历史两层写法）
+    const jwt = (data && data.token && data.token.token) || (data && data.token);
     if (!jwt) {
       uni.showToast({ title: '登录失败：未返回凭证', icon: 'none' });
       return;
@@ -129,26 +129,32 @@ onMounted(() => {
   min-height: 100vh;
 }
 .login-hero {
-  background: linear-gradient(160deg, #2B6CFF 0%, #1A4FD6 100%);
-  padding: 60rpx 48rpx 80rpx;
+  height: 560rpx;
+  padding: 60rpx 48rpx 120rpx;
+  background: url('/static/login-bg.png') no-repeat center / cover;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
 }
 .login-logo {
   width: 360rpx;
   height: auto;
-  margin: 0 auto;
+  filter: drop-shadow(0 6rpx 16rpx rgba(0, 0, 0, 0.18));
 }
 .login-slogan {
   margin-top: 12rpx;
-  color: rgba(255, 255, 255, 0.85);
+  color: #ffffff;
   font-size: var(--f-body);
+  text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15);
 }
 .login-card {
-  margin: -40rpx 32rpx 0;
+  margin: -60rpx 32rpx 0;
   background: var(--c-surface);
-  border-radius: var(--r-lg);
+  border-radius: 28rpx;
   padding: 40rpx 32rpx;
-  box-shadow: var(--shadow-card);
+  box-shadow: 0 12rpx 40rpx rgba(31, 54, 122, 0.12);
 }
 .captcha-row {
   display: flex;

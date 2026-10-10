@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <u-navbar :title="id ? '编辑地址' : '新增地址'" :back="true" :borderBottom="false" bgColor="#2B6CFF" placeholder />
+    <u-navbar :title="id ? '编辑地址' : '新增地址'" :back="true" :borderBottom="false" bgColor="#E15536" placeholder />
 
     <view class="card">
       <u-form :model="form" :rules="rules" ref="formRef">
@@ -23,7 +23,7 @@
           <u-input v-model="form.companyName" placeholder="选填" border="none" />
         </u-form-item>
         <u-form-item label="设为默认" borderBottom>
-          <u-switch v-model="form.isDefault" :activeValue="1" :inactiveValue="0" activeColor="#2B6CFF" />
+          <u-switch v-model="form.isDefault" :activeValue="1" :inactiveValue="0" activeColor="#E15536" />
         </u-form-item>
       </u-form>
     </view>

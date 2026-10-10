@@ -1,6 +1,6 @@
 <template>
   <view class="page track-page">
-    <u-navbar :title="'实时轨迹'" :back="true" :borderBottom="false" bgColor="#2B6CFF" />
+    <u-navbar :title="'实时轨迹'" :back="true" :borderBottom="false" bgColor="#E15536" />
 
     <view v-if="loading" class="state-wrap">
       <u-loading-page :loading="true" :bgColor="'#F5F6F8'" />
@@ -84,7 +84,7 @@ const markers = computed(() => {
       longitude: last.lng,
       width: 20,
       height: 20,
-      label: { content: '当前位置', color: '#2B6CFF', fontSize: 12, anchorX: -20, anchorY: -28 },
+      label: { content: '当前位置', color: '#E15536', fontSize: 12, anchorX: -20, anchorY: -28 },
     });
   }
   return arr;
@@ -95,7 +95,7 @@ const polyline = computed(() => {
   return [
     {
       points: points.value,
-      color: '#2B6CFF',
+      color: '#E15536',
       width: 4,
       dottedLine: false,
     },

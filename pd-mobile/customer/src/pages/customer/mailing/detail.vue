@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <u-navbar :title="'运单详情'" :back="true" :borderBottom="false" bgColor="#2B6CFF" placeholder />
+    <u-navbar :title="'运单详情'" :back="true" :borderBottom="false" bgColor="#E15536" placeholder />
 
     <!-- 加载/空态 -->
     <view v-if="loading && !detail" class="state-wrap">

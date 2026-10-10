@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <u-navbar :title="'我的'" :back="false" :borderBottom="false" bgColor="#2B6CFF" placeholder />
+    <u-navbar :title="'我的'" :back="false" :borderBottom="false" bgColor="#E15536" placeholder />
 
     <!-- 用户信息 -->
     <view class="profile-hero">
@@ -17,22 +17,22 @@
     <!-- 功能入口 -->
     <view class="card menu-card">
       <view class="menu-row" @click="goAddress">
-        <u-icon name="list-dot" color="#2B6CFF" size="20" />
+        <u-icon name="list-dot" color="#E15536" size="20" />
         <text class="menu-text">地址簿</text>
         <u-icon name="arrow-right" color="#C9CDD4" size="18" />
       </view>
       <view class="menu-row" @click="goMailingList">
-        <u-icon name="order" color="#2B6CFF" size="20" />
+        <u-icon name="order" color="#E15536" size="20" />
         <text class="menu-text">我的运单</text>
         <u-icon name="arrow-right" color="#C9CDD4" size="18" />
       </view>
       <view class="menu-row" @click="goAgency">
-        <u-icon name="map" color="#2B6CFF" size="20" />
+        <u-icon name="map" color="#E15536" size="20" />
         <text class="menu-text">网点查询</text>
         <u-icon name="arrow-right" color="#C9CDD4" size="18" />
       </view>
       <view class="menu-row" @click="goAbout">
-        <u-icon name="info-circle" color="#2B6CFF" size="20" />
+        <u-icon name="info-circle" color="#E15536" size="20" />
         <text class="menu-text">关于品达</text>
         <u-icon name="arrow-right" color="#C9CDD4" size="18" />
       </view>
@@ -103,7 +103,7 @@ onShow(() => {
 
 <style lang="scss" scoped>
 .profile-hero {
-  background: linear-gradient(160deg, #2B6CFF 0%, #1A4FD6 100%);
+  background: linear-gradient(160deg, #E15536 0%, #B53D22 100%);
   padding: 48rpx 40rpx 64rpx;
   display: flex;
   align-items: center;

@@ -90,7 +90,7 @@
 	],
 	"tabBar": {
 		"color": "#86909C",
-		"selectedColor": "#2B6CFF",
+		"selectedColor": "#E15536",
 		"backgroundColor": "#FFFFFF",
 		"borderStyle": "black",
 		"list": [
@@ -111,7 +111,7 @@
 	"globalStyle": {
 		"navigationBarTextStyle": "white",
 		"navigationBarTitleText": "品达物流 · 司机端",
-		"navigationBarBackgroundColor": "#2B6CFF",
+		"navigationBarBackgroundColor": "#E15536",
 		"backgroundColor": "#F5F7FA"
 	},
 	"condition": {

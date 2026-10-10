@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <u-navbar :title="'我要寄件'" :back="true" :borderBottom="false" bgColor="#2B6CFF" placeholder />
+    <u-navbar :title="'我要寄件'" :back="true" :borderBottom="false" bgColor="#E15536" placeholder />
 
     <!-- 地址选择 -->
     <view class="card">
@@ -28,7 +28,7 @@
       <view class="card-title">取件信息</view>
       <view class="form-row">
         <text class="form-label">取件方式</text>
-        <u-radio-group v-model="form.pickupType" :activeColor="'#2B6CFF'" shape="circle">
+        <u-radio-group v-model="form.pickupType" :activeColor="'#E15536'" shape="circle">
           <u-radio :name="1" label="网点自寄" />
           <u-radio :name="2" label="上门取件" />
         </u-radio-group>
@@ -67,7 +67,7 @@
       <view class="card-title">费用</view>
       <view class="form-row">
         <text class="form-label">付款方式</text>
-        <u-radio-group v-model="form.payMethod" :activeColor="'#2B6CFF'" shape="circle">
+        <u-radio-group v-model="form.payMethod" :activeColor="'#E15536'" shape="circle">
           <u-radio :name="1" label="预结" />
           <u-radio :name="2" label="到付" />
         </u-radio-group>

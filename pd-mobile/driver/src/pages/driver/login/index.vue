@@ -70,7 +70,8 @@ async function onLogin() {
       code: form.code,
       tenantCode: TENANT_CODE,
     })
-    const token = res && res.token && res.token.token
+    // JWT 在 res.token（后端返回字符串；兼容历史两层写法）
+    const token = (res && res.token && res.token.token) || (res && res.token)
     if (!token) {
       uni.showToast({ title: '登录失败，请重试', icon: 'none' })
       refreshCaptcha()
@@ -96,24 +97,30 @@ async function onLogin() {
   padding: 0;
 }
 .login-hero {
-  background: var(--c-primary);
-  padding: calc(var(--s-8) * 3) var(--s-6) var(--s-8);
+  height: 560rpx;
+  padding: 60rpx 48rpx 120rpx;
+  background: url('/static/login-bg.png') no-repeat center / cover;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 .login-logo {
   width: 320rpx;
   height: auto;
-  align-self: center;
+  filter: drop-shadow(0 6rpx 16rpx rgba(0, 0, 0, 0.18));
 }
 .login-sub {
-  color: rgba(255, 255, 255, 0.85);
+  color: #ffffff;
   font-size: var(--f-aux);
   margin-top: var(--s-2);
+  text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15);
 }
 .login-card {
-  margin: calc(var(--s-8) * -1) var(--s-5) 0;
-  border-radius: var(--r-lg);
+  margin: -60rpx var(--s-5) 0;
+  border-radius: 28rpx;
+  box-shadow: 0 12rpx 40rpx rgba(31, 54, 122, 0.12);
+  padding: 40rpx 32rpx 48rpx;
 }
 .captcha-img {
   width: 180rpx;
