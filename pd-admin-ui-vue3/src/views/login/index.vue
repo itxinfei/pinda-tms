@@ -8,10 +8,6 @@
     <div class="login-layout">
       <div class="login-brand">
         <img :src="loginHero" class="login-brand__hero-img" alt="物流配送" />
-        <div class="login-brand__header">
-          <img :src="logoFull" class="login-brand__header-logo" alt="品达物流" />
-          <span class="login-brand__header-en">FASTER AND SAFER</span>
-        </div>
         <div class="login-brand__slogan">品质速递 使命必达</div>
         <div class="login-brand__copyright">© 2020-2026 品达物流集团</div>
       </div>
@@ -136,7 +132,6 @@ import { useUserStore } from "@/stores";
 import { AuthStorage } from "@/utils/auth";
 import ResetPwd from "./components/ResetPwd.vue";
 import logoMark from "@/assets/images/logo-mark.png";
-import logoFull from "@/assets/images/logo-full.png";
 import loginHero from "@/assets/images/login-hero.png";
 
 const userStore = useUserStore();
@@ -298,34 +293,6 @@ $brand-red: #d7000f; // 品达品牌红：登录按钮、书法标语（参考�
     height: 100%;
     object-fit: cover;
     object-position: center;
-  }
-
-  &__header {
-    position: absolute;
-    z-index: 1;
-    top: 30px;
-    left: 6%;
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    padding: 12px 22px;
-    background: rgb(255 255 255 / 88%);
-    border-radius: 14px;
-    box-shadow: 0 6px 20px rgb(39 50 72 / 12%);
-
-    &-logo {
-      display: block;
-      width: 150px;
-      height: auto;
-    }
-
-    &-en {
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 3px;
-      color: $brand-red;
-      white-space: nowrap;
-    }
   }
 
   &__slogan {
