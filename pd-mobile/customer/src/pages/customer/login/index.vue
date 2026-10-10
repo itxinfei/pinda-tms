@@ -1,6 +1,6 @@
 <template>
   <view class="page login-page">
-    <u-navbar :title="'客户登录'" :back="false" :borderBottom="false" bgColor="#E15536" placeholder>
+    <u-navbar :title="'客户登录'" :back="false" :borderBottom="false" bgColor="#E15536">
       <template #left><view /></template>
     </u-navbar>
 
