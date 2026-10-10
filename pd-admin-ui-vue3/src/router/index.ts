@@ -67,12 +67,43 @@ export const constantRoutes: RouteRecordRaw[] = [
         },
       },
       {
+        path: "org",
+        component: () => import("@/views/system/org/index.vue"),
+        name: "Org",
+        meta: {
+          title: "组织架构",
+          icon: "tree",
+          keepAlive: true,
+        },
+      },
+      {
+        path: "station",
+        component: () => import("@/views/system/station/index.vue"),
+        name: "Station",
+        meta: {
+          title: "岗位管理",
+          icon: "group",
+          keepAlive: true,
+        },
+      },
+      {
+        path: "area",
+        component: () => import("@/views/system/area/index.vue"),
+        name: "Area",
+        meta: {
+          title: "行政区划",
+          icon: "cascader",
+          keepAlive: true,
+        },
+      },
+      {
         path: "order",
-        component: () => import("@/views/placeholder/index.vue"),
+        component: () => import("@/views/order/index.vue"),
         name: "Order",
         meta: {
           title: "订单管理",
           icon: "document",
+          keepAlive: true,
         },
       },
       {

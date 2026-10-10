@@ -66,7 +66,6 @@ function createSseConnection(options: UseSseOptions = {}) {
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   let reconnectAttempts = 0;
   let currentReconnectInterval = config.reconnectInterval;
-  let tokenRefreshed = false; // 本轮拒绝是否已刷新过令牌，防止无限刷新
 
   const eventHandlers = new Map<string, Set<EventHandler>>();
 
@@ -248,25 +247,9 @@ function createSseConnection(options: UseSseOptions = {}) {
       .then(async (response) => {
         if (!response.ok) {
           if (response.status === 401 || response.status === 403) {
-            // 令牌过期：刷新后用新令牌重连，刷新失败或令牌仍无效则停止重连
-            if (!tokenRefreshed) {
-              tokenRefreshed = true;
-              connectionTimeoutTimer = clearTimer(connectionTimeoutTimer);
-              const userStore = useUserStoreHook();
-              try {
-                await userStore.refreshTokenOnce();
-                if (AuthStorage.getAccessToken()) {
-                  connectionState.value = SseConnectionState.DISCONNECTED;
-                  log(`SSE 连接被拒绝（HTTP ${response.status}），令牌已刷新，使用新令牌重连`);
-                  connect();
-                  return null;
-                }
-              } catch (err) {
-                logError("SSE 令牌刷新失败:", err);
-                // 续期失败即会话失效，走统一出口弹窗提示后跳登录页
-                await userStore.redirectToLogin("expired");
-              }
-            }
+            // 品达无 refreshToken：401/403 直接走会话失效出口，弹窗后跳登录页，不再刷新重连
+            connectionTimeoutTimer = clearTimer(connectionTimeoutTimer);
+            await useUserStoreHook().redirectToLogin("expired");
             isManualDisconnect = true;
             connectionState.value = SseConnectionState.DISCONNECTED;
             log(`SSE 连接被拒绝（HTTP ${response.status}），不再重连`);
@@ -276,7 +259,6 @@ function createSseConnection(options: UseSseOptions = {}) {
         }
         connectionTimeoutTimer = clearTimer(connectionTimeoutTimer);
         connectionState.value = SseConnectionState.CONNECTED;
-        tokenRefreshed = false;
         resetReconnectState();
         log("SSE 连接已建立");
         return response.body?.getReader();

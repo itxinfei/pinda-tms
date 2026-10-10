@@ -68,5 +68,13 @@
     "uniStatistics": {  
         "enable": false
     },
+    /* H5 部署路径：/customer/（nginx 反代剥前缀到容器根） */
+    "h5" : {
+        "router" : {
+            "base" : "/customer/"
+        },
+        "title" : "品达物流 · 客户端",
+        "template" : "index.html"
+    },
     "vueVersion" : "3"
 }

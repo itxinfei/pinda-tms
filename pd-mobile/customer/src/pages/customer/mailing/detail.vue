@@ -1,165 +1,216 @@
 <template>
   <view class="page">
-    <u-navbar title="运单详情" autoBack></u-navbar>
-    <u-loading-page :loading="loading"></u-loading-page>
+    <u-navbar :title="'运单详情'" :back="true" :borderBottom="false" bgColor="#2B6CFF" placeholder />
 
-    <block v-if="!loading && order">
-      <view class="card">
-        <view class="detail-head">
-          <text class="detail-no">{{ order.orderNumber || order.id }}</text>
-          <u-tag :text="statusView(order.status).text" :type="statusView(order.status).type" />
-        </view>
-        <u-cell-group>
-          <u-cell title="收件人" :label="maskName(order.name)" />
-          <u-cell title="联系电话" :label="maskPhone(order.mobile)" />
-          <u-cell title="计划取件" :label="order.planPickUpTime || '—'" />
-          <u-cell title="实际取件" :label="order.actualDispathedTime || '—'" />
-          <u-cell title="运单号" :label="order.tranOrderId || '—'" />
-        </u-cell-group>
+    <!-- 加载/空态 -->
+    <view v-if="loading && !detail" class="state-wrap">
+      <u-loading-page :loading="true" :bgColor="'#F5F6F8'" />
+    </view>
+    <view v-else-if="!detail" class="state-wrap">
+      <u-empty mode="data" text="运单不存在" />
+    </view>
+    <template v-else>
+      <!-- 状态条 -->
+      <view class="status-hero">
+        <u-tag :text="statusInfo(detail.status).label" :type="statusInfo(detail.status).type" :plain="false" size="large" />
+        <view class="status-time">{{ fmtTime(detail.planPickUpTime || detail.actualDispathedTime) }}</view>
       </view>
 
+      <!-- 基本信息 -->
       <view class="card">
-        <text class="section-title">物流轨迹</text>
-        <!-- 修改点：uview-plus 无 u-time-line 组件，改用普通 view + CSS 时间轴 -->
-        <view class="tl" v-if="routeList.length">
-          <view class="tl-row" v-for="(r, i) in routeList" :key="i">
-            <view class="tl-dot"></view>
-            <view class="tl-item">
-              <text class="tl-msg">{{ r.msg }}</text>
-              <text class="tl-time">{{ r.time || '' }}</text>
+        <view class="card-title">订单信息</view>
+        <view class="info-row"><text class="info-label">订单号</text><text class="info-value">{{ detail.id }}</text></view>
+        <view class="info-row"><text class="info-label">运单号</text><text class="info-value">{{ detail.tranOrderId || '-' }}</text></view>
+        <view class="info-row"><text class="info-label">计划取件</text><text class="info-value">{{ fmtTime(detail.planPickUpTime) }}</text></view>
+        <view class="info-row"><text class="info-label">派送完成</text><text class="info-value">{{ fmtTime(detail.actualDispathedTime) }}</text></view>
+        <view class="info-row"><text class="info-label">取消时间</text><text class="info-value">{{ fmtTime(detail.cancelTime) }}</text></view>
+        <view v-if="detail.name" class="info-row">
+          <text class="info-label">快递员</text>
+          <text class="info-value">{{ maskName(detail.name) }} {{ maskPhone(detail.mobile) }}</text>
+        </view>
+      </view>
+
+      <!-- 物流时间轴 -->
+      <view class="card">
+        <view class="card-title">物流动态</view>
+        <view v-if="routeList.length === 0" class="route-empty">暂无物流动态</view>
+        <view v-else class="route-timeline">
+          <view v-for="(r, i) in routeList" :key="i" class="route-node">
+            <view class="node-left">
+              <view class="node-dot" :class="{ last: i === 0 }"></view>
+              <view v-if="i !== routeList.length - 1" class="node-line"></view>
+            </view>
+            <view class="node-body">
+              <view class="node-msg">{{ r.msg || '节点更新' }}</view>
+              <view class="node-time">{{ fmtTime(r.time) }}</view>
             </view>
           </view>
         </view>
-        <u-empty v-else mode="list" text="暂无轨迹"></u-empty>
       </view>
 
-      <view class="action-bar" v-if="order && (order.status === 23000 || canPay)">
-        <u-button
-          v-if="order.status === 23000"
-          text="取消订单"
-          type="error"
-          plain
-          shape="circle"
-          @click="onCancel"
-        />
-        <u-button
-          v-if="canPay"
-          text="立即支付"
-          type="primary"
-          shape="circle"
-          @click="onPay"
-        />
+      <!-- 底部操作 -->
+      <view class="action-bar detail-actions">
+        <u-button v-if="canPay" type="primary" shape="circle" text="去支付" class="action-btn" @click="handlePay" />
+        <u-button v-if="canCancel" type="error" shape="circle" plain text="取消订单" class="action-btn" @click="handleCancel" />
+        <u-button type="primary" shape="circle" plain text="查看实时轨迹" class="action-btn" @click="goTrack" />
       </view>
-    </block>
-
-    <u-empty v-if="!loading && !order" mode="page" text="订单不存在"></u-empty>
+      <view style="height: 140rpx"></view>
+    </template>
   </view>
 </template>
 
-<script setup lang="ts">
-import { ref, computed } from 'vue'
-import {
-  mailingDetail,
-  mailingRoute,
-  cancelMailing,
-  payMailing,
-} from '@/common/api/customer'
-import { orderStatusView } from '@/common/constants'
-import { maskName, maskPhone } from '@/common/utils/desensitive'
-import { onLoad } from '@dcloudio/uni-app'
+<script setup>
+import { ref, computed } from 'vue';
+import { onLoad } from '@dcloudio/uni-app';
+import { detail as fetchDetail, route as fetchRoute, pay, cancel } from '../../../common/api/mailing.js';
+import { statusInfo, fmtTime } from '../../../common/utils/order.js';
+import { maskName, maskPhone } from '../../../common/utils/mask.js';
 
-const order = ref<any>(null)
-const routeList = ref<any[]>([])
-const loading = ref(true)
-const id = ref('')
+const id = ref('');
+const detail = ref(null);
+const routeList = ref([]);
+const loading = ref(false);
 
-function statusView(s?: number) {
-  return orderStatusView(s)
-}
-const canPay = computed(
-  () => order.value && order.value.paymentStatus !== undefined && order.value.paymentStatus === 0
-)
+// 仅"待取件(23000)"可取消、可支付
+const canCancel = computed(() => detail.value && detail.value.status === 23000);
+const canPay = computed(() => detail.value && detail.value.status === 23000);
 
-async function load() {
-  loading.value = true
+const loadDetail = async () => {
+  loading.value = true;
   try {
-    order.value = await mailingDetail(id.value)
-    routeList.value = (await mailingRoute(id.value)) || []
+    detail.value = await fetchDetail(id.value);
   } catch (e) {
+    detail.value = null;
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
-async function onCancel() {
+const loadRoute = async () => {
+  try {
+    const data = await fetchRoute(id.value);
+    const list = data || [];
+    routeList.value = list.slice().sort((a, b) => (a.time > b.time ? 1 : -1));
+  } catch (e) {
+    routeList.value = [];
+  }
+};
+
+const handlePay = async () => {
   uni.showModal({
-    title: '提示',
-    content: '仅发货前可取消并原路退款，确定取消？',
-    success: async (r) => {
-      if (r.confirm) {
-        await cancelMailing(id.value)
-        uni.showToast({ title: '已取消', icon: 'success' })
-        load()
-      }
+    title: '确认支付',
+    content: '确定支付该订单运费吗？',
+    success: async (res) => {
+      if (!res.confirm) return;
+      try {
+        await pay(id.value);
+        uni.showToast({ title: '支付成功', icon: 'success' });
+        loadDetail();
+        loadRoute();
+      } catch (e) { /* 错误已提示 */ }
     },
-  })
-}
-async function onPay() {
-  await payMailing(id.value)
-  uni.showToast({ title: '支付成功', icon: 'success' })
-  load()
-}
+  });
+};
 
-onLoad((opt: any) => {
-  id.value = opt.id
-  load()
-})
+const handleCancel = async () => {
+  uni.showModal({
+    title: '取消订单',
+    content: '取消后订单将关闭并全额退款，确定取消吗？',
+    success: async (res) => {
+      if (!res.confirm) return;
+      try {
+        await cancel(id.value);
+        uni.showToast({ title: '已取消', icon: 'success' });
+        loadDetail();
+        loadRoute();
+      } catch (e) { /* 错误已提示 */ }
+    },
+  });
+};
+
+const goTrack = () => uni.navigateTo({ url: `/pages/customer/mailing/track?id=${id.value}` });
+
+onLoad((options) => {
+  id.value = options.id || '';
+  loadDetail();
+  loadRoute();
+});
 </script>
 
-<style lang="scss">
-.detail-head {
+<style lang="scss" scoped>
+.state-wrap { padding-top: 120rpx; }
+.status-hero {
+  margin: 24rpx;
+  padding: 32rpx;
+  background: var(--c-surface);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-card);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--s-3);
 }
-.detail-no {
-  font-size: var(--f-title);
-  color: var(--c-text-1);
-  font-weight: bold;
-}
-.section-title {
-  display: block;
-  font-size: var(--f-sub);
-  color: var(--c-text-1);
-  font-weight: bold;
-  margin-bottom: var(--s-3);
-}
-.tl-row {
-  display: flex;
-  align-items: flex-start;
-}
-.tl-dot {
-  width: 12rpx;
-  height: 12rpx;
-  border-radius: 50%;
-  background: var(--c-primary);
-  margin: 8rpx var(--s-3) 0 0;
-  flex-shrink: 0;
-}
-.tl-item {
-  display: flex;
-  flex-direction: column;
-  padding-bottom: var(--s-3);
-  border-bottom: 1rpx solid var(--c-border);
-}
-.tl-msg {
-  font-size: var(--f-body);
-  color: var(--c-text-2);
-}
-.tl-time {
+.status-time {
   font-size: var(--f-tip);
   color: var(--c-text-3);
-  margin-top: var(--s-1);
 }
+.card-title {
+  font-size: var(--f-sub);
+  font-weight: 600;
+  color: var(--c-text-1);
+  margin-bottom: 16rpx;
+}
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10rpx 0;
+  font-size: var(--f-body);
+}
+.info-label { color: var(--c-text-3); }
+.info-value { color: var(--c-text-1); }
+.route-empty {
+  padding: 32rpx 0;
+  text-align: center;
+  color: var(--c-text-3);
+  font-size: var(--f-aux);
+}
+.route-timeline { padding: 8rpx 0; }
+.route-node { display: flex; }
+.node-left {
+  width: 32rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 12rpx;
+}
+.node-dot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+  background: var(--c-primary);
+  margin-top: 8rpx;
+  flex-shrink: 0;
+}
+.node-dot.last { background: var(--c-success); }
+.node-line {
+  flex: 1;
+  width: 2rpx;
+  background: var(--c-border);
+  min-height: 40rpx;
+}
+.node-body { padding-bottom: 28rpx; }
+.node-msg {
+  font-size: var(--f-body);
+  color: var(--c-text-1);
+}
+.node-time {
+  margin-top: 4rpx;
+  font-size: var(--f-tip);
+  color: var(--c-text-3);
+}
+.detail-actions {
+  display: flex;
+  gap: 16rpx;
+  padding-bottom: 24rpx;
+}
+.action-btn { flex: 1; }
 </style>

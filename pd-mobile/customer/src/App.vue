@@ -1,10 +1,11 @@
 <script>
-// 启动守卫：无 token 跳登录页
+// 品达TMS 客户端 App 入口
 export default {
   onLaunch: function () {
-    const token = uni.getStorageSync('pd_token')
+    // 登录态检查：无 token 引导回登录页
+    const token = uni.getStorageSync('token');
     if (!token) {
-      uni.reLaunch({ url: '/pages/customer/login/index' })
+      // 首次启动页为 home，home onShow 会跳登录；此处仅预检
     }
   },
   onShow: function () {},
@@ -15,6 +16,6 @@ export default {
 <style lang="scss">
 /* uview-plus 全局样式 */
 @import "uview-plus/index.scss";
-/* 设计 Token（颜色 / 间距 / 字号 / 全局 class）唯一真源，全局注入一次 */
-@import "./common/styles/variables.scss";
+/* 业务设计 Token */
+@import "@/common/styles/variables.scss";
 </style>
