@@ -36,7 +36,7 @@
                 <el-form-item prop="username">
                   <el-input
                     v-model.trim="loginFormData.username"
-                    placeholder="{{ t('login.usernamePlaceholder') }}"
+                    :placeholder="t('login.usernamePlaceholder')"
                     :prefix-icon="UserIcon"
                   />
                 </el-form-item>
@@ -45,7 +45,7 @@
                   <el-form-item prop="password">
                     <el-input
                       v-model.trim="loginFormData.password"
-                      placeholder="{{ t('login.passwordPlaceholder') }}"
+                      :placeholder="t('login.passwordPlaceholder')"
                       type="password"
                       show-password
                       :prefix-icon="LockIcon"
@@ -59,7 +59,7 @@
                   <div style="display: flex; gap: 12px; width: 100%;">
                     <el-input
                       v-model.trim="loginFormData.captchaCode"
-                      placeholder="{{ t('login.captchaPlaceholder') }}"
+                      :placeholder="t('login.captchaPlaceholder')"
                       style="flex: 1; min-width: 0;"
                       @keyup.enter="handleLoginSubmit"
                     />
@@ -133,7 +133,9 @@ import { AuthStorage } from "@/utils/auth";
 import ResetPwd from "./components/ResetPwd.vue";
 import logoMark from "@/assets/images/logo-mark.png";
 import loginHero from "@/assets/images/login-hero.png";
+import { useI18n } from "vue-i18n";
 
+const { t } = useI18n();
 const userStore = useUserStore();
 const route = useRoute();
 const component = ref<"login" | "resetPwd">("login");
