@@ -90,14 +90,16 @@ jobs:
 
       - name: 部署后健康检查（8760/9000，最长 4 分钟）
         run: |
+          # 注意：act_runner 的 shell 是 bash -e，curl 连接失败(exit 7)会直接终止脚本，
+          # 导致重试循环失效；必须 || echo 000 兜底，让循环等容器完成启动
           PORTS="8760 9000"
           ok=0
           for i in $(seq 1 48); do
             ok=1
             for p in $PORTS; do
-              # 注意：job 容器是独立网络，127.0.0.1 是 job 容器自身，
+              # job 容器是独立网络，127.0.0.1 是 job 容器自身，
               # 必须经宿主 IP 走端口映射访问业务容器（192.168.20.130）
-              code=$(curl -s -o /dev/null -w '%{http_code}' -m 3 "http://192.168.20.130:${p}/")
+              code=$(curl -s -o /dev/null -w '%{http_code}' -m 3 "http://192.168.20.130:${p}/" || echo 000)
               # 401=网关/服务鉴权拦截（服务已就绪）；404=无根路径处理器
               [ "$code" = "200" ] || [ "$code" = "401" ] || [ "$code" = "404" ] || ok=0
             done
@@ -105,7 +107,7 @@ jobs:
             sleep 5
           done
           for p in $PORTS; do
-            echo "端口 $p -> $(curl -s -o /dev/null -w '%{http_code}' -m 3 http://192.168.20.130:${p}/)"
+            echo "端口 $p -> $(curl -s -o /dev/null -w '%{http_code}' -m 3 http://192.168.20.130:${p}/ || echo 000)"
           done
           [ "$ok" = "1" ] || { echo "::error::有端口未就绪"; exit 1; }
 
