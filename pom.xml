@@ -44,6 +44,19 @@
         <!-- 算术/图形验证码（登录） -->
         <easy-captcha.version>1.6.2</easy-captcha.version>
 
+        <!-- ↓↓↓ 新栈第三方版本（Boot3 / jakarta） ↓↓↓ -->
+        <!-- FastJSON2（替换 fastjson 1.2.x） -->
+        <fastjson2.version>2.0.53</fastjson2.version>
+        <!-- springdoc-openapi（替换 springfox）；其内部 swagger-core 2.2.22 -->
+        <springdoc.version>2.6.0</springdoc.version>
+        <swagger-core.version>2.2.22</swagger-core.version>
+        <!-- Druid Spring Boot 3 starter -->
+        <druid-boot3.version>1.2.24</druid-boot3.version>
+        <!-- Seata 2.x（替换 1.2.0，支持 jakarta） -->
+        <seata.version>2.0.0</seata.version>
+        <!-- Commons IO（Spring Boot 3.x BOM 不再托管，需统一显式版本） -->
+        <commons-io.version>2.16.1</commons-io.version>
+
         <!-- ↓↓↓ 以下为旧业务模块 pom 仍在引用的历史版本变量，仅用于让全聚合模型可读、
              reactor 能以 -pl 方式单独构建新模块；旧模块不下载、不编译。
              随旧模块逐个迁到新栈时同步删除，禁止新代码引用。 ↓↓↓ -->
@@ -104,6 +117,12 @@
                 <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
                 <version>${mybatis-plus.version}</version>
             </dependency>
+            <!-- MyBatis-Plus 扩展（MybatisPlusInterceptor / Page 等） -->
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-extension</artifactId>
+                <version>${mybatis-plus.version}</version>
+            </dependency>
             <!-- MyBatis-Plus 多租户/分页插件所需 JSqlParser -->
             <dependency>
                 <groupId>com.baomidou</groupId>
@@ -118,6 +137,44 @@
                 <version>${easy-captcha.version}</version>
             </dependency>
 
+            <!-- ===== 新栈第三方坐标（Boot3 / jakarta） ===== -->
+            <!-- FastJSON2 -->
+            <dependency>
+                <groupId>com.alibaba.fastjson2</groupId>
+                <artifactId>fastjson2</artifactId>
+                <version>${fastjson2.version}</version>
+            </dependency>
+            <!-- springdoc-openapi（可启动 Web 服务） -->
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc.version}</version>
+            </dependency>
+            <!-- swagger v3 注解（纯 domain / common 库只需注解，不引 webmvc） -->
+            <dependency>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-annotations-jakarta</artifactId>
+                <version>${swagger-core.version}</version>
+            </dependency>
+            <!-- Druid Spring Boot 3 starter -->
+            <dependency>
+                <groupId>com.alibaba</groupId>
+                <artifactId>druid-spring-boot-3-starter</artifactId>
+                <version>${druid-boot3.version}</version>
+            </dependency>
+            <!-- Seata（RootContext 在 seata-core；业务 starter 供 SEATA-01 阶段使用） -->
+            <dependency>
+                <groupId>io.seata</groupId>
+                <artifactId>seata-core</artifactId>
+                <version>${seata.version}</version>
+            </dependency>
+            <!-- Commons IO（Boot3 BOM 不托管，统一版本） -->
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${commons-io.version}</version>
+            </dependency>
+
             <!-- ↓↓↓ 旧业务模块的历史坐标版本托管，仅让聚合模型可读，随旧模块迁移删除 ↓↓↓ -->
             <dependency>
                 <groupId>mysql</groupId>
@@ -127,7 +184,7 @@
             <dependency>
                 <groupId>io.seata</groupId>
                 <artifactId>seata-spring-boot-starter</artifactId>
-                <version>1.2.0</version>
+                <version>${seata.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.springfox</groupId>

@@ -3,10 +3,14 @@
 spring:
   cloud:
     nacos:
+      username: ${NACOS_USERNAME:nacos}
+      password: ${NACOS_PASSWORD:123456}
       discovery:
         server-addr: nacos:8848
-        namespace: 09d0e14f-107f-4fea-8f80-e59e0cc63694
+        group: pinda-tms
+        namespace: 1cb93ce4-dc0e-4730-b759-d35fd7ed93c3
       config:
         server-addr: nacos:8848
         file-extension: yml
-        namespace: 09d0e14f-107f-4fea-8f80-e59e0cc63694
+        group: pinda-tms
+        namespace: 1cb93ce4-dc0e-4730-b759-d35fd7ed93c3

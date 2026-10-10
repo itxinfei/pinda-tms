@@ -7,8 +7,8 @@ import com.itheima.pinda.enums.OrderPaymentStatus;
 import com.itheima.pinda.pay.PayChannel;
 import com.itheima.pinda.service.IOrderService;
 import com.itheima.pinda.service.IPaymentOrderService;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.lang.reflect.Field;
@@ -19,9 +19,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -39,7 +39,7 @@ public class PayServiceImplTest {
     private IOrderService orderService;
     private PayChannel mockChannel;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         payService = new PayServiceImpl();
         paymentOrderService = mock(IPaymentOrderService.class);
@@ -161,6 +161,6 @@ public class PayServiceImplTest {
         when(paymentOrderService.getOne(any())).thenReturn(null);
 
         // 未知支付渠道 → 优雅返回 null（而非 NPE）
-        org.junit.Assert.assertNull(payService.createPayment("ORDER-1"));
+        org.junit.jupiter.api.Assertions.assertNull(payService.createPayment("ORDER-1"));
     }
 }

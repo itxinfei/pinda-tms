@@ -1,15 +1,17 @@
 spring:
   cloud:
     nacos:
+      username: ${NACOS_USERNAME:nacos}
+      password: ${NACOS_PASSWORD:123456}
       discovery:
-        server-addr: localhost:9001
+        server-addr: ${NACOS_SERVER_ADDR:192.168.20.130:8848}
         group: pinda-tms
-        namespace: 5747bed4-a142-4cd1-a42b-5a5affdb176a
+        namespace: 1cb93ce4-dc0e-4730-b759-d35fd7ed93c3
       config:
-        server-addr: localhost:9001
+        server-addr: ${NACOS_SERVER_ADDR:192.168.20.130:8848}
         file-extension: yml
         group: pinda-tms
-        namespace: 5747bed4-a142-4cd1-a42b-5a5affdb176a
+        namespace: 1cb93ce4-dc0e-4730-b759-d35fd7ed93c3
 
   # jackson时间格式化
   jackson:

@@ -1,6 +1,6 @@
 package com.itheima.pinda.service.impl;
 
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.itheima.pinda.entity.PaymentOrder;
 import com.itheima.pinda.mapper.PaymentOrderMapper;
 import com.itheima.pinda.service.IPaymentOrderService;

@@ -5,12 +5,12 @@ import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.feign.agency.hystrix.AgencyScopeFeignFallback;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
-import springfox.documentation.annotations.ApiIgnore;
+import io.swagger.v3.oas.annotations.Hidden;
 
 import java.util.List;
 
 @FeignClient(value = "pd-base", fallback = AgencyScopeFeignFallback.class, path = "/scope")
-@ApiIgnore
+@Hidden
 public interface AgencyScopeFeign {
     /**
      * 批量保存机构业务范围

@@ -1,6 +1,6 @@
 package com.itheima.pinda.DTO;
 
-import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -14,7 +14,7 @@ import java.math.BigDecimal;
  * @author jpf
  * @since 2019-12-26
  */
-@ApiModel("货物")
+@Schema(description = "货物")
 @Data
 public class OrderCargoDto implements Serializable {
     private static final long serialVersionUID = -8573238049526791013L;

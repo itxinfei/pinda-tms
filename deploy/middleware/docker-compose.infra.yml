@@ -1,16 +1,15 @@
 # ============================================
 # 品达TMS 中间件编排：MySQL / Redis / Nacos / RabbitMQ
 #
-# 本文件按 192.168.20.130 上**实际运行**的容器参数还原（docker inspect），
-# 此前这些容器由零散 docker run 创建、仓库中无可复现编排，且 docs/部署文档.md 的
-# 镜像选择已与实际漂移（seata 运行方式与实际不一致）。
+# 本文件按 192.168.20.130 上**实际运行**的容器参数还原（docker inspect）。
+# 2026-10-09 校对补齐了三处"运行时改了但文件里没有"的漂移：
+#   1) nacos 的 data 目录挂载方向（此前声明与实际相反，按旧声明重建会把配置退回上一版）；
+#   2) nacos 的 6 个 NACOS_AUTH_* 鉴权变量（此前只在容器 Env 里，重建即失效）；
+#   3) redis 的 --requirepass（此前服务器那份根本没有）。
+# zookeeper / kafka 已按 BA-09 定案（RabbitMQ 单总线）从编排中移除，运行机上亦无此二者。
 #
-# 首次启用必须先迁移数据，否则容器内已有状态会随重建丢失：
-#   rabbitmq 原本没有任何挂载卷，nacos 只挂了 logs、
-#   内嵌 Derby 配置库留在容器可写层。见本目录 migrate-data.sh。
-#
-# 启动（迁移完成后）：
-#   docker compose -f deploy/middleware/docker-compose.infra.yml up -d
+# 口令一律走同目录 .env（root 0600，不入 Git）。缺任一项 compose 直接报错，
+# 不会静默起一个用默认口令的容器。
 # ============================================
 name: pinda-infra
 
@@ -30,18 +29,14 @@ services:
       - "3306:3306"
     volumes:
       - /data/mysql:/var/lib/mysql
+      # 运行参数走 my.cnf 而不是 command 的 --xxx：
+      #   command 参数只在"重建容器"时重读，改参数就得删容器重建；
+      #   my.cnf 挂在数据目录之外，docker restart / 重建都不丢，
+      #   也方便 DBA 直接 cat 核对当前生效参数。
+      # 每项参数的实测调整依据见同目录 my.cnf。
+      - /home/pdwl/mysql-conf/pinda.cnf:/etc/mysql/conf.d/pinda.cnf:ro
     environment:
-      # 口令不入库：由同目录 .env 提供（机器上 /data/deploy/middleware/.env，root 0600）。
-      # 缺这个文件 compose 会直接报错，不会静默用一个新密码把库改掉。
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?缺少 .env 里的 MYSQL_ROOT_PASSWORD}
-    # 缓冲池 128M(出厂默认) -> 1G：/data/mysql 数据 231M，原先大部分查询落盘，
-    # 与本机单块接近饱和的虚拟盘互相放大；max_connections 151 -> 500，
-    # 覆盖 8 个服务各自 Druid max-active=50（合计 400）的最坏情况。
-    command:
-      - --character-set-server=utf8mb4
-      - --collation-server=utf8mb4_general_ci
-      - --innodb-buffer-pool-size=1G
-      - --max-connections=500
     mem_limit: 2g
     # memory.low（docker 把 reservation 落到 cgroup v2 的 memory.low）：
     # 2026-10-07 实测过 1G 缓冲池里 246M 被换进 swap，表现为查询突然变慢。
@@ -53,6 +48,7 @@ services:
       timeout: 10s
       retries: 5
       start_period: 40s
+    network_mode: bridge
 
   redis:
     image: redis:7
@@ -63,24 +59,28 @@ services:
       - "6379:6379"
     volumes:
       - /data/redis:/data
+    environment:
+      # 口令只进 .env，不进本文件。同时供 command 与 healthcheck 读取。
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?缺少 .env 里的 REDIS_PASSWORD}
     # volatile-lru 而非 allkeys-lru：resource 这个 Hash 无 TTL，存的是网关鉴权
     # 用的整张权限资源表，被淘汰会直接打穿权限体系。
+    # 用 sh -c 起进程而不是列表参数：列表形式无法引用容器内环境变量，
+    # 而把口令写进 compose 的 command 等于把明文落进 Git。
     command:
-      - redis-server
-      - --appendonly
-      - "yes"
-      - --maxmemory
-      - 1gb
-      - --maxmemory-policy
-      - volatile-lru
+      - sh
+      - -c
+      - exec redis-server --appendonly yes --maxmemory 1gb --maxmemory-policy volatile-lru --requirepass "$$REDIS_PASSWORD"
     mem_limit: 1536m
     mem_reservation: 256m
     oom_score_adj: -500
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      # 启用 requirepass 后裸 `redis-cli ping` 会回 NOAUTH，健康检查必须带口令，
+      # 否则容器永远显示 unhealthy（这不是故障，是探针写错了）。
+      test: ["CMD-SHELL", "redis-cli --no-auth-warning -a \"$$REDIS_PASSWORD\" ping | grep -q PONG"]
       interval: 15s
       timeout: 5s
       retries: 3
+    network_mode: bridge
 
   nacos:
     image: nacos/nacos-server:v2.3.2
@@ -92,10 +92,12 @@ services:
       - "9848:9848"
       - "9849:9849"
     volumes:
-      - /data/nacos:/home/nacos/logs
-      # 原本只有 logs 被挂出，35 条微服务配置存在容器可写层的内嵌 Derby 里，
-      # docker rm nacos 即永久消失。
-      - /data/nacos-data:/home/nacos/data
+      # data 目录 = /data/nacos（当前生效的那份配置就在这），logs 单独挂出。
+      # 2026-10-09 之前本文件把两者写反了（/data/nacos → logs、/data/nacos-data → data），
+      # 后果是照本文件重建 = 加载 10-08 那份含过期 DEFAULT_GROUP 副本的旧配置，
+      # 且新改动全部静默丢失。/data/nacos-data 保留作冷备份，不再被任何容器挂载。
+      - /data/nacos:/home/nacos/data
+      - /data/nacos-logs:/home/nacos/logs
     environment:
       MODE: standalone
       JVM_XMS: 256m
@@ -106,8 +108,15 @@ services:
       PREFER_HOST_MODE: ip
       FUNCTION_MODE: all
       TOMCAT_ACCESSLOG_ENABLED: "false"
-    mem_limit: 1g
-    mem_reservation: 512m
+      # ---- 鉴权（2026-10-09 开启，值必须与运行容器一致，改动会让已签发 token 失效）----
+      NACOS_AUTH_ENABLE: ${NACOS_AUTH_ENABLE:?缺少 .env 里的 NACOS_AUTH_ENABLE}
+      NACOS_AUTH_TOKEN: ${NACOS_AUTH_TOKEN:?缺少 .env 里的 NACOS_AUTH_TOKEN}
+      NACOS_AUTH_IDENTITY_KEY: ${NACOS_AUTH_IDENTITY_KEY:?缺少 .env 里的 NACOS_AUTH_IDENTITY_KEY}
+      NACOS_AUTH_IDENTITY_VALUE: ${NACOS_AUTH_IDENTITY_VALUE:?缺少 .env 里的 NACOS_AUTH_IDENTITY_VALUE}
+      NACOS_AUTH_SERVER_IDENTITY_KEY: ${NACOS_AUTH_SERVER_IDENTITY_KEY:?缺少 .env 里的 NACOS_AUTH_SERVER_IDENTITY_KEY}
+      NACOS_AUTH_SERVER_IDENTITY_VALUE: ${NACOS_AUTH_SERVER_IDENTITY_VALUE:?缺少 .env 里的 NACOS_AUTH_SERVER_IDENTITY_VALUE}
+    mem_limit: 1536m
+    mem_reservation: 768m
     oom_score_adj: -500
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://127.0.0.1:8848/nacos/v1/ns/operator/metrics || exit 1"]
@@ -115,6 +124,7 @@ services:
       timeout: 10s
       retries: 5
       start_period: 60s
+    network_mode: bridge
 
   rabbitmq:
     image: rabbitmq:3.12-management
@@ -130,16 +140,18 @@ services:
       # 挂整个 /var/lib/rabbitmq 而不是只挂 mnesia：.erlang.cookie 在父目录里，
       # 只挂 mnesia 会让重建后的节点拿到新 cookie、以新节点身份重新加入。
       - /data/rabbitmq:/var/lib/rabbitmq
+      # 内存高水位必须显式指定绝对值：RabbitMQ 用**宿主机**总内存算 relative 水位，
+      # 0.4 × 15.9G ≈ 6.4G，而本容器 cgroup 上限只有 1G —— 于是它永远不会自己进
+      # 流控，先被 cgroup OOM kill。3.12 已废弃 RABBITMQ_VM_MEMORY_HIGH_WATERMARK
+      # 环境变量，只能走配置文件。
+      - /data/rabbitmq-conf/20-pinda.conf:/etc/rabbitmq/conf.d/20-pinda.conf:ro
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:?缺少 .env 里的 RABBITMQ_DEFAULT_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:?缺少 .env 里的 RABBITMQ_DEFAULT_PASS}
       RABBITMQ_LOGS: "-"
-    # RabbitMQ 3.12 废弃了 RABBITMQ_VM_MEMORY_HIGH_WATERMARK 环境变量，
-    # 改用 command 里的配置参数设置内存高水位
-    # 注意：现有 mnesia 目录名是 rabbit@<旧容器ID>，钉住 hostname 后新节点名为
-    # rabbit@rabbitmq，会另起一份空库；旧目录原样留在 /data/rabbitmq/mnesia 下不删，
-    # 需要接回时按官方 node_name 改名流程处理即可。当前 5 个队列消息数均为 0，
-    # 且 Spring AMQP 连接时会重新声明队列/交换机，因此新节点不丢业务拓扑。
+    # 注意：现有 mnesia 目录已是 rabbit@rabbitmq（hostname 已钉住）。节点名与
+    # /data/rabbitmq 数据目录可直接复用；RABBITMQ_DEFAULT_PASS 只在**用户不存在时**
+    # 生效，轮换口令要先 rabbitmqctl change_password，再改 .env，反序会出现新密码连旧库。
     command: ["rabbitmq-server"]
     mem_limit: 1g
     mem_reservation: 128m
@@ -150,3 +162,21 @@ services:
       timeout: 20s
       retries: 5
       start_period: 60s
+    networks: [infra]
+
+# 网络按运行时原样声明，不给这次变更引入额外的网络迁移：
+#   mysql8 / redis / nacos 历史上就是裸 docker run 起在默认 bridge（docker0, 172.17.0.0/16）；
+#   rabbitmq 由本 compose 项目创建过 pinda-infra_default（172.22.0.0/16）。
+#
+# 为什么 mysql8/redis/nacos 用 network_mode: bridge 而不是 networks：
+#   compose 会给 networks 下的服务自动附加 network-scoped alias，而 Docker 只对
+#   **用户自定义网络**支持别名 —— 照 networks 写会直接启动失败：
+#   "invalid config for network bridge: network-scoped aliases are only supported
+#    for user-defined networks"。network_mode 走的是 docker run --network bridge 的
+#   原生路径，不加别名，端口发布照常。
+# pinda-infra_default 标 external，compose 只使用不创建。全新机器上先执行：
+#   docker network create pinda-infra_default
+networks:
+  infra:
+    name: pinda-infra_default
+    external: true

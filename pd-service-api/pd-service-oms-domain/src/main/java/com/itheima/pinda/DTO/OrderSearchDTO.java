@@ -1,113 +1,112 @@
 package com.itheima.pinda.DTO;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
 
-@ApiModel("订单模糊搜索参数")
+@Schema(description = "订单模糊搜索参数")
 @Data
 public class OrderSearchDTO extends OrderDTO {
 
     /**
      * 页码
      */
-    @ApiModelProperty(value = "页码", required = true, example = "1")
+    @Schema(description = "页码", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     private Integer page;
 
 
     /**
      * 总页数
      */
-    @ApiModelProperty(value = "总页数", required = true, example = "10")
+    @Schema(description = "总页数", requiredMode = Schema.RequiredMode.REQUIRED, example = "10")
     private Integer pageSize;
 
     /**
      * 订单编号
      */
-    @ApiModelProperty(value = "订单编号", required = false)
+    @Schema(description = "订单编号")
     private String orderId;
 
     /**
      * 发件人姓名
      */
-    @ApiModelProperty(value = "发件人姓名", required = false)
+    @Schema(description = "发件人姓名")
     private String senderName;
 
     /**
      * 发件人电话
      */
-    @ApiModelProperty(value = "发件人电话", required = false)
+    @Schema(description = "发件人电话")
     private String senderPhone;
 
     /**
      * 发件人所在省份Id
      */
-    @ApiModelProperty(value = "发件人所在省份Id", required = false)
+    @Schema(description = "发件人所在省份Id")
     private String senderProvinceId;
 
 
     /**
      * 发件人所在市Id
      */
-    @ApiModelProperty(value = "发件人所在市Id", required = false)
+    @Schema(description = "发件人所在市Id")
     private String senderCityId;
 
     /**
      * 发件人所在区Id 集合
      */
-    @ApiModelProperty(value = "发件人所在区Id集合", required = false)
+    @Schema(description = "发件人所在区Id集合")
     private List<String> senderCountyIds;
 
     /**
      * 收件人姓名
      */
-    @ApiModelProperty(value = "收件人姓名", required = false)
+    @Schema(description = "收件人姓名")
     private String receiverName;
 
     /**
      * 收件人电话
      */
-    @ApiModelProperty(value = "收件人电话", required = false)
+    @Schema(description = "收件人电话")
     private String receiverPhone;
 
 
     /**
      * 收件人所在省份Id
      */
-    @ApiModelProperty(value = "收件人所在省份Id", required = false)
+    @Schema(description = "收件人所在省份Id")
     private String receiverProvinceId;
 
 
     /**
      * 收件人所在市Id
      */
-    @ApiModelProperty(value = "收件人所在市Id", required = false)
+    @Schema(description = "收件人所在市Id")
     private String receiverCityId;
 
     /**
      * 收件人所在区Id 集合
      */
-    @ApiModelProperty(value = "收件人所在区Id集合", required = false)
+    @Schema(description = "收件人所在区Id集合")
     private List<String> receiverCountyIds;
 
     /**
      * 订单状态
      */
-    @ApiModelProperty(value = "订单状态", required = true, example = "0")
+    @Schema(description = "订单状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "0")
     private Integer orderStatus;
 
     /**
      * 客户id
      */
-    @ApiModelProperty(value = "客户id")
+    @Schema(description = "客户id")
     private String memberId;
 
     /**
      * 公用搜索字段
      */
-    @ApiModelProperty(value = "公用搜索字段")
+    @Schema(description = "公用搜索字段")
     private String keyword;
 
     public Integer getPage() {

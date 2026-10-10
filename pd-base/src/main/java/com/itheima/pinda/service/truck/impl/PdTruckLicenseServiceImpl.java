@@ -1,6 +1,6 @@
 package com.itheima.pinda.service.truck.impl;
 
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.itheima.pinda.common.CustomIdGenerator;
 import com.itheima.pinda.mapper.truck.PdTruckLicenseMapper;
 import com.itheima.pinda.entity.truck.PdTruck;

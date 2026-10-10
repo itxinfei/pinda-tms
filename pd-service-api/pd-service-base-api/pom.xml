@@ -31,8 +31,7 @@
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-openfeign</artifactId>
-<!--            <scope>provided</scope>-->
-                        <version>2.1.2.RELEASE</version>
+            <!--            <scope>provided</scope>-->
         </dependency>
     </dependencies>
 </project>

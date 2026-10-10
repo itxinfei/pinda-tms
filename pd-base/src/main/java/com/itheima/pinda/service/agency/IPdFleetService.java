@@ -3,7 +3,7 @@ package com.itheima.pinda.service.agency;
 import java.util.List;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 import com.itheima.pinda.entity.agency.PdFleet;
 
 /**

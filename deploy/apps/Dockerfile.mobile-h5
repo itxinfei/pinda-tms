@@ -1,51 +1,58 @@
 # ============================================
-# 品达TMS uniapp 应用的 H5 版打包镜像（参数化，3 个 app 共用）
+# 品达TMS 移动端 H5 镜像（pnpm workspace，driver/courier/customer 三端共用）
 #
-# uni-app 只有编译成 H5 才是网页，才能用 nginx 托管访问；
-# 微信小程序 / App 端产物不走这个镜像（小程序要在微信开发者工具上传，
-# App 要用 HBuilderX / uni-app CLI 云打包）。
+# uni-app 只有编译成 H5 才是网页，才能用 nginx 托管；
+# 微信小程序 / App 端产物不走这个镜像（小程序在微信开发者工具上传，
+# App 用 HBuilderX / uni-app CLI 打包）。
 #
-# 参数化设计：另外 2 个 app 代码就位后，只改 compose 里的 build.args，
-# 不需要新增 Dockerfile。
+# 参数化：三端只改 build-arg，不需要新增 Dockerfile。
 #
-# 构建示例：
+# 构建示例（司机端）：
 #   docker build -f deploy/apps/Dockerfile.mobile-h5 \
 #     --build-arg APP_PATH=pd-mobile \
-#     --build-arg BUILD_CMD=build:h5 \
-#     --build-arg DIST_SUBDIR=build/h5 \
+#     --build-arg APP_SUBDIR=driver \
+#     --build-arg APP_NAME=pd-mobile-driver \
 #     -t pinda/pd-driver-h5:<tag> .
 #
-# 为什么用 Node 22：
-#   uni-app 3.0 (@dcloudio/uni-app 3.0.0-50206...) 基于 Vite 5，要求 Node 18+；
-#   CI 旧作业镜像固定 Node 14，跑不了 Vite 5。
+# 为什么 Node 22 + pnpm 10：
+#   uni-app 3.0 基于 Vite 5，要求 Node 18+；pnpm 10 与开发机构建版本(10.28)对齐，
+#   避免 lockfile 主版本不兼容。
 # ============================================
 
 # ---------- 构建阶段 ----------
 FROM node:22-alpine AS builder
 
 RUN npm config set registry https://registry.npmmirror.com \
- && npm install -g pnpm@9 --registry=https://registry.npmmirror.com
+ && npm install -g pnpm@10 --registry=https://registry.npmmirror.com
 
-# APP_PATH：uniapp 项目在仓库中的相对路径（默认 pd-mobile）
+# APP_PATH：移动端 monorepo 在仓库中的相对路径
 ARG APP_PATH=pd-mobile
-# BUILD_CMD：package.json 里的构建脚本（uniapp H5 = build:h5）
-ARG BUILD_CMD=build:h5
-# DIST_SUBDIR：产物相对项目根的子目录（uniapp H5 输出到 build/h5）
-ARG DIST_SUBDIR=build/h5
+# APP_SUBDIR：目标端在 workspace 内的子目录（driver/courier/customer）
+ARG APP_SUBDIR=driver
+# APP_NAME：目标端包名（pnpm -F 过滤用）
+ARG APP_NAME=pd-mobile-driver
 
 WORKDIR /build
 
-# 依赖清单单独拷一层，最大化复用缓存
-COPY ${APP_PATH}/package.json ${APP_PATH}/pnpm-lock.yaml ./
+# 先拷 workspace 根清单 + 三个子包依赖清单，最大化复用层缓存：
+# 业务代码变动但依赖不变时，直接命中 install 层，不重装
+COPY ${APP_PATH}/package.json ./package.json
+COPY ${APP_PATH}/pnpm-workspace.yaml ./pnpm-workspace.yaml
+COPY ${APP_PATH}/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY ${APP_PATH}/.npmrc ./.npmrc
+COPY ${APP_PATH}/driver/package.json ./driver/package.json
+COPY ${APP_PATH}/courier/package.json ./courier/package.json
+COPY ${APP_PATH}/customer/package.json ./customer/package.json
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
 
-# uni-app 需要 src/ 下的 pages.json / manifest.json，必须拷整个项目
+# 再拷整个 workspace 源码（node_modules 由 .dockerignore 排除）
 COPY ${APP_PATH}/ ./
 
-RUN pnpm run ${BUILD_CMD} \
- && test -f ${DIST_SUBDIR}/index.html \
- || (echo "=== 构建失败，产物目录内容如下 ==="; ls -laR ${DIST_SUBDIR} 2>/dev/null; echo "=== 项目根 ==="; ls -la; exit 1)
+# 只构建目标端 H5
+RUN pnpm -F ${APP_NAME} run build:h5 \
+ && test -f ${APP_SUBDIR}/dist/build/h5/index.html \
+ || (echo "=== 构建失败，产物目录内容如下 ==="; ls -laR ${APP_SUBDIR}/dist 2>/dev/null; echo "=== workspace 根 ==="; ls -la; exit 1)
 
 # ---------- 运行阶段 ----------
 FROM nginx:1.27-alpine

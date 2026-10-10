@@ -9,7 +9,7 @@
 package com.itheima.pinda.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.itheima.pinda.entity.OrderClassifyAttachEntity;
 import com.itheima.pinda.mapper.OrderClassifyAttachMapper;
 import com.itheima.pinda.service.IOrderClassifyAttachService;

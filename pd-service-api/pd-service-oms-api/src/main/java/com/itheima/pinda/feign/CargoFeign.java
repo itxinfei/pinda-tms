@@ -5,12 +5,12 @@ import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.feign.hystrix.CargoFeignFallback;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
-import springfox.documentation.annotations.ApiIgnore;
+import io.swagger.v3.oas.annotations.Hidden;
 
 import java.util.List;
 
 @FeignClient(value = "pd-oms", fallback = CargoFeignFallback.class, path = "/cargo")
-@ApiIgnore
+@Hidden
 public interface CargoFeign {
     /**
      * 获取货物列表

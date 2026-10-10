@@ -13,13 +13,13 @@ spring:
       active: prod
   main:
     allow-bean-definition-overriding: true
-  # RabbitMQ 配置
+  # RabbitMQ 配置（口令由 Nacos pd-netty.yml / 环境变量提供，不在此写死）
   rabbitmq:
-    host: 192.168.20.130
-    port: 5672
-    username: pinda
-    password: pinda
-    virtual-host: /
+    host: ${RABBITMQ_HOST:192.168.20.130}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:pinda}
+    password: ${RABBITMQ_PASSWORD:}
+    virtual-host: ${RABBITMQ_VHOST:/}
     listener:
       simple:
         acknowledge-mode: manual

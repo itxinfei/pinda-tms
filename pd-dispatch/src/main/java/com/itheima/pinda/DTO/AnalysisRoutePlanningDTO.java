@@ -1,11 +1,11 @@
 package com.itheima.pinda.DTO;
 
-import com.alibaba.nacos.common.utils.Md5Utils;
 import com.itheima.pinda.DTO.transportline.TransportLineDto;
 import com.itheima.pinda.entity.CacheLineDetailEntity;
 import com.itheima.pinda.entity.CacheLineEntity;
 import com.itheima.pinda.utils.IdUtils;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.DigestUtils;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -63,7 +63,7 @@ public class AnalysisRoutePlanningDTO {
             cacheLineEntity.setEndAgencyId(this.endAgencyId);
             cacheLineEntity.setTransferCount(value.size());
             cacheLineEntity.setIsCurrent(1);
-            cacheLineEntity.setVerifyKey(Md5Utils.getMD5(sbf.toString().getBytes()));
+            cacheLineEntity.setVerifyKey(DigestUtils.md5DigestAsHex(sbf.toString().getBytes()));
             result.put(cacheLineEntity, value);
         }
         return result;

@@ -1,7 +1,6 @@
 package com.itheima.pinda.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.api.R;
 import com.itheima.pinda.DTO.base.GoodsTypeDto;
 import com.itheima.pinda.common.utils.Constant;
 import com.itheima.pinda.common.utils.PageResponse;
@@ -10,8 +9,8 @@ import com.itheima.pinda.entity.base.PdGoodsType;
 import com.itheima.pinda.entity.truck.PdTruckTypeGoodsType;
 import com.itheima.pinda.service.base.IPdGoodsTypeService;
 import com.itheima.pinda.service.truck.IPdTruckTypeGoodsTypeService;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +27,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @RestController
 @RequestMapping("base/goodsType")
-@Api(tags = "货物类型管理")
+@Tag(name = "货物类型管理")
 public class GoodsTypeController {
     @Autowired
     private IPdGoodsTypeService goodsTypeService;
@@ -42,7 +41,7 @@ public class GoodsTypeController {
      * @return 货物类型信息
      */
     @PostMapping("")
-    @ApiOperation(value = "添加货物类型")
+    @Operation(summary = "添加货物类型")
     public GoodsTypeDto saveGoodsType(@Validated @RequestBody GoodsTypeDto goodsTypeDto){
         PdGoodsType pdGoodsType = new PdGoodsType();
         BeanUtils.copyProperties(goodsTypeDto,pdGoodsType);
@@ -74,7 +73,7 @@ public class GoodsTypeController {
      * @return
      */
     @GetMapping("/{id}")
-    @ApiOperation(value = "根据id查询货物类型")
+    @Operation(summary = "根据id查询货物类型")
     public GoodsTypeDto findById(@PathVariable(name = "id") String id){
         PdGoodsType pdGoodsType = goodsTypeService.getById(id);
 
@@ -98,7 +97,7 @@ public class GoodsTypeController {
      * @return
      */
     @GetMapping("/all")
-    @ApiOperation(value = "查询所有货物类型")
+    @Operation(summary = "查询所有货物类型")
     public List<GoodsTypeDto> findAll(){
         List<PdGoodsType> goodsTypeList = goodsTypeService.findAll();
         if(goodsTypeList != null && goodsTypeList.size() > 0){
@@ -122,7 +121,7 @@ public class GoodsTypeController {
      * @return
      */
     @GetMapping("/page")
-    @ApiOperation(value = "分页查询货物类型")
+    @Operation(summary = "分页查询货物类型")
     public PageResponse<GoodsTypeDto> findByPage(@RequestParam(name = "page") Integer page,
                                                  @RequestParam(name = "pageSize") Integer pageSize,
                                                  @RequestParam(name = "name", required = false) String name,
@@ -155,7 +154,7 @@ public class GoodsTypeController {
      * @return
      */
     @GetMapping("")
-    @ApiOperation(value = "查询货物类型列表")
+    @Operation(summary = "查询货物类型列表")
     public List<GoodsTypeDto> findAll(@RequestParam(name = "ids", required = false) List<String> ids){
         List<PdGoodsType> list= goodsTypeService.findAll(ids);
         if(list != null && list.size() > 0){
@@ -179,7 +178,7 @@ public class GoodsTypeController {
      * @return
      */
     @PutMapping("/{id}")
-    @ApiOperation(value = "更新货物类型信息")
+    @Operation(summary = "更新货物类型信息")
     public GoodsTypeDto updateById(@PathVariable(name = "id") String id, @RequestBody GoodsTypeDto dto){
         PdGoodsType pdGoodsType = new PdGoodsType();
         BeanUtils.copyProperties(dto,pdGoodsType);
@@ -214,7 +213,7 @@ public class GoodsTypeController {
      * @return 返回信息
      */
     @PutMapping("/{id}/disable")
-    @ApiOperation(value = "删除货物类型")
+    @Operation(summary = "删除货物类型")
     public Result disable(@PathVariable(name = "id") String id) {
         // 关联校验：存在车辆类型引用该货物类型时禁止删除
         List<PdTruckTypeGoodsType> refs = truckTypeGoodsTypeService.findAll(null, id);

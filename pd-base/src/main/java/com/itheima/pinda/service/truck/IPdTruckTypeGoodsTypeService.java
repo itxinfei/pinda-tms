@@ -1,6 +1,6 @@
 package com.itheima.pinda.service.truck;
 
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 import com.itheima.pinda.entity.truck.PdTruckTypeGoodsType;
 
 import java.util.List;

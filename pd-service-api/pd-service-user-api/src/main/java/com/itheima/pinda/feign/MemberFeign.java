@@ -5,11 +5,11 @@ import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.entity.Member;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
-import springfox.documentation.annotations.ApiIgnore;
+import io.swagger.v3.oas.annotations.Hidden;
 
 // 不要在接口上加类级 @RequestMapping；路径前缀下沉到方法，避免被 MVC 注册与本地 Controller 冲突。
 @FeignClient(name = "pd-user")
-@ApiIgnore
+@Hidden
 public interface MemberFeign {
     /**
      * 分页查询

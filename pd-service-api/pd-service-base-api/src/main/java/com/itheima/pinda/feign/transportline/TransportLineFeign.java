@@ -6,12 +6,12 @@ import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.feign.transportline.hystrix.TransportLineFeignFallback;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
-import springfox.documentation.annotations.ApiIgnore;
+import io.swagger.v3.oas.annotations.Hidden;
 
 import java.util.List;
 
 @FeignClient(value = "pd-base", fallback = TransportLineFeignFallback.class, path = "/base/transportLine")
-@ApiIgnore
+@Hidden
 public interface TransportLineFeign {
     /**
      * 添加线路

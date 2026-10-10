@@ -4,13 +4,13 @@ import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.DTO.user.CourierScopeDto;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
-import springfox.documentation.annotations.ApiIgnore;
+import io.swagger.v3.oas.annotations.Hidden;
 
 import java.util.List;
 
 @FeignClient(name = "pd-base")
 @RequestMapping("scope")
-@ApiIgnore
+@Hidden
 public interface CourierScopeFeign {
     /**
      * 批量保存快递员业务范围

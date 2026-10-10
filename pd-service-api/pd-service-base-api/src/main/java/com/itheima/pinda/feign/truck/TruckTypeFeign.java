@@ -5,7 +5,7 @@ import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.DTO.truck.TruckTypeDto;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
-import springfox.documentation.annotations.ApiIgnore;
+import io.swagger.v3.oas.annotations.Hidden;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -13,7 +13,7 @@ import java.util.List;
 
 @FeignClient(name = "pd-base")
 @RequestMapping("base/truck/type")
-@ApiIgnore
+@Hidden
 public interface TruckTypeFeign {
     /**
      * 添加车辆类型

@@ -1,7 +1,7 @@
 package com.itheima.pinda.service.transportline;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 import com.itheima.pinda.entity.transportline.PdTransportLineType;
 
 import java.util.List;
