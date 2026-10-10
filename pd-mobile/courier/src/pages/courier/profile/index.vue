@@ -27,6 +27,7 @@ import { userProfile } from '@/common/api/courier'
 import { useUserStore } from '@/common/store/user'
 import { maskPhone } from '@/common/utils/desensitive'
 import { LOGIN_PAGE } from '@/common/config'
+import { onShow } from '@dcloudio/uni-app'
 
 const profile = ref<any>(null)
 const userStore = useUserStore()

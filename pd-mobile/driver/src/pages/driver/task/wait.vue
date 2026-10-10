@@ -42,6 +42,7 @@
 import { ref } from 'vue'
 import { cargoWait } from '@/common/api/driver'
 import { driverJobStatusView } from '@/common/constants'
+import { onShow, onReachBottom, onPullDownRefresh } from '@dcloudio/uni-app'
 
 const list = ref<any[]>([])
 const loading = ref(false)

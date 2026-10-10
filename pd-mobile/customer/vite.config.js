@@ -16,6 +16,12 @@ export default defineConfig({
         target: 'http://192.168.20.130:8760',
         changeOrigin: true,
       },
+      // config.ts 条件编译后 H5 走 /prod-api，开发态同样代理并改写前缀
+      '/prod-api': {
+        target: 'http://192.168.20.130:8760',
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/prod-api/, '/api'),
+      },
     },
   },
 })

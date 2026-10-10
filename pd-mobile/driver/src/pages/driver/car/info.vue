@@ -43,6 +43,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { carInfo } from '@/common/api/driver'
+import { onLoad } from '@dcloudio/uni-app'
 
 const id = ref('')
 const car = ref<any>(null)

@@ -51,6 +51,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { cargoFinish, attachmentUpload } from '@/common/api/driver'
+import { onLoad } from '@dcloudio/uni-app'
 
 const id = ref('')
 const fileList = ref<any[]>([])

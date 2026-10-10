@@ -22,6 +22,7 @@
 // 入库：接 tranOrderId，确认调 warehousing，成功后 toast 并返回
 import { ref } from 'vue'
 import { warehousing } from '@/common/api/courier'
+import { onLoad } from '@dcloudio/uni-app'
 
 const tranOrderId = ref('')
 const loading = ref(false)

@@ -59,6 +59,7 @@
 import { ref, computed } from 'vue'
 import { cargoOnTheWay } from '@/common/api/driver'
 import { transportTaskStatusView } from '@/common/constants'
+import { onShow } from '@dcloudio/uni-app'
 
 const loading = ref(false)
 const raw = ref<any>(null)

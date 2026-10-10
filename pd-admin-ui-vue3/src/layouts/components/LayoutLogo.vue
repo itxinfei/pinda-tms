@@ -2,7 +2,7 @@
   <div class="layout-logo">
     <transition enter-active-class="animate__animated animate__fadeInLeft">
       <router-link :key="+collapse" class="wh-full flex-center" to="/">
-        <img :src="logo" class="w20px h20px" />
+        <img :src="logoMark" class="w20px h20px" />
         <span v-if="!collapse" class="layout-logo__title">
           {{ appConfig.title }}
         </span>
@@ -13,7 +13,7 @@
 
 <script lang="ts" setup>
 import { appConfig } from "@/settings";
-import logo from "@/assets/images/logo.png";
+import logoMark from "@/assets/images/logo-mark.png";
 
 defineProps({
   collapse: {

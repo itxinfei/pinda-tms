@@ -49,6 +49,7 @@ import { ref } from 'vue'
 import { pickupDispatchPage } from '@/common/api/courier'
 import { taskStatusView, taskTypeView } from '@/common/constants'
 import { maskName } from '@/common/utils/desensitive'
+import { onShow, onReachBottom } from '@dcloudio/uni-app'
 
 const tabs = [{ name: '取件' }, { name: '派件' }]
 const tabIndex = ref(0)

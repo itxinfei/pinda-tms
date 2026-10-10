@@ -28,6 +28,7 @@
 // 交接：接 tranOrderId，选填交接网点/交接人，确认调 handover
 import { ref, reactive } from 'vue'
 import { handover } from '@/common/api/courier'
+import { onLoad } from '@dcloudio/uni-app'
 
 const tranOrderId = ref('')
 const loading = ref(false)
