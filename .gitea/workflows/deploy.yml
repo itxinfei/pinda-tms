@@ -14,6 +14,7 @@ on:
   push:
     branches: [master]
     # 只在前端相关路径变化时触发；后端 push 由 deploy-backend.yml 接住，避免互相空跑
+    # 2026-10-10：courier/customer 端代码已补齐，本次更新注释触发重新构建验证（占位镜像→真实代码）
     paths:
       - 'pd-admin-ui-vue3/**'
       - 'pd-mobile/**'
