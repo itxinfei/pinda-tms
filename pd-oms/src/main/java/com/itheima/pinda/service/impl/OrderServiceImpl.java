@@ -20,6 +20,7 @@ import com.itheima.pinda.service.SettlementService;
 import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieSession;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import lombok.extern.slf4j.Slf4j;
@@ -84,7 +85,11 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         ORDER_STATUS_TRANSITIONS.put(OrderStatus.CANCELLED.getCode(), Collections.emptySet());
     }
 
+    // @Lazy：注入延迟代理，打破 OrderServiceImpl ↔ SettlementServiceImpl 的字段循环依赖。
+    // settlementService.settle 仅在订单签收后的运行期回调（非启动期依赖），延迟解析不影响业务；
+    // Spring Boot 2.6 起默认禁止循环引用，不加会导致容器启动报 BeanCurrentlyInCreationException。
     @Autowired
+    @Lazy
     private SettlementService settlementService;
 
     @Autowired
