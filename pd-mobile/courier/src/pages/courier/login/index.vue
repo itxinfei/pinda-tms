@@ -1,18 +1,12 @@
 <template>
   <view class="page login-page">
-    <!-- 品牌区（联云式顶部渐变头，神领深藏青配色） -->
-    <view class="login-hero">
+    <!-- 品牌区：极简白底，仅 logo -->
+    <view class="login-brand">
       <image class="login-logo" src="/static/logo-full.png" mode="widthFix" />
-      <view class="login-brand">品达物流</view>
-      <view class="login-slogan">快递员工作台 · 取派一体</view>
-      <image class="hero-deco" src="/static/login-bg.png" mode="widthFix" />
     </view>
 
-    <!-- 登录卡片 -->
-    <view class="login-card">
-      <view class="login-title">欢迎回来</view>
-      <view class="login-sub">请登录账号，开启高效配送服务</view>
-
+    <!-- 表单区：白底描边输入框 + 橙色实心按钮 -->
+    <view class="login-form">
       <view class="field">
         <u--input v-model="form.account" placeholder="请输入账号" clearable prefixIcon="account" />
       </view>
@@ -27,7 +21,9 @@
       <view class="login-btn" :class="{ 'is-loading': loading }" @click="onLogin">
         {{ loading ? '登录中...' : '登 录' }}
       </view>
+
       <view class="login-tip">账号登录 · 微信免密登录开发中</view>
+      <view class="login-agree">登录即代表同意《用户协议》和《隐私政策》</view>
     </view>
 
     <view class="login-footer">品达物流 TMS · 快递员端</view>
@@ -94,72 +90,28 @@ async function onLogin() {
 <style lang="scss">
 .login-page {
   min-height: 100vh;
-  padding: 0;
-  background: #f5f6f8;
-  position: relative;
+  padding: 0 var(--s-6);
+  background: #ffffff;
 }
-.login-hero {
-  padding: calc(var(--s-8) * 3) var(--s-6) 150rpx;
-  background: linear-gradient(160deg, #1a1c41 0%, #283443 60%, #2d3a4b 100%);
-  border-radius: 0 0 48rpx 48rpx;
+.login-brand {
+  padding-top: 170rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
-  text-align: center;
-  position: relative;
-  overflow: hidden;
 }
 .login-logo {
-  width: 240rpx;
+  width: 200rpx;
   height: auto;
-  filter: drop-shadow(0 8rpx 20rpx rgba(0, 0, 0, 0.35));
 }
-.login-brand {
-  margin-top: 24rpx;
-  color: #ffffff;
-  font-size: 44rpx;
-  font-weight: 700;
-  letter-spacing: 6rpx;
-}
-.login-slogan {
-  margin-top: 12rpx;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: var(--f-aux);
-  letter-spacing: 2rpx;
-}
-.hero-deco {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -10rpx;
-  width: 100%;
-  opacity: 0.5;
-  pointer-events: none;
-}
-.login-card {
-  margin: -80rpx var(--s-6) 0;
-  background: #ffffff;
-  border-radius: 32rpx;
-  padding: 48rpx 40rpx;
-  box-shadow: 0 16rpx 48rpx rgba(26, 28, 65, 0.16);
-  position: relative;
-  z-index: 2;
-}
-.login-title {
-  font-size: 40rpx;
-  font-weight: 700;
-  color: var(--c-text-1);
-}
-.login-sub {
-  margin-top: 8rpx;
-  font-size: var(--f-aux);
-  color: var(--c-text-3);
+.login-form {
+  margin-top: 80rpx;
 }
 .field {
-  margin-top: 32rpx;
-  background: #f5f6f8;
-  border-radius: 20rpx;
-  padding: 8rpx 28rpx;
+  margin-top: 28rpx;
+  background: #f7f8fa;
+  border: 2rpx solid #e5e7ec;
+  border-radius: 16rpx;
+  padding: 0 24rpx;
 }
 .field-captcha {
   display: flex;
@@ -177,16 +129,15 @@ async function onLogin() {
 }
 .login-btn {
   margin-top: 48rpx;
-  height: 96rpx;
-  line-height: 96rpx;
-  border-radius: 48rpx;
-  background: linear-gradient(90deg, #e15536 0%, #f1784f 100%);
+  height: 88rpx;
+  line-height: 88rpx;
+  border-radius: 20rpx;
+  background: #e15536;
   color: #ffffff;
-  font-size: 34rpx;
+  font-size: 32rpx;
   font-weight: 600;
   text-align: center;
   letter-spacing: 4rpx;
-  box-shadow: 0 12rpx 28rpx rgba(225, 85, 54, 0.35);
 }
 .login-btn.is-loading {
   opacity: 0.7;
@@ -195,6 +146,12 @@ async function onLogin() {
   margin-top: 24rpx;
   text-align: center;
   color: var(--c-text-3);
+  font-size: var(--f-tip);
+}
+.login-agree {
+  margin-top: 40rpx;
+  text-align: center;
+  color: var(--c-text-4);
   font-size: var(--f-tip);
 }
 .login-footer {
