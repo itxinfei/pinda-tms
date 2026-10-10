@@ -11,60 +11,26 @@
     <artifactId>pd-druid</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <name>pd-druid</name>
-    <description>druid服务</description>
-
-    <properties>
-        <pd-auth-entity.version>1.0.0</pd-auth-entity.version>
-        <pd-auth-api.version>1.0.0</pd-auth-api.version>
-        <pd-common.version>1.0.0-SNAPSHOT</pd-common.version>
-        <pd-service-base-api.version>1.0.0-SNAPSHOT</pd-service-base-api.version>
-        <pd-service-work-api.version>1.0.0-SNAPSHOT</pd-service-work-api.version>
-        <pd-service-oms-api.version>1.0.0-SNAPSHOT</pd-service-oms-api.version>
-        <pd-service-user-api.version>1.0.0-SNAPSHOT</pd-service-user-api.version>
-        <quartz.version>2.3.0</quartz.version>
-    </properties>
+    <description>Apache Druid 时序数据查询服务</description>
 
     <dependencies>
         <dependency>
             <groupId>com.itheima</groupId>
             <artifactId>pd-common</artifactId>
-            <version>${pd-common.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.alibaba</groupId>
-                    <artifactId>druid-spring-boot-starter</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.alibaba.cloud</groupId>
-                    <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.alibaba.cloud</groupId>
-                    <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.seata</groupId>
-                    <artifactId>seata-spring-boot-starter</artifactId>
-                </exclusion>
-            </exclusions>
+            <version>1.0.0-SNAPSHOT</version>
         </dependency>
+        <!-- Nacos 注册/配置（版本由 Spring Cloud Alibaba BOM 托管） -->
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
-            <version>${spring-cloud-alibaba-version}</version>
         </dependency>
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
-            <version>${spring-cloud-alibaba-version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -76,6 +42,7 @@
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
+        <!-- Apache Druid JDBC 驱动（Avatica 远程协议） -->
         <dependency>
             <groupId>org.apache.calcite.avatica</groupId>
             <artifactId>avatica-core</artifactId>
@@ -87,31 +54,6 @@
             <version>1.15.0</version>
         </dependency>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.itheima</groupId>
-            <artifactId>pd-tools-common</artifactId>
-            <version>1.0.0</version>
-            <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.alibaba</groupId>
-                    <artifactId>druid-spring-boot-starter</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.alibaba.cloud</groupId>
-                    <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.alibaba.cloud</groupId>
-                    <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-jdbc</artifactId>
         </dependency>
@@ -119,25 +61,19 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-jdbc</artifactId>
         </dependency>
-        <!-- MySQL 驱动：pd-druid 需加载 com.mysql.cj.jdbc.Driver 连接业务库做监控 -->
+        <!-- MySQL 驱动：业务库消息落库 -->
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
             <scope>runtime</scope>
         </dependency>
+        <!-- springdoc-openapi 接口文档（替换 springfox） -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        </dependency>
     </dependencies>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.springframework.cloud</groupId>
-                <artifactId>spring-cloud-dependencies</artifactId>
-                <version>${spring-cloud.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
     <build>
         <plugins>
             <plugin>

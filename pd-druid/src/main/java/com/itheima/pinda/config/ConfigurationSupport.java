@@ -1,8 +1,5 @@
 package com.itheima.pinda.config;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.DateSerializer;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
@@ -13,161 +10,68 @@ import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;
 import com.itheima.pinda.common.converter.EnumDeserializer;
 import com.itheima.pinda.common.json.BigDecimalSerializer;
-import com.itheima.pinda.utils.DateUtils;
+import com.itheima.pinda.common.utils.DatePatterns;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Info;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.converter.HttpMessageConverter;
-import org.springframework.http.converter.StringHttpMessageConverter;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
-import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupport;
-import springfox.documentation.builders.ApiInfoBuilder;
-import springfox.documentation.builders.PathSelectors;
-import springfox.documentation.builders.RequestHandlerSelectors;
-import springfox.documentation.service.ApiInfo;
-import springfox.documentation.spi.DocumentationType;
-import springfox.documentation.spring.web.plugins.Docket;
-import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
-import java.util.List;
 
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 
+/**
+ * MVC / Jackson / 接口文档统一配置。
+ * Boot3 迁移：不再继承 WebMvcConfigurationSupport（继承会关闭 Spring MVC 自动配置），
+ * Jackson 定制改用 Jackson2ObjectMapperBuilderCustomizer 由自动配置生效；
+ * springfox 替换为 springdoc（OpenAPI Bean）。
+ * 序列化口径与旧版完全一致：枚举反序列化、时间格式、大数字转字符串。
+ */
 @Slf4j
 @Configuration
-@EnableSwagger2
-public class ConfigurationSupport extends WebMvcConfigurationSupport {
+public class ConfigurationSupport {
     /**
-     * deserializerByType 解决string类型入参转为 LocalDateTime 格式问题
-     *
-     * @return
+     * Jackson 序列化 / 反序列化定制（枚举、时间格式、Long 等大数字转字符串，避免前端精度丢失）
      */
     @Bean
     public Jackson2ObjectMapperBuilderCustomizer jackson2ObjectMapperBuilderCustomizer() {
-        return builder -> builder
-                .deserializerByType(Enum.class, EnumDeserializer.INSTANCE)
-                .deserializerByType(LocalDateTime.class, new LocalDateTimeDeserializer(DateTimeFormatter.ofPattern(DateUtils.DEFAULT_DATE_TIME_FORMAT)))
-                .deserializerByType(LocalDate.class, new LocalDateDeserializer(DateTimeFormatter.ofPattern(DateUtils.DEFAULT_DATE_FORMAT)))
-                .deserializerByType(LocalTime.class, new LocalTimeDeserializer(DateTimeFormatter.ofPattern(DateUtils.DEFAULT_TIME_FORMAT)));
-
-    }
-
-    @Bean
-    public Docket createRestApi() {
-        // 文档类型
-        return new Docket(DocumentationType.SWAGGER_2)
-                // 创建api的基本信息
-                .apiInfo(apiInfo())
-                // 选择哪些接口去暴露
-                .select()
-                // 扫描的包
-                .apis(RequestHandlerSelectors.basePackage("com.itheima.pinda.controller"))
-                .paths(PathSelectors.any())
-                .build();
-    }
-
-    private ApiInfo apiInfo() {
-        return new ApiInfoBuilder()
-                .title("品达物流管理druid服务--Swagger文档")
-                .version("1.0")
-                .build();
-    }
-
-    /**
-     * 防止@EnableMvc把默认的静态资源路径覆盖了，手动设置的方式
-     *
-     * @param registry
-     */
-    @Override
-    protected void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // 解决静态资源无法访问
-        registry.addResourceHandler("/**").addResourceLocations("classpath:/static/");
-        // 解决swagger无法访问
-        registry.addResourceHandler("/swagger-ui.html").addResourceLocations("classpath:/META-INF/resources/");
-        // 解决swagger的js文件无法访问
-        registry.addResourceHandler("/webjars/**").addResourceLocations("classpath:/META-INF/resources/webjars/");
-
-    }
-
-    /**
-     * 解决序列化
-     */
-    @Override
-    public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
         log.info("初始化jackson配置( 枚举类型、时间格式 )");
-        //在json转换之前先进行string转换
-        converters.add(new StringHttpMessageConverter());
-        //添加json转换
-        MappingJackson2HttpMessageConverter jackson2HttpMessageConverter = new MappingJackson2HttpMessageConverter();
-        jackson2HttpMessageConverter.setObjectMapper(new JacksonObjectMapper());
-        converters.add(jackson2HttpMessageConverter);
-        //追加默认转换器
-        super.addDefaultHttpMessageConverters(converters);
+        return builder -> builder
+                .featuresToDisable(FAIL_ON_UNKNOWN_PROPERTIES)
+                // 反序列化
+                .deserializerByType(Enum.class, EnumDeserializer.INSTANCE)
+                .deserializerByType(java.time.LocalDateTime.class, new LocalDateTimeDeserializer(DateTimeFormatter.ofPattern(DatePatterns.DATE_TIME)))
+                .deserializerByType(java.time.LocalDate.class, new LocalDateDeserializer(DateTimeFormatter.ofPattern(DatePatterns.DATE)))
+                .deserializerByType(java.time.LocalTime.class, new LocalTimeDeserializer(DateTimeFormatter.ofPattern(DatePatterns.TIME)))
+                // 序列化
+                .serializerByType(BigInteger.class, ToStringSerializer.instance)
+                .serializerByType(Long.class, ToStringSerializer.instance)
+                .serializerByType(Double.class, ToStringSerializer.instance)
+                .serializerByType(Float.class, ToStringSerializer.instance)
+                .serializerByType(Long.TYPE, ToStringSerializer.instance)
+                .serializerByType(Double.TYPE, ToStringSerializer.instance)
+                .serializerByType(Float.TYPE, ToStringSerializer.instance)
+                .serializerByType(BigDecimal.class, new BigDecimalSerializer())
+                .serializerByType(java.time.LocalDateTime.class, new LocalDateTimeSerializer(DateTimeFormatter.ofPattern(DatePatterns.DATE_TIME)))
+                .serializerByType(java.time.LocalDate.class, new LocalDateSerializer(DateTimeFormatter.ofPattern(DatePatterns.DATE)))
+                .serializerByType(java.time.LocalTime.class, new LocalTimeSerializer(DateTimeFormatter.ofPattern(DatePatterns.TIME)))
+                .serializerByType(Date.class, new DateSerializer(false, new SimpleDateFormat(DatePatterns.DATE_TIME)));
     }
 
-    class JacksonObjectMapper extends ObjectMapper {
-        public JacksonObjectMapper() {
-            super();
-            //收到未知属性时不报异常
-            this.configure(FAIL_ON_UNKNOWN_PROPERTIES, false);
-
-            //反序列化时，属性不存在的兼容处理
-            this.getDeserializationConfig().withoutFeatures(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-
-            SimpleModule simpleModule = new SimpleModule()
-                    .addSerializer(BigInteger.class, ToStringSerializer.instance)
-                    .addSerializer(Long.class, ToStringSerializer.instance)
-                    .addSerializer(Double.class, ToStringSerializer.instance)
-                    .addSerializer(Float.class, ToStringSerializer.instance)
-                    .addSerializer(long.class, ToStringSerializer.instance)
-                    .addSerializer(double.class, ToStringSerializer.instance)
-                    .addSerializer(float.class, ToStringSerializer.instance)
-                    .addSerializer(BigDecimal.class, new BigDecimalSerializer())
-                    .addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(DateTimeFormatter.ofPattern(DateUtils.DEFAULT_DATE_TIME_FORMAT)))
-                    .addSerializer(LocalDate.class, new LocalDateSerializer(DateTimeFormatter.ofPattern(DateUtils.DEFAULT_DATE_FORMAT)))
-                    .addSerializer(LocalTime.class, new LocalTimeSerializer(DateTimeFormatter.ofPattern(DateUtils.DEFAULT_TIME_FORMAT)))
-                    .addSerializer(Date.class, new DateSerializer(false, new SimpleDateFormat(DateUtils.DEFAULT_DATE_TIME_FORMAT)));
-
-            this.registerModule(simpleModule);
-            //处理空指针时设置的值
-//            this.getSerializerProvider().setNullValueSerializer(new JsonSerializer<Object>() {
-//                @Override
-//                public void serialize(Object value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-//                    String fieldName = gen.getOutputContext().getCurrentName();
-//                    try {
-//                        //反射获取字段类型
-//                        Field field = gen.getCurrentValue().getClass().getDeclaredField(fieldName);
-//                        if (Objects.equals(field.getType(), String.class)) {
-//                            //字符串型空值""
-//                            gen.writeString("");
-//                            return;
-//                        } else if (Objects.equals(field.getType(), List.class)) {
-//                            //列表型空值返回[]
-//                            gen.writeStartArray();
-//                            gen.writeEndArray();
-//                            return;
-//                        } else if (Objects.equals(field.getType(), Map.class)) {
-//                            //map型空值返回{}
-//                            gen.writeStartObject();
-//                            gen.writeEndObject();
-//                            return;
-//                        }
-//                    } catch (NoSuchFieldException e) {
-//                    }
-//                    //默认返回""
-//                    gen.writeString("");
-//                }
-//            });
-        }
+    /**
+     * springdoc 接口文档基本信息
+     */
+    @Bean
+    public OpenAPI customOpenAPI() {
+        return new OpenAPI()
+                .info(new Info()
+                        .title("品达物流管理druid服务--Swagger文档")
+                        .version("1.0"));
     }
 }

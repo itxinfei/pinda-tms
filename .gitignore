@@ -102,3 +102,9 @@ codeback/
 deploy/middleware/my.cnf
 deploy/ci/docker-compose.ci.yml
 品达TMS服务器优化报告-*.md
+
+# ===== AI 工具本地配置与本地调试脚本（明确私有，不进任何 remote） =====
+# .serena 为 Serena AI 助手的本地配置与 memory（含本地路径/内部上下文），类比已忽略的 .codebuddy/.workbuddy
+.serena/
+# 本地一次性调试脚本（含服务器操作，防误提交；已在上方注释说明，现显式忽略）
+.fix_appendix.py

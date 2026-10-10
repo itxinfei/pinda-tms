@@ -28,7 +28,9 @@ public class MybatisPlusConfigure {
     private static final Set<String> IGNORE_TABLES = Set.of(
             "pd_auth_tenant",
             "pd_auth_menu",
-            "pd_auth_resource"
+            "pd_auth_resource",
+            // 行政区划为国家标准全局数据，所有租户共享
+            "pd_area"
     );
 
     /** token-session 中租户ID的键 */

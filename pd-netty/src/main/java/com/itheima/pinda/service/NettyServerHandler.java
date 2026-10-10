@@ -1,6 +1,6 @@
 package com.itheima.pinda.service;
 
-import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson2.JSON;
 import com.itheima.pinda.entity.LocationEntity;
 import com.itheima.pinda.enums.CoordSystem;
 import com.itheima.pinda.enums.LocationSource;
@@ -94,7 +94,7 @@ public class NettyServerHandler extends ChannelInboundHandlerAdapter {
 
         //发送至RabbitMQ队列
         // RabbitSender.sendGpsTrace 内部已 catch 异常，不会抛出
-        com.alibaba.fastjson.JSONObject json = JSON.parseObject(message);
+        com.alibaba.fastjson2.JSONObject json = JSON.parseObject(message);
         String truckId = json.getString("businessId");
         rabbitSender.sendGpsTrace(truckId, message);
         ctx.writeAndFlush("OK\n");

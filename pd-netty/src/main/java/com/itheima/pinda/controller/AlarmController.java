@@ -8,8 +8,8 @@ import com.itheima.pinda.DTO.ExceptionReportDTO;
 import com.itheima.pinda.entity.AlarmRecord;
 import com.itheima.pinda.enums.ExceptionType;
 import com.itheima.pinda.service.IAlarmRecordService;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,7 +36,7 @@ import java.util.Map;
 @Slf4j
 @RestController
 @RequestMapping("/alarm")
-@Api(tags = "GPS告警查询与处置")
+@Tag(name = "GPS告警查询与处置")
 public class AlarmController {
 
     @Autowired
@@ -52,7 +52,7 @@ public class AlarmController {
      * @param pageSize        每页条数，默认10，最大200
      * @return 分页结果
      */
-    @ApiOperation(value = "告警分页查询")
+    @Operation(summary = "告警分页查询")
     @GetMapping
     public Result page(@RequestParam(value = "transportTaskId", required = false) String transportTaskId,
                        @RequestParam(value = "alarmType", required = false) String alarmType,
@@ -93,7 +93,7 @@ public class AlarmController {
      * @param id 告警记录ID
      * @return 更新后的告警记录
      */
-    @ApiOperation(value = "标记告警已处理")
+    @Operation(summary = "标记告警已处理")
     @PutMapping("/{id}/handle")
     public Result handle(@PathVariable("id") String id) {
         if (StringUtils.isBlank(id)) {
@@ -128,7 +128,7 @@ public class AlarmController {
      * @param dto 上报入参
      * @return 落库后的告警记录（含id 供前端追单）
      */
-    @ApiOperation(value = "异常上报（快递员/司机）")
+    @Operation(summary = "异常上报（快递员/司机）")
     @PostMapping("/report")
     public Result report(@RequestBody ExceptionReportDTO dto) {
         // 1. 入参基础校验（三要素：D-46）

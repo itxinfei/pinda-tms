@@ -1,13 +1,13 @@
 package com.itheima.pinda.controller;
 
-import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson2.JSON;
 import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.entity.LocationEntity;
 import com.itheima.pinda.enums.CoordSystem;
 import com.itheima.pinda.enums.LocationSource;
 import com.itheima.pinda.service.RabbitSender;
 import com.itheima.pinda.utils.GpsLocationValidator;
-import io.swagger.annotations.Api;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/netty")
-@Api(tags = "车辆轨迹服务")
+@Tag(name = "车辆轨迹服务")
 @Slf4j
 public class NettyController {
     @Autowired

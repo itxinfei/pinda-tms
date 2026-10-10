@@ -5,7 +5,7 @@ import com.itheima.pinda.DTO.DriverJobDTO;
 import com.itheima.pinda.common.context.RequestContext;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.service.DriverService;
-import io.swagger.annotations.Api;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,7 +17,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 @Slf4j
-@Api(tags = "司机聚合平台")
+@Tag(name = "司机聚合平台")
 @RestController
 @RequestMapping("appDriver")
 public class AppDriverController {

@@ -6,8 +6,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.entity.LocationRecord;
 import com.itheima.pinda.service.ILocationRecordService;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @RestController
 @RequestMapping("/trace")
-@Api(tags = "车辆轨迹查询")
+@Tag(name = "车辆轨迹查询")
 public class GpsTraceController {
 
     @Autowired
@@ -46,7 +46,7 @@ public class GpsTraceController {
      * @param type       类型：truck-车辆 courier-快递员（可选）
      * @return 轨迹点列表
      */
-    @ApiOperation(value = "轨迹回放")
+    @Operation(summary = "轨迹回放")
     @GetMapping("/replay")
     public Result replay(@RequestParam("businessId") String businessId,
                          @RequestParam(value = "type", required = false) String type) {
@@ -71,7 +71,7 @@ public class GpsTraceController {
      * @param type       类型（可选）
      * @return 最新位置记录
      */
-    @ApiOperation(value = "最近位置")
+    @Operation(summary = "最近位置")
     @GetMapping("/latest")
     public Result latest(@RequestParam("businessId") String businessId,
                          @RequestParam(value = "type", required = false) String type) {
@@ -98,7 +98,7 @@ public class GpsTraceController {
      * @param taskIds 运输任务ID列表，去空去重后最多 50 个
      * @return 轨迹点列表（可能为空，但不会报错）
      */
-    @ApiOperation("按运输任务批量查轨迹")
+    @Operation(summary = "按运输任务批量查轨迹")
     @GetMapping("/byTasks")
     public Result byTasks(@RequestParam("taskIds") List<String> taskIds) {
         List<String> ids = taskIds == null ? Collections.emptyList() : taskIds.stream()
@@ -125,7 +125,7 @@ public class GpsTraceController {
      * @param params page、pageSize、businessId、type、transportTaskId、licensePlate
      * @return 分页结果
      */
-    @ApiOperation(value = "轨迹分页查询")
+    @Operation(summary = "轨迹分页查询")
     @PostMapping("/page")
     public Result page(@RequestBody Map<String, Object> params) {
         // 分页参数防御性解析：非法或越界时返回 400，避免 500

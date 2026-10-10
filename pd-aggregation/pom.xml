@@ -55,15 +55,14 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Nacos 注册/配置（版本由 Spring Cloud Alibaba BOM 托管） -->
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
-            <version>${spring-cloud-alibaba-version}</version>
         </dependency>
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
-            <version>${spring-cloud-alibaba-version}</version>
         </dependency>
         <dependency>
             <groupId>com.mysql</groupId>
@@ -71,57 +70,34 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.shiro</groupId>
-            <artifactId>shiro-spring</artifactId>
-            <version>${shiro.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpcore</artifactId>
-            <version>${http-core.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
-        <!--MyBatisPLus-->
-        
-        <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus</artifactId>
-            <version>${mybatis-plus.version}</version>
-        </dependency>
+        <!-- MyBatis-Plus（Spring Boot 3 starter；版本由根 pom 统一托管） -->
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
-            <version>${mybatis-plus.version}</version>
         </dependency>
-        <dependency>
-            <groupId>com.alibaba</groupId>
-            <artifactId>druid-spring-boot-starter</artifactId>
-            <version>${druid.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>${commons.io.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.itheima</groupId>
-            <artifactId>pd-tools-common</artifactId>
-            <version>1.0.0</version>
-            <scope>compile</scope>
-        </dependency>
-            <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-jsqlparser</artifactId>
-            <version>${mybatis-plus.version}</version>
-        </dependency>
+        <!-- Page / MybatisPlusInterceptor 在 extension -->
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-extension</artifactId>
-            <version>${mybatis-plus.version}</version>
+        </dependency>
+        <!-- PaginationInnerInterceptor 在 jsqlparser 模块 -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-jsqlparser</artifactId>
+        </dependency>
+        <!-- Druid（Spring Boot 3 专用 starter） -->
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>druid-spring-boot-3-starter</artifactId>
+        </dependency>
+        <!-- springdoc-openapi 接口文档（替换 springfox） -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
         </dependency>
     </dependencies>
 
@@ -130,45 +106,6 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>com.spotify</groupId>
-                <artifactId>docker-maven-plugin</artifactId>
-                <version>1.0.0</version>
-                <configuration>
-                    <!-- 镜像名称 guoweixin/exam-->
-                    <imageName>${project.artifactId}</imageName>
-                    <!--指定标签-->
-                    <imageTags>
-                        <imageTag>latest</imageTag>
-                    </imageTags>
-                    <!-- 基础镜像jdk 1.8-->
-                    <baseImage>java</baseImage>
-                    <!-- 制作者提供本人信息 -->
-                    <maintainer>pangzhao</maintainer>
-                    <runs>
-                        <run>mkdir -p /opt/java/</run>
-                    </runs>
-                    <!--切换到/ROOT目录 -->
-                    <workdir>/ROOT</workdir>
-                    <cmd>["java", "-version"]</cmd>
-                    <entryPoint>["java", "-jar", "${project.build.finalName}.jar"]</entryPoint>
-                    <!-- 指定 Dockerfile 路径-->
-                    <dockerDirectory>${project.basedir}/src/main/docker</dockerDirectory>
-                    <!--指定远程 docker api地址-->
-                    <dockerHost>http://192.168.20.130:2375</dockerHost>
-                    <!-- 这里是复制 jar 包到 docker 容器指定目录配置 -->
-                    <resources>
-                        <resource>
-                            <targetPath>/</targetPath>
-                            <!--用于指定需要复制的根目录，${project.build.directory}表示target目录-->
-                            <directory>${project.build.directory}</directory>
-                            <!--用于指定需要复制的文件。${project.build.finalName}.jar指的是打包后的jar
-                            包文件。-->
-                            <include>${project.build.finalName}.jar</include>
-                        </resource>
-                    </resources>
-                </configuration>
             </plugin>
         </plugins>
     </build>

@@ -5,7 +5,7 @@ import com.itheima.pinda.DTO.TaskPickupDispatchDTO;
 import com.itheima.pinda.common.context.RequestContext;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.service.CourierService;
-import io.swagger.annotations.Api;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,7 +17,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 @Slf4j
-@Api(tags = "快递员聚合平台")
+@Tag(name = "快递员聚合平台")
 @RestController
 @RequestMapping("appCourier")
 public class AppCourierController {
