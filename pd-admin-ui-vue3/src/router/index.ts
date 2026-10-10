@@ -108,20 +108,42 @@ export const constantRoutes: RouteRecordRaw[] = [
       },
       {
         path: "transport",
-        component: () => import("@/views/placeholder/index.vue"),
+        component: () => import("@/views/transport/index.vue"),
         name: "Transport",
         meta: {
           title: "运单管理",
-          icon: "train",
+          icon: "el-icon-Tickets",
+          keepAlive: true,
         },
       },
       {
         path: "task",
-        component: () => import("@/views/placeholder/index.vue"),
+        component: () => import("@/views/task/index.vue"),
         name: "Task",
         meta: {
           title: "运输任务",
-          icon: "van",
+          icon: "el-icon-Odometer",
+          keepAlive: true,
+        },
+      },
+      {
+        path: "pickup-dispatch",
+        component: () => import("@/views/pickup-dispatch/index.vue"),
+        name: "PickupDispatch",
+        meta: {
+          title: "取派件任务",
+          icon: "scan",
+          keepAlive: true,
+        },
+      },
+      {
+        path: "driver-job",
+        component: () => import("@/views/driver-job/index.vue"),
+        name: "DriverJob",
+        meta: {
+          title: "司机作业单",
+          icon: "role",
+          keepAlive: true,
         },
       },
       {
@@ -144,20 +166,32 @@ export const constantRoutes: RouteRecordRaw[] = [
       },
       {
         path: "truck",
-        component: () => import("@/views/placeholder/index.vue"),
+        component: () => import("@/views/truck/index.vue"),
         name: "Truck",
         meta: {
           title: "车辆管理",
-          icon: "truck",
+          icon: "el-icon-Van",
+          keepAlive: true,
         },
       },
       {
         path: "driver",
-        component: () => import("@/views/placeholder/index.vue"),
+        component: () => import("@/views/driver/index.vue"),
         name: "Driver",
         meta: {
           title: "司机管理",
-          icon: "user-filled",
+          icon: "el-icon-User",
+          keepAlive: true,
+        },
+      },
+      {
+        path: "transport-line",
+        component: () => import("@/views/transport-line/index.vue"),
+        name: "TransportLine",
+        meta: {
+          title: "线路管理",
+          icon: "el-icon-Guide",
+          keepAlive: true,
         },
       },
       {
