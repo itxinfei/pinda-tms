@@ -77,3 +77,28 @@ PUSH_GUIDE.md
 # 老 React 版后台管理系统（2026-10-09 下线，已停用并取消 git 跟踪）
 # 代码保留在本地供查阅，需要时 git init 即可恢复；node_modules/dist 本就被上面规则忽略
 pd-admin-ui/
+
+# ===== 2026-10-10 敏感/非公开文件防泄漏 =====
+# AI 工具本地配置（含本地路径与内部命令，禁止提交）
+.qoder/
+*.local.json
+
+# 备份文件
+*.bak
+
+# 内部运维/安全处置文档（含凭据盘点与处置记录，不入库）
+docs/凭据泄露处置方案.md
+
+# 本地调试脚本（含服务器操作，防误提交）
+.seata-*.sh
+.charset*.sh
+.nacos-noauth.sh
+.chk.sh
+
+# 本地备份/归档目录
+codeback/
+
+# 服务器运维敏感文件（不入库）
+deploy/middleware/my.cnf
+deploy/ci/docker-compose.ci.yml
+品达TMS服务器优化报告-*.md

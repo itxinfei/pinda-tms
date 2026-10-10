@@ -1,6 +1,6 @@
 package com.itheima.j2cache.model;
 
-import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson2.JSONObject;
 import java.lang.annotation.Annotation;
 
 /**

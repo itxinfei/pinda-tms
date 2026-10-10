@@ -1,0 +1,62 @@
+server:
+  port: 8760
+
+spring:
+  application:
+    name: pd-gateway
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  # Spring Cloud 2023 标准接入方式（取代旧 bootstrap.yml）；optional 表示远程配置缺失不阻断启动
+  config:
+    import:
+      - optional:nacos:pd-gateway.yaml
+  cloud:
+    nacos:
+      # 服务注册
+      discovery:
+        # 变量名与 deploy/apps/docker-compose.app.yml 的 nacos-env 锚点对齐
+        server-addr: ${NACOS_SERVER_ADDR:192.168.20.130:8848}
+        namespace: 1cb93ce4-dc0e-4730-b759-d35fd7ed93c3
+        group: pinda-tms
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:123456}
+      # 配置中心
+      config:
+        server-addr: ${NACOS_SERVER_ADDR:192.168.20.130:8848}
+        namespace: 1cb93ce4-dc0e-4730-b759-d35fd7ed93c3
+        group: pinda-tms
+        file-extension: yaml
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:123456}
+    gateway:
+      # 不开启按服务名自动路由，路由显式声明，避免内部服务被意外暴露
+      discovery:
+        locator:
+          enabled: false
+      routes:
+        # 认证服务：/api/auth/** -> pd-auth，去掉 /api/auth 两段前缀（/api/auth/anno/login -> /anno/login）
+        - id: pd-auth
+          uri: lb://pd-auth
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - StripPrefix=2
+  # Redis（Sa-Token 会话 + Same-Token 读取）
+  data:
+    redis:
+      host: ${REDIS_HOST:192.168.20.130}
+      port: ${REDIS_PORT:6379}
+      database: ${REDIS_DATABASE:0}
+      password: ${REDIS_PASSWORD:123456}
+
+# Sa-Token 配置（与子服务一致，网关据此读取登录态）
+sa-token:
+  # token 头字段（全端统一）
+  token-name: token
+  # 有效期 7200 秒
+  timeout: 7200
+  active-timeout: -1
+  is-concurrent: true
+  is-share: false
+  token-style: uuid
+  is-log: false

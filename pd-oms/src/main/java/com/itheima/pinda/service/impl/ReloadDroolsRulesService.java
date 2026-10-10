@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.itheima.pinda.entity.Rule;
 import com.itheima.pinda.mapper.RuleMapper;
-import org.apache.poi.ss.formula.functions.T;
 import org.kie.api.KieServices;
 import org.kie.api.builder.KieBuilder;
 import org.kie.api.builder.KieFileSystem;
