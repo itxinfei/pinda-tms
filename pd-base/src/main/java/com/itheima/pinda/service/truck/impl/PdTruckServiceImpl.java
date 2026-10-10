@@ -4,126 +4,108 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
-import com.itheima.pinda.common.CustomIdGenerator;
 import com.itheima.pinda.common.utils.Constant;
-import com.itheima.pinda.mapper.truck.PdTruckMapper;
 import com.itheima.pinda.entity.truck.PdTruck;
+import com.itheima.pinda.mapper.truck.PdTruckMapper;
 import com.itheima.pinda.service.truck.IPdTruckService;
-
-import org.springframework.beans.factory.annotation.Autowired;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
-import org.apache.commons.lang.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * <p>
- * 车辆信息表 服务实现类
- * </p>
- *
- * @author itcast
- * @since 2019-12-20
+ * 车辆 服务实现类
  */
 @Service
 public class PdTruckServiceImpl extends ServiceImpl<PdTruckMapper, PdTruck> implements IPdTruckService {
-    @Autowired
-    private CustomIdGenerator idGenerator;
 
     @Override
     public PdTruck saveTruck(PdTruck pdTruck) {
-        pdTruck.setId(idGenerator.nextId(pdTruck) + "");
         baseMapper.insert(pdTruck);
         return pdTruck;
     }
 
     @Override
-    public IPage<PdTruck> findByPage(Integer page, Integer pageSize, String truckTypeId, String licensePlate, String fleetId) {
-        Page<PdTruck> iPage = new Page(page, pageSize);
-        LambdaQueryWrapper<PdTruck> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+    public IPage<PdTruck> findByPage(Integer page, Integer pageSize, Long truckTypeId, String licensePlate,
+                                     Long fleetId) {
+        Page<PdTruck> iPage = new Page<>(page, pageSize);
+        LambdaQueryWrapper<PdTruck> wrapper = new LambdaQueryWrapper<>();
         if (StringUtils.isNotEmpty(licensePlate)) {
-            lambdaQueryWrapper.like(PdTruck::getLicensePlate, licensePlate);
+            wrapper.like(PdTruck::getLicensePlate, licensePlate);
         }
-        if (StringUtils.isNotEmpty(truckTypeId)) {
-            lambdaQueryWrapper.eq(PdTruck::getTruckTypeId, truckTypeId);
-
+        if (truckTypeId != null) {
+            wrapper.eq(PdTruck::getTruckTypeId, truckTypeId);
         }
-        if (StringUtils.isNotEmpty(fleetId)) {
-            lambdaQueryWrapper.eq(PdTruck::getFleetId, fleetId);
-
+        if (fleetId != null) {
+            wrapper.eq(PdTruck::getFleetId, fleetId);
         }
-        lambdaQueryWrapper.eq(PdTruck::getStatus, Constant.DATA_DEFAULT_STATUS);
-        lambdaQueryWrapper.orderBy(true, false, PdTruck::getId);
-        return baseMapper.selectPage(iPage, lambdaQueryWrapper);
+        wrapper.eq(PdTruck::getStatus, Constant.DATA_DEFAULT_STATUS);
+        wrapper.orderBy(true, false, PdTruck::getId);
+        return baseMapper.selectPage(iPage, wrapper);
     }
 
     @Override
-    public IPage<PdTruck> findByPageByFleetIds(Integer page, Integer pageSize, String truckTypeId, String licensePlate, List<String> fleetIds) {
-        Page<PdTruck> iPage = new Page(page, pageSize);
-        // 车队ID列表为空（如名称未匹配到任何车队）时直接返回空页，避免误返回全部车辆
+    public IPage<PdTruck> findByPageByFleetIds(Integer page, Integer pageSize, Long truckTypeId, String licensePlate,
+                                               List<Long> fleetIds) {
+        Page<PdTruck> iPage = new Page<>(page, pageSize);
+        // 车队ID列表为空（名称未匹配到任何车队）时直接返回空页
         if (fleetIds == null || fleetIds.isEmpty()) {
             return iPage;
         }
-        LambdaQueryWrapper<PdTruck> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+        LambdaQueryWrapper<PdTruck> wrapper = new LambdaQueryWrapper<>();
         if (StringUtils.isNotEmpty(licensePlate)) {
-            lambdaQueryWrapper.like(PdTruck::getLicensePlate, licensePlate);
+            wrapper.like(PdTruck::getLicensePlate, licensePlate);
         }
-        if (StringUtils.isNotEmpty(truckTypeId)) {
-            lambdaQueryWrapper.eq(PdTruck::getTruckTypeId, truckTypeId);
+        if (truckTypeId != null) {
+            wrapper.eq(PdTruck::getTruckTypeId, truckTypeId);
         }
-        lambdaQueryWrapper.in(PdTruck::getFleetId, fleetIds);
-        lambdaQueryWrapper.eq(PdTruck::getStatus, Constant.DATA_DEFAULT_STATUS);
-        lambdaQueryWrapper.orderBy(true, false, PdTruck::getId);
-        return baseMapper.selectPage(iPage, lambdaQueryWrapper);
+        wrapper.in(PdTruck::getFleetId, fleetIds);
+        wrapper.eq(PdTruck::getStatus, Constant.DATA_DEFAULT_STATUS);
+        wrapper.orderBy(true, false, PdTruck::getId);
+        return baseMapper.selectPage(iPage, wrapper);
     }
 
     @Override
-    public List<PdTruck> findAll(List<String> ids, String fleetId) {
-        LambdaQueryWrapper<PdTruck> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        if (ids != null && ids.size() > 0) {
-            lambdaQueryWrapper.in(PdTruck::getId, ids);
+    public List<PdTruck> findAll(List<Long> ids, Long fleetId) {
+        LambdaQueryWrapper<PdTruck> wrapper = new LambdaQueryWrapper<>();
+        if (ids != null && !ids.isEmpty()) {
+            wrapper.in(PdTruck::getId, ids);
         }
-        if (StringUtils.isNotEmpty(fleetId)) {
-            lambdaQueryWrapper.eq(PdTruck::getFleetId, fleetId);
+        if (fleetId != null) {
+            wrapper.eq(PdTruck::getFleetId, fleetId);
         }
-        lambdaQueryWrapper.eq(PdTruck::getStatus, Constant.DATA_DEFAULT_STATUS);
-        lambdaQueryWrapper.orderBy(true, false, PdTruck::getId);
-        return baseMapper.selectList(lambdaQueryWrapper);
+        wrapper.eq(PdTruck::getStatus, Constant.DATA_DEFAULT_STATUS);
+        wrapper.orderBy(true, false, PdTruck::getId);
+        return baseMapper.selectList(wrapper);
     }
 
     @Override
-    public Integer count(String fleetId) {
-        LambdaQueryWrapper<PdTruck> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        if (StringUtils.isNotEmpty(fleetId)) {
-            lambdaQueryWrapper.eq(PdTruck::getFleetId, fleetId);
+    public Integer count(Long fleetId) {
+        LambdaQueryWrapper<PdTruck> wrapper = new LambdaQueryWrapper<>();
+        if (fleetId != null) {
+            wrapper.eq(PdTruck::getFleetId, fleetId);
         }
-        lambdaQueryWrapper.eq(PdTruck::getStatus, Constant.DATA_DEFAULT_STATUS);
-        return Math.toIntExact(baseMapper.selectCount(lambdaQueryWrapper));
+        wrapper.eq(PdTruck::getStatus, Constant.DATA_DEFAULT_STATUS);
+        return Math.toIntExact(baseMapper.selectCount(wrapper));
     }
 
     @Override
-    public void disableById(String id) {
-        PdTruck pdTruck = new PdTruck();
-        pdTruck.setId(id);
-        pdTruck.setStatus(Constant.DATA_DISABLE_STATUS);
-        baseMapper.updateById(pdTruck);
+    public void disableById(Long id) {
+        PdTruck truck = new PdTruck();
+        truck.setId(id);
+        truck.setStatus(Constant.DATA_DISABLE_STATUS);
+        baseMapper.updateById(truck);
     }
 
-    /**
-     * 更新车辆在线状态与心跳时间（参数为车辆主键 id）
-     */
     @Override
-    public boolean updateHeartbeat(String truckId, LocalDateTime heartbeatTime) {
-        if (StringUtils.isEmpty(truckId) || heartbeatTime == null) {
+    public boolean updateHeartbeat(Long truckId, LocalDateTime heartbeatTime) {
+        if (truckId == null || heartbeatTime == null) {
             return false;
         }
-        int affected = baseMapper.updateHeartbeat(truckId, heartbeatTime);
-        return affected > 0;
+        return baseMapper.updateHeartbeat(truckId, heartbeatTime) > 0;
     }
 
-    /**
-     * 批量将心跳超时车辆置为离线（P0-4 北斗字段最小改造 · D-13）
-     */
     @Override
     public int markOfflineByHeartbeat(LocalDateTime threshold) {
         if (threshold == null) {
@@ -131,5 +113,4 @@ public class PdTruckServiceImpl extends ServiceImpl<PdTruckMapper, PdTruck> impl
         }
         return baseMapper.markOfflineByHeartbeat(threshold);
     }
-
 }

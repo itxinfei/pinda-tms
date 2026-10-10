@@ -1,51 +1,47 @@
 package com.itheima.pinda.entity.transportline;
 
-import java.io.Serializable;
-
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 /**
- * <p>
- * 车次信息表
- * </p>
- *
- * @author itcast
- * @since 2019-12-20
+ * 车次（运输班次）
  */
 @Data
-@TableName("pd_transport_trips")
-public class PdTransportTrips implements Serializable {
-    private static final long serialVersionUID = -934311173866081843L;
-    /**
-     * id
-     */
-    @TableId(value = "id", type = IdType.INPUT)
-    private String id;
-    /**
-     * 车次名称
-     */
+@TableName("base_transport_trips")
+public class PdTransportTrips {
+
+    @TableId(type = IdType.ASSIGN_ID)
+    private Long id;
+
+    /** 租户ID */
+    private Long tenantId;
+
+    /** 车次名称 */
     private String name;
 
-    /**
-     * 发车时间
-     */
+    /** 发车时间 HH:mm */
     private String departureTime;
 
-    /**
-     * 所属线路id
-     */
-    private String transportLineId;
+    /** 所属线路ID */
+    private Long transportLineId;
 
-    /**
-     * 周期，1为天，2为周，3为月
-     */
+    /** 周期 1天 2周 3月 */
     private Integer period;
 
-    /**
-     * 状态  0：禁用   1：正常
-     */
+    /** 1正常 0禁用 */
     private Integer status;
+
+    private Long createBy;
+    private LocalDateTime createTime;
+    private Long updateBy;
+    private LocalDateTime updateTime;
+
+    /** 逻辑删除：0 未删 1 已删 */
+    @TableLogic
+    private Integer deleted;
 }

@@ -7,6 +7,7 @@ import com.alibaba.fastjson2.JSON;
 import com.itheima.pinda.DTO.angency.AgencyScopeDto;
 import com.itheima.pinda.DTO.user.CourierScopeDto;
 import com.itheima.pinda.common.utils.Result;
+import com.itheima.pinda.controller.support.IdConverter;
 import com.itheima.pinda.entity.agency.PdAgencyScope;
 import com.itheima.pinda.entity.user.PdCourierScope;
 import com.itheima.pinda.service.agency.IPdAgencyScopeService;
@@ -17,7 +18,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -36,6 +36,8 @@ public class ScopeController {
     @Autowired
     private IPdCourierScopeService courierScopeService;
 
+    private static final Gson GSON = new Gson();
+
     /**
      * 批量保存机构业务范围
      *
@@ -47,11 +49,13 @@ public class ScopeController {
         agencyScopService.batchSave(dtoList.stream().map(dto -> {
             PdAgencyScope scope = new PdAgencyScope();
             BeanUtils.copyProperties(dto, scope);
+            scope.setOrgId(IdConverter.toLong(dto.getAgencyId()));
+            scope.setAreaId(IdConverter.toInteger(dto.getAreaId()));
             if (!ObjectUtils.isEmpty(dto.getMutiPoints())) {
-                scope.setMutiPoints(JSON.toJSONString(dto.getMutiPoints()));
+                scope.setPolygonPoints(JSON.toJSONString(dto.getMutiPoints()));
             }
             return scope;
-        }).collect(Collectors.toList()));
+        }).toList());
         return Result.ok();
     }
 
@@ -63,7 +67,7 @@ public class ScopeController {
      */
     @DeleteMapping("/agency")
     public Result deleteAgencyScope(@RequestBody AgencyScopeDto dto) {
-        agencyScopService.delete(dto.getAreaId(), dto.getAgencyId());
+        agencyScopService.delete(IdConverter.toInteger(dto.getAreaId()), IdConverter.toLong(dto.getAgencyId()));
         return Result.ok();
     }
 
@@ -75,17 +79,23 @@ public class ScopeController {
      * @return 机构业务范围列表
      */
     @GetMapping("/agency")
-    public List<AgencyScopeDto> findAllAgencyScope(@RequestParam(name = "areaId", required = false) String areaId, @RequestParam(name = "agencyId", required = false) String agencyId, @RequestParam(name = "agencyIds", required = false) List<String> agencyIds, @RequestParam(name = "areaIds", required = false) List<String> areaIds) {
-        return agencyScopService.findAll(areaId, agencyId, agencyIds, areaIds).stream().map(scope -> {
+    public List<AgencyScopeDto> findAllAgencyScope(@RequestParam(name = "areaId", required = false) String areaId,
+                                                   @RequestParam(name = "agencyId", required = false) String agencyId,
+                                                   @RequestParam(name = "agencyIds", required = false) List<String> agencyIds,
+                                                   @RequestParam(name = "areaIds", required = false) List<String> areaIds) {
+        return agencyScopService.findAll(IdConverter.toInteger(areaId), IdConverter.toLong(agencyId),
+                IdConverter.toLongList(agencyIds), IdConverter.toIntegerList(areaIds)).stream().map(scope -> {
             AgencyScopeDto dto = new AgencyScopeDto();
             BeanUtils.copyProperties(scope, dto);
-            if (StringUtils.isNotBlank(scope.getMutiPoints())) {
-                Gson gson = new Gson();
-                List<List<Map>> json = gson.fromJson(scope.getMutiPoints(),List.class);
-                dto.setMutiPoints(json);
+            dto.setId(IdConverter.toStr(scope.getId()));
+            dto.setAgencyId(IdConverter.toStr(scope.getOrgId()));
+            dto.setAreaId(scope.getAreaId() == null ? null : scope.getAreaId().toString());
+            if (StringUtils.isNotBlank(scope.getPolygonPoints())) {
+                List<List<Map>> points = GSON.fromJson(scope.getPolygonPoints(), List.class);
+                dto.setMutiPoints(points);
             }
             return dto;
-        }).collect(Collectors.toList());
+        }).toList();
     }
 
     /**
@@ -99,11 +109,13 @@ public class ScopeController {
         courierScopeService.batchSave(dtoList.stream().map(dto -> {
             PdCourierScope scope = new PdCourierScope();
             BeanUtils.copyProperties(dto, scope);
+            scope.setCourierId(IdConverter.toLong(dto.getUserId()));
+            scope.setAreaId(IdConverter.toInteger(dto.getAreaId()));
             if (!ObjectUtils.isEmpty(dto.getMutiPoints())) {
-                scope.setMutiPoints(JSON.toJSONString(dto.getMutiPoints()));
+                scope.setPolygonPoints(JSON.toJSONString(dto.getMutiPoints()));
             }
             return scope;
-        }).collect(Collectors.toList()));
+        }).toList());
         return Result.ok();
     }
 
@@ -115,7 +127,7 @@ public class ScopeController {
      */
     @DeleteMapping("/courier")
     public Result deleteCourierScope(@RequestBody CourierScopeDto dto) {
-        courierScopeService.delete(dto.getAreaId(), dto.getUserId());
+        courierScopeService.delete(IdConverter.toInteger(dto.getAreaId()), IdConverter.toLong(dto.getUserId()));
         return Result.ok();
     }
 
@@ -127,25 +139,20 @@ public class ScopeController {
      * @return 快递员业务范围列表
      */
     @GetMapping("/courier")
-    public List<CourierScopeDto> findAllCourierScope(@RequestParam(name = "areaId", required = false) String areaId, @RequestParam(name = "userId", required = false) String userId) {
-        return courierScopeService.findAll(areaId, userId).stream().map(scope -> {
+    public List<CourierScopeDto> findAllCourierScope(@RequestParam(name = "areaId", required = false) String areaId,
+                                                     @RequestParam(name = "userId", required = false) String userId) {
+        return courierScopeService.findAll(IdConverter.toInteger(areaId), IdConverter.toLong(userId)).stream()
+                .map(scope -> {
             CourierScopeDto dto = new CourierScopeDto();
             BeanUtils.copyProperties(scope, dto);
-            if (StringUtils.isNotBlank(scope.getMutiPoints())) {
-                Gson gson = new Gson();
-                List<List<Map>> json = gson.fromJson(scope.getMutiPoints(),List.class);
-                dto.setMutiPoints(json);
+            dto.setId(IdConverter.toStr(scope.getId()));
+            dto.setUserId(IdConverter.toStr(scope.getCourierId()));
+            dto.setAreaId(scope.getAreaId() == null ? null : scope.getAreaId().toString());
+            if (StringUtils.isNotBlank(scope.getPolygonPoints())) {
+                List<List<Map>> points = GSON.fromJson(scope.getPolygonPoints(), List.class);
+                dto.setMutiPoints(points);
             }
             return dto;
-        }).collect(Collectors.toList());
+        }).toList();
     }
-
-//    public static void main(String[] args) {
-//        String str = "[[{\"lng\":\"1\",\"lat\":\"2\"},{\"lng\":\"3\",\"lat\":\"4\"}],[{\"lng\":\"5\",\"lat\":\"6\"},{\"lng\":\"7\",\"lat\":\"84\"}]]";
-//        List<List> mutiPoints = JSON.parseArray(str,List.class);
-//        System.out.println(JSON.toJSONString(mutiPoints));
-//        Gson gson = new Gson();
-//        List<List<Map>> json = gson.fromJson(str,List.class);
-//        System.out.println(JSON.toJSONString(json));
-//    }
 }

@@ -1,87 +1,66 @@
 package com.itheima.pinda.entity.truck;
 
-import java.io.Serializable;
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
 /**
- * <p>
- * 车辆信息表
- * </p>
- *
- * @author itcast
- * @since 2019-12-20
+ * 车辆
  */
 @Data
-@TableName("pd_truck")
-public class PdTruck implements Serializable {
+@TableName("base_truck")
+public class PdTruck {
 
-    private static final long serialVersionUID = 1L;
-    /**
-     * id
-     */
-    @TableId(value = "id", type = IdType.INPUT)
-    private String id;
-    /**
-     * 车辆类型id
-     */
-    private String truckTypeId;
+    @TableId(type = IdType.ASSIGN_ID)
+    private Long id;
 
-    /**
-     * 所属车队id
-     */
-    private String fleetId;
+    /** 租户ID */
+    private Long tenantId;
 
-    /**
-     * 品牌
-     */
+    /** 车辆类型ID */
+    private Long truckTypeId;
+
+    /** 所属车队ID */
+    private Long fleetId;
+
+    /** 品牌 */
     private String brand;
 
-    /**
-     * 车牌号码
-     */
+    /** 车牌号 */
     private String licensePlate;
 
-    /**
-     * GPS设备id
-     */
+    /** GPS设备ID */
     private String deviceGpsId;
 
-    /**
-     * 准载重量
-     */
+    /** 准载重量(kg) */
     private BigDecimal allowableLoad;
 
-    /**
-     * 准载体积
-     */
+    /** 准载体积(m³) */
     private BigDecimal allowableVolume;
 
-    /**
-     * 车辆行驶证信息id
-     */
-    private String truckLicenseId;
-    
-    /**
-     * 状态 0：禁用 1：正常
-     */
+    /** 车辆行驶证ID */
+    private Long truckLicenseId;
+
+    /** 1正常 0禁用 */
     private Integer status;
 
-    /**
-     * 在线状态（P0-4 北斗字段最小改造 · D-13）
-     * <p>0-离线 1-在线。由 pd-netty GpsTraceConsumer 收到 GPS 上报时置 1，
-     * 由 @Scheduled 定时任务（每 60s 扫描）将心跳超时（>5min 无上报）的车辆置 0。</p>
-     */
+    /** 在线状态 1在线 0离线（pd-netty 心跳维护，VEHICLE_OFFLINE 告警依赖） */
     private Integer onlineStatus;
 
-    /**
-     * 最后心跳时间（P0-4 北斗字段最小改造 · D-13）
-     * <p>最近一次 GPS 上报时间，用于在线状态判定与设备故障排查。</p>
-     */
+    /** 最后心跳时间 */
     private LocalDateTime lastHeartbeatTime;
+
+    private Long createBy;
+    private LocalDateTime createTime;
+    private Long updateBy;
+    private LocalDateTime updateTime;
+
+    /** 逻辑删除：0 未删 1 已删 */
+    @TableLogic
+    private Integer deleted;
 }

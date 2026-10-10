@@ -2,42 +2,47 @@ package com.itheima.pinda.entity.base;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
-import java.io.Serializable;
+
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 /**
- * 货物类型实体
+ * 货物类型
  */
 @Data
-@TableName("pd_goods_type")
-public class PdGoodsType implements Serializable{
+@TableName("base_goods_type")
+public class PdGoodsType {
 
-    private static final long serialVersionUID = 1L;
-    /**
-     * id
-     */
-    @TableId(value = "id", type = IdType.INPUT)
-    private String id;
-    /**
-     * 货物类型名称
-     */
+    @TableId(type = IdType.ASSIGN_ID)
+    private Long id;
+
+    /** 租户ID */
+    private Long tenantId;
+
+    /** 货物类型名称 */
     private String name;
-    /**
-     * 默认重量，单位：千克
-     */
+
+    /** 默认重量(kg) */
     private BigDecimal defaultWeight;
-    /**
-     * 默认体积，单位：方
-     */
+
+    /** 默认体积(m³) */
     private BigDecimal defaultVolume;
-    /**
-     * 说明
-     */
+
+    /** 说明 */
     private String remark;
-    /**
-     * 状态 0：禁用 1：正常
-     */
+
+    /** 1启用 0禁用 */
     private Integer status;
+
+    private Long createBy;
+    private LocalDateTime createTime;
+    private Long updateBy;
+    private LocalDateTime updateTime;
+
+    /** 逻辑删除：0 未删 1 已删 */
+    @TableLogic
+    private Integer deleted;
 }

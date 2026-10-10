@@ -1,46 +1,37 @@
 package com.itheima.pinda.service.truck.impl;
 
-import java.math.BigDecimal;
-import java.util.List;
-
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
-import com.itheima.pinda.common.CustomIdGenerator;
 import com.itheima.pinda.common.utils.Constant;
-import com.itheima.pinda.mapper.truck.PdTruckTypeMapper;
 import com.itheima.pinda.entity.truck.PdTruckType;
 import com.itheima.pinda.entity.truck.PdTruckTypeGoodsType;
-import com.itheima.pinda.service.truck.IPdTruckTypeService;
+import com.itheima.pinda.mapper.truck.PdTruckTypeMapper;
 import com.itheima.pinda.service.truck.IPdTruckTypeGoodsTypeService;
-
-import org.springframework.beans.factory.annotation.Autowired;
+import com.itheima.pinda.service.truck.IPdTruckTypeService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.apache.commons.lang.StringUtils;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * <p>
- * 车辆类型表 服务实现类
- * </p>
- *
- * @author itcast
- * @since 2019-12-20
+ * 车辆类型 服务实现类
  */
 @Service
-public class PdTruckTypeServiceImpl extends ServiceImpl<PdTruckTypeMapper, PdTruckType> implements IPdTruckTypeService {
-    @Autowired
-    private CustomIdGenerator idGenerator;
-    @Autowired
-    private IPdTruckTypeGoodsTypeService truckTypeGoodsTypeService;
+public class PdTruckTypeServiceImpl extends ServiceImpl<PdTruckTypeMapper, PdTruckType>
+        implements IPdTruckTypeService {
+
+    private final IPdTruckTypeGoodsTypeService truckTypeGoodsTypeService;
+
+    public PdTruckTypeServiceImpl(IPdTruckTypeGoodsTypeService truckTypeGoodsTypeService) {
+        this.truckTypeGoodsTypeService = truckTypeGoodsTypeService;
+    }
 
     @Override
     public PdTruckType saveTruckType(PdTruckType pdTruckType) {
-        pdTruckType.setId(idGenerator.nextId(pdTruckType) + "");
         baseMapper.insert(pdTruckType);
         return pdTruckType;
     }
@@ -48,66 +39,62 @@ public class PdTruckTypeServiceImpl extends ServiceImpl<PdTruckTypeMapper, PdTru
     @Override
     public IPage<PdTruckType> findByPage(Integer page, Integer pageSize, String name, BigDecimal allowableLoad,
                                          BigDecimal allowableVolume) {
-        Page<PdTruckType> iPage = new Page(page, pageSize);
-        LambdaQueryWrapper<PdTruckType> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        if (StringUtils.isNotEmpty(name)) {
-            lambdaQueryWrapper.like(PdTruckType::getName, name);
+        Page<PdTruckType> iPage = new Page<>(page, pageSize);
+        LambdaQueryWrapper<PdTruckType> wrapper = new LambdaQueryWrapper<>();
+        if (name != null && !name.isEmpty()) {
+            wrapper.like(PdTruckType::getName, name);
         }
         if (allowableLoad != null) {
-            lambdaQueryWrapper.eq(PdTruckType::getAllowableLoad, allowableLoad);
+            wrapper.eq(PdTruckType::getAllowableLoad, allowableLoad);
         }
         if (allowableVolume != null) {
-            lambdaQueryWrapper.eq(PdTruckType::getAllowableVolume, allowableVolume);
+            wrapper.eq(PdTruckType::getAllowableVolume, allowableVolume);
         }
-        lambdaQueryWrapper.eq(PdTruckType::getStatus, Constant.DATA_DEFAULT_STATUS);
-        return baseMapper.selectPage(iPage, lambdaQueryWrapper);
+        wrapper.eq(PdTruckType::getStatus, Constant.DATA_DEFAULT_STATUS);
+        return baseMapper.selectPage(iPage, wrapper);
     }
 
     @Override
-    public List<PdTruckType> findAll(List<String> ids) {
-        LambdaQueryWrapper<PdTruckType> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        if (ids != null && ids.size() > 0) {
-            lambdaQueryWrapper.in(PdTruckType::getId, ids);
+    public List<PdTruckType> findAll(List<Long> ids) {
+        LambdaQueryWrapper<PdTruckType> wrapper = new LambdaQueryWrapper<>();
+        if (ids != null && !ids.isEmpty()) {
+            wrapper.in(PdTruckType::getId, ids);
         }
-        lambdaQueryWrapper.eq(PdTruckType::getStatus, Constant.DATA_DEFAULT_STATUS);
-        return baseMapper.selectList(lambdaQueryWrapper);
+        wrapper.eq(PdTruckType::getStatus, Constant.DATA_DEFAULT_STATUS);
+        return baseMapper.selectList(wrapper);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public PdTruckType saveTruckTypeWithGoodsTypes(PdTruckType pdTruckType, List<String> goodsTypeIds) {
-        if (pdTruckType.getId() == null) {
-            pdTruckType.setId(idGenerator.nextId(pdTruckType) + "");
-        }
+    public PdTruckType saveTruckTypeWithGoodsTypes(PdTruckType pdTruckType, List<Long> goodsTypeIds) {
         if (pdTruckType.getStatus() == null) {
             pdTruckType.setStatus(Constant.DATA_DEFAULT_STATUS);
         }
         baseMapper.insert(pdTruckType);
-        if (goodsTypeIds != null && !goodsTypeIds.isEmpty()) {
-            List<PdTruckTypeGoodsType> list = goodsTypeIds.stream().map(goodsTypeId -> {
-                PdTruckTypeGoodsType item = new PdTruckTypeGoodsType();
-                item.setGoodsTypeId(goodsTypeId);
-                item.setTruckTypeId(pdTruckType.getId());
-                return item;
-            }).collect(Collectors.toList());
-            truckTypeGoodsTypeService.batchSave(list);
-        }
+        saveGoodsRelations(pdTruckType.getId(), goodsTypeIds);
         return pdTruckType;
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void updateTruckTypeWithGoodsTypes(PdTruckType truckType, List<String> goodsTypeIds) {
+    public void updateTruckTypeWithGoodsTypes(PdTruckType truckType, List<Long> goodsTypeIds) {
         baseMapper.updateById(truckType);
         if (goodsTypeIds != null) {
             truckTypeGoodsTypeService.delete(truckType.getId(), null);
-            List<PdTruckTypeGoodsType> list = goodsTypeIds.stream().map(goodsTypeId -> {
-                PdTruckTypeGoodsType item = new PdTruckTypeGoodsType();
-                item.setGoodsTypeId(goodsTypeId);
-                item.setTruckTypeId(truckType.getId());
-                return item;
-            }).collect(Collectors.toList());
-            truckTypeGoodsTypeService.batchSave(list);
+            saveGoodsRelations(truckType.getId(), goodsTypeIds);
         }
+    }
+
+    private void saveGoodsRelations(Long truckTypeId, List<Long> goodsTypeIds) {
+        if (goodsTypeIds == null || goodsTypeIds.isEmpty()) {
+            return;
+        }
+        List<PdTruckTypeGoodsType> list = goodsTypeIds.stream().map(goodsTypeId -> {
+            PdTruckTypeGoodsType item = new PdTruckTypeGoodsType();
+            item.setGoodsTypeId(goodsTypeId);
+            item.setTruckTypeId(truckTypeId);
+            return item;
+        }).collect(Collectors.toList());
+        truckTypeGoodsTypeService.batchSave(list);
     }
 }

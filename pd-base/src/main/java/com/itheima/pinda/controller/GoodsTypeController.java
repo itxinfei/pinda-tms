@@ -5,6 +5,7 @@ import com.itheima.pinda.DTO.base.GoodsTypeDto;
 import com.itheima.pinda.common.utils.Constant;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
+import com.itheima.pinda.controller.support.IdConverter;
 import com.itheima.pinda.entity.base.PdGoodsType;
 import com.itheima.pinda.entity.truck.PdTruckTypeGoodsType;
 import com.itheima.pinda.service.base.IPdGoodsTypeService;
@@ -19,7 +20,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * 货物类型管理
@@ -48,22 +48,23 @@ public class GoodsTypeController {
 
         //保存货物类型信息到货物类型表
         pdGoodsType = goodsTypeService.saveGoodsType(pdGoodsType);
-        String goodsTypeId = pdGoodsType.getId();//货物类型id
+        Long goodsTypeId = pdGoodsType.getId();//货物类型id
 
         //保存货物类型和车辆类型关联信息到关联表
-        List<String> truckTypeIds = goodsTypeDto.getTruckTypeIds();
+        List<Long> truckTypeIds = IdConverter.toLongList(goodsTypeDto.getTruckTypeIds());
         if(truckTypeIds != null && truckTypeIds.size() > 0){
             List<PdTruckTypeGoodsType> list = truckTypeIds.stream().map(truckTypeId -> {
                 PdTruckTypeGoodsType pdTruckTypeGoodsType = new PdTruckTypeGoodsType();
                 pdTruckTypeGoodsType.setGoodsTypeId(goodsTypeId);//货物类型id
                 pdTruckTypeGoodsType.setTruckTypeId(truckTypeId);//车辆类型id
                 return pdTruckTypeGoodsType;
-            }).collect(Collectors.toList());
+            }).toList();
             //批量保存货物类型和车辆类型的关联信息
             truckTypeGoodsTypeService.batchSave(list);
         }
 
         BeanUtils.copyProperties(pdGoodsType,goodsTypeDto);
+        goodsTypeDto.setId(IdConverter.toStr(goodsTypeId));
         return goodsTypeDto;
     }
 
@@ -75,17 +76,19 @@ public class GoodsTypeController {
     @GetMapping("/{id}")
     @Operation(summary = "根据id查询货物类型")
     public GoodsTypeDto findById(@PathVariable(name = "id") String id){
-        PdGoodsType pdGoodsType = goodsTypeService.getById(id);
+        PdGoodsType pdGoodsType = goodsTypeService.getById(IdConverter.toLong(id));
 
         GoodsTypeDto goodsTypeDto = new GoodsTypeDto();
-        BeanUtils.copyProperties(pdGoodsType,goodsTypeDto);
+        if (pdGoodsType != null) {
+            BeanUtils.copyProperties(pdGoodsType,goodsTypeDto);
+        }
 
         //还需要查询当前货物类型关联的车辆类型的id
-        List<PdTruckTypeGoodsType> list = truckTypeGoodsTypeService.findAll(null, id);
+        List<PdTruckTypeGoodsType> list = truckTypeGoodsTypeService.findAll(null, IdConverter.toLong(id));
         if(list != null && list.size() > 0){
-            List<String> truckTypeId = list.stream().map(pdTruckTypeGoodsType ->
-                pdTruckTypeGoodsType.getTruckTypeId()
-            ).collect(Collectors.toList());
+            List<String> truckTypeId = IdConverter.toStrList(list.stream()
+                .map(PdTruckTypeGoodsType::getTruckTypeId)
+                .toList());
             goodsTypeDto.setTruckTypeIds(truckTypeId);
         }
 
@@ -101,12 +104,12 @@ public class GoodsTypeController {
     public List<GoodsTypeDto> findAll(){
         List<PdGoodsType> goodsTypeList = goodsTypeService.findAll();
         if(goodsTypeList != null && goodsTypeList.size() > 0){
-            List<GoodsTypeDto> goodsTypeDtoList = goodsTypeList.stream().map(goodsType -> {
+            return goodsTypeList.stream().map(goodsType -> {
                 GoodsTypeDto goodsTypeDto = new GoodsTypeDto();
                 BeanUtils.copyProperties(goodsType, goodsTypeDto);
+                goodsTypeDto.setId(IdConverter.toStr(goodsType.getId()));
                 return goodsTypeDto;
-            }).collect(Collectors.toList());
-            return goodsTypeDtoList;
+            }).toList();
         }
         return Collections.emptyList();
     }
@@ -129,18 +132,21 @@ public class GoodsTypeController {
                                                  @RequestParam(name = "truckTypeName", required = false) String truckTypeName){
 
         //分页查询
-        IPage<PdGoodsType> goodsTypePage = goodsTypeService.findByPage(page, pageSize, name, truckTypeId, truckTypeName);
+        IPage<PdGoodsType> goodsTypePage = goodsTypeService.findByPage(page, pageSize, name,
+                IdConverter.toLong(truckTypeId), truckTypeName);
         List<PdGoodsType> goodsTypePageRecords = goodsTypePage.getRecords();
 
         if(goodsTypePageRecords != null && goodsTypePageRecords.size() > 0){
             List<GoodsTypeDto> goodsTypeDtoList = goodsTypePageRecords.stream().map(goodsType -> {
                 List<PdTruckTypeGoodsType> truckTypeGoodsTypes = truckTypeGoodsTypeService.findAll(null, goodsType.getId());
-                List<String> truckTypeIds = truckTypeGoodsTypes.stream().map(pdTruckTypeGoodsType -> pdTruckTypeGoodsType.getTruckTypeId()).collect(Collectors.toList());
+                List<String> truckTypeIds = IdConverter.toStrList(truckTypeGoodsTypes.stream()
+                        .map(PdTruckTypeGoodsType::getTruckTypeId).toList());
                 GoodsTypeDto goodsTypeDto = new GoodsTypeDto();
                 BeanUtils.copyProperties(goodsType, goodsTypeDto);
+                goodsTypeDto.setId(IdConverter.toStr(goodsType.getId()));
                 goodsTypeDto.setTruckTypeIds(truckTypeIds);
                 return goodsTypeDto;
-            }).collect(Collectors.toList());
+            }).toList();
 
             return PageResponse.<GoodsTypeDto>builder().items(goodsTypeDtoList).counts(goodsTypePage.getTotal()).page(page).pages(goodsTypePage.getPages()).pagesize(pageSize).build();
         }
@@ -156,16 +162,18 @@ public class GoodsTypeController {
     @GetMapping("")
     @Operation(summary = "查询货物类型列表")
     public List<GoodsTypeDto> findAll(@RequestParam(name = "ids", required = false) List<String> ids){
-        List<PdGoodsType> list= goodsTypeService.findAll(ids);
+        List<PdGoodsType> list= goodsTypeService.findAll(IdConverter.toLongList(ids));
         if(list != null && list.size() > 0){
             List<GoodsTypeDto> goodsTypeDtoList = list.stream().map(pdGoodsType -> {
                 List<PdTruckTypeGoodsType> truckTypeGoodsTypes = truckTypeGoodsTypeService.findAll(null, pdGoodsType.getId());
-                List<String> truckTypeIds = truckTypeGoodsTypes.stream().map(pdTruckTypeGoodsType -> pdTruckTypeGoodsType.getTruckTypeId()).collect(Collectors.toList());
+                List<String> truckTypeIds = IdConverter.toStrList(truckTypeGoodsTypes.stream()
+                        .map(PdTruckTypeGoodsType::getTruckTypeId).toList());
                 GoodsTypeDto goodsTypeDto = new GoodsTypeDto();
                 BeanUtils.copyProperties(pdGoodsType, goodsTypeDto);
+                goodsTypeDto.setId(IdConverter.toStr(pdGoodsType.getId()));
                 goodsTypeDto.setTruckTypeIds(truckTypeIds);
                 return goodsTypeDto;
-            }).collect(Collectors.toList());
+            }).toList();
             return goodsTypeDtoList;
         }
         return Collections.emptyList();
@@ -180,24 +188,25 @@ public class GoodsTypeController {
     @PutMapping("/{id}")
     @Operation(summary = "更新货物类型信息")
     public GoodsTypeDto updateById(@PathVariable(name = "id") String id, @RequestBody GoodsTypeDto dto){
+        Long goodsTypeId = IdConverter.toLong(id);
         PdGoodsType pdGoodsType = new PdGoodsType();
         BeanUtils.copyProperties(dto,pdGoodsType);
-        pdGoodsType.setId(id);
+        pdGoodsType.setId(goodsTypeId);
         //更新货物类型的普通属性
         goodsTypeService.updateById(pdGoodsType);
 
         //更新关联信息
-        List<String> truckTypeIds = dto.getTruckTypeIds();
+        List<Long> truckTypeIds = IdConverter.toLongList(dto.getTruckTypeIds());
         if(truckTypeIds != null && truckTypeIds.size() > 0){
             //清理原有关联信息
-            truckTypeGoodsTypeService.delete(null,id);
+            truckTypeGoodsTypeService.delete(null,goodsTypeId);
             //重新建立关联关系
             List<PdTruckTypeGoodsType> list = truckTypeIds.stream().map(truckTypeId -> {
                 PdTruckTypeGoodsType pdTruckTypeGoodsType = new PdTruckTypeGoodsType();
-                pdTruckTypeGoodsType.setGoodsTypeId(id);//货物类型id
+                pdTruckTypeGoodsType.setGoodsTypeId(goodsTypeId);//货物类型id
                 pdTruckTypeGoodsType.setTruckTypeId(truckTypeId);//车辆类型id
                 return pdTruckTypeGoodsType;
-            }).collect(Collectors.toList());
+            }).toList();
             //批量保存货物类型和车辆类型的关联信息
             truckTypeGoodsTypeService.batchSave(list);
         }
@@ -215,14 +224,15 @@ public class GoodsTypeController {
     @PutMapping("/{id}/disable")
     @Operation(summary = "删除货物类型")
     public Result disable(@PathVariable(name = "id") String id) {
+        Long goodsTypeId = IdConverter.toLong(id);
         // 关联校验：存在车辆类型引用该货物类型时禁止删除
-        List<PdTruckTypeGoodsType> refs = truckTypeGoodsTypeService.findAll(null, id);
+        List<PdTruckTypeGoodsType> refs = truckTypeGoodsTypeService.findAll(null, goodsTypeId);
         if (refs != null && !refs.isEmpty()) {
             log.warn("[货物类型] 存在车辆类型关联，禁止删除: goodsTypeId={}, 关联数={}", id, refs.size());
             return Result.error(400, "该货物类型已被车辆类型关联，无法删除");
         }
         PdGoodsType pdGoodsType = new PdGoodsType();
-        pdGoodsType.setId(id);
+        pdGoodsType.setId(goodsTypeId);
         pdGoodsType.setStatus(Constant.DATA_DISABLE_STATUS);
         goodsTypeService.updateById(pdGoodsType);
         return Result.ok();

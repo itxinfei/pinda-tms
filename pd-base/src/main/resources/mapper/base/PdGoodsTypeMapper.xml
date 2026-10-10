@@ -6,12 +6,12 @@
         SELECT
         goods_type.*
         FROM
-        pd_goods_type goods_type
+        base_goods_type goods_type
         <if test="truckTypeId != null || truckTypeName != null">
-            LEFT JOIN pd_truck_type_goods_type truck_type_goods_type ON goods_type.id = truck_type_goods_type.goods_type_id
+            LEFT JOIN base_truck_type_goods truck_type_goods_type ON goods_type.id = truck_type_goods_type.goods_type_id
         </if>
         <if test="truckTypeName != null">
-            LEFT JOIN pd_truck_type truck_type ON 	truck_type_goods_type.truck_type_id=truck_type.id
+            LEFT JOIN base_truck_type truck_type ON 	truck_type_goods_type.truck_type_id=truck_type.id
         </if>
         <where>
             goods_type.status=1

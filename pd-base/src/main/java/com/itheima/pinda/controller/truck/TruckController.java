@@ -4,11 +4,12 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.itheima.pinda.DTO.truck.TruckDto;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
+import com.itheima.pinda.controller.support.IdConverter;
 import com.itheima.pinda.entity.agency.PdFleet;
 import com.itheima.pinda.entity.truck.PdTruck;
 import com.itheima.pinda.service.agency.IPdFleetService;
 import com.itheima.pinda.service.truck.IPdTruckService;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.ObjectUtils;
@@ -17,7 +18,6 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * TruckController
@@ -41,9 +41,9 @@ public class TruckController {
     public TruckDto saveTruck(@RequestBody TruckDto dto) {
         PdTruck pdTruck = new PdTruck();
         BeanUtils.copyProperties(dto, pdTruck);
+        fillEntity(dto, pdTruck);
         pdTruck = truckService.saveTruck(pdTruck);
-        BeanUtils.copyProperties(pdTruck, dto);
-        return dto;
+        return toDto(pdTruck);
     }
 
     /**
@@ -53,14 +53,12 @@ public class TruckController {
      * @return 车辆信息
      */
     @GetMapping("/{id}")
-    public TruckDto fineById(@PathVariable(name = "id") String id) {
-        PdTruck pdTruck = truckService.getById(id);
+    public TruckDto findById(@PathVariable(name = "id") String id) {
+        PdTruck pdTruck = truckService.getById(IdConverter.toLong(id));
         if (ObjectUtils.isEmpty(pdTruck)) {
             return null;
         }
-        TruckDto dto = new TruckDto();
-        BeanUtils.copyProperties(pdTruck, dto);
-        return dto;
+        return toDto(pdTruck);
     }
 
     /**
@@ -81,23 +79,21 @@ public class TruckController {
                                              @RequestParam(name = "licensePlate", required = false) String licensePlate,
                                              @RequestParam(name = "fleetId", required = false) String fleetId,
                                              @RequestParam(name = "fleetName", required = false) String fleetName) {
+        Long truckTypeIdValue = IdConverter.toLong(truckTypeId);
         IPage<PdTruck> truckPage;
         if (StringUtils.isNotBlank(fleetName) && StringUtils.isBlank(fleetId)) {
             // 按车队名称模糊查询：先查匹配的车队，再按车队ID列表查车辆
             IPage<PdFleet> fleetPage = fleetService.findByPage(1, 1000, fleetName, null, null);
-            List<String> fleetIds = fleetPage.getRecords().stream()
+            List<Long> fleetIds = fleetPage.getRecords().stream()
                     .map(PdFleet::getId)
-                    .collect(Collectors.toList());
-            truckPage = truckService.findByPageByFleetIds(page, pageSize, truckTypeId, licensePlate, fleetIds);
+                    .toList();
+            truckPage = truckService.findByPageByFleetIds(page, pageSize, truckTypeIdValue, licensePlate, fleetIds);
         } else {
-            truckPage = truckService.findByPage(page, pageSize, truckTypeId, licensePlate, fleetId);
+            truckPage = truckService.findByPage(page, pageSize, truckTypeIdValue, licensePlate,
+                    IdConverter.toLong(fleetId));
         }
         List<TruckDto> dtoList = new ArrayList<>();
-        truckPage.getRecords().forEach(pdTruck -> {
-            TruckDto dto = new TruckDto();
-            BeanUtils.copyProperties(pdTruck, dto);
-            dtoList.add(dto);
-        });
+        truckPage.getRecords().forEach(pdTruck -> dtoList.add(toDto(pdTruck)));
         return PageResponse.<TruckDto>builder().items(dtoList).pagesize(pageSize).page(page).counts(truckPage.getTotal())
                 .pages(truckPage.getPages()).build();
     }
@@ -110,7 +106,7 @@ public class TruckController {
      */
     @GetMapping("/count")
     public Integer count(@RequestParam(name = "fleetId", required = false) String fleetId) {
-        return truckService.count(fleetId);
+        return truckService.count(IdConverter.toLong(fleetId));
     }
 
     /**
@@ -120,12 +116,11 @@ public class TruckController {
      * @return 车辆列表
      */
     @GetMapping("")
-    public List<TruckDto> findAll(@RequestParam(name = "ids", required = false) List<String> ids, @RequestParam(name = "fleetId", required = false) String fleetId) {
-        return truckService.findAll(ids, fleetId).stream().map(pdTruck -> {
-            TruckDto dto = new TruckDto();
-            BeanUtils.copyProperties(pdTruck, dto);
-            return dto;
-        }).collect(Collectors.toList());
+    public List<TruckDto> findAll(@RequestParam(name = "ids", required = false) List<String> ids,
+                                  @RequestParam(name = "fleetId", required = false) String fleetId) {
+        return truckService.findAll(IdConverter.toLongList(ids), IdConverter.toLong(fleetId)).stream()
+                .map(this::toDto)
+                .toList();
     }
 
     /**
@@ -137,10 +132,12 @@ public class TruckController {
      */
     @PutMapping("/{id}")
     public TruckDto update(@PathVariable(name = "id") String id, @RequestBody TruckDto dto) {
-        dto.setId(id);
         PdTruck pdTruck = new PdTruck();
         BeanUtils.copyProperties(dto, pdTruck);
+        fillEntity(dto, pdTruck);
+        pdTruck.setId(IdConverter.toLong(id));
         truckService.updateById(pdTruck);
+        dto.setId(id);
         return dto;
     }
 
@@ -152,8 +149,9 @@ public class TruckController {
      */
     @PutMapping("/{id}/disable")
     public Result disable(@PathVariable(name = "id") String id) {
+        Long truckId = IdConverter.toLong(id);
         // 删除前检查车辆当前状态：已禁用/不存在时不允许重复操作
-        PdTruck pdTruck = truckService.getById(id);
+        PdTruck pdTruck = truckService.getById(truckId);
         if (ObjectUtils.isEmpty(pdTruck)) {
             return Result.error(400, "车辆不存在");
         }
@@ -162,7 +160,7 @@ public class TruckController {
         }
         // 非空闲状态校验：在途运输任务校验已由管理端(web-manager deleteTruck)在删除前拦截，
         // 此处完成基础状态(存在性/重复禁用)校验
-        truckService.disableById(id);
+        truckService.disableById(truckId);
         return Result.ok();
     }
 
@@ -186,7 +184,7 @@ public class TruckController {
                                   @RequestParam(name = "heartbeatTime")
                                   @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME)
                                   LocalDateTime heartbeatTime) {
-        boolean ok = truckService.updateHeartbeat(deviceGpsId, heartbeatTime);
+        boolean ok = truckService.updateHeartbeat(IdConverter.toLong(deviceGpsId), heartbeatTime);
         return ok ? Result.ok() : Result.error(400, "车辆不存在或已禁用");
     }
 
@@ -204,5 +202,27 @@ public class TruckController {
                               LocalDateTime threshold) {
         int affected = truckService.markOfflineByHeartbeat(threshold);
         return Result.ok().put("data", affected);
+    }
+
+    /**
+     * DTO 差异字段填充：车辆类型/车队/行驶证 id（String→Long）
+     */
+    private void fillEntity(TruckDto dto, PdTruck entity) {
+        entity.setTruckTypeId(IdConverter.toLong(dto.getTruckTypeId()));
+        entity.setFleetId(IdConverter.toLong(dto.getFleetId()));
+        entity.setTruckLicenseId(IdConverter.toLong(dto.getTruckLicenseId()));
+    }
+
+    /**
+     * 实体 → DTO：各关联 id（Long→String），onlineStatus/lastHeartbeatTime 同名直接拷贝
+     */
+    private TruckDto toDto(PdTruck entity) {
+        TruckDto dto = new TruckDto();
+        BeanUtils.copyProperties(entity, dto);
+        dto.setId(IdConverter.toStr(entity.getId()));
+        dto.setTruckTypeId(IdConverter.toStr(entity.getTruckTypeId()));
+        dto.setFleetId(IdConverter.toStr(entity.getFleetId()));
+        dto.setTruckLicenseId(IdConverter.toStr(entity.getTruckLicenseId()));
+        return dto;
     }
 }

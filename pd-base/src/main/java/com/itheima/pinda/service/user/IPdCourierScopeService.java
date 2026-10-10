@@ -6,28 +6,22 @@ import com.itheima.pinda.entity.user.PdCourierScope;
 import java.util.List;
 
 /**
- * <p>
- * 快递员业务范围表  服务类
- * </p>
- *
- * @author itcast
- * @since 2019-12-20
+ * 快递员作业范围 服务类
  */
 public interface IPdCourierScopeService extends IService<PdCourierScope> {
+
     /**
-     * 批量保存快递员业务范围
-     *
-     * @param scopeList 快递员业务范围信息列表
+     * 批量保存快递员作业范围
      */
     void batchSave(List<PdCourierScope> scopeList);
 
     /**
-     * 删除快递员业务范围
+     * 删除快递员作业范围
      *
-     * @param areaId 行政区域id
-     * @param userId 快递员id
+     * @param areaId    行政区域id
+     * @param courierId 快递员账号id
      */
-    void delete(String areaId, String userId);
+    void delete(Integer areaId, Long courierId);
 
-    List<PdCourierScope> findAll(String areaId, String userId);
+    List<PdCourierScope> findAll(Integer areaId, Long courierId);
 }

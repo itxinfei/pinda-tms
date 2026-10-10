@@ -1,83 +1,67 @@
 package com.itheima.pinda.entity.truck;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.io.Serializable;
-
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 /**
- * <p>
- * 车辆行驶证表
- * </p>
- *
- * @author itcast
- * @since 2019-12-20
+ * 车辆行驶证
  */
 @Data
-@TableName("pd_truck_license")
-public class PdTruckLicense implements Serializable {
+@TableName("base_truck_license")
+public class PdTruckLicense {
 
-    private static final long serialVersionUID = 1L;
-    /**
-     * id
-     */
-    @TableId(value = "id", type = IdType.INPUT)
-    private String id;
-    /**
-     * 车辆id
-     */
-    private String truckId;
-    /**
-     * 发动机编号
-     */
+    @TableId(type = IdType.ASSIGN_ID)
+    private Long id;
+
+    /** 租户ID */
+    private Long tenantId;
+
+    /** 车辆 base_truck.id */
+    private Long truckId;
+
+    /** 发动机编号 */
     private String engineNumber;
 
-    /**
-     * 注册时间
-     */
+    /** 注册日期 */
     private LocalDate registrationDate;
 
-    /**
-     * 国家强制报废日期
-     */
+    /** 强制报废日期 */
     private LocalDate mandatoryScrap;
 
-    /**
-     * 检验有效期
-     */
+    /** 检验有效期 */
     private LocalDate expirationDate;
 
-    /**
-     * 整备质量
-     */
+    /** 整备质量(kg) */
     private BigDecimal overallQuality;
 
-    /**
-     * 核定载质量
-     */
+    /** 核定载质量(kg) */
     private BigDecimal allowableWeight;
 
-    /**
-     * 外廓尺寸
-     */
+    /** 外廓尺寸 */
     private String outsideDimensions;
 
-    /**
-     * 行驶证有效期
-     */
+    /** 行驶证有效期 */
     private LocalDate validityPeriod;
 
-    /**
-     * 道路运输证号
-     */
+    /** 道路运输证号 */
     private String transportCertificateNumber;
 
-    /**
-     * 图片信息
-     */
+    /** 图片 */
     private String picture;
+
+    private Long createBy;
+    private LocalDateTime createTime;
+    private Long updateBy;
+    private LocalDateTime updateTime;
+
+    /** 逻辑删除：0 未删 1 已删 */
+    @TableLogic
+    private Integer deleted;
 }

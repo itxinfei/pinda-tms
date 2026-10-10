@@ -3,6 +3,8 @@ package com.itheima.pinda.controller.truck;
 import com.itheima.pinda.entity.truck.PdTruckLicense;
 import com.itheima.pinda.service.truck.IPdTruckLicenseService;
 import com.itheima.pinda.DTO.truck.TruckLicenseDto;
+import com.itheima.pinda.controller.support.IdConverter;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -10,8 +12,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import org.springframework.beans.BeanUtils;
 
 /**
  * TruckLicenseController
@@ -32,9 +32,9 @@ public class TruckLicenseController {
     public TruckLicenseDto saveTruckLicense(@RequestBody TruckLicenseDto dto) {
         PdTruckLicense pdTruckLicense = new PdTruckLicense();
         BeanUtils.copyProperties(dto, pdTruckLicense);
+        pdTruckLicense.setTruckId(IdConverter.toLong(dto.getTruckId()));
         pdTruckLicense = truckLicenseService.saveTruckLicense(pdTruckLicense);
-        BeanUtils.copyProperties(pdTruckLicense, dto);
-        return dto;
+        return toDto(pdTruckLicense);
     }
 
     /**
@@ -44,10 +44,22 @@ public class TruckLicenseController {
      * @return 车辆行驶证信息
      */
     @GetMapping("/{id}")
-    public TruckLicenseDto fineById(@PathVariable(name = "id") String id) {
-        PdTruckLicense pdTruckLicense = truckLicenseService.getById(id);
+    public TruckLicenseDto findById(@PathVariable(name = "id") String id) {
+        PdTruckLicense pdTruckLicense = truckLicenseService.getById(IdConverter.toLong(id));
+        if (pdTruckLicense == null) {
+            return new TruckLicenseDto();
+        }
+        return toDto(pdTruckLicense);
+    }
+
+    /**
+     * 实体 → DTO：id/车辆id 转回 String
+     */
+    private TruckLicenseDto toDto(PdTruckLicense entity) {
         TruckLicenseDto dto = new TruckLicenseDto();
-        BeanUtils.copyProperties(pdTruckLicense, dto);
+        BeanUtils.copyProperties(entity, dto);
+        dto.setId(IdConverter.toStr(entity.getId()));
+        dto.setTruckId(IdConverter.toStr(entity.getTruckId()));
         return dto;
     }
 }
