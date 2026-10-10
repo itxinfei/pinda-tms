@@ -41,6 +41,13 @@ spring:
             - Path=/api/auth/**
           filters:
             - StripPrefix=2
+        # 管理端 BFF：/api/manager/** -> pd-web-manager，去掉 /api/manager 两段前缀
+        - id: pd-web-manager
+          uri: lb://pd-web-manager
+          predicates:
+            - Path=/api/manager/**
+          filters:
+            - StripPrefix=2
   # Redis（Sa-Token 会话 + Same-Token 读取）
   data:
     redis:
