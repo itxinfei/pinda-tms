@@ -6,7 +6,7 @@
 
     <!-- 品牌区 -->
     <view class="login-hero">
-      <view class="login-logo">品达物流</view>
+      <image class="login-logo" src="/static/logo-full.png" mode="widthFix" />
       <view class="login-slogan">品质速递 · 使命必达</view>
     </view>
 
@@ -132,10 +132,9 @@ onMounted(() => {
   text-align: center;
 }
 .login-logo {
-  color: #fff;
-  font-size: 56rpx;
-  font-weight: 700;
-  letter-spacing: 4rpx;
+  width: 360rpx;
+  height: auto;
+  margin: 0 auto;
 }
 .login-slogan {
   margin-top: 12rpx;

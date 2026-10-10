@@ -1,4 +1,5 @@
-// 品达TMS 当前运行时拓扑 + 信任边界（技术栈与系统架构体检配图）
+// 🔴 2026-10-10 已过时：本图为重构前（2026-10-09 HEAD）快照。数据库已由"7 库同 1 实例"重构为【单一物理库 pinda_tms（51 表）+ 业务表 tenant_id 多租户】，认证 = pd-auth(Sa-Token)、网关 = pd-gateway。现行口径见 docs/02-架构设计.md、《需求文档/45》。图内"7 库 / pd_oms / pd_auth ..."仅作历史问题留痕，禁止当现状。
+// 品达TMS 当前运行时拓扑 + 信任边界（技术栈与系统架构体检配图）· 历史快照
 // 维护：本图与 tech-stack-and-system-architecture-review.md 的编号（T-x/S-x）一一对应，改文必改图。
 // 读法：实线=代码/配置双证；虚线=推断或本次未取证；红=边界违规；黄=归属漂移；灰=未开工。
 // 取证：HEAD 代码 + deploy/*.yml；未连服务器，故中间件运行时版本画为 unknown。
@@ -8,7 +9,7 @@ digraph current_runtime_topology {
   ranksep=0.60;
   fontname="Microsoft YaHei";
   labelloc=t;
-  label="品达TMS 当前运行时拓扑（2026-10-09 HEAD 实测）\n14个JVM + 7库同1个MySQL实例 + 2前端容器 @ 单机15G\n实线=双证  虚线=推断/未取证  红=边界违规  黄=归属漂移  灰=未开工";
+  label="⚠️ 重构前快照（2026-10-09；2026-10-10 已重构为单库 pinda_tms + 多租户，勿当现状）\n品达TMS 当前运行时拓扑（2026-10-09 HEAD 实测）\n14个JVM + 7库同1个MySQL实例 + 2前端容器 @ 单机15G\n实线=双证  虚线=推断/未取证  红=边界违规  黄=归属漂移  灰=未开工";
   compound=true;
 
   node [fontname="Microsoft YaHei", fontsize=10];
@@ -62,7 +63,7 @@ digraph current_runtime_topology {
       rmq    [label="RabbitMQ 消息总线（轨迹+调度事件）", shape=cylinder, style=filled, fillcolor="#e8e8ff"];
       nacos  [label="Nacos（unknown 1.4.1/2.3.2）\n注册+配置：路由/数据源/hystrix开关都在这里面，仓内无", shape=cylinder, style="filled,dashed", fillcolor="#fff2cc"];
       legacy [label="pinda_tms 遗留65表\n无服务连接，同名对象易误查→B-16", shape=cylinder, style=filled, fillcolor="#eeeeee"];
-      seata  [label="Seata TC\n🔴 仅依赖未启用（0 配置）\nundo_log 8库齐、@GlobalTransactional 仅5处(S-5)", shape=box, style="filled,dashed", fillcolor="#eeeeee"];
+      seata  [label="Seata TC\n✅ 2026-10-10 已移除（注解/依赖/配置全清）\n原 5 处 @GlobalTransactional 从未真正生效", shape=box, style="filled,dashed", fillcolor="#e8f5e9"];
     }
   }
 
@@ -108,7 +109,7 @@ digraph current_runtime_topology {
   work -> rmq   [style=dashed, label="调度事件（消费端入口已注释→B-08）"];
   auth -> redis [label="J2Cache L1/L2"];
   gw   -> redis [label="鉴权资源缓存"];
-  oms  -> seata [style=dashed, label="未生效"];
+  oms  -> seata [style=dashed, label="已移除（原未生效）", color="#999999"];
 
   mysql -> legacy [style=dashed, color="#999999", label="同名对象并存（风险，非数据流）"];
   nacos -> gw  [style=dashed, label="路由/开关（本次未取证）"];

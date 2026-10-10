@@ -1,8 +1,9 @@
-// 数据归属与服务边界 current-state（证据：Nacos datasource 实测 + information_schema 实测 + mapper/Feign 代码）
+// 🔴 2026-10-10 已过时：本图为重构前快照。数据库已由"8 库"重构为【单一物理库 pinda_tms（51 表）+ tenant_id 多租户】，表按 sys_/dict_/base_/oms_/disp_/work_/member_/iot_ 八域前缀归属（写严格归属、读可适度跨域）。现行口径见 docs/02、《需求文档/45》。图内 pd_oms/pd_auth 等旧库名仅作历史问题留痕。
+// 数据归属与服务边界 current-state（重构前快照；证据：Nacos datasource 实测 + information_schema 实测 + mapper/Feign 代码）
 digraph data_ownership {
   rankdir=TB; nodesep=0.4; ranksep=0.8;
   graph [fontname="Microsoft YaHei", fontsize=15, labelloc=t,
-         label="服务 ↔ 库 ↔ 影子副本：红色=实测漂移/缺失，虚线=副本应同步但无机制"];
+         label="⚠️ 重构前快照（2026-10-10 已重构为单库 pinda_tms/51表+多租户，勿当现状）\n服务 ↔ 库 ↔ 影子副本：红色=实测漂移/缺失，虚线=副本应同步但无机制"];
   node [fontname="Microsoft YaHei", fontsize=11, style="rounded,filled", fillcolor="#f5f7fa"];
   edge [fontname="Microsoft YaHei", fontsize=10];
 
@@ -45,6 +46,6 @@ digraph data_ownership {
   webc -> base [label="TruckFeign（fallback 静默降级）", style=dashed];
 
   // 事务边界
-  note1 [label="Seata 已铺：8 库均有 undo_log\n但 @GlobalTransactional 仅 5 处\n签收/交件/妥投三处裸写", shape=note, fillcolor="#fef7e0"];
+  note1 [label="Seata 已移除（2026-10-10）：依赖/配置/注解全清\n跨域一致性改由本地事务 + 编排下沉(B1)\n原 undo_log 空表随旧库下线", shape=note, fillcolor="#e8f5e9"];
   note2 [label="pd_order 无 deleted / update_time / tenant\n全仓无 @TableLogic\n查询不按 org 隔离", shape=note, fillcolor="#fde8e8"];
 }
