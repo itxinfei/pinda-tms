@@ -1,7 +1,7 @@
 <template>
   <view class="page login">
     <view class="login-hero">
-      <text class="login-logo">品达物流</text>
+      <image class="login-logo" src="/static/logo-full.png" mode="widthFix" />
       <text class="login-sub">快递员工作台 · 取派一体</text>
     </view>
     <view class="card login-card">
@@ -103,9 +103,9 @@ async function onLogin() {
   flex-direction: column;
 }
 .login-logo {
-  color: var(--c-surface);
-  font-size: 56rpx;
-  font-weight: bold;
+  width: 320rpx;
+  height: auto;
+  align-self: center;
 }
 .login-sub {
   color: rgba(255, 255, 255, 0.85);
