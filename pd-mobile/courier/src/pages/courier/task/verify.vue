@@ -39,6 +39,7 @@
 // 红线：禁止本地缓存或日志打印身份证号，故不输出、不存储原始身份证号
 import { ref, reactive } from 'vue'
 import { verifyIdCard } from '@/common/api/courier'
+import { onLoad } from '@dcloudio/uni-app'
 
 const orderNumber = ref('')
 const loading = ref(false)

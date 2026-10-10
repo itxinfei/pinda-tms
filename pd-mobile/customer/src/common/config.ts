@@ -1,12 +1,13 @@
 // 全局配置：网关地址、三端前缀、token 头、角色
 // 修改点：三端前缀 / 角色 各不相同，courier、driver 复制本文件后改这两处即可。
-const UNI_PLATFORM =
-  (typeof process !== 'undefined' && (process.env as any)?.UNI_PLATFORM) || ''
-const isH5 = UNI_PLATFORM === 'h5'
-
-// H5 端走相对路径，由 vite dev proxy / 生产 nginx 反代 /api 到网关；
-// 小程序 / App 走绝对地址（开发环境网关地址）。
-const GATEWAY = isH5 ? '/api' : 'http://192.168.20.130:8760/api'
+// 修改点：GATEWAY 用条件编译（构建期静态处理）。运行时读 process.env.UNI_PLATFORM
+// 会被 vite define 漏掉（as any 转型破坏替换匹配），导致 H5 产物直连绝对网关触发 CORS。
+// #ifdef H5
+const GATEWAY = '/prod-api' // 容器 nginx 将 /prod-api/* 重写为网关 /api/*
+// #endif
+// #ifndef H5
+const GATEWAY = 'http://192.168.20.130:8760/api'
+// #endif
 
 // 客户端前缀（快递员端 /web-courier、司机端 /web-driver）
 export const BASE_URL = GATEWAY + '/web-customer'

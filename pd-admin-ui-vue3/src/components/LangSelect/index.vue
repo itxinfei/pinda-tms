@@ -1,19 +1,5 @@
 <template>
-  <el-dropdown trigger="click" @command="handleLanguageChange">
-    <div class="i-svg:language" :class="size" />
-    <template #dropdown>
-      <el-dropdown-menu>
-        <el-dropdown-item
-          v-for="item in langOptions"
-          :key="item.value"
-          :disabled="appStore.language === item.value"
-          :command="item.value"
-        >
-          {{ item.label }}
-        </el-dropdown-item>
-      </el-dropdown-menu>
-    </template>
-  </el-dropdown>
+  <div class="i-svg:language click-switch" :class="size" @click="toggleLanguage" />
 </template>
 
 <script setup lang="ts">
@@ -21,7 +7,7 @@ import { useAppStore } from "@/stores/app";
 import { LanguageEnum } from "@/enums/settings";
 
 /**
- * 语言切换：中英文切换入口
+ * 语言切换：点击直接在中英文之间切换
  */
 defineProps({
   size: {
@@ -30,23 +16,26 @@ defineProps({
   },
 });
 
-const langOptions = [
-  { label: "中文", value: LanguageEnum.ZH_CN },
-  { label: "English", value: LanguageEnum.EN },
-];
-
 const appStore = useAppStore();
 const { locale, t } = useI18n();
 
 /**
- * 处理语言切换
- *
- * @param lang 语言（zh-cn、en）
+ * 处理语言切换（中 <-> 英 直接切换）
  */
-function handleLanguageChange(lang: string) {
-  locale.value = lang;
-  appStore.changeLanguage(lang);
+function toggleLanguage() {
+  const next =
+    locale.value === LanguageEnum.ZH_CN
+      ? LanguageEnum.EN
+      : LanguageEnum.ZH_CN;
+  locale.value = next;
+  appStore.changeLanguage(next);
 
   ElMessage.success(t("langSelect.message.success"));
 }
 </script>
+
+<style scoped>
+.click-switch {
+  cursor: pointer;
+}
+</style>

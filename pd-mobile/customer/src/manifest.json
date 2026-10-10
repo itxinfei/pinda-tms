@@ -82,10 +82,11 @@
     "uniStatistics": {  
         "enable": false
     },
-    /* H5 部署路径：/customer/（nginx 反代剥前缀到容器根） */
+    /* H5 部署路径：当前为每端独立端口、容器 nginx 根路径托管，故 base 用 /。
+       若未来改为外层 nginx 按路径分发（剥前缀到容器根），再改回 /customer/ */
     "h5" : {
         "router" : {
-            "base" : "/customer/"
+            "base" : "/"
         },
         "title" : "品达物流 · 客户端",
         "template" : "index.html"

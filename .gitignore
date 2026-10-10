@@ -112,3 +112,13 @@ deploy/ci/docker-compose.ci.yml
 .serena/
 # 本地一次性调试脚本（含服务器操作，防误提交；已在上方注释说明，现显式忽略）
 .fix_appendix.py
+
+# ===== 2026-10-10 前端工程规范化（公开仓库卫生） =====
+# AI 工具本地配置（Claude Code / Atom / 创意设计 / Gitea 操作配置，含本地路径与内部命令，禁止提交）
+.claude/
+.atomcode/
+.creative-design/
+.gitea/
+# 本地构建日志
+mvn_build*
+

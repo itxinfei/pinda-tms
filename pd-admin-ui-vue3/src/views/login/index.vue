@@ -8,8 +8,8 @@
     <div class="login-layout">
       <div class="login-brand">
         <img :src="loginHero" class="login-brand__hero-img" alt="物流配送" />
-        <div class="login-brand__slogan">品质速递 使命必达</div>
-        <div class="login-brand__copyright">© 2020-2026 品达物流集团</div>
+        <div class="login-brand__slogan">{{ t("login.slogan") }}</div>
+        <div class="login-brand__copyright">{{ t("login.copyright") }}</div>
       </div>
 
       <div class="login-card">
@@ -17,14 +17,14 @@
           <transition name="fade-slide" mode="out-in">
             <div v-if="component === 'login'" key="login" class="login-card__form">
               <div class="login-card__brand">
-                <el-image :src="logo" class="login-card__logo" />
+                <el-image :src="logoMark" class="login-card__logo" />
                 <div class="login-card__brand-text">
                   <span class="login-card__brand-name">品达物流</span>
                   <span class="login-card__brand-en">FASTER AND SAFER</span>
                 </div>
               </div>
-              <h2 class="login-card__title">欢迎登录</h2>
-              <p class="login-card__desc">品达物流运输管理系统</p>
+              <h2 class="login-card__title">{{ t("login.title") }}</h2>
+              <p class="login-card__desc">{{ t("login.desc") }}</p>
 
               <el-form
                 ref="loginFormRef"
@@ -36,16 +36,16 @@
                 <el-form-item prop="username">
                   <el-input
                     v-model.trim="loginFormData.username"
-                    placeholder="请输入用户名"
+                    placeholder="{{ t('login.usernamePlaceholder') }}"
                     :prefix-icon="UserIcon"
                   />
                 </el-form-item>
 
-                <el-tooltip :visible="isCapsLock" content="大写锁定已开启" placement="right">
+                <el-tooltip :visible="isCapsLock" :content="t('login.capsLock')" placement="right">
                   <el-form-item prop="password">
                     <el-input
                       v-model.trim="loginFormData.password"
-                      placeholder="请输入密码"
+                      placeholder="{{ t('login.passwordPlaceholder') }}"
                       type="password"
                       show-password
                       :prefix-icon="LockIcon"
@@ -59,7 +59,7 @@
                   <div style="display: flex; gap: 12px; width: 100%;">
                     <el-input
                       v-model.trim="loginFormData.captchaCode"
-                      placeholder="请输入验证码"
+                      placeholder="{{ t('login.captchaPlaceholder') }}"
                       style="flex: 1; min-width: 0;"
                       @keyup.enter="handleLoginSubmit"
                     />
@@ -90,7 +90,7 @@
                 </el-form-item>
 
                 <div class="login-card__options">
-                  <el-checkbox v-model="loginFormData.rememberMe">记住我</el-checkbox>
+                  <el-checkbox v-model="loginFormData.rememberMe">{{ t("login.rememberMe") }}</el-checkbox>
                 </div>
 
                 <el-button
@@ -100,7 +100,7 @@
                   class="login-card__submit"
                   @click="handleLoginSubmit"
                 >
-                  登 录
+                  {{ t("login.login") }}
                 </el-button>
               </el-form>
             </div>
@@ -114,7 +114,7 @@
           </transition>
         </div>
 
-        <div class="login-footer">Copyright © 2026-2026 品达物流 TMS</div>
+        <div class="login-footer">{{ t("login.footer") }}</div>
       </div>
     </div>
   </div>
@@ -131,7 +131,7 @@ import router from "@/router";
 import { useUserStore } from "@/stores";
 import { AuthStorage } from "@/utils/auth";
 import ResetPwd from "./components/ResetPwd.vue";
-import logo from "@/assets/images/logo.png";
+import logoMark from "@/assets/images/logo-mark.png";
 import loginHero from "@/assets/images/login-hero.png";
 
 const userStore = useUserStore();
@@ -156,21 +156,21 @@ const loginFormData = ref<LoginRequest>({
 });
 
 const loginRules = computed(() => ({
-  username: [{ required: true, trigger: "blur", message: "请输入用户名" }],
+  username: [{ required: true, trigger: "blur", message: t("login.message.username.required") }],
   password: [
-    { required: true, trigger: "blur", message: "请输入密码" },
-    { min: 6, message: "密码不能少于6位", trigger: "blur" },
+    { required: true, trigger: "blur", message: t("login.message.password.required") },
+    { min: 6, message: t("login.message.password.min"), trigger: "blur" },
   ],
-  captchaCode: [{ required: true, trigger: "blur", message: "请输入验证码" }],
+  captchaCode: [{ required: true, trigger: "blur", message: t("login.message.captchaCode.required") }],
 }));
 
 // 品达物流演示账号
-const demoAccounts = [
-  { username: "admin", label: "管理员" },
-  { username: "dispatch", label: "调度员" },
-  { username: "driver", label: "司机" },
-  { username: "customer", label: "客户" },
-];
+const demoAccounts = computed(() => [
+  { username: "admin", label: t("login.accounts.admin") },
+  { username: "dispatch", label: t("login.accounts.dispatch") },
+  { username: "driver", label: t("login.accounts.driver") },
+  { username: "customer", label: t("login.accounts.customer") },
+]);
 
 /**
  * 填充演示账号
@@ -360,8 +360,8 @@ $brand-red: #d7000f; // 品达品牌红：登录按钮、书法标语（参考�
   }
 
   &__logo {
-    width: 44px;
-    height: 44px;
+    width: 46px;
+    height: 46px;
     flex-shrink: 0;
   }
 

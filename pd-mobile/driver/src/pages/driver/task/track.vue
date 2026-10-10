@@ -41,6 +41,7 @@
 import { ref, reactive, onUnmounted } from 'vue'
 import { traceLatest, traceReplay } from '@/common/api/driver'
 import { wgs84ToGcj02 } from '@/common/utils/coord'
+import { onLoad } from '@dcloudio/uni-app'
 
 const truckId = ref('')
 const latest = ref<any>(null)

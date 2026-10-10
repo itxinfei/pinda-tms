@@ -36,6 +36,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { cargoPickUp, attachmentUpload } from '@/common/api/driver'
+import { onLoad } from '@dcloudio/uni-app'
 
 // 修改点：作业单 id（容错：taskTransportId 实为 DriverJobId）
 const id = ref('')

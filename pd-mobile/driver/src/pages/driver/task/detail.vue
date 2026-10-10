@@ -100,6 +100,7 @@ import {
 } from '@/common/api/driver'
 import { useUserStore } from '@/common/store/user'
 import { driverJobStatusView, orderStatusView } from '@/common/constants'
+import { onLoad } from '@dcloudio/uni-app'
 
 const userStore = useUserStore()
 const id = ref('')
