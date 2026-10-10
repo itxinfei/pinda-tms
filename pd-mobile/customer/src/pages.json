@@ -6,9 +6,67 @@
 	},
 	"pages": [
 		{
-			"path": "pages/index/index",
+			"path": "pages/customer/home/index",
 			"style": {
-				"navigationBarTitleText": "品达物流 · 客户端"
+				"navigationBarTitleText": "品达物流 · 客户端",
+				"enablePullDownRefresh": false
+			}
+		},
+		{
+			"path": "pages/customer/login/index",
+			"style": {
+				"navigationBarTitleText": "登录"
+			}
+		},
+		{
+			"path": "pages/customer/mailing/list",
+			"style": {
+				"navigationBarTitleText": "我的运单",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/customer/mailing/detail",
+			"style": {
+				"navigationBarTitleText": "运单详情"
+			}
+		},
+		{
+			"path": "pages/customer/mailing/create",
+			"style": {
+				"navigationBarTitleText": "我要寄件"
+			}
+		},
+		{
+			"path": "pages/customer/mailing/track",
+			"style": {
+				"navigationBarTitleText": "实时轨迹"
+			}
+		},
+		{
+			"path": "pages/customer/address/list",
+			"style": {
+				"navigationBarTitleText": "地址簿",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/customer/address/edit",
+			"style": {
+				"navigationBarTitleText": "编辑地址"
+			}
+		},
+		{
+			"path": "pages/customer/agency/list",
+			"style": {
+				"navigationBarTitleText": "网点查询",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/customer/profile/index",
+			"style": {
+				"navigationBarTitleText": "我的"
 			}
 		}
 	],
@@ -16,6 +74,6 @@
 		"navigationBarTextStyle": "white",
 		"navigationBarTitleText": "品达物流 · 客户端",
 		"navigationBarBackgroundColor": "#2B6CFF",
-		"backgroundColor": "#F5F7FA"
+		"backgroundColor": "#F5F6F8"
 	}
 }
