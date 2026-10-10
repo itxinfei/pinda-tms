@@ -41,6 +41,7 @@
 import { ref, reactive, onMounted } from 'vue';
 import { useUserStore } from '../../../stores/user.js';
 import { login, captchaUrl } from '../../../common/api/auth.js';
+import { TENANT_CODE } from '../../../common/config';
 
 const userStore = useUserStore();
 const formRef = ref(null);
@@ -89,6 +90,7 @@ const handleLogin = async () => {
       password: form.password,
       key: key.value,
       code: form.code,
+      tenantCode: TENANT_CODE,
     });
     // JWT 在 data.token.token（两层）
     const jwt = data && data.token && data.token.token;

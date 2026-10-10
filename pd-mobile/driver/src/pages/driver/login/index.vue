@@ -41,6 +41,7 @@
 import { ref, reactive } from 'vue'
 import { loginApi, captchaSrc } from '@/common/api/driver'
 import { useUserStore } from '@/common/store/user'
+import { TENANT_CODE } from '@/common/config'
 
 const form = reactive({ account: '', password: '', code: '' })
 const key = ref('')
@@ -67,6 +68,7 @@ async function onLogin() {
       password: form.password,
       key: key.value,
       code: form.code,
+      tenantCode: TENANT_CODE,
     })
     const token = res && res.token && res.token.token
     if (!token) {

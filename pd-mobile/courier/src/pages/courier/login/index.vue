@@ -41,6 +41,7 @@
 // 登录页：复用 courier 端鉴权接口与用户 store，登录成功后跳快递员首页
 import { ref, reactive } from 'vue'
 import { loginApi, captchaSrc } from '@/common/api/courier'
+import { TENANT_CODE } from '@/common/config'
 import { useUserStore } from '@/common/store/user'
 
 const form = reactive({ account: '', password: '', code: '' })
@@ -69,6 +70,7 @@ async function onLogin() {
       password: form.password,
       key: key.value,
       code: form.code,
+      tenantCode: TENANT_CODE,
     })
     const token = res && res.token && res.token.token
     if (!token) {
