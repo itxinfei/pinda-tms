@@ -1,10 +1,11 @@
 <template>
   <view class="page login-page">
-    <!-- 品牌区（深色科技渐变，广联达风格） -->
+    <!-- 品牌区（联云式顶部渐变头，神领深藏青配色） -->
     <view class="login-hero">
       <image class="login-logo" src="/static/logo-full.png" mode="widthFix" />
       <view class="login-brand">品达物流</view>
       <view class="login-slogan">品质速递 · 使命必达</view>
+      <image class="hero-deco" src="/static/login-bg.png" mode="widthFix" />
     </view>
 
     <!-- 登录卡片 -->
@@ -27,11 +28,6 @@
         {{ loading ? '登录中...' : '登 录' }}
       </view>
       <view class="login-tip">账号登录 · 微信免密登录开发中</view>
-    </view>
-
-    <!-- 背景装饰插画 -->
-    <view class="login-bg-deco">
-      <image src="/static/login-bg.png" mode="widthFix" />
     </view>
 
     <view class="login-footer">品达物流 TMS · 客户端</view>
@@ -122,41 +118,53 @@ onMounted(() => {
 .login-page {
   min-height: 100vh;
   padding: 0;
-  background: linear-gradient(160deg, #1a1c41 0%, #283443 55%, #2d3a4b 100%);
+  background: #f5f6f8;
   position: relative;
-  overflow: hidden;
 }
 .login-hero {
-  padding: calc(var(--s-8) * 3) var(--s-6) 120rpx;
+  padding: calc(var(--s-8) * 3) var(--s-6) 150rpx;
+  background: linear-gradient(160deg, #1a1c41 0%, #283443 60%, #2d3a4b 100%);
+  border-radius: 0 0 48rpx 48rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
+  position: relative;
+  overflow: hidden;
 }
 .login-logo {
-  width: 260rpx;
+  width: 240rpx;
   height: auto;
   filter: drop-shadow(0 8rpx 20rpx rgba(0, 0, 0, 0.35));
 }
 .login-brand {
-  margin-top: 28rpx;
+  margin-top: 24rpx;
   color: #ffffff;
   font-size: 44rpx;
   font-weight: 700;
   letter-spacing: 6rpx;
 }
 .login-slogan {
-  margin-top: 14rpx;
+  margin-top: 12rpx;
   color: rgba(255, 255, 255, 0.7);
   font-size: var(--f-aux);
   letter-spacing: 2rpx;
 }
+.hero-deco {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -10rpx;
+  width: 100%;
+  opacity: 0.5;
+  pointer-events: none;
+}
 .login-card {
-  margin: 0 var(--s-6);
-  background: rgba(255, 255, 255, 0.97);
+  margin: -80rpx var(--s-6) 0;
+  background: #ffffff;
   border-radius: 32rpx;
   padding: 48rpx 40rpx;
-  box-shadow: 0 24rpx 64rpx rgba(0, 0, 0, 0.28);
+  box-shadow: 0 16rpx 48rpx rgba(26, 28, 65, 0.16);
   position: relative;
   z-index: 2;
 }
@@ -212,26 +220,10 @@ onMounted(() => {
   color: var(--c-text-3);
   font-size: var(--f-tip);
 }
-.login-bg-deco {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -20rpx;
-  z-index: 1;
-  opacity: 0.55;
-  pointer-events: none;
-}
-.login-bg-deco image {
-  width: 100%;
-}
 .login-footer {
-  position: absolute;
-  bottom: 40rpx;
-  left: 0;
-  right: 0;
-  z-index: 2;
+  margin-top: 48rpx;
   text-align: center;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--c-text-4);
   font-size: var(--f-tip);
 }
 </style>
