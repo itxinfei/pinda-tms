@@ -43,6 +43,14 @@ spring:
     openfeign:
       circuitbreaker:
         enabled: true
+  # Redis：BFF 需与网关/pd-auth/pd-netty 接同一个 db0，InternalAuthRequestInterceptor 才能
+  # 读到网关签发的 Same-Token（容器内 REDIS_* 由 compose 注入，本地走默认值）
+  data:
+    redis:
+      host: ${REDIS_HOST:192.168.20.130}
+      port: ${REDIS_PORT:6379}
+      database: ${REDIS_DATABASE:0}
+      password: ${REDIS_PASSWORD:123456}
   # jackson 时间格式化（原自引用占位符，值取自 Nacos common.yml 的现网口径）
   jackson:
     time-zone: ${JACKSON_TIME_ZONE:GMT+8}
@@ -66,3 +74,15 @@ resilience4j:
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
+
+# Sa-Token（BFF 仅作出站 Same-Token 消费方，不注册入站登录拦截器，入站仍由网关负责）
+# 关键：token-name 必须与网关/pd-auth 同为 token，Same-Token 的 Redis key 为 token:var:same-token；
+# 缺省值是 satoken，会在 BFF 本地自造假令牌导致 /internal/** 被 401。配置口径对齐 pd-netty/pd-auth。
+sa-token:
+  token-name: token
+  timeout: 7200
+  active-timeout: -1
+  is-concurrent: true
+  is-share: false
+  token-style: uuid
+  is-log: false
