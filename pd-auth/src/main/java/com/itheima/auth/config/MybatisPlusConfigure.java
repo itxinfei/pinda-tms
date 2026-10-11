@@ -38,6 +38,8 @@ public class MybatisPlusConfigure {
             "sys_tenant",
             "sys_menu",
             "sys_resource",
+            // 参数配置为平台全局数据（CFG-01），一期只使用 tenant_id=0
+            "sys_config",
             // 行政区划为国家标准全局数据，所有租户共享
             "dict_area"
     );

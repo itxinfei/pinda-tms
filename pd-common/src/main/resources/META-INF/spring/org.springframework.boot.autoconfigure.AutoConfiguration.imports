@@ -1,1 +1,2 @@
 com.itheima.pinda.common.config.CustomIdGeneratorAutoConfiguration
+com.itheima.pinda.common.config.dynamic.DynamicConfigAutoConfiguration

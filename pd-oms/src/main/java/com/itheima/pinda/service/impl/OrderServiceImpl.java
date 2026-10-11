@@ -95,6 +95,10 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     @Autowired
     private ReloadDroolsRulesService reloadDroolsRulesService;
 
+    // 百度地图组件（CFG-01 起为 Spring Bean，AK 走参数配置表热读取）
+    @Autowired
+    private BaiduMapUtils baiduMapUtils;
+
     /**
      * 修改订单（重写以接入状态流转校验）
      *
@@ -317,20 +321,20 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
      */
     public OrderDTO getDistance(OrderDTO orderDTO) {
         //调用百度地图服务接口获取寄件人地址对应的坐标经纬度
-        String begin = BaiduMapUtils.getCoordinate(orderDTO.getSenderAddress());
+        String begin = baiduMapUtils.getCoordinate(orderDTO.getSenderAddress());
         if (begin == null) {
             orderDTO.setSenderAddress("sender error msg");
             return orderDTO;
         }
 
         //调用百度地图服务接口获取收件人地址对应的坐标经纬度
-        String end = BaiduMapUtils.getCoordinate(orderDTO.getReceiverAddress());
+        String end = baiduMapUtils.getCoordinate(orderDTO.getReceiverAddress());
         if (end == null) {
             orderDTO.setReceiverAddress("receiver error msg");
             return orderDTO;
         }
 
-        Double distance = BaiduMapUtils.getDistance(begin, end);
+        Double distance = baiduMapUtils.getDistance(begin, end);
         DecimalFormat decimalFormat = new DecimalFormat("#.##");
         String distanceStr = decimalFormat.format(distance / 1000);
 
