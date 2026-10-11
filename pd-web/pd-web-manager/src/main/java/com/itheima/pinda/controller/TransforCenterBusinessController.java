@@ -191,6 +191,67 @@ public class TransforCenterBusinessController {
         return Result.ok();
     }
 
+    @Operation(summary = "添加货物类型")
+    @PostMapping("/goodsType")
+    public GoodsTypeVo saveGoodsType(@RequestBody GoodsTypeVo vo) {
+        GoodsTypeDto dto = new GoodsTypeDto();
+        BeanUtils.copyProperties(vo, dto);
+        GoodsTypeDto resultDto = goodsTypeFeign.saveGoodsType(dto);
+        GoodsTypeVo resultVo = new GoodsTypeVo();
+        BeanUtils.copyProperties(resultDto, resultVo);
+        return resultVo;
+    }
+
+    @Operation(summary = "更新货物类型")
+    @PutMapping("/goodsType/{id}")
+    public GoodsTypeVo updateGoodsType(@PathVariable(name = "id") String id, @RequestBody GoodsTypeVo vo) {
+        vo.setId(id);
+        GoodsTypeDto dto = new GoodsTypeDto();
+        BeanUtils.copyProperties(vo, dto);
+        GoodsTypeDto resultDto = goodsTypeFeign.update(id, dto);
+        GoodsTypeVo resultVo = new GoodsTypeVo();
+        BeanUtils.copyProperties(resultDto, resultVo);
+        return resultVo;
+    }
+
+    @Operation(summary = "获取货物类型分页数据")
+    @GetMapping("/goodsType/page")
+    public PageResponse<GoodsTypeVo> findGoodsTypeByPage(@RequestParam(name = "page") Integer page,
+                                                         @RequestParam(name = "pageSize") Integer pageSize,
+                                                         @RequestParam(name = "name", required = false) String name) {
+        // 货物类型与车辆类型的关联在车型页维护，管理端货物类型列表不回填关联车型
+        PageResponse<GoodsTypeDto> dtoPage =
+                goodsTypeFeign.findByPage(page, pageSize, name, null, null);
+        List<GoodsTypeVo> voList = Rx.items(dtoPage).stream().map(dto -> {
+            GoodsTypeVo vo = new GoodsTypeVo();
+            BeanUtils.copyProperties(dto, vo);
+            return vo;
+        }).collect(Collectors.toList());
+        return PageResponse.<GoodsTypeVo>builder()
+                .items(voList).page(page).pagesize(pageSize)
+                .pages(dtoPage != null ? dtoPage.getPages() : 0L)
+                .counts(dtoPage != null ? dtoPage.getCounts() : 0L).build();
+    }
+
+    @Operation(summary = "获取货物类型详情")
+    @GetMapping("/goodsType/{id}")
+    public GoodsTypeVo findGoodsTypeById(@PathVariable(name = "id") String id) {
+        GoodsTypeDto dto = goodsTypeFeign.fineById(id);
+        if (dto == null) {
+            return null;
+        }
+        GoodsTypeVo vo = new GoodsTypeVo();
+        BeanUtils.copyProperties(dto, vo);
+        return vo;
+    }
+
+    @Operation(summary = "删除货物类型")
+    @DeleteMapping("/goodsType/{id}")
+    public Result deleteGoodsType(@PathVariable(name = "id") String id) {
+        // 下游 disable 带关联校验：已被车辆类型关联时返回 400，Result 直接透传给前端提示
+        return goodsTypeFeign.disable(id);
+    }
+
     @Operation(summary = "添加线路类型")
     @PostMapping("/transportLineType")
     public TransportLineTypeVo saveTransportLineType(@RequestBody TransportLineTypeVo vo) {
@@ -290,7 +351,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "删除线路类型")
     @DeleteMapping("/transportLineType/{id}")
-    public Result deleteGoodsType(@PathVariable(name = "id") String id) {
+    public Result deleteTransportLineType(@PathVariable(name = "id") String id) {
         // 说明：线路类型关联校验（存在关联线路时禁止删除）已在 pd-base disable 侧实现
         transportLineTypeFeign.disable(id);
         return Result.ok();

@@ -27,4 +27,6 @@ public class GoodsTypeVo implements Serializable {
     private String remark;
     @Schema(description = "车辆类型")
     private List<TruckTypeVo> truckTypes;
+    @Schema(description = "状态：1 启用，0 停用")
+    private Integer status;
 }

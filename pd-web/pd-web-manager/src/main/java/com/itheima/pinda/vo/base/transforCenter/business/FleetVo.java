@@ -30,4 +30,6 @@ public class FleetVo implements Serializable {
     private List<SysUserVo> drivers;
     @Schema(description = "车队车辆")
     private List<TruckVo> trucks;
+    @Schema(description = "状态：1 启用，0 停用")
+    private Integer status;
 }

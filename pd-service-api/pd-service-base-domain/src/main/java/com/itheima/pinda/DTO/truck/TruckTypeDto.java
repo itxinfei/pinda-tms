@@ -44,4 +44,8 @@ public class TruckTypeDto implements Serializable {
      * 货物类型id列表
      */
     private List<String> goodsTypeIds;
+    /**
+     * 状态：1 启用，0 停用
+     */
+    private Integer status;
 }

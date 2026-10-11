@@ -28,4 +28,6 @@ public class TruckTypeVo implements Serializable {
     private BigDecimal measureHigh;
     @Schema(description = "货物类型列表")
     private List<GoodsTypeVo> goodsTypes;
+    @Schema(description = "状态：1 启用，0 停用")
+    private Integer status;
 }
