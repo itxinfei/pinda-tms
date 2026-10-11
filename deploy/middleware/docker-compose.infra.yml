@@ -37,10 +37,11 @@ services:
       - /home/pdwl/mysql-conf/pinda.cnf:/etc/mysql/conf.d/pinda.cnf:ro
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?缺少 .env 里的 MYSQL_ROOT_PASSWORD}
-    mem_limit: 2g
+    mem_limit: 1g
     # memory.low（docker 把 reservation 落到 cgroup v2 的 memory.low）：
     # 2026-10-07 实测过 1G 缓冲池里 246M 被换进 swap，表现为查询突然变慢。
-    mem_reservation: 1200m
+    # 2026-10-11 压缩：limit 2g→1g，实测常驻 ~395M；reservation 同步下调防 warning。
+    mem_reservation: 640m
     oom_score_adj: -500
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD"]
@@ -69,8 +70,8 @@ services:
     command:
       - sh
       - -c
-      - exec redis-server --appendonly yes --maxmemory 1gb --maxmemory-policy volatile-lru --requirepass "$$REDIS_PASSWORD"
-    mem_limit: 1536m
+      - exec redis-server --appendonly yes --maxmemory 200mb --maxmemory-policy volatile-lru --requirepass "$$REDIS_PASSWORD"
+    mem_limit: 256m
     mem_reservation: 256m
     oom_score_adj: -500
     healthcheck:
@@ -115,7 +116,7 @@ services:
       NACOS_AUTH_IDENTITY_VALUE: ${NACOS_AUTH_IDENTITY_VALUE:?缺少 .env 里的 NACOS_AUTH_IDENTITY_VALUE}
       NACOS_AUTH_SERVER_IDENTITY_KEY: ${NACOS_AUTH_SERVER_IDENTITY_KEY:?缺少 .env 里的 NACOS_AUTH_SERVER_IDENTITY_KEY}
       NACOS_AUTH_SERVER_IDENTITY_VALUE: ${NACOS_AUTH_SERVER_IDENTITY_VALUE:?缺少 .env 里的 NACOS_AUTH_SERVER_IDENTITY_VALUE}
-    mem_limit: 1536m
+    mem_limit: 1g
     mem_reservation: 768m
     oom_score_adj: -500
     healthcheck:
@@ -153,7 +154,7 @@ services:
     # /data/rabbitmq 数据目录可直接复用；RABBITMQ_DEFAULT_PASS 只在**用户不存在时**
     # 生效，轮换口令要先 rabbitmqctl change_password，再改 .env，反序会出现新密码连旧库。
     command: ["rabbitmq-server"]
-    mem_limit: 1g
+    mem_limit: 512m
     mem_reservation: 128m
     oom_score_adj: -500
     healthcheck:

@@ -44,7 +44,7 @@ x-ulimits: &app-ulimits
 
 # JVM 档位
 x-jvm-core: &jvm-core
-  JAVA_OPTS: "-Xms128m -Xmx256m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:MaxMetaspaceSize=256m -XX:MaxDirectMemorySize=256m -Xss512k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -Dmybatis-plus.mapper-locations=classpath*:/mapper/**/*.xml -Dmybatis-plus.typeAliasesPackage=com.itheima.pinda.entity -Dmybatis-plus.configuration.map-underscore-to-camel-case=true -Dmybatis-plus.configuration.cache-enabled=true -Dmybatis-plus.configuration.call-setters-on-nulls=false -Dmybatis-plus.configuration.jdbc-type-for-null=NULL -Dmybatis-plus.global-config.db-config.id-type=ASSIGN_ID -Dmybatis-plus.global-config.banner=false"
+  JAVA_OPTS: "-Xms96m -Xmx192m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:MaxMetaspaceSize=192m -XX:MaxDirectMemorySize=128m -Xss512k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -Dmybatis-plus.mapper-locations=classpath*:/mapper/**/*.xml -Dmybatis-plus.typeAliasesPackage=com.itheima.pinda.entity -Dmybatis-plus.configuration.map-underscore-to-camel-case=true -Dmybatis-plus.configuration.cache-enabled=true -Dmybatis-plus.configuration.call-setters-on-nulls=false -Dmybatis-plus.configuration.jdbc-type-for-null=NULL -Dmybatis-plus.global-config.db-config.id-type=ASSIGN_ID -Dmybatis-plus.global-config.banner=false"
   # JVM 系统属性（JAVA_TOOL_OPTIONS，优先级高于 Nacos 与 jar 内 druid.properties）：
   # 修复 druid-spring-boot-starter 1.1.x 的 druid.properties 自引用占位符导致的
   # "Circular placeholder reference"（Nacos 配置覆盖无效，优先级低于 druid.properties 的 @PropertySource）。
@@ -102,7 +102,7 @@ x-jvm-core: &jvm-core
   MYBATIS_PLUS_GLOBAL_CONFIG_DB_CONFIG_LOGIC_NOT_DELETE_VALUE: "1"
   MYBATIS_PLUS_GLOBAL_CONFIG_BANNER: "false"
 x-jvm-small: &jvm-small
-  JAVA_OPTS: "-Xms96m -Xmx192m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:MaxMetaspaceSize=192m -XX:MaxDirectMemorySize=128m -Xss512k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -Dmybatis-plus.mapper-locations=classpath*:/mapper/**/*.xml -Dmybatis-plus.typeAliasesPackage=com.itheima.pinda.entity -Dmybatis-plus.configuration.map-underscore-to-camel-case=true -Dmybatis-plus.configuration.cache-enabled=true -Dmybatis-plus.configuration.call-setters-on-nulls=false -Dmybatis-plus.configuration.jdbc-type-for-null=NULL -Dmybatis-plus.global-config.db-config.id-type=ASSIGN_ID -Dmybatis-plus.global-config.banner=false"
+  JAVA_OPTS: "-Xms64m -Xmx128m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:MaxMetaspaceSize=160m -XX:MaxDirectMemorySize=64m -Xss512k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -Dmybatis-plus.mapper-locations=classpath*:/mapper/**/*.xml -Dmybatis-plus.typeAliasesPackage=com.itheima.pinda.entity -Dmybatis-plus.configuration.map-underscore-to-camel-case=true -Dmybatis-plus.configuration.cache-enabled=true -Dmybatis-plus.configuration.call-setters-on-nulls=false -Dmybatis-plus.configuration.jdbc-type-for-null=NULL -Dmybatis-plus.global-config.db-config.id-type=ASSIGN_ID -Dmybatis-plus.global-config.banner=false"
   JAVA_TOOL_OPTIONS: "-Dbaidu.map.ak=${BAIDU_MAP_AK:-} -Dspring.datasource.druid.stat-view-servlet.enabled=false -Dspring.datasource.druid.web-stat-filter.enabled=false -Dspring.servlet.multipart.enabled=true -Dspring.servlet.multipart.max-file-size=100MB -Dspring.servlet.multipart.max-request-size=1000MB -Dspring.jackson.time-zone=GMT+8 -Dmybatis-plus.configuration.map-underscore-to-camel-case=true -Dmybatis-plus.configuration.cache-enabled=true -Dmybatis-plus.configuration.call-setters-on-nulls=false -Dmybatis-plus.configuration.jdbc-type-for-null=NULL -Dmybatis-plus.global-config.db-config.id-type=ASSIGN_ID -Dmybatis-plus.global-config.banner=false"
   # 含空格的值（如日期格式）不能放进 JAVA_TOOL_OPTIONS（JVM 按空白切分参数会断裂），
   # 改用环境变量注入，Spring 松弛绑定 SPRINT_JACKSON_DATE_FORMAT -> spring.jackson.date-format，且不触发占位符死循环。
@@ -152,8 +152,8 @@ x-jvm-small: &jvm-small
 
 # 服务级加固档位
 x-app-core: &app-core
-  mem_limit: 1g
-  mem_reservation: 640m      # -> memory.low，实测本档常驻 459~676M
+  mem_limit: 640m
+  mem_reservation: 384m      # -> memory.low，2026-10-11 压缩后实测本档常驻 313~390M
   oom_score_adj: -200
   cpu_shares: 1024
   ulimits: *app-ulimits
@@ -162,8 +162,8 @@ x-app-edge: &app-edge
   <<: *app-core
   cpu_shares: 2048
 x-app-small: &app-small
-  mem_limit: 768m
-  mem_reservation: 384m      # 实测本档常驻 382~500M
+  mem_limit: 512m
+  mem_reservation: 256m      # 2026-10-11 压缩后实测本档常驻 ~283M
   oom_score_adj: -200
   cpu_shares: 1024
   ulimits: *app-ulimits
@@ -189,6 +189,14 @@ x-nacos-env: &nacos-env
   # 其余服务的 bootstrap-*.yml 用占位 ${NACOS_SERVER_ADDR:192.168.20.130:8848}（含端口，整体作为 server-addr），
   # 这里显式注入，不再仅依赖 jar 内默认值
   NACOS_SERVER_ADDR: 192.168.20.130:8848
+  # 服务注册 IP（spring.cloud.nacos.discovery.ip，Spring 松弛绑定读此环境变量）：
+  # 不注入时 Nacos 客户端自动探测网卡，容器里注册的就是 172.21.0.x 容器网 IP ——
+  # 该网段仅服务器 Docker 内部可达，本地 IDEA / 其他机器经 Nacos 服务发现拿到后连不上
+  # （connection timeout）。统一注册为宿主 IP 后，本地与容器间都走可路由地址；
+  # 换部署服务器只需改 .env 里的 NACOS_DISCOVERY_IP（或本行默认值）。
+  # ⚠️ 前置条件：宿主防火墙必须放行各服务端口（8161~8193/8760/9000 等）对 Docker 网段的
+  # 入站，否则容器间互调（原走容器 IP 直连）会超时——实测踩过（见 pd-gateway 段注释）。
+  SPRING_CLOUD_NACOS_DISCOVERY_IP: ${NACOS_DISCOVERY_IP:-192.168.20.130}
   # 2026-10-09 Nacos 已开启鉴权（此前是 AUTH_DISABLED，任何人可读写全部配置，
   # 而配置里含 MySQL/RabbitMQ 明文口令）。各服务 bootstrap-prod.yml 本就写了
   # ${NACOS_USERNAME:pinda} / ${NACOS_PASSWORD:pinda}，只是服务端一直没校验；
@@ -240,7 +248,7 @@ services:
       # 8081=新版Vue3后台, 8082=uniapp H5, 8083/8084=预留另两个app
       # 注意：本服务显式写了 JAVA_OPTS，会整体覆盖 x-jvm-core 锚点，
       # 所以堆外与 OOM 参数必须在下面这一行重复一遍，否则锚点的加固对网关无效。
-      JAVA_OPTS: "-Xms128m -Xmx256m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:MaxMetaspaceSize=256m -XX:MaxDirectMemorySize=256m -Xss512k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -Dcors.allowed.origins=http://192.168.20.130,http://192.168.20.130:8080,http://192.168.20.130:8081,http://192.168.20.130:8082,http://192.168.20.130:8083,http://192.168.20.130:8084,http://localhost:8080,http://localhost:3000"
+      JAVA_OPTS: "-Xms96m -Xmx192m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:MaxMetaspaceSize=192m -XX:MaxDirectMemorySize=128m -Xss512k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -Dcors.allowed.origins=http://192.168.20.130,http://192.168.20.130:8080,http://192.168.20.130:8081,http://192.168.20.130:8082,http://192.168.20.130:8083,http://192.168.20.130:8084,http://localhost:8080,http://localhost:3000"
       # JWT 验签公钥的外部来源（详见 pd-auth-server 段注释与部署文档 §2.11）
       PINDA_JWT_PUB_KEY_PATH: ${PINDA_JWT_PUB_KEY_PATH:-}
       # 网关镜像不含任何 JDBC 连接池（无 druid/hikari/tomcat-jdbc），却因 mysql.yml 强制
@@ -301,6 +309,10 @@ services:
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8186' || exit 1"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
+      # RabbitMQ 在 pinda-infra 网络，跨网走宿主 IP（rabbitmq 在 pinda-infra_default、pd-oms 在 pinda-apps_default）
+      RABBITMQ_HOST: 192.168.20.130
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-pinda}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
 
   pd-work:
     <<: *app-core
@@ -364,6 +376,8 @@ services:
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8192' || exit 1"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
+      # netty TCP 长连接吃堆外内存，显式恢复 256m（覆盖 jvm-core 锚点的 128m）
+      JAVA_OPTS: "-Xms96m -Xmx192m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:MaxMetaspaceSize=192m -XX:MaxDirectMemorySize=256m -Xss512k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -Dmybatis-plus.mapper-locations=classpath*:/mapper/**/*.xml -Dmybatis-plus.typeAliasesPackage=com.itheima.pinda.entity -Dmybatis-plus.configuration.map-underscore-to-camel-case=true -Dmybatis-plus.configuration.cache-enabled=true -Dmybatis-plus.configuration.call-setters-on-nulls=false -Dmybatis-plus.configuration.jdbc-type-for-null=NULL -Dmybatis-plus.global-config.db-config.id-type=ASSIGN_ID -Dmybatis-plus.global-config.banner=false"
       # 单库 pinda_tms 后 netty 的 pd_alarm_record/pd_truck_location* 与其他表同库，URL 由 jar 内 application.yml 给出
 
   pd-druid:
