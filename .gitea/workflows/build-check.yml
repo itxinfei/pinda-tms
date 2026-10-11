@@ -1,0 +1,32 @@
+# ============================================
+# 品达TMS 后端 push 编译门禁（Gitea Actions）
+#
+# 策略（2026-10-11 用户拍板）：push 只做「编译门禁」，不打镜像、不部署、不碰容器；
+# 发布一律手动走 deploy-backend.yml（Actions 手触发）或宿主 /data/pinda-deploy/deploy-be.sh。
+#
+# - 触发：push 到 master（每次推送兜底校验主干可编译）+ workflow_dispatch（可手动补跑）
+# - 执行：ci/pinda-ci（JDK21 + Maven 3.9.9），挂 /data/m2 仓库缓存、/ci 只读 settings
+# - 全量 reactor：mvn clean compile（加 clean 杜绝增量构建的陈旧类；本地“编译过才推”的服务器侧二次兜底）
+# - runner capacity=1 串行，不与部署 job 并发抢占 4 核 4G
+# ============================================
+name: build-check
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码（内网 Gitea，不用 actions/checkout 以避免外网）
+        run: |
+          rm -rf ./* ./.??*
+          git clone --depth 50 -b "${GITHUB_REF_NAME:-master}" \
+            "http://192.168.20.130:3000/pinda/pinda-tms.git" .
+
+      - name: Maven 全量编译（JDK21，仅校验不打包，跳过测试）
+        run: |
+          mvn -B clean compile -T 1C -Dmaven.test.skip=true -s /ci/maven-settings.xml
+        timeout-minutes: 25
