@@ -349,12 +349,22 @@ services:
     image: pinda/pd-dispatch:${PD_DISPATCH_TAG:-${TAG:-latest}}
     container_name: pd-dispatch
     restart: unless-stopped
-    ports: ["8190:8190"]
+    # 9999 = XXL-Job 执行器回调端口：xxl-job-admin 位于默认 bridge 网（172.17.x），
+    # 与本服务的 172.21 网不互通，必须发布到宿主机并让执行器以宿主 IP 注册（见下 XXL_JOB_EXECUTOR_IP），
+    # 否则注册成功后调度会卡在"回调连接超时"。
+    ports: ["8190:8190", "9999:9999"]
     healthcheck:
       <<: *hc-common
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8190' || exit 1"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
+      # XXL-Job 执行器注册（2026-10-11 接入）：token 必须与 xxl-job-admin 容器启动参数同值，
+      # 否则 admin 注册接口回 "The access token is wrong."、执行器地址列表恒为 null（42 次空转根因）。
+      # 值在服务器 compose 同目录 .env(0600) 的 XXL_JOB_ACCESS_TOKEN（与 /data/ci/apps.env 同值），不进 Git。
+      XXL_JOB_ACCESS_TOKEN: ${XXL_JOB_ACCESS_TOKEN:?缺少 .env 里的 XXL_JOB_ACCESS_TOKEN（与 xxl-job-admin 同值）}
+      # 执行器注册给 admin 的 IP（Spring 松弛绑定 -> xxl.job.executor.ip）：固定宿主 IP，
+      # admin 跨 Docker 网经 192.168.20.130:9999 反向回调；换部署服务器时在 .env 覆盖。
+      XXL_JOB_EXECUTOR_IP: ${NACOS_DISCOVERY_IP:-192.168.20.130}
 
   pd-aggregation:
     <<: *app-core
