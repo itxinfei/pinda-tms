@@ -128,10 +128,21 @@
 
 /* 联云式侧边栏菜单：分组标题紧凑标签 + 紧凑高度 + 选中项主色竖条 */
 .layout-root .layout-sidebar .el-menu {
-  // 消除菜单顶部默认空白（Element Plus 默认有 padding-top）
+  // 消除菜单顶部默认空白
   padding-top: 0 !important;
 
-  // 菜单项包裹层（AppLink → router-link/a）：块级占满、零边距，与 el-menu-item 完全贴合（消除 flex-center 两侧留白）
+  // 菜单项包裹的 div 零边距
+  > div {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  // scrollbar 内容区零边距
+  .el-scrollbar__view {
+    padding-top: 0 !important;
+  }
+
+  // 菜单项包裹层（AppLink → router-link/a）：块级占满、零边距
   a {
     display: block;
     width: 100%;
@@ -140,10 +151,27 @@
     margin: 0 !important;
   }
 
+  // 菜单项紧凑高度，图标和文字不放大
   .el-menu-item,
   .el-sub-menu__title {
-    height: 42px;
-    line-height: 42px;
+    height: 40px !important;
+    line-height: 40px !important;
+    padding: 0 16px !important;
+    margin: 0 !important;
+  }
+
+  // 菜单图标大小统一
+  .layout-menu-icon {
+    width: 18px !important;
+    height: 18px !important;
+    font-size: 18px !important;
+    margin-right: 8px !important;
+  }
+
+  // 菜单文字大小统一
+  .el-menu-item span,
+  .el-sub-menu__title span {
+    font-size: 14px !important;
   }
 
   // 分组标题：紧凑「组标签」样式（28px、12px 次级灰、去图标去箭头），不抢菜单项视觉
