@@ -109,21 +109,26 @@ mybatis-plus:
       logic-delete-value: 1
       logic-not-delete-value: 0
 
-# 定时任务失败重试参数（原 bootstrap-dev.yml；可用环境变量或 Nacos 覆写）
-# 注：原 bootstrap-dev.yml 中根键 schedule: 出现两次（retry 段 + exception 段），
-#     此处按 SnakeYAML 重复根键风险合并为单一根键，键路径与取值逐字不变。
+# 调度重试参数（业务级：机构调度执行失败时的重试，区别于 XXL-Job 平台级调度）
 schedule:
   retry:
     # 最大尝试次数（含首次），3 表示首次 + 2 次重试
     max-attempts: ${SCHEDULE_RETRY_MAX_ATTEMPTS:3}
     # 重试间隔（毫秒）
     interval-ms: ${SCHEDULE_RETRY_INTERVAL_MS:2000}
-  exception:
-    retry:
-      # 重试开关
-      enabled: ${SCHEDULE_EXCEPTION_RETRY_ENABLED:true}
-      # 重试 cron 表达式（默认每10分钟）
-      cron: ${SCHEDULE_EXCEPTION_RETRY_CRON:0 */10 * * * ?}
+
+# XXL-Job 执行器（2026-10-10 调度改造：替代自研 Quartz/@Scheduled，控制台见《56-中间件信息总表》§2）
+# 定时触发/开关/频率统一由 admin 控制台「品达调度中心」分组管理，服务侧只保留业务重试参数
+xxl:
+  job:
+    admin:
+      addresses: ${XXL_JOB_ADMIN:http://192.168.20.130:8090/xxl-job-admin}
+    accessToken: ${XXL_JOB_ACCESS_TOKEN:}
+    executor:
+      appname: pinda-dispatch
+      port: ${XXL_JOB_EXECUTOR_PORT:9999}
+      logpath: ${user.home}/logs/xxl-job/pd-dispatch
+      logretentiondays: 7
 
 # 短信通知网关（可选，配置后推送订单通知到外部短信网关）
 sms:

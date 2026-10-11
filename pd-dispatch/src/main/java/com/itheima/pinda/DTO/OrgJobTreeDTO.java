@@ -9,9 +9,9 @@ import lombok.EqualsAndHashCode;
 public class OrgJobTreeDTO extends OrgTreeDTO {
 
     /**
-     * jobId
+     * 定时任务ID（disp_schedule_job.id）
      */
-    private String jobId;
+    private Long jobId;
     /**
      * 参数
      */

@@ -1,14 +1,9 @@
-/**
- * Copyright (c) 2019 联智合创 All rights reserved.
- * <p>
- * http://www.witlinked.com
- * <p>
- * 版权所有，侵权必究！
- */
-
 package com.itheima.pinda.entity;
 
-import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -16,62 +11,76 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * 定时任务
+ * 定时任务（disp_schedule_job）
  *
- * @author
+ * <p>主键雪花 Long；tenant_id 由 TenantLineInnerInterceptor 自动填充，实体不声明。</p>
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
-@TableName("schedule_job")
+@TableName("disp_schedule_job")
 public class ScheduleJobEntity implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     /**
-     * id
+     * 主键（雪花）
      */
-    @TableId(value = "id", type = IdType.INPUT)
-    private String id;
+    @TableId(value = "id", type = IdType.ASSIGN_ID)
+    private Long id;
+
     /**
-     * 创建者
+     * 所属组织ID（sys_org.id）
      */
-    @TableField(fill = FieldFill.INSERT)
-    private Long creator;
+    private Long businessId;
+
     /**
-     * 创建时间
-     */
-    @TableField(fill = FieldFill.INSERT)
-    private Date createDate;
-    /**
-     * spring bean名称
+     * 执行器 Bean 名
      */
     private String beanName;
+
     /**
-     * 参数
+     * 任务参数
      */
     private String params;
+
     /**
-     * cron表达式
+     * cron 表达式
      */
     private String cronExpression;
+
     /**
-     * 任务状态  0：暂停  1：正常
+     * 任务状态 0：暂停 1：正常
      */
     private Integer status;
+
     /**
      * 备注
      */
     private String remark;
+
     /**
-     * 业务id 机构id
+     * 创建人
      */
-    private String businessId;
+    private Long createBy;
+
     /**
-     * 更新者
+     * 创建时间
      */
-    @TableField(fill = FieldFill.INSERT_UPDATE)
-    private Long updater;
+    private Date createTime;
+
+    /**
+     * 更新人
+     */
+    private Long updateBy;
+
     /**
      * 更新时间
      */
-    @TableField(fill = FieldFill.INSERT_UPDATE)
-    private Date updateDate;
+    private Date updateTime;
+
+    /**
+     * 逻辑删除 0：未删 1：已删
+     */
+    @TableLogic
+    private Integer deleted;
 }

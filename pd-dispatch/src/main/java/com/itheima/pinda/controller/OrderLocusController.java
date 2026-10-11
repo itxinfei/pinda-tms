@@ -53,33 +53,34 @@ public class OrderLocusController {
 
         LinkedHashSet<OrderPointDTO> OrderPointDTOs = new LinkedHashSet<>();
 
-        String orderClassifyId = orderClassifyOrderService.getClassifyId(id);
+        // 入参 id 为订单号（pd-oms String 边界），返回分类ID为内部 Long
+        Long orderClassifyId = orderClassifyOrderService.getClassifyId(id);
 
-        CacheLineUseEntity cacheLineUseEntity = cacheLineUseService.getByOrderClassifyId(orderClassifyId);
+        CacheLineUseEntity cacheLineUseEntity = cacheLineUseService.getByClassifyId(orderClassifyId);
         if (cacheLineUseEntity != null) {
             CacheLineEntity cacheLineEntity = cacheLineService.getById(cacheLineUseEntity.getCacheLineId());
             List<CacheLineDetailEntity> cacheLineDetailEntities = cacheLineDetailService.findByCacheLineId(cacheLineUseEntity.getCacheLineId());
 
-            Set<String> agencySet = new HashSet<>();
-            agencySet.add(cacheLineEntity.getStartAgencyId());
-            agencySet.add(cacheLineEntity.getEndAgencyId());
-            agencySet.addAll(cacheLineDetailEntities.stream().map(cacheLineDetailEntity -> cacheLineDetailEntity.getStartAgencyId()).collect(Collectors.toSet()));
-            agencySet.addAll(cacheLineDetailEntities.stream().map(cacheLineDetailEntity -> cacheLineDetailEntity.getEndAgencyId()).collect(Collectors.toSet()));
+            Set<Long> agencySet = new HashSet<>();
+            agencySet.add(cacheLineEntity.getStartOrgId());
+            agencySet.add(cacheLineEntity.getEndOrgId());
+            agencySet.addAll(cacheLineDetailEntities.stream().map(CacheLineDetailEntity::getStartOrgId).collect(Collectors.toSet()));
+            agencySet.addAll(cacheLineDetailEntities.stream().map(CacheLineDetailEntity::getEndOrgId).collect(Collectors.toSet()));
 
             CompletableFuture<Map<Long, OrgDTO>> agnecyMapFu = PdCompletableFuture.agencyMapFuture(orgFeign, null, agencySet, null);
             Map<Long, OrgDTO> agency = agnecyMapFu.get();
 
             cacheLineDetailEntities.forEach(cacheLineDetailEntity -> {
 
-                OrgDTO startAgency = agency.get(Long.parseLong(cacheLineDetailEntity.getStartAgencyId()));
+                OrgDTO startAgency = agency.get(cacheLineDetailEntity.getStartOrgId());
                 if (startAgency == null) {
-                    log.warn("未找到起始机构: {}", cacheLineDetailEntity.getStartAgencyId());
+                    log.warn("未找到起始机构: {}", cacheLineDetailEntity.getStartOrgId());
                     return;
                 }
 
-                OrgDTO endAgency = agency.get(Long.parseLong(cacheLineDetailEntity.getEndAgencyId()));
+                OrgDTO endAgency = agency.get(cacheLineDetailEntity.getEndOrgId());
                 if (endAgency == null) {
-                    log.warn("未找到结束机构: {}", cacheLineDetailEntity.getEndAgencyId());
+                    log.warn("未找到结束机构: {}", cacheLineDetailEntity.getEndOrgId());
                     return;
                 }
 

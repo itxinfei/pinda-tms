@@ -18,9 +18,15 @@ import com.itheima.pinda.entity.CacheLineEntity;
  */
 public interface ICacheLineService extends IService<CacheLineEntity> {
 
-    String check(String verifyKey);
+    /**
+     * 按校验 key 查当前生效线路ID，不存在返回 null
+     */
+    Long check(String verifyKey);
 
     int saveAndUpdate(CacheLineEntity cacheLineEntity);
 
-    Integer deleteOldAndGetNewVersion(String notEqualsLineStart, String notEqualsLineEnd);
+    /**
+     * 作废两机构间的当前版本线路，返回新版本号
+     */
+    Integer deleteOldAndGetNewVersion(Long notEqualsLineStart, Long notEqualsLineEnd);
 }

@@ -16,7 +16,7 @@ import com.itheima.pinda.feign.truck.TruckFeign;
 import com.itheima.pinda.feign.UserFeign;
 import com.itheima.pinda.service.IOrderClassifyAttachService;
 import com.itheima.pinda.service.ITaskTripsSchedulingService;
-import com.itheima.pinda.utils.IdUtils;
+import com.itheima.pinda.utils.IdConvert;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -56,15 +57,15 @@ public class TaskTripsSchedulingServiceImpl implements ITaskTripsSchedulingServi
     private IOrderClassifyAttachService orderClassifyAttachService;
 
     @Override
-    public List<OrderLineTripsTruckDriverDTO> execute(List<OrderLineSimpleDTO> orderLineSimpleDTOS, String businessId, String jobId, String logId, String agencyId) {
+    public List<OrderLineTripsTruckDriverDTO> execute(List<OrderLineSimpleDTO> orderLineSimpleDTOS, Long businessId, Long jobId, Long logId, Long agencyId) {
         log.info("车次 车辆 司机 规划 {}", orderLineSimpleDTOS);
         List<OrderLineTripsTruckDriverDTO> orderLineTripsTruckDriverDTOS = new ArrayList<>();
         orderLineSimpleDTOS.forEach(orderLineSimpleDTO -> {
             CacheLineDetailEntity cacheLineDetailEntity = orderLineSimpleDTO.getCacheLineDetailEntity();
 
 
-            // 根据线路获取车次
-            List<TransportTripsDto> transportTripsDtos = transportTripsFeign.findAll(cacheLineDetailEntity.getTransportLineId(), null);
+            // 根据线路获取车次（pd-base 边界：transportLineId 为 String）
+            List<TransportTripsDto> transportTripsDtos = transportTripsFeign.findAll(IdConvert.toStr(cacheLineDetailEntity.getTransportLineId()), null);
             if (CollectionUtils.isEmpty(transportTripsDtos)) {
                 return;
             }
@@ -96,7 +97,7 @@ public class TaskTripsSchedulingServiceImpl implements ITaskTripsSchedulingServi
             log.info("记录车次信息: tripsId={}, truckId={}, driverId={}",
                 tripsTruckDriverDTO.getTripsId(), tripsTruckDriverDTO.getTruckId(), tripsTruckDriverDTO.getDriverId());
 
-            orderLineTripsTruckDriverDTOS.add(new OrderLineTripsTruckDriverDTO(tripsTruckDriverDTO, cacheLineDetailEntity.getTransportLineId(), orderLineSimpleDTO.getOrderClassifyGroupDTOS()));
+            orderLineTripsTruckDriverDTOS.add(new OrderLineTripsTruckDriverDTO(tripsTruckDriverDTO, IdConvert.toStr(cacheLineDetailEntity.getTransportLineId()), orderLineSimpleDTO.getOrderClassifyGroupDTOS()));
 
 
         });
@@ -112,11 +113,11 @@ public class TaskTripsSchedulingServiceImpl implements ITaskTripsSchedulingServi
     private void relation(TripsTruckDriverDTO tripsTruckDriverDTO, List<OrderClassifyGroupDTO> orderClassifyGroupDTOS) {
         orderClassifyGroupDTOS.forEach(orderClassifyGroupDTO -> {
             OrderClassifyAttachEntity orderClassifyAttachEntity = new OrderClassifyAttachEntity();
-            orderClassifyAttachEntity.setOrderClassifyId(orderClassifyGroupDTO.getId());
-            orderClassifyAttachEntity.setTripsId(tripsTruckDriverDTO.getTripsId());
-            orderClassifyAttachEntity.setTruckId(tripsTruckDriverDTO.getTruckId());
+            orderClassifyAttachEntity.setClassifyId(orderClassifyGroupDTO.getId());
+            // 车次/车辆ID为 pd-base String 边界，落库 BIGINT 前转换；司机ID内部即 Long
+            orderClassifyAttachEntity.setTripsId(IdConvert.toLong(tripsTruckDriverDTO.getTripsId()));
+            orderClassifyAttachEntity.setTruckId(IdConvert.toLong(tripsTruckDriverDTO.getTruckId()));
             orderClassifyAttachEntity.setDriverId(tripsTruckDriverDTO.getDriverId());
-            orderClassifyAttachEntity.setId(IdUtils.get());
             orderClassifyAttachService.save(orderClassifyAttachEntity);
         });
 
@@ -155,7 +156,7 @@ public class TaskTripsSchedulingServiceImpl implements ITaskTripsSchedulingServi
 
             LocalDateTime departureDate = LocalDateTime.of(LocalDate.now(), departureTime);
 
-            Duration duration = Duration.between(nowDate, DateUtils.getUTCTime(departureDate));
+            Duration duration = Duration.between(nowDate, DateUtils.shanghaiToUTC(departureDate));
 
             long minute = duration.toMinutes();
 
@@ -190,8 +191,13 @@ public class TaskTripsSchedulingServiceImpl implements ITaskTripsSchedulingServi
             // 获取状态正常的车辆id
             List<String> truckIds = truckDtos.stream().filter(item -> item.getStatus() == 1).map(item -> item.getId()).collect(Collectors.toList());
 
-            // 获取全部司机id
-            List<UserDTO> users = userFeign.list(transportTripsTruckDriverDtoList.stream().filter(item -> StringUtils.isNotBlank(item.getUserId())).map(item -> Long.parseLong(item.getUserId())).collect(Collectors.toList()), null, null, null);
+            // 获取全部司机id（pd-base 边界 userId 为 String，调 pd-auth 前转 Long）
+            List<Long> driverIds = transportTripsTruckDriverDtoList.stream()
+                .filter(item -> StringUtils.isNotBlank(item.getUserId()))
+                .map(item -> IdConvert.toLong(item.getUserId()))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+            List<UserDTO> users = userFeign.list(driverIds, null, null, null);
             // 远程失败(fallback 返回 null)按无可用司机降级，避免 NPE
             if (users == null) {
                 users = new ArrayList<>();
@@ -201,8 +207,8 @@ public class TaskTripsSchedulingServiceImpl implements ITaskTripsSchedulingServi
 
             transportTripsTruckDriverDtoList.forEach(item -> {
                 if (userIds.contains(item.getUserId()) && truckIds.contains(item.getTruckId())) {
-                    // 可用车次 车辆  司机  添加到模型中
-                    TripsTruckDriverDTO tripsTruckDriverDTO = new TripsTruckDriverDTO(tripsId, item.getTruckId(), item.getUserId());
+                    // 可用车次 车辆  司机  添加到模型中（tripsId/truckId 保持 pd-base String，driverId 内部 Long）
+                    TripsTruckDriverDTO tripsTruckDriverDTO = new TripsTruckDriverDTO(tripsId, item.getTruckId(), IdConvert.toLong(item.getUserId()));
                     tripsTruckDriverDTOS.add(tripsTruckDriverDTO);
                 }
             });

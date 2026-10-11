@@ -21,7 +21,7 @@ import java.util.List;
 public class CacheLineDetailServiceImpl extends ServiceImpl<CacheLineDetailMapper, CacheLineDetailEntity> implements ICacheLineDetailService {
 
     @Override
-    public List<CacheLineDetailEntity> findByCacheLineId(String cacheLineId) {
+    public List<CacheLineDetailEntity> findByCacheLineId(Long cacheLineId) {
         LambdaQueryWrapper<CacheLineDetailEntity> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(CacheLineDetailEntity::getCacheLineId, cacheLineId);
         return this.baseMapper.selectList(wrapper);

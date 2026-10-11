@@ -20,6 +20,6 @@ import java.util.List;
  */
 public interface IOrderClassifyAttachService extends IService<OrderClassifyAttachEntity> {
 
-    List<OrderClassifyAttachEntity> findAttachByClassifyId(String classifyId);
+    List<OrderClassifyAttachEntity> findAttachByClassifyId(Long classifyId);
 
 }

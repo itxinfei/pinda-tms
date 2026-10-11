@@ -14,25 +14,16 @@
     <description>调度服务</description>
 
     <properties>
-        <quartz.version>2.3.0</quartz.version>
+        <!-- 2026-10-10 调度改造：Quartz 自研调度面下线，统一接入 XXL-Job（版本与服务器 xxl-job-admin 2.4.1 对齐） -->
+        <xxl-job.version>2.4.1</xxl-job.version>
     </properties>
 
     <dependencies>
-        <!-- Quartz 定时调度 -->
+        <!-- XXL-Job 执行器（替代 Quartz；admin 控制台 192.168.20.130:8090/xxl-job-admin，见《56-中间件信息总表》） -->
         <dependency>
-            <groupId>org.quartz-scheduler</groupId>
-            <artifactId>quartz</artifactId>
-            <version>${quartz.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.mchange</groupId>
-                    <artifactId>c3p0</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.zaxxer</groupId>
-                    <artifactId>HikariCP-java6</artifactId>
-                </exclusion>
-            </exclusions>
+            <groupId>com.xuxueli</groupId>
+            <artifactId>xxl-job-core</artifactId>
+            <version>${xxl-job.version}</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -102,6 +93,11 @@
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-openfeign</artifactId>
+        </dependency>
+        <!-- Feign 负载均衡（Spring Cloud 2025 必需；旧 bootstrap 时代由 Ribbon 传递提供，迁移后暴露缺失，2026-10-10 启动验证补齐） -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-loadbalancer</artifactId>
         </dependency>
         <!-- Resilience4j 熔断降级（Feign Fallback 生效前提；版本由 Spring Cloud BOM 托管） -->
         <dependency>

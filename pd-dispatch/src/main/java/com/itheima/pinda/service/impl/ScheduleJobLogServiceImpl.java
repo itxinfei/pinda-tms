@@ -9,7 +9,6 @@ import com.itheima.pinda.entity.ScheduleJobLogEntity;
 import com.itheima.pinda.mapper.ScheduleJobLogMapper;
 import com.itheima.pinda.service.IScheduleJobLogService;
 import com.itheima.pinda.utils.ConvertUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import java.util.Map;
 
@@ -24,15 +23,15 @@ public class ScheduleJobLogServiceImpl extends ServiceImpl<ScheduleJobLogMapper,
 
         LambdaQueryWrapper<ScheduleJobLogEntity> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(params.containsKey("jobId"), ScheduleJobLogEntity::getJobId, params.get("jobId"));
-        wrapper.orderByDesc(ScheduleJobLogEntity::getCreateDate);
+        wrapper.orderByDesc(ScheduleJobLogEntity::getCreateTime);
         return this.baseMapper.selectPage(page,wrapper);
     }
 
     private QueryWrapper<ScheduleJobLogEntity> getWrapper(Map<String, Object> params) {
-        String jobId = (String) params.get("jobId");
+        Object jobId = params.get("jobId");
 
         QueryWrapper<ScheduleJobLogEntity> wrapper = new QueryWrapper<>();
-        wrapper.eq(StringUtils.isNotBlank(jobId), "job_id", jobId);
+        wrapper.eq(jobId != null, "job_id", jobId);
 
         return wrapper;
     }

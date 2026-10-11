@@ -18,5 +18,8 @@ import com.itheima.pinda.entity.CacheLineUseEntity;
  */
 public interface ICacheLineUseService extends IService<CacheLineUseEntity> {
 
-    CacheLineUseEntity getByOrderClassifyId(String id);
+    /**
+     * 按分类ID查线路使用记录
+     */
+    CacheLineUseEntity getByClassifyId(Long classifyId);
 }

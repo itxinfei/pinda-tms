@@ -8,10 +8,10 @@ import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.entity.ScheduleExceptionOrder;
 import com.itheima.pinda.service.IScheduleExceptionOrderService;
 import com.itheima.pinda.service.IScheduleJobService;
+import com.itheima.pinda.utils.IdConvert;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -46,7 +46,7 @@ public class ScheduleExceptionOrderController {
      * @param page     页码
      * @param pageSize 每页条数
      * @param status   状态筛选（可选：0-待处理 1-已处理）
-     * @param orderId  订单ID模糊筛选（可选）
+     * @param orderId  订单ID筛选（可选，精确匹配，pd-oms String 边界转 Long）
      * @return 分页结果
      */
     @Operation(summary = "分页查询异常调度订单")
@@ -57,7 +57,8 @@ public class ScheduleExceptionOrderController {
                        @RequestParam(name = "orderId", required = false) String orderId) {
         LambdaQueryWrapper<ScheduleExceptionOrder> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(status != null, ScheduleExceptionOrder::getStatus, status);
-        wrapper.like(StringUtils.isNotBlank(orderId), ScheduleExceptionOrder::getOrderId, orderId);
+        Long orderIdLong = IdConvert.toLong(orderId);
+        wrapper.eq(orderIdLong != null, ScheduleExceptionOrder::getOrderId, orderIdLong);
         wrapper.orderByAsc(ScheduleExceptionOrder::getStatus).orderByDesc(ScheduleExceptionOrder::getCreateTime);
 
         IPage<ScheduleExceptionOrder> result = scheduleExceptionOrderService.page(new Page<>(page, pageSize), wrapper);
@@ -73,7 +74,7 @@ public class ScheduleExceptionOrderController {
      */
     @Operation(summary = "标记异常调度订单为已处理")
     @PutMapping("/{id}/handle")
-    public Result handle(@PathVariable(name = "id") String id,
+    public Result handle(@PathVariable(name = "id") Long id,
                          @RequestParam(name = "remark", required = false) String remark) {
         ScheduleExceptionOrder record = scheduleExceptionOrderService.getById(id);
         if (record == null) {
@@ -103,17 +104,14 @@ public class ScheduleExceptionOrderController {
      */
     @Operation(summary = "按机构触发重新调度")
     @PutMapping("/retry/{agencyId}")
-    public Result retry(@PathVariable(name = "agencyId") String agencyId) {
-        if (StringUtils.isBlank(agencyId)) {
-            return Result.error(400, "机构ID不能为空");
-        }
+    public Result retry(@PathVariable(name = "agencyId") Long agencyId) {
         ScheduleJobDTO scheduleJob = scheduleJobService.getByOrgId(agencyId);
-        if (scheduleJob == null || StringUtils.isBlank(scheduleJob.getId())) {
+        if (scheduleJob == null || scheduleJob.getId() == null) {
             log.warn("[异常调度] 机构[{}]未配置调度任务，无法触发重新调度", agencyId);
             return Result.error(400, "该机构未配置调度任务，无法重新调度");
         }
         // 触发该机构的智能调度任务立即执行
-        scheduleJobService.run(new String[]{scheduleJob.getId()});
+        scheduleJobService.run(new Long[]{scheduleJob.getId()});
         log.info("[异常调度] 机构[{}]已触发重新调度，任务ID: {}", agencyId, scheduleJob.getId());
         return Result.ok();
     }

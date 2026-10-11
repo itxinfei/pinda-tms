@@ -10,7 +10,7 @@ import java.util.List;
 @Service
 public class OrderClassifyServiceImpl extends ServiceImpl<OrderClassifyMapper, OrderClassifyEntity> implements IOrderClassifyService {
     @Override
-    public List<OrderClassifyEntity> findByJobLogId(String id) {
+    public List<OrderClassifyEntity> findByJobLogId(Long id) {
         LambdaQueryWrapper<OrderClassifyEntity> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(OrderClassifyEntity::getJobLogId, id);
         return this.baseMapper.selectList(wrapper);

@@ -3,20 +3,28 @@ package com.itheima.pinda.DTO;
 import com.itheima.pinda.DTO.transportline.TransportLineDto;
 import com.itheima.pinda.entity.CacheLineDetailEntity;
 import com.itheima.pinda.entity.CacheLineEntity;
-import com.itheima.pinda.utils.IdUtils;
+import com.itheima.pinda.utils.IdConvert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.DigestUtils;
 
 import java.math.BigDecimal;
 import java.util.*;
 
+/**
+ * 线路规划结果分析模型：把 {@link RoutePlanningDTO} 递归树拆解、聚合为可落库的
+ * 缓存线路（CacheLineEntity + 明细 CacheLineDetailEntity）。
+ *
+ * <p>机构/线路ID在实体侧为 Long；pd-base 线路 Feign（{@link TransportLineDto}）仍为 String 边界，
+ * 构造明细时在本模型内完成转换。缓存线路主键不预生成，交由 MyBatis-Plus ASSIGN_ID 在 insert 时回填，
+ * 明细的 cacheLineId 在 {@code TaskRoutePlanningServiceImpl.mergeLine} 新线落库后补齐。</p>
+ */
 public class AnalysisRoutePlanningDTO {
     private Map<Integer, List<CacheLineDetailEntity>> lineMap = new HashMap<>();
     private Map<String, TransportLineDto> transportLineDtoMap = new HashMap<>();
 
     private RoutePlanningDTO routePlanningDTO;
-    private String startAgencyId;
-    private String endAgencyId;
+    private Long startOrgId;
+    private Long endOrgId;
 
     private Integer index = 0;
 
@@ -28,39 +36,43 @@ public class AnalysisRoutePlanningDTO {
         for (List<CacheLineDetailEntity> value : lineMap.values()) {
             // 集合反转
             Collections.reverse(value);
-            String cacheLineId = IdUtils.get();
-            BigDecimal distance = new BigDecimal(0);
-            BigDecimal cost = new BigDecimal(0);
-            BigDecimal estimatedTime = new BigDecimal(0);
+            BigDecimal distance = BigDecimal.ZERO;
+            BigDecimal cost = BigDecimal.ZERO;
+            int estimatedTime = 0;
             StringBuffer sbf = new StringBuffer();
             for (int i = 0; i < value.size(); i++) {
                 CacheLineDetailEntity cacheLineDetailEntity = value.get(i);
-                cacheLineDetailEntity.setCacheLineId(cacheLineId);
                 cacheLineDetailEntity.setSort(i + 1);
-                String transportLineId = cacheLineDetailEntity.getTransportLineId();
-                TransportLineDto transportLineDto = transportLineDtoMap.get(transportLineId);
-                distance = distance.add(transportLineDto.getDistance());
-                cost = cost.add(transportLineDto.getCost());
-                estimatedTime = estimatedTime.add(transportLineDto.getEstimatedTime());
-                sbf.append(transportLineDto.getStartAgencyId())
-                        .append("#")
-                        .append(transportLineDto.getEndAgencyId())
-                        .append("#")
-                        .append(transportLineDto.getDistance().toString())
-                        .append("#")
-                        .append(transportLineDto.getCost().toString())
-                        .append("#")
-                        .append(transportLineDto.getEstimatedTime().toString())
-                        .append("#");
-
+                // 实体 transportLineId 为 Long，线路 Map 以 pd-base 的 String ID 为键
+                TransportLineDto transportLineDto = transportLineDtoMap.get(IdConvert.toStr(cacheLineDetailEntity.getTransportLineId()));
+                if (transportLineDto != null) {
+                    if (transportLineDto.getDistance() != null) {
+                        distance = distance.add(transportLineDto.getDistance());
+                    }
+                    if (transportLineDto.getCost() != null) {
+                        cost = cost.add(transportLineDto.getCost());
+                    }
+                    if (transportLineDto.getEstimatedTime() != null) {
+                        estimatedTime += transportLineDto.getEstimatedTime().intValue();
+                    }
+                    sbf.append(transportLineDto.getStartAgencyId())
+                            .append("#")
+                            .append(transportLineDto.getEndAgencyId())
+                            .append("#")
+                            .append(transportLineDto.getDistance() == null ? "" : transportLineDto.getDistance().toString())
+                            .append("#")
+                            .append(transportLineDto.getCost() == null ? "" : transportLineDto.getCost().toString())
+                            .append("#")
+                            .append(transportLineDto.getEstimatedTime() == null ? "" : transportLineDto.getEstimatedTime().toString())
+                            .append("#");
+                }
             }
             CacheLineEntity cacheLineEntity = new CacheLineEntity();
-            cacheLineEntity.setId(cacheLineId);
             cacheLineEntity.setDistance(distance);
             cacheLineEntity.setCost(cost);
             cacheLineEntity.setEstimatedTime(estimatedTime);
-            cacheLineEntity.setStartAgencyId(this.startAgencyId);
-            cacheLineEntity.setEndAgencyId(this.endAgencyId);
+            cacheLineEntity.setStartOrgId(this.startOrgId);
+            cacheLineEntity.setEndOrgId(this.endOrgId);
             cacheLineEntity.setTransferCount(value.size());
             cacheLineEntity.setIsCurrent(1);
             cacheLineEntity.setVerifyKey(DigestUtils.md5DigestAsHex(sbf.toString().getBytes()));
@@ -69,10 +81,10 @@ public class AnalysisRoutePlanningDTO {
         return result;
     }
 
-    public AnalysisRoutePlanningDTO(RoutePlanningDTO routePlanningDTO, String startAgencyId, String endAgencyId) {
+    public AnalysisRoutePlanningDTO(RoutePlanningDTO routePlanningDTO, Long startOrgId, Long endOrgId) {
         this.routePlanningDTO = routePlanningDTO;
-        this.startAgencyId = startAgencyId;
-        this.endAgencyId = endAgencyId;
+        this.startOrgId = startOrgId;
+        this.endOrgId = endOrgId;
     }
 
     public AnalysisRoutePlanningDTO build() {
@@ -98,9 +110,9 @@ public class AnalysisRoutePlanningDTO {
                     // 含有可行线路，增加上级中转点
                     for (Integer integer : result) {
                         CacheLineDetailEntity cacheLineDetailEntity = new CacheLineDetailEntity();
-                        cacheLineDetailEntity.setStartAgencyId(item.getStartAgencyId());
-                        cacheLineDetailEntity.setEndAgencyId(item.getEndAgencyId());
-                        cacheLineDetailEntity.setTransportLineId(item.getId());
+                        cacheLineDetailEntity.setStartOrgId(IdConvert.toLong(item.getStartAgencyId()));
+                        cacheLineDetailEntity.setEndOrgId(IdConvert.toLong(item.getEndAgencyId()));
+                        cacheLineDetailEntity.setTransportLineId(IdConvert.toLong(item.getId()));
                         lineMap.get(integer).add(cacheLineDetailEntity);
                         indexList.add(integer);
                         transportLineDtoMap.put(item.getId(), item);
@@ -115,9 +127,9 @@ public class AnalysisRoutePlanningDTO {
                 TransportLineDto item = feasibleDtos.get(i);
                 // 可行路线  增加路线集合数据
                 CacheLineDetailEntity cacheLineDetailEntity = new CacheLineDetailEntity();
-                cacheLineDetailEntity.setStartAgencyId(item.getStartAgencyId());
-                cacheLineDetailEntity.setEndAgencyId(item.getEndAgencyId());
-                cacheLineDetailEntity.setTransportLineId(item.getId());
+                cacheLineDetailEntity.setStartOrgId(IdConvert.toLong(item.getStartAgencyId()));
+                cacheLineDetailEntity.setEndOrgId(IdConvert.toLong(item.getEndAgencyId()));
+                cacheLineDetailEntity.setTransportLineId(IdConvert.toLong(item.getId()));
                 List<CacheLineDetailEntity> cacheLineDetailEntities = new ArrayList<>();
                 cacheLineDetailEntities.add(cacheLineDetailEntity);
                 lineMap.put(++index, cacheLineDetailEntities);

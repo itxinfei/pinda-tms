@@ -13,9 +13,8 @@ import com.itheima.pinda.service.ICacheLineService;
 import com.itheima.pinda.service.ICacheLineUseService;
 import com.itheima.pinda.service.IScheduleExceptionOrderService;
 import com.itheima.pinda.service.ITaskRoutePlanningService;
-import com.itheima.pinda.utils.IdUtils;
+import com.itheima.pinda.utils.IdConvert;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.*;
@@ -41,13 +40,13 @@ public class TaskRoutePlanningServiceImpl implements ITaskRoutePlanningService {
     /**
      * 路线规划
      * @param orderClassifyGroupDTOS
-     * @param agencyId
+     * @param orgId
      * @param jobId
      * @param logId
      * @param params
      * @return
      */
-    public List<OrderLineSimpleDTO> execute(List<OrderClassifyGroupDTO> orderClassifyGroupDTOS, String agencyId, String jobId, String logId, String params) {
+    public List<OrderLineSimpleDTO> execute(List<OrderClassifyGroupDTO> orderClassifyGroupDTOS, Long orgId, Long jobId, Long logId, String params) {
         List<OrderLineDTO> orderLineDTOS = new ArrayList<>();
         orderClassifyGroupDTOS.stream().filter(item -> "ERROR".equals(item.getKey())).forEach(item -> {
             // 无法调度订单：登记异常，供运营人员人工处理（幂等登记）
@@ -56,7 +55,7 @@ public class TaskRoutePlanningServiceImpl implements ITaskRoutePlanningService {
             for (String errorOrderId : errorOrderIds) {
                 try {
                     scheduleExceptionOrderService.registerExceptionOrder(
-                        errorOrderId, agencyId, "起始/目的机构信息缺失，无法完成线路规划");
+                        errorOrderId, orgId, "起始/目的机构信息缺失，无法完成线路规划");
                 } catch (Exception e) {
                     log.error("[异常调度] 订单[{}]异常登记失败", errorOrderId, e);
                 }
@@ -64,12 +63,13 @@ public class TaskRoutePlanningServiceImpl implements ITaskRoutePlanningService {
         });
         // 新订单调度
         orderClassifyGroupDTOS.stream().filter(item -> (item.isNew() && !"ERROR".equals(item.getKey()))).forEach(item -> {
-            log.info("开始计算线路 {} -> {}", item.getStartAgencyId(), item.getEndAgencyId());
+            log.info("开始计算线路 {} -> {}", item.getStartOrgId(), item.getEndOrgId());
             // 查找到所有相关线路 （存在无法通行的情况，）
-            RoutePlanningDTO routePlanningDTO = findLine(0, agencyId, item.getStartAgencyId(), item.getEndAgencyId(), new ArrayList<>());
+            // findLine 递归内部全程走 pd-base String 边界，仅在入口把 disp 内部 Long 机构转 String
+            RoutePlanningDTO routePlanningDTO = findLine(0, IdConvert.toStr(orgId), IdConvert.toStr(item.getStartOrgId()), IdConvert.toStr(item.getEndOrgId()), new ArrayList<>());
             log.info("RoutePlanningDTO:{}", JSON.toJSONString(routePlanningDTO));
             // 查找到的线路分析，拆分，聚合。
-            AnalysisRoutePlanningDTO analysisRoutePlanningDTO = new AnalysisRoutePlanningDTO(routePlanningDTO, item.getStartAgencyId(), item.getEndAgencyId()).build();
+            AnalysisRoutePlanningDTO analysisRoutePlanningDTO = new AnalysisRoutePlanningDTO(routePlanningDTO, item.getStartOrgId(), item.getEndOrgId()).build();
             Map<CacheLineEntity, List<CacheLineDetailEntity>> map = analysisRoutePlanningDTO.get();
             log.info("CacheLine:{}", JSON.toJSONString(map));
             log.info("线路分析完成：{}", map);
@@ -88,10 +88,10 @@ public class TaskRoutePlanningServiceImpl implements ITaskRoutePlanningService {
         });
         // 中转订单调度
         orderClassifyGroupDTOS.stream().filter(item -> (!item.isNew() && !"ERROR".equals(item.getKey()))).forEach(item -> {
-            log.info("开始查找线路 {} -> {}", item.getStartAgencyId(), item.getEndAgencyId());
-            String id = item.getId();
+            log.info("开始查找线路 {} -> {}", item.getStartOrgId(), item.getEndOrgId());
+            Long id = item.getId();
             // 根据orderId 查到之前的线路
-            CacheLineDetailEntity cacheLineDetailEntity = findBeforeLine(id, agencyId);
+            CacheLineDetailEntity cacheLineDetailEntity = findBeforeLine(id, orgId);
             if (cacheLineDetailEntity == null) {
                 // 【健壮性】历史线路缺失时跳过该订单分组，避免将 null 传入下游导致 NPE 中断整轮调度
                 log.warn("中转订单分组[{}]无历史线路信息，跳过该分组，待人工处理", id);
@@ -116,8 +116,8 @@ public class TaskRoutePlanningServiceImpl implements ITaskRoutePlanningService {
      * @return
      */
     private List<OrderLineSimpleDTO> buildOrderLineSimpleDTOS(List<OrderLineDTO> orderLineDTOS) {
-        Map<String, List<OrderClassifyGroupDTO>> orderClassifyGroupDTOMap = new HashMap<>();
-        Map<String, CacheLineDetailEntity> cacheLineDetailEntityMap = new HashMap<>();
+        Map<Long, List<OrderClassifyGroupDTO>> orderClassifyGroupDTOMap = new HashMap<>();
+        Map<Long, CacheLineDetailEntity> cacheLineDetailEntityMap = new HashMap<>();
         orderLineDTOS.forEach(orderLineDTO -> {
             CacheLineDetailEntity cacheLineDetail = orderLineDTO.getCacheLineDetailEntity();
             OrderClassifyGroupDTO orderClassify = orderLineDTO.getOrderClassifyGroupDTO();
@@ -135,8 +135,8 @@ public class TaskRoutePlanningServiceImpl implements ITaskRoutePlanningService {
         List<OrderLineSimpleDTO> orderLineSimpleDTOS = new ArrayList<>();
         cacheLineDetailEntityMap.forEach((transportLineId, cacheLineDetail) -> {
             CacheLineDetailEntity copy = new CacheLineDetailEntity();
-            copy.setStartAgencyId(cacheLineDetail.getStartAgencyId());
-            copy.setEndAgencyId(cacheLineDetail.getEndAgencyId());
+            copy.setStartOrgId(cacheLineDetail.getStartOrgId());
+            copy.setEndOrgId(cacheLineDetail.getEndOrgId());
             copy.setTransportLineId(cacheLineDetail.getTransportLineId());
             copy.setSort(cacheLineDetail.getSort());
             orderLineSimpleDTOS.add(new OrderLineSimpleDTO(copy, orderClassifyGroupDTOMap.get(transportLineId)));
@@ -148,13 +148,13 @@ public class TaskRoutePlanningServiceImpl implements ITaskRoutePlanningService {
      * 中转订单 查询之前计算好的线路
      *
      * @param id
-     * @param agencyId
+     * @param orgId
      * @return
      */
-    private CacheLineDetailEntity findBeforeLine(String id, String agencyId) {
-        log.info("查找之前使用的线路，分组id：{},机构id：{}", id, agencyId);
+    private CacheLineDetailEntity findBeforeLine(Long id, Long orgId) {
+        log.info("查找之前使用的线路，分组id：{},机构id：{}", id, orgId);
         LambdaQueryWrapper<CacheLineUseEntity> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(CacheLineUseEntity::getOrderClassifyId, id);
+        wrapper.eq(CacheLineUseEntity::getClassifyId, id);
         CacheLineUseEntity cacheLineUseEntity = cacheLineUseService.getOne(wrapper);
         log.info("查询到分组使用的线路信息:{}", cacheLineUseEntity);
         // 【健壮性】历史线路使用记录可能不存在（如数据缺失/被清理），返回 null 交由调用方容错
@@ -162,10 +162,10 @@ public class TaskRoutePlanningServiceImpl implements ITaskRoutePlanningService {
             log.warn("中转订单分组[{}]未找到历史线路使用记录，跳过本次路线规划", id);
             return null;
         }
-        String cacheLineId = cacheLineUseEntity.getCacheLineId();
+        Long cacheLineId = cacheLineUseEntity.getCacheLineId();
         LambdaQueryWrapper<CacheLineDetailEntity> detailWrapper = new LambdaQueryWrapper<>();
         detailWrapper.eq(CacheLineDetailEntity::getCacheLineId, cacheLineId);
-        detailWrapper.eq(CacheLineDetailEntity::getStartAgencyId, agencyId);
+        detailWrapper.eq(CacheLineDetailEntity::getStartOrgId, orgId);
         CacheLineDetailEntity cacheLineDetailEntity = cacheLineDetailService.getOne(detailWrapper);
         log.info("获取当前阶段路线信息:{}", cacheLineDetailEntity);
         return cacheLineDetailEntity;
@@ -177,11 +177,10 @@ public class TaskRoutePlanningServiceImpl implements ITaskRoutePlanningService {
      * @param cacheLineDetailEntity
      * @param id
      */
-    private void relationOrder(CacheLineDetailEntity cacheLineDetailEntity, String id) {
+    private void relationOrder(CacheLineDetailEntity cacheLineDetailEntity, Long id) {
         CacheLineUseEntity cacheLineUseEntity = new CacheLineUseEntity();
         cacheLineUseEntity.setCacheLineId(cacheLineDetailEntity.getCacheLineId());
-        cacheLineUseEntity.setOrderClassifyId(id);
-        cacheLineUseEntity.setId(IdUtils.get());
+        cacheLineUseEntity.setClassifyId(id);
         cacheLineUseService.save(cacheLineUseEntity);
     }
 
@@ -222,7 +221,7 @@ public class TaskRoutePlanningServiceImpl implements ITaskRoutePlanningService {
         Set<Map.Entry<CacheLineEntity, List<CacheLineDetailEntity>>> entrySet = map.entrySet();
         Map<String, List<Map.Entry<CacheLineEntity, List<CacheLineDetailEntity>>>> groupMap = new HashMap<>();
         entrySet.forEach(entry -> {
-            String key = entry.getKey().getStartAgencyId() + entry.getKey().getEndAgencyId();
+            String key = entry.getKey().getStartOrgId() + "" + entry.getKey().getEndOrgId();
             if (groupMap.containsKey(key)) {
                 groupMap.get(key).add(entry);
             } else {
@@ -235,18 +234,18 @@ public class TaskRoutePlanningServiceImpl implements ITaskRoutePlanningService {
         for (Map.Entry<String, List<Map.Entry<CacheLineEntity, List<CacheLineDetailEntity>>>> stringListEntry : groupMap.entrySet()) {
             // 同一 起始，终点的线路（多种方案）
             List<Map.Entry<CacheLineEntity, List<CacheLineDetailEntity>>> list = stringListEntry.getValue();
-            String notEqualsLineStart = null;
-            String notEqualsLineEnd = null;
+            Long notEqualsLineStart = null;
+            Long notEqualsLineEnd = null;
             for (Map.Entry<CacheLineEntity, List<CacheLineDetailEntity>> cacheLineEntityListEntry : list) {
                 CacheLineEntity cacheLineEntity = cacheLineEntityListEntry.getKey();
-                String cacheLineId = cacheLineService.check(cacheLineEntity.getVerifyKey());
-                if (StringUtils.isEmpty(cacheLineId)) {
+                Long cacheLineId = cacheLineService.check(cacheLineEntity.getVerifyKey());
+                if (cacheLineId == null) {
                     // 线路不一致，
-                    notEqualsLineStart = cacheLineEntity.getStartAgencyId();
-                    notEqualsLineEnd = cacheLineEntity.getEndAgencyId();
+                    notEqualsLineStart = cacheLineEntity.getStartOrgId();
+                    notEqualsLineEnd = cacheLineEntity.getEndOrgId();
                 }
             }
-            if (StringUtils.isNotBlank(notEqualsLineStart) && StringUtils.isNotBlank(notEqualsLineEnd)) {
+            if (notEqualsLineStart != null && notEqualsLineEnd != null) {
                 // 线路存在不一致情况，统一作废原线路。
                 Integer version = cacheLineService.deleteOldAndGetNewVersion(notEqualsLineStart, notEqualsLineEnd);
                 for (Map.Entry<CacheLineEntity, List<CacheLineDetailEntity>> cacheLineEntityListEntry : list) {
@@ -264,16 +263,14 @@ public class TaskRoutePlanningServiceImpl implements ITaskRoutePlanningService {
             if (deleteLindVerifyKey.containsKey(cacheLineEntity.getVerifyKey())) {
                 //已经作废的线路  新增
                 cacheLineEntity.setVersion(deleteLindVerifyKey.get(cacheLineEntity.getVerifyKey()));
+                // 先保存主表回填雪花ID，再回填明细的 cacheLineId 后批量保存
                 cacheLineService.save(cacheLineEntity);
-                cacheLineDetailEntities = cacheLineDetailEntities.stream().map(item -> {
-                    item.setId(IdUtils.get());
-                    return item;
-                }).collect(Collectors.toList());
+                cacheLineDetailEntities.forEach(item -> item.setCacheLineId(cacheLineEntity.getId()));
                 cacheLineDetailService.saveBatch(cacheLineDetailEntities);
                 map.put(cacheLineEntity, cacheLineDetailEntities);
             } else {
                 // 未作废 查询
-                String cacheLineId = cacheLineService.check(cacheLineEntity.getVerifyKey());
+                Long cacheLineId = cacheLineService.check(cacheLineEntity.getVerifyKey());
                 cacheLineEntity.setId(cacheLineId);
                 LambdaQueryWrapper<CacheLineDetailEntity> wrapper = new LambdaQueryWrapper<>();
                 wrapper.eq(CacheLineDetailEntity::getCacheLineId, cacheLineId);

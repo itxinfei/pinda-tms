@@ -1,6 +1,5 @@
 package com.itheima.pinda.service;
 
-import com.itheima.pinda.DTO.OrderLineDTO;
 import com.itheima.pinda.DTO.OrderLineSimpleDTO;
 import com.itheima.pinda.DTO.OrderLineTripsTruckDriverDTO;
 
@@ -13,11 +12,12 @@ public interface ITaskTripsSchedulingService {
     /**
      * 执行
      *
-     * @param orderLineSimpleDTOS
-     * @param businessId
-     * @param jobId
-     * @param logId
+     * @param orderLineSimpleDTOS 线路简单DTO集合
+     * @param businessId          机构ID
+     * @param jobId               定时任务id
+     * @param logId               日志id
+     * @param agencyId            机构ID
      * @return
      */
-    List<OrderLineTripsTruckDriverDTO> execute(List<OrderLineSimpleDTO> orderLineSimpleDTOS, String businessId, String jobId, String logId, String agencyId);
+    List<OrderLineTripsTruckDriverDTO> execute(List<OrderLineSimpleDTO> orderLineSimpleDTOS, Long businessId, Long jobId, Long logId, Long agencyId);
 }

@@ -19,7 +19,7 @@ import com.itheima.pinda.future.PdCompletableFuture;
 import com.itheima.pinda.service.IOrderClassifyOrderService;
 import com.itheima.pinda.service.IOrderClassifyService;
 import com.itheima.pinda.service.ITaskOrderClassifyService;
-import com.itheima.pinda.utils.IdUtils;
+import com.itheima.pinda.utils.IdConvert;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
@@ -30,7 +30,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -52,21 +51,21 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
 
     /**
      * 订单分类核心逻辑
-     * @param agencyId 机构id（网点或者转运中心的id）
+     * @param orgId 机构id（网点或者转运中心的id）
      * @param jobId 定时任务id
      * @param logId 日志id
      * @return
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public List<OrderClassifyGroupDTO> execute(String agencyId, String jobId, String logId) {
+    public List<OrderClassifyGroupDTO> execute(Long orgId, Long jobId, Long logId) {
         //用于存放当前机构下的订单
         List<OrderClassifyDTO> orderClassifyDTOS = new ArrayList<>();
         List<OrderClassifyGroupDTO> orderClassifyGroupDTOS = new ArrayList<>();
 
         //获取当前机构下所有的订单数据(分为新订单和中转订单）
-        orderClassifyDTOS.addAll(buildNewOrder(agencyId));
-        orderClassifyDTOS.addAll(buildTransferOrder(agencyId));
+        orderClassifyDTOS.addAll(buildNewOrder(orgId));
+        orderClassifyDTOS.addAll(buildTransferOrder(orgId));
 
         //进行订单分类
         Map<String, List<OrderClassifyDTO>> orderClassifyDTOGroup = orderClassifyDTOS.stream().collect(Collectors.groupingBy(OrderClassifyDTO::groupBy));
@@ -94,7 +93,7 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
      * @param jobId
      * @param logId
      */
-    private void saveRecord(List<OrderClassifyGroupDTO> orderClassifyGroupDTOS, String jobId, String logId) {
+    private void saveRecord(List<OrderClassifyGroupDTO> orderClassifyGroupDTOS, Long jobId, Long logId) {
         orderClassifyGroupDTOS.forEach(item -> {
             if (item.isNew()) {
                 log.info("新订单 保存分组信息");
@@ -103,32 +102,33 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
                 entity.setJobId(jobId);
                 entity.setJobLogId(logId);
                 if (!entity.getClassify().equals("ERROR")) {
-                    entity.setStartAgencyId(item.getStartAgencyId());
-                    entity.setEndAgencyId(item.getEndAgencyId());
+                    entity.setStartOrgId(item.getStartOrgId());
+                    entity.setEndOrgId(item.getEndOrgId());
                 }
                 entity.setTotal(item.getOrders().size());
-                entity.setId(IdUtils.get());
+
+                // 先保存主表，由 MyBatis-Plus 回填雪花ID，再构造关联明细
+                orderClassifyService.save(entity);
+                item.setId(entity.getId());
 
                 List<OrderClassifyOrderEntity> orderClassifyOrders = item.getOrders().stream().map((orderId) -> {
                     OrderClassifyOrderEntity orderClassifyOrderEntity = new OrderClassifyOrderEntity();
-                    orderClassifyOrderEntity.setOrderId(orderId);
-                    orderClassifyOrderEntity.setOrderClassifyId(entity.getId());
-                    orderClassifyOrderEntity.setId(IdUtils.get());
+                    // 订单ID为 pd-oms String 边界，落库 BIGINT 前转换
+                    orderClassifyOrderEntity.setOrderId(IdConvert.toLong(orderId));
+                    orderClassifyOrderEntity.setClassifyId(entity.getId());
                     return orderClassifyOrderEntity;
                 }).collect(Collectors.toList());
 
-                item.setId(entity.getId());
-                orderClassifyService.save(entity);
                 orderClassifyOrderService.saveBatch(orderClassifyOrders);
             } else {
                 log.info("中转订单，查询分组信息");
                 List<String> orderIds = new ArrayList<>(item.getOrders());
                 log.info("当前分组的订单id：{}", orderIds);
                 LambdaQueryWrapper<OrderClassifyOrderEntity> wrapper = new LambdaQueryWrapper<>();
-                wrapper.in(OrderClassifyOrderEntity::getOrderId, orderIds);
+                wrapper.in(OrderClassifyOrderEntity::getOrderId, IdConvert.toLongList(orderIds));
                 List<OrderClassifyOrderEntity> orderClassifyOrders = orderClassifyOrderService.list(wrapper);
                 // 不出意外只会查到一个订单分类id
-                Set<String> orderClassifyIds = orderClassifyOrders.stream().map(orderClassifyOrderEntity -> orderClassifyOrderEntity.getOrderClassifyId()).collect(Collectors.toSet());
+                Set<Long> orderClassifyIds = orderClassifyOrders.stream().map(OrderClassifyOrderEntity::getClassifyId).collect(Collectors.toSet());
                 log.info("查询订单分组id:{}", orderClassifyIds);
                 if (CollectionUtils.isEmpty(orderClassifyIds)) {
                     log.error("中转订单异常:{}", orderIds);
@@ -142,29 +142,30 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
 
     /**
      *查询中转订单
-     * @param agencyId
+     * @param orgId
      * @return
      */
-    private List<OrderClassifyDTO> buildTransferOrder(String agencyId) {
+    private List<OrderClassifyDTO> buildTransferOrder(Long orgId) {
         OrderSearchDTO orderSearchDTO = new OrderSearchDTO();
         //订单状态为运输中
         orderSearchDTO.setStatus(OrderStatus.IN_TRANSIT.getCode());
-        orderSearchDTO.setCurrentAgencyId(agencyId);
+        //pd-oms 边界：currentAgencyId 为 String
+        orderSearchDTO.setCurrentAgencyId(IdConvert.toStr(orgId));
         //调用Feign接口实现远程调用，查询当前机构下的新订单
         List<OrderDTO> orderList = orderFeign.list(orderSearchDTO);
 
         log.info("查询到新订单个数：{}",orderList.size());
 
         OrderClassifyDTO.OrderClassifyDTOBuilder builder = OrderClassifyDTO.builder();
-        builder.currentAgencyId(agencyId);
+        builder.currentOrgId(orgId);
 
         List<OrderClassifyDTO> orderClassifyDTOList = orderList.stream().map((item) -> {
             OrderClassifyDTO.OrderClassifyDTOBuilder orderBuilder = OrderClassifyDTO.builder();
             orderBuilder.order(item);//原始订单
-            orderBuilder.startAgencyId(getStartAgencyId(item));//起始机构
-            orderBuilder.endAgencyId(getEndAgencyId(item));//目的地机构（目的地网点）
+            orderBuilder.startOrgId(IdConvert.toLong(getStartAgencyId(item)));//起始机构
+            orderBuilder.endOrgId(IdConvert.toLong(getEndAgencyId(item)));//目的地机构（目的地网点）
             orderBuilder.orderType(item.getOrderType());
-            orderBuilder.currentAgencyId(agencyId);
+            orderBuilder.currentOrgId(orgId);
             return orderBuilder.build();
         }).collect(Collectors.toList());
 
@@ -262,29 +263,30 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
 
     /**
      * 获取指定机构下的新订单
-     * @param agencyId
+     * @param orgId
      * @return
      */
-    private List<OrderClassifyDTO> buildNewOrder(String agencyId) {
+    private List<OrderClassifyDTO> buildNewOrder(Long orgId) {
         OrderSearchDTO orderSearchDTO = new OrderSearchDTO();
         //订单状态为网点入库
         orderSearchDTO.setStatus(OrderStatus.OUTLETS_WAREHOUSE.getCode());
-        orderSearchDTO.setCurrentAgencyId(agencyId);
+        //pd-oms 边界：currentAgencyId 为 String
+        orderSearchDTO.setCurrentAgencyId(IdConvert.toStr(orgId));
         //调用Feign接口实现远程调用，查询当前机构下的新订单
         List<OrderDTO> orderList = orderFeign.list(orderSearchDTO);
 
         log.info("查询到新订单个数：{}",orderList.size());
 
         OrderClassifyDTO.OrderClassifyDTOBuilder builder = OrderClassifyDTO.builder();
-        builder.currentAgencyId(agencyId);
+        builder.currentOrgId(orgId);
 
         List<OrderClassifyDTO> orderClassifyDTOList = orderList.stream().map((item) -> {
             OrderClassifyDTO.OrderClassifyDTOBuilder orderBuilder = OrderClassifyDTO.builder();
             orderBuilder.order(item);//原始订单
-            orderBuilder.startAgencyId(agencyId);//起始机构
-            orderBuilder.endAgencyId(getEndAgencyId(item));//目的地机构（目的地网点）
+            orderBuilder.startOrgId(orgId);//起始机构（当前入库网点）
+            orderBuilder.endOrgId(IdConvert.toLong(getEndAgencyId(item)));//目的地机构（目的地网点）
             orderBuilder.orderType(item.getOrderType());
-            orderBuilder.currentAgencyId(agencyId);
+            orderBuilder.currentOrgId(orgId);
             return orderBuilder.build();
         }).collect(Collectors.toList());
 
@@ -343,7 +345,7 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
 
         log.info("根据地址{}获取对应的坐标值{}",address,location);
 
-        //根据经纬度坐标获取对应的区县检查通过百度地图获取的区域是否和下单时选择的区域一致
+        //根据经纬度获取对应的区县检查通过百度地图获取的区域是否和下单时选择的区域一致
         Map map = EntCoordSyncJob.getLocationByPosition(location);//根据经纬度获取对应的区域信息（从百度官方获取）
         if(ObjectUtils.isEmpty(map)){
             exceptionHappend("根据经纬度获取区域信息为空");

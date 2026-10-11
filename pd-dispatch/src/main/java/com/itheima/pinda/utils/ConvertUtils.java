@@ -44,7 +44,7 @@ public class ConvertUtils {
         }
         T targetObject = null;
         try {
-            targetObject = target.newInstance();
+            targetObject = target.getDeclaredConstructor().newInstance();
             BeanUtils.copyProperties(source, targetObject);
         } catch (Exception e) {
             logger.error("convert error ", e);
@@ -61,7 +61,7 @@ public class ConvertUtils {
         List targetList = new ArrayList<>(sourceList.size());
         try {
             for(Object source : sourceList){
-                T targetObject = target.newInstance();
+                T targetObject = target.getDeclaredConstructor().newInstance();
                 BeanUtils.copyProperties(source, targetObject);
                 targetList.add(targetObject);
             }

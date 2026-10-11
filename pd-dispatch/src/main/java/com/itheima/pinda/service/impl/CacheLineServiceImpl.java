@@ -14,7 +14,6 @@ import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.itheima.pinda.entity.CacheLineEntity;
 import com.itheima.pinda.mapper.CacheLineMapper;
 import com.itheima.pinda.service.ICacheLineService;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -27,7 +26,7 @@ public class CacheLineServiceImpl extends ServiceImpl<CacheLineMapper, CacheLine
     private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(CacheLineServiceImpl.class);
 
     @Override
-    public String check(String verifyKey) {
+    public Long check(String verifyKey) {
         LambdaQueryWrapper<CacheLineEntity> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(CacheLineEntity::getVerifyKey, verifyKey);
         wrapper.eq(CacheLineEntity::getIsCurrent, 1);
@@ -48,8 +47,8 @@ public class CacheLineServiceImpl extends ServiceImpl<CacheLineMapper, CacheLine
                 return doSaveAndUpdate(cacheLineEntity);
             } catch (org.springframework.dao.DuplicateKeyException e) {
                 // 唯一键冲突，重试
-                LOG.warn("[线路版本] 保存线路版本冲突，重试第{}次: startAgencyId={}, endAgencyId={}",
-                    attempt + 1, cacheLineEntity.getStartAgencyId(), cacheLineEntity.getEndAgencyId());
+                LOG.warn("[线路版本] 保存线路版本冲突，重试第{}次: startOrgId={}, endOrgId={}",
+                    attempt + 1, cacheLineEntity.getStartOrgId(), cacheLineEntity.getEndOrgId());
                 if (attempt >= maxRetry - 1) {
                     throw e;
                 }
@@ -66,8 +65,8 @@ public class CacheLineServiceImpl extends ServiceImpl<CacheLineMapper, CacheLine
         Integer version = 1;
         LambdaQueryWrapper<CacheLineEntity> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(CacheLineEntity::getIsCurrent, 1);
-        queryWrapper.eq(CacheLineEntity::getStartAgencyId, cacheLineEntity.getStartAgencyId());
-        queryWrapper.eq(CacheLineEntity::getEndAgencyId, cacheLineEntity.getEndAgencyId());
+        queryWrapper.eq(CacheLineEntity::getStartOrgId, cacheLineEntity.getStartOrgId());
+        queryWrapper.eq(CacheLineEntity::getEndOrgId, cacheLineEntity.getEndOrgId());
         CacheLineEntity result = baseMapper.selectOne(queryWrapper);
         if (result != null) {
             version = result.getVersion();
@@ -78,8 +77,8 @@ public class CacheLineServiceImpl extends ServiceImpl<CacheLineMapper, CacheLine
         CacheLineEntity cacheLineEntityUpdate = new CacheLineEntity();
         cacheLineEntityUpdate.setIsCurrent(0);
         LambdaUpdateWrapper<CacheLineEntity> updateWrapper = new LambdaUpdateWrapper<>();
-        updateWrapper.eq(CacheLineEntity::getStartAgencyId, cacheLineEntity.getStartAgencyId());
-        updateWrapper.eq(CacheLineEntity::getEndAgencyId, cacheLineEntity.getEndAgencyId());
+        updateWrapper.eq(CacheLineEntity::getStartOrgId, cacheLineEntity.getStartOrgId());
+        updateWrapper.eq(CacheLineEntity::getEndOrgId, cacheLineEntity.getEndOrgId());
         updateWrapper.eq(CacheLineEntity::getVersion, version - 1);
         baseMapper.update(cacheLineEntityUpdate, updateWrapper);
 
@@ -89,13 +88,13 @@ public class CacheLineServiceImpl extends ServiceImpl<CacheLineMapper, CacheLine
     }
 
     @Override
-    public Integer deleteOldAndGetNewVersion(String notEqualsLineStart, String notEqualsLineEnd) {
+    public Integer deleteOldAndGetNewVersion(Long notEqualsLineStart, Long notEqualsLineEnd) {
         // 查询当前最大version
         Integer version = 0;
         LambdaQueryWrapper<CacheLineEntity> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(CacheLineEntity::getIsCurrent, 1);
-        queryWrapper.eq(CacheLineEntity::getStartAgencyId, notEqualsLineStart);
-        queryWrapper.eq(CacheLineEntity::getEndAgencyId, notEqualsLineEnd);
+        queryWrapper.eq(CacheLineEntity::getStartOrgId, notEqualsLineStart);
+        queryWrapper.eq(CacheLineEntity::getEndOrgId, notEqualsLineEnd);
         List<CacheLineEntity> results = baseMapper.selectList(queryWrapper);
         if (!CollectionUtils.isEmpty(results)) {
             version = results.get(0).getVersion();
@@ -104,8 +103,8 @@ public class CacheLineServiceImpl extends ServiceImpl<CacheLineMapper, CacheLine
             CacheLineEntity cacheLineEntityUpdate = new CacheLineEntity();
             cacheLineEntityUpdate.setIsCurrent(0);
             LambdaUpdateWrapper<CacheLineEntity> updateWrapper = new LambdaUpdateWrapper<>();
-            updateWrapper.eq(CacheLineEntity::getStartAgencyId, notEqualsLineStart);
-            updateWrapper.eq(CacheLineEntity::getEndAgencyId, notEqualsLineEnd);
+            updateWrapper.eq(CacheLineEntity::getStartOrgId, notEqualsLineStart);
+            updateWrapper.eq(CacheLineEntity::getEndOrgId, notEqualsLineEnd);
             updateWrapper.eq(CacheLineEntity::getIsCurrent, 1);
             baseMapper.update(cacheLineEntityUpdate, updateWrapper);
         }

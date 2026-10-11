@@ -9,33 +9,45 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * 车次车辆司机订单分类关联表
+ * 分类-派配关联表（disp_classify_attach）：车次/车辆/司机
  *
- * @author diesel 2020-04-16
+ * <p>车次/车辆/司机ID 落库为 BIGINT；pd-base 车次车辆 Feign 以 String 协议交互，
+ * 落库点完成转换。主键雪花 Long；tenant_id 由 TenantLineInnerInterceptor 自动填充。</p>
  */
 @Data
-@TableName("pd_order_classify_attach")
+@TableName("disp_classify_attach")
 public class OrderClassifyAttachEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     /**
-     * id
+     * 主键（雪花）
      */
-    @TableId(value = "id", type = IdType.INPUT)
-    private String id;
+    @TableId(value = "id", type = IdType.ASSIGN_ID)
+    private Long id;
 
-    private String tripsId;
+    /**
+     * 分类ID
+     */
+    private Long classifyId;
 
-    private String truckId;
+    /**
+     * 车次ID（base_transport_trips.id，落库 BIGINT）
+     */
+    private Long tripsId;
 
-    private String driverId;
+    /**
+     * 车辆ID（base_truck.id，落库 BIGINT）
+     */
+    private Long truckId;
 
-    private String orderClassifyId;
+    /**
+     * 司机ID（base_truck_driver.id / pd-auth 用户ID）
+     */
+    private Long driverId;
 
     /**
      * 创建时间
      */
-    private Date createDate;
-
+    private Date createTime;
 }

@@ -20,5 +20,5 @@ import java.util.List;
  */
 public interface ICacheLineDetailService extends IService<CacheLineDetailEntity> {
 
-    List<CacheLineDetailEntity> findByCacheLineId(String cacheLineId);
+    List<CacheLineDetailEntity> findByCacheLineId(Long cacheLineId);
 }

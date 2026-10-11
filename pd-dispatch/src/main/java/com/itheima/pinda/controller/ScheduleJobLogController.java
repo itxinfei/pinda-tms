@@ -16,12 +16,12 @@ import com.itheima.pinda.feign.transportline.TransportTripsFeign;
 import com.itheima.pinda.feign.truck.TruckFeign;
 import com.itheima.pinda.future.PdCompletableFuture;
 import com.itheima.pinda.service.*;
+import com.itheima.pinda.utils.IdConvert;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -83,7 +83,10 @@ public class ScheduleJobLogController {
                 //修改点：PageResponse 为纯数据载体，无 error 方法，统一以 PdException 表达参数错误
                 throw new PdException("缺少 orgId 参数");
             }
-            String orgId = orgIdObj.toString();
+            Long orgId = IdConvert.toLong(orgIdObj.toString());
+            if (orgId == null) {
+                throw new PdException("orgId 参数非法");
+            }
             ScheduleJobDTO scheduleJobDto = scheduleJobService.getByOrgId(orgId);
             if (scheduleJobDto == null) {
                 throw new PdException("该机构无调度任务");
@@ -118,9 +121,9 @@ public class ScheduleJobLogController {
         }
         // 组合 订单分组等信息
         List<OrderClassifyEntity> orderClassifyEntities = orderClassifyService.findByJobLogId(logDto.getId());
-        Set<String> agencySet = new HashSet<>();
-        agencySet.addAll(orderClassifyEntities.stream().map(OrderClassifyEntity::getStartAgencyId).collect(Collectors.toSet()));
-        agencySet.addAll(orderClassifyEntities.stream().map(OrderClassifyEntity::getEndAgencyId).collect(Collectors.toSet()));
+        Set<Long> agencySet = new HashSet<>();
+        agencySet.addAll(orderClassifyEntities.stream().map(OrderClassifyEntity::getStartOrgId).filter(Objects::nonNull).collect(Collectors.toSet()));
+        agencySet.addAll(orderClassifyEntities.stream().map(OrderClassifyEntity::getEndOrgId).filter(Objects::nonNull).collect(Collectors.toSet()));
 
         CompletableFuture<Map<Long, OrgDTO>> agnecyMapFuture = PdCompletableFuture.agencyMapFuture(orgFeign, null, agencySet, null);
         Map<Long, OrgDTO> agencyMap = agnecyMapFuture.get();
@@ -128,14 +131,14 @@ public class ScheduleJobLogController {
         List<OrderClassifyLogDTO> orderClassifyLogDTOS = orderClassifyEntities.stream().map(item -> {
             OrderClassifyLogDTO orderClassifyLogDTO = new OrderClassifyLogDTO();
             BeanUtils.copyProperties(item, orderClassifyLogDTO);
-            if (StringUtils.isNotEmpty(orderClassifyLogDTO.getStartAgencyId())) {
-                OrgDTO startAgency = agencyMap.get(Long.parseLong(orderClassifyLogDTO.getStartAgencyId()));
+            if (orderClassifyLogDTO.getStartOrgId() != null) {
+                OrgDTO startAgency = agencyMap.get(orderClassifyLogDTO.getStartOrgId());
                 if (startAgency != null) {
                     orderClassifyLogDTO.setStartAgency(startAgency.getName());
                 }
             }
-            if (StringUtils.isNotBlank(orderClassifyLogDTO.getEndAgencyId())) {
-                OrgDTO endAgency = agencyMap.get(Long.parseLong(orderClassifyLogDTO.getEndAgencyId()));
+            if (orderClassifyLogDTO.getEndOrgId() != null) {
+                OrgDTO endAgency = agencyMap.get(orderClassifyLogDTO.getEndOrgId());
                 if (endAgency != null) {
                     orderClassifyLogDTO.setEndAgency(endAgency.getName());
                 }
@@ -161,13 +164,14 @@ public class ScheduleJobLogController {
     @SneakyThrows
     private void buildTripsTruckDriver(OrderClassifyEntity item, OrderClassifyLogDTO orderClassifyLogDTO) {
         LambdaQueryWrapper<OrderClassifyAttachEntity> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(OrderClassifyAttachEntity::getOrderClassifyId, item.getId());
-        wrapper.orderByAsc(OrderClassifyAttachEntity::getCreateDate);
+        wrapper.eq(OrderClassifyAttachEntity::getClassifyId, item.getId());
+        wrapper.orderByAsc(OrderClassifyAttachEntity::getCreateTime);
         List<OrderClassifyAttachEntity> orderClassifyAttachs = orderClassifyAttachService.list(wrapper);
 
-        Set<String> tripsIdSet = orderClassifyAttachs.stream().map(OrderClassifyAttachEntity::getTripsId).collect(Collectors.toSet());
-        Set<String> truckIdSet = orderClassifyAttachs.stream().map(OrderClassifyAttachEntity::getTruckId).collect(Collectors.toSet());
-        Set<String> driverIdSet = orderClassifyAttachs.stream().map(OrderClassifyAttachEntity::getDriverId).collect(Collectors.toSet());
+        // 车次/车辆为 pd-base String 边界，转 String 集合后远程查询；司机内部即 Long
+        Set<String> tripsIdSet = IdConvert.toStrSet(orderClassifyAttachs.stream().map(OrderClassifyAttachEntity::getTripsId).collect(Collectors.toSet()));
+        Set<String> truckIdSet = IdConvert.toStrSet(orderClassifyAttachs.stream().map(OrderClassifyAttachEntity::getTruckId).collect(Collectors.toSet()));
+        Set<Long> driverIdSet = orderClassifyAttachs.stream().map(OrderClassifyAttachEntity::getDriverId).collect(Collectors.toSet());
 
         CompletableFuture<Map<String, TransportTripsDto>> tripsMapFuture = PdCompletableFuture.tripsMapFuture(transportTripsFeign, tripsIdSet);
         CompletableFuture<Map<String, TruckDto>> truckMapFuture = PdCompletableFuture.truckMapFuture(truckFeign, truckIdSet);
@@ -180,9 +184,9 @@ public class ScheduleJobLogController {
         Map<String, TruckDto> truckMap = truckMapFuture.get();
         Map<Long, UserDTO> driverMap = driverMapFuture.get();
         for (OrderClassifyAttachEntity orderClassifyAttach : orderClassifyAttachs) {
-            tripsSet.add(tripsMap.get(orderClassifyAttach.getTripsId()).getName());
-            truckSet.add(truckMap.get(orderClassifyAttach.getTruckId()).getLicensePlate());
-            driverSet.add(driverMap.get(Long.parseLong(orderClassifyAttach.getDriverId())).getName());
+            tripsSet.add(tripsMap.get(IdConvert.toStr(orderClassifyAttach.getTripsId())).getName());
+            truckSet.add(truckMap.get(IdConvert.toStr(orderClassifyAttach.getTruckId())).getLicensePlate());
+            driverSet.add(driverMap.get(orderClassifyAttach.getDriverId()).getName());
         }
         orderClassifyLogDTO.setTripsSet(tripsSet);
         orderClassifyLogDTO.setTruckSet(truckSet);
@@ -197,20 +201,21 @@ public class ScheduleJobLogController {
      */
     @SneakyThrows
     private void buildTransportLine(OrderClassifyEntity item, OrderClassifyLogDTO orderClassifyLogDTO) {
-        CacheLineUseEntity cacheLineUseEntity = cacheLineUseService.getByOrderClassifyId(item.getId());
+        CacheLineUseEntity cacheLineUseEntity = cacheLineUseService.getByClassifyId(item.getId());
         Set<String> lineSet = new LinkedHashSet<>();
         Set<String> transportLineSet = new LinkedHashSet<>();
         if (cacheLineUseEntity != null) {
             CacheLineEntity cacheLineEntity = cacheLineService.getById(cacheLineUseEntity.getCacheLineId());
             List<CacheLineDetailEntity> cacheLineDetailEntities = cacheLineDetailService.findByCacheLineId(cacheLineUseEntity.getCacheLineId());
-            Set<String> transportLineIdSet = cacheLineDetailEntities.stream().map(cacheLineDetailEntity -> cacheLineDetailEntity.getTransportLineId()).collect(Collectors.toSet());
+            // 线路ID为 pd-base String 边界，转 String 集合后远程查询
+            Set<String> transportLineIdSet = IdConvert.toStrSet(cacheLineDetailEntities.stream().map(CacheLineDetailEntity::getTransportLineId).collect(Collectors.toSet()));
             CompletableFuture<Map<String, TransportLineDto>> transportLineMapFuture = PdCompletableFuture.transportLineIdMapFuture(transportLineFeign, transportLineIdSet);
 
-            Set<String> agencySet = new HashSet<>();
-            agencySet.add(cacheLineEntity.getStartAgencyId());
-            agencySet.add(cacheLineEntity.getEndAgencyId());
-            agencySet.addAll(cacheLineDetailEntities.stream().map(cacheLineDetailEntity -> cacheLineDetailEntity.getStartAgencyId()).collect(Collectors.toSet()));
-            agencySet.addAll(cacheLineDetailEntities.stream().map(cacheLineDetailEntity -> cacheLineDetailEntity.getEndAgencyId()).collect(Collectors.toSet()));
+            Set<Long> agencySet = new HashSet<>();
+            agencySet.add(cacheLineEntity.getStartOrgId());
+            agencySet.add(cacheLineEntity.getEndOrgId());
+            agencySet.addAll(cacheLineDetailEntities.stream().map(CacheLineDetailEntity::getStartOrgId).collect(Collectors.toSet()));
+            agencySet.addAll(cacheLineDetailEntities.stream().map(CacheLineDetailEntity::getEndOrgId).collect(Collectors.toSet()));
 
             CompletableFuture<Map<Long, OrgDTO>> agnecyMapFu = PdCompletableFuture.agencyMapFuture(orgFeign, null, agencySet, null);
             Map<String, TransportLineDto> transportLineMap = transportLineMapFuture.get();
@@ -219,13 +224,13 @@ public class ScheduleJobLogController {
             cacheLineDetailEntities.forEach(cacheLineDetailEntity -> {
                 CacheLineDetailDTO cacheLineDetailDTO = new CacheLineDetailDTO();
                 BeanUtils.copyProperties(cacheLineDetailEntity, cacheLineDetailDTO);
-                if (StringUtils.isNotEmpty(cacheLineDetailDTO.getStartAgencyId())) {
-                    cacheLineDetailDTO.setStartAgency(agency.get(Long.parseLong(cacheLineDetailDTO.getStartAgencyId())).getName());
+                if (cacheLineDetailDTO.getStartOrgId() != null) {
+                    cacheLineDetailDTO.setStartAgency(agency.get(cacheLineDetailDTO.getStartOrgId()).getName());
                 }
-                if (StringUtils.isNotBlank(cacheLineDetailDTO.getEndAgencyId())) {
-                    cacheLineDetailDTO.setEndAgency(agency.get(Long.parseLong(cacheLineDetailDTO.getEndAgencyId())).getName());
+                if (cacheLineDetailDTO.getEndOrgId() != null) {
+                    cacheLineDetailDTO.setEndAgency(agency.get(cacheLineDetailDTO.getEndOrgId()).getName());
                 }
-                transportLineSet.add(transportLineMap.get(cacheLineDetailDTO.getTransportLineId()).getName());
+                transportLineSet.add(transportLineMap.get(IdConvert.toStr(cacheLineDetailDTO.getTransportLineId())).getName());
 
                 lineSet.add(cacheLineDetailDTO.getStartAgency());
                 lineSet.add(cacheLineDetailDTO.getEndAgency());

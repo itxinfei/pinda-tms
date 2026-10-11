@@ -7,5 +7,5 @@ import java.util.List;
  * 订单分类
  */
 public interface IOrderClassifyService extends IService<OrderClassifyEntity> {
-    List<OrderClassifyEntity> findByJobLogId(String id);
+    List<OrderClassifyEntity> findByJobLogId(Long id);
 }

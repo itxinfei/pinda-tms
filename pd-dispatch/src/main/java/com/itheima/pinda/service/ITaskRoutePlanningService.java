@@ -13,5 +13,5 @@ public interface ITaskRoutePlanningService {
      * 执行
      * @return
      */
-    List<OrderLineSimpleDTO> execute(List<OrderClassifyGroupDTO> orderClassifyGroupDTOS, String agencyId, String jobId, String logId, String params);
+    List<OrderLineSimpleDTO> execute(List<OrderClassifyGroupDTO> orderClassifyGroupDTOS, Long orgId, Long jobId, Long logId, String params);
 }

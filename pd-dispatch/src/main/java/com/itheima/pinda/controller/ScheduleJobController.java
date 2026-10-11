@@ -10,11 +10,9 @@ import com.itheima.pinda.entity.ScheduleJobEntity;
 import com.itheima.pinda.enums.org.OrgType;
 import com.itheima.pinda.feign.OrgFeign;
 import com.itheima.pinda.service.IScheduleJobService;
-import com.itheima.pinda.utils.IdUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -32,7 +30,7 @@ import java.util.Map;
 @RequestMapping("/schedule")
 @Tag(name = "定时任务")
 public class ScheduleJobController {
-    private static final List<Integer> ORG_TYPE = ImmutableList.of(OrgType.BUSINESS_HALL.getType(), OrgType.TOP_TRANSFER_CENTER.getType()).asList();
+    private static final List<Integer> ORG_TYPE = ImmutableList.of(OrgType.BUSINESS_HALL.getType(), OrgType.TOP_TRANSFER_CENTER.getType());
 
     @Autowired
     private IScheduleJobService scheduleJobService;
@@ -50,14 +48,14 @@ public class ScheduleJobController {
 
     @GetMapping("{id}")
     @Operation(summary = "信息")
-    public ScheduleJobDTO info(@PathVariable("id") String id) {
+    public ScheduleJobDTO info(@PathVariable("id") Long id) {
         ScheduleJobDTO schedule = scheduleJobService.get(id);
         return schedule;
     }
 
     @GetMapping("dispatch/{id}")
     @Operation(summary = "调度信息")
-    public Result dispatchInfo(@PathVariable("id") String id) {
+    public Result dispatchInfo(@PathVariable("id") Long id) {
 
         LambdaQueryWrapper<ScheduleJobEntity> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(ScheduleJobEntity::getBusinessId, id);
@@ -84,11 +82,11 @@ public class ScheduleJobController {
     @Operation(summary = "保存或修改")
     public Result dispatch(@RequestBody ScheduleJobDTO dto) {
 
-        String businessId = dto.getBusinessId();
-        if (StringUtils.isBlank(businessId)) {
+        Long businessId = dto.getBusinessId();
+        if (businessId == null) {
             return Result.error(400, "机构ID不能为空");
         }
-        OrgDTO org = orgFeign.get(Long.valueOf(businessId));
+        OrgDTO org = orgFeign.get(businessId);
         if (org == null) {
             return Result.error(404, "机构不存在");
         }
@@ -97,14 +95,13 @@ public class ScheduleJobController {
             return Result.error(400, "无法给转运中心以上的机构增加调度任务");
         }
 
-        if (StringUtils.isNotBlank(dto.getId())) {
-            dto.setUpdateDate(new Date());
+        if (dto.getId() != null) {
+            dto.setUpdateTime(new Date());
             scheduleJobService.update(dto);
             return Result.ok();
         } else {
-            dto.setId(IdUtils.get());
             dto.setBeanName("dispatchTask");
-            dto.setCreateDate(new Date());
+            dto.setCreateTime(new Date());
             scheduleJobService.save(dto);
 
             return Result.ok();
@@ -122,7 +119,7 @@ public class ScheduleJobController {
 
     @DeleteMapping
     @Operation(summary = "删除")
-    public Result delete(@RequestBody String[] ids) {
+    public Result delete(@RequestBody Long[] ids) {
         scheduleJobService.deleteBatch(ids);
 
         return Result.ok();
@@ -130,15 +127,15 @@ public class ScheduleJobController {
 
     @PutMapping("/run/{id}")
     @Operation(summary = "立即执行")
-    public Result run(@PathVariable String id) {
-        scheduleJobService.run(new String[]{id});
+    public Result run(@PathVariable Long id) {
+        scheduleJobService.run(new Long[]{id});
 
         return Result.ok();
     }
 
     @PutMapping("/run")
     @Operation(summary = "立即执行")
-    public Result run(@RequestBody String[] ids) {
+    public Result run(@RequestBody Long[] ids) {
         scheduleJobService.run(ids);
 
         return Result.ok();
@@ -146,15 +143,15 @@ public class ScheduleJobController {
 
     @PutMapping("/pause/{id}")
     @Operation(summary = "暂停")
-    public Result pause(@PathVariable String id) {
-        scheduleJobService.pause(new String[]{id});
+    public Result pause(@PathVariable Long id) {
+        scheduleJobService.pause(new Long[]{id});
 
         return Result.ok();
     }
 
     @PutMapping("/pause")
     @Operation(summary = "暂停")
-    public Result pause(@RequestBody String[] ids) {
+    public Result pause(@RequestBody Long[] ids) {
         scheduleJobService.pause(ids);
 
         return Result.ok();
@@ -162,15 +159,15 @@ public class ScheduleJobController {
 
     @PutMapping("/resume/{id}")
     @Operation(summary = "恢复")
-    public Result resume(@PathVariable String id) {
-        scheduleJobService.resume(new String[]{id});
+    public Result resume(@PathVariable Long id) {
+        scheduleJobService.resume(new Long[]{id});
 
         return Result.ok();
     }
 
     @PutMapping("/resume")
     @Operation(summary = "恢复")
-    public Result resume(@RequestBody String[] ids) {
+    public Result resume(@RequestBody Long[] ids) {
         scheduleJobService.resume(ids);
 
         return Result.ok();

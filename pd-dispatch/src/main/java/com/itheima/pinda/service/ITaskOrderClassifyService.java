@@ -10,10 +10,10 @@ import java.util.List;
 public interface ITaskOrderClassifyService {
     /**
      * 订单分类
-     * @param agencyId 机构id（网点或者转运中心的id）
+     * @param orgId 机构id（网点或者转运中心的id）
      * @param jobId 定时任务id
      * @param logId 日志id
      * @return
      */
-    List<OrderClassifyGroupDTO> execute(String agencyId, String jobId, String logId);
+    List<OrderClassifyGroupDTO> execute(Long orgId, Long jobId, Long logId);
 }

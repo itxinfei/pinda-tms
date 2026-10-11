@@ -4,12 +4,16 @@ import com.itheima.pinda.DTO.OrderLineSimpleDTO;
 import com.itheima.pinda.DTO.OrderLineTripsTruckDriverDTO;
 import com.itheima.pinda.DTO.TaskTransportDTO;
 import com.itheima.pinda.service.IBusinessOperationService;
+import com.itheima.pinda.service.IScheduleJobService;
 import com.itheima.pinda.service.ITaskOrderClassifyService;
 import com.itheima.pinda.service.ITaskRoutePlanningService;
 import com.itheima.pinda.service.ITaskTripsSchedulingService;
-import lombok.SneakyThrows;
+import com.itheima.pinda.utils.IdConvert;
+import com.xxl.job.core.context.XxlJobHelper;
+import com.xxl.job.core.handler.annotation.XxlJob;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Map;
@@ -27,10 +31,18 @@ public class DispatchTask {
     private ITaskRoutePlanningService routePlanningService;
     @Autowired
     private IBusinessOperationService businessOperationService;
+    /**
+     * ScheduleJobServiceImpl 已注入本类，此处反向注入用 @Lazy 打破循环依赖
+     */
+    @Autowired
+    @Lazy
+    private IScheduleJobService scheduleJobService;
 
-    @SneakyThrows
-    public void run(String businessId, String params, String jobId, String logId) {
-        String LOGID = businessId + System.currentTimeMillis();
+    /**
+     * 执行单个机构的智能调度全链路（订单分类 → 路线规划 → 运输任务 → 车次车辆司机）
+     */
+    public void run(Long businessId, String params, Long jobId, Long logId) {
+        String LOGID = businessId + "" + System.currentTimeMillis();
         log.info("[{}]TestTask定时任务正在执行，参数为：{},{},{},{}", LOGID, businessId, params, jobId, logId);
 
         // 订单分类
@@ -46,11 +58,27 @@ public class DispatchTask {
         log.info("[{}] 运输任务创建完成:{}", LOGID, transportTaskMap);
 
         // 车次 车辆 司机
-        List<OrderLineTripsTruckDriverDTO> orderLineTripsTruckDriverDTOS = truckSchedulingService.execute(orderLineSimpleDTOS, businessId, jobId, logId, params);
+        List<OrderLineTripsTruckDriverDTO> orderLineTripsTruckDriverDTOS = truckSchedulingService.execute(orderLineSimpleDTOS, businessId, jobId, logId, businessId);
         log.info("[{}] 规划车次车辆司机:{}", LOGID, orderLineTripsTruckDriverDTOS);
 
         //  完善运输任务信息； 创建司机作业任务；
         businessOperationService.updateTransportTask(orderLineTripsTruckDriverDTOS, transportTaskMap);
         log.info("[{}] 安排车次车辆司机,当前机构调度结束！！！！！", LOGID);
+    }
+
+    /**
+     * XXL-Job 调度入口：xxl-job-admin 控制台按机构配置任务，任务参数为机构ID。
+     * 租户绑定/失败重试/执行日志统一在 ScheduleJobServiceImpl#executeWithRetry 中处理。
+     */
+    @XxlJob("dispatchTask")
+    public void runJob() {
+        String param = XxlJobHelper.getJobParam();
+        Long orgId = IdConvert.toLong(param);
+        if (orgId == null) {
+            log.error("[XXL-Job] dispatchTask 参数非法（需要机构ID），param={}", param);
+            XxlJobHelper.handleFail("机构ID参数非法: " + param);
+            return;
+        }
+        scheduleJobService.runByOrgId(orgId);
     }
 }

@@ -2,11 +2,13 @@ package com.itheima.pinda.DTO;
 
 import com.itheima.pinda.entity.OrderClassifyEntity;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
 
 @Data
+@EqualsAndHashCode(callSuper = true)
 public class OrderClassifyLogDTO extends OrderClassifyEntity {
 
     /**

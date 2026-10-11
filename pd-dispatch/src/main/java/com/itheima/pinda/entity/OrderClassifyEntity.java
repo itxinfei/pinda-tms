@@ -9,55 +9,55 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * 订单分类记录
+ * 订单分类记录（disp_order_classify）
  *
- * @author diesel 2020-04-16
+ * <p>一次调度对订单按「起始机构#目的机构#当前机构」归组的结果。
+ * 主键雪花 Long；tenant_id 由 TenantLineInnerInterceptor 自动填充。</p>
  */
 @Data
-@TableName("pd_order_classify")
+@TableName("disp_order_classify")
 public class OrderClassifyEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     /**
-     * id
+     * 主键（雪花）
      */
-    @TableId(value = "id", type = IdType.INPUT)
-    private String id;
+    @TableId(value = "id", type = IdType.ASSIGN_ID)
+    private Long id;
 
     /**
-     * 任务id
+     * 定时任务ID
      */
-    private String jobId;
+    private Long jobId;
 
     /**
-     * 任务日志id
+     * 任务日志ID
      */
-    private String jobLogId;
+    private Long jobLogId;
 
     /**
-     * 起始机构
+     * 起始机构ID
      */
-    private String startAgencyId;
+    private Long startOrgId;
 
     /**
-     * 终点机构
+     * 目的机构ID
      */
-    private String endAgencyId;
-    
+    private Long endOrgId;
+
     /**
      * 订单类别:xxx#xxx#xxx
      */
     private String classify;
 
     /**
-     * 订单数量
+     * 组内订单数量
      */
     private Integer total;
 
     /**
      * 创建时间
      */
-    private Date createDate;
-
+    private Date createTime;
 }

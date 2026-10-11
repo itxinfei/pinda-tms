@@ -1,4 +1,5 @@
 package com.itheima.pinda.service;
+
 import com.baomidou.mybatisplus.spring.service.IService;
 import com.itheima.pinda.entity.OrderClassifyOrderEntity;
 
@@ -6,5 +7,9 @@ import com.itheima.pinda.entity.OrderClassifyOrderEntity;
  * 订单分类关联订单
  */
 public interface IOrderClassifyOrderService extends IService<OrderClassifyOrderEntity> {
-    String getClassifyId(String orderId);
+
+    /**
+     * 按订单ID（pd-oms String 边界）查分类ID
+     */
+    Long getClassifyId(String orderId);
 }

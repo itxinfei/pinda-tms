@@ -8,7 +8,6 @@
 
 package com.itheima.pinda.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.itheima.pinda.entity.CacheLineUseEntity;
@@ -20,9 +19,9 @@ import org.springframework.stereotype.Service;
 public class CacheLineUseServiceImpl extends ServiceImpl<CacheLineUseMapper, CacheLineUseEntity> implements ICacheLineUseService {
 
     @Override
-    public CacheLineUseEntity getByOrderClassifyId(String id) {
+    public CacheLineUseEntity getByClassifyId(Long classifyId) {
         LambdaQueryWrapper<CacheLineUseEntity> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(CacheLineUseEntity::getOrderClassifyId, id);
+        wrapper.eq(CacheLineUseEntity::getClassifyId, classifyId);
         return this.baseMapper.selectOne(wrapper);
     }
 }

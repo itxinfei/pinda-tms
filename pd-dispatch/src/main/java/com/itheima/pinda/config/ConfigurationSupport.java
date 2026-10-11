@@ -110,6 +110,9 @@ public class ConfigurationSupport extends WebMvcConfigurationSupport {
 //                .addDeserializer(LocalTime.class, new LocalTimeDeserializer(DateTimeFormatter.ofPattern(DatePatterns.TIME)))
 
                     .addSerializer(BigInteger.class, ToStringSerializer.instance)
+                    //雪花ID精度铁律：对外 Long 统一序列化为 String，避免 JS Number 精度丢失
+                    .addSerializer(Long.class, ToStringSerializer.instance)
+                    .addSerializer(Long.TYPE, ToStringSerializer.instance)
                     .addSerializer(BigDecimal.class, new BigDecimalSerializer())
                     .addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(DateTimeFormatter.ofPattern(DatePatterns.DATE_TIME)))
                     .addSerializer(LocalDate.class, new LocalDateSerializer(DateTimeFormatter.ofPattern(DatePatterns.DATE)))
@@ -124,7 +127,7 @@ public class ConfigurationSupport extends WebMvcConfigurationSupport {
                     String fieldName = gen.getOutputContext().getCurrentName();
                     try {
                         //反射获取字段类型
-                        Field field = gen.getCurrentValue().getClass().getDeclaredField(fieldName);
+                        Field field = gen.currentValue().getClass().getDeclaredField(fieldName);
                         if (Objects.equals(field.getType(), String.class)) {
                             //字符串型空值""
                             gen.writeString("");

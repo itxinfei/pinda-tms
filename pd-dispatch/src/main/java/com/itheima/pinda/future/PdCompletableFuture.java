@@ -18,7 +18,6 @@ import com.itheima.pinda.feign.transportline.TransportLineFeign;
 import com.itheima.pinda.feign.transportline.TransportTripsFeign;
 import com.itheima.pinda.feign.truck.TruckFeign;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.CollectionUtils;
 
 import java.util.*;
@@ -35,10 +34,10 @@ public class PdCompletableFuture {
      * @param ids        机构id列表
      * @return 执行结果
      */
-    public static final CompletableFuture<Map<Long, OrgDTO>> agencyMapFuture(OrgFeign feign, Integer agencyType, Set<String> ids, Long countyId) {
+    public static final CompletableFuture<Map<Long, OrgDTO>> agencyMapFuture(OrgFeign feign, Integer agencyType, Set<Long> ids, Long countyId) {
         return CompletableFuture.supplyAsync(() -> {
             log.info("agencyMapFuture : {} , {} , {}", agencyType, ids, countyId);
-            List<Long> idList = ids.stream().filter(StringUtils::isNotBlank).mapToLong(Long::valueOf).boxed().collect(Collectors.toList());
+            List<Long> idList = new ArrayList<>(ids);
             if (!CollectionUtils.isEmpty(idList)) {
                 List<OrgDTO> result = feign.list(agencyType,
                         idList,
@@ -53,9 +52,9 @@ public class PdCompletableFuture {
         });
     }
 
-    public static CompletableFuture<Map<Long, OrgDTO>> businessHallMapFuture(OrgFeign feign, Set<String> set) {
+    public static CompletableFuture<Map<Long, OrgDTO>> businessHallMapFuture(OrgFeign feign, Set<Long> set) {
         return CompletableFuture.supplyAsync(() -> {
-            List<Long> list = set.stream().map(Long::parseLong).collect(Collectors.toList());
+            List<Long> list = new ArrayList<>(set);
             List<OrgDTO> orgs = feign.listByCountyIds(OrgType.BUSINESS_HALL.getType(), list);
             if (orgs == null) {
                 return new HashMap<>();
@@ -108,9 +107,9 @@ public class PdCompletableFuture {
         });
     }
 
-    public static CompletableFuture<Map<Long, UserDTO>> driverMapFuture(UserFeign api, Set<String> driverIdSet) {
+    public static CompletableFuture<Map<Long, UserDTO>> driverMapFuture(UserFeign api, Set<Long> driverIdSet) {
         return CompletableFuture.supplyAsync(() -> {
-            List<Long> list = driverIdSet.stream().filter(StringUtils::isNotBlank).map(Long::parseLong).collect(Collectors.toList());
+            List<Long> list = new ArrayList<>(driverIdSet);
 
             List<UserDTO> result = api.list(list, null, null, null);
             if (result != null) {

@@ -9,13 +9,14 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 异常调度订单登记实体
+ * 异常调度订单登记实体（disp_exception_order）
  *
  * <p>记录调度过程中无法完成线路规划（ERROR 分组，如起始/目的机构信息缺失）的订单，
- * 供运营人员查询并人工处理。</p>
+ * 供运营人员查询并人工处理。订单ID落库为 BIGINT，pd-oms 侧以 String 协议交互。
+ * 主键雪花 Long；tenant_id 由 TenantLineInnerInterceptor 自动填充。</p>
  */
 @Data
-@TableName("pd_schedule_exception_order")
+@TableName("disp_exception_order")
 public class ScheduleExceptionOrder implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -31,20 +32,20 @@ public class ScheduleExceptionOrder implements Serializable {
     public static final int STATUS_HANDLED = 1;
 
     /**
-     * id
+     * 主键（雪花）
      */
-    @TableId(value = "id", type = IdType.INPUT)
-    private String id;
+    @TableId(value = "id", type = IdType.ASSIGN_ID)
+    private Long id;
 
     /**
-     * 订单ID
+     * 订单ID（oms_order.id，落库 BIGINT）
      */
-    private String orderId;
+    private Long orderId;
 
     /**
-     * 当前机构ID（调度发生时所在网点）
+     * 发生时所在机构ID（调度发生时所在网点）
      */
-    private String agencyId;
+    private Long orgId;
 
     /**
      * 异常原因（如：起始/目的机构信息缺失）

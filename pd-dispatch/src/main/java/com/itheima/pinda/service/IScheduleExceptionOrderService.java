@@ -13,12 +13,12 @@ public interface IScheduleExceptionOrderService extends IService<ScheduleExcepti
     /**
      * 登记无法调度的订单（幂等：同一订单存在待处理记录时不重复登记）
      *
-     * @param orderId  订单ID
-     * @param agencyId 当前机构ID
-     * @param reason   异常原因
+     * @param orderId 订单ID（pd-oms String 边界）
+     * @param orgId   当前机构ID
+     * @param reason  异常原因
      * @return 是否新增登记
      */
-    boolean registerExceptionOrder(String orderId, String agencyId, String reason);
+    boolean registerExceptionOrder(String orderId, Long orgId, String reason);
 
     /**
      * 查询所有待处理的异常订单（用于自动重试调度）
@@ -34,5 +34,5 @@ public interface IScheduleExceptionOrderService extends IService<ScheduleExcepti
      * @param remark 处理备注
      * @return 是否成功
      */
-    boolean markHandled(String id, String remark);
+    boolean markHandled(Long id, String remark);
 }

@@ -11,6 +11,7 @@ package com.itheima.pinda.DTO;
 import com.itheima.pinda.entity.ScheduleJobLogEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.util.List;
 
@@ -21,6 +22,7 @@ import java.util.List;
  * @since 1.0.0
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @Schema(description = "定时任务日志")
 public class ScheduleJobLogDTO extends ScheduleJobLogEntity {
 

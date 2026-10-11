@@ -9,35 +9,34 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * 缓冲线路使用表
+ * 算路缓存使用记录表（disp_cache_line_use）：缓存被哪次分类采用
  *
- * @author diesel 2020-04-16
+ * <p>主键雪花 Long；tenant_id 由 TenantLineInnerInterceptor 自动填充。</p>
  */
 @Data
-@TableName("pd_cache_line_use")
+@TableName("disp_cache_line_use")
 public class CacheLineUseEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     /**
-     * id
+     * 主键（雪花）
      */
-    @TableId(value = "id", type = IdType.INPUT)
-    private String id;
+    @TableId(value = "id", type = IdType.ASSIGN_ID)
+    private Long id;
 
     /**
-     * 缓冲线路表id
+     * 缓存路线ID
      */
-    private String cacheLineId;
+    private Long cacheLineId;
 
     /**
-     * 订单分类表id
+     * 分类ID
      */
-    private String orderClassifyId;
+    private Long classifyId;
 
     /**
      * 创建时间
      */
-    private Date createDate;
-
+    private Date createTime;
 }

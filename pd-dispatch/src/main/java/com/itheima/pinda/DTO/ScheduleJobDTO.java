@@ -11,6 +11,7 @@ package com.itheima.pinda.DTO;
 import com.itheima.pinda.entity.ScheduleJobEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * 定时任务
@@ -19,6 +20,7 @@ import lombok.Data;
  * @since 1.0.0
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @Schema(description = "定时任务")
 public class ScheduleJobDTO extends ScheduleJobEntity {
 

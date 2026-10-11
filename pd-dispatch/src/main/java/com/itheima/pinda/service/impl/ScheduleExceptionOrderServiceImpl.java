@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.itheima.pinda.entity.ScheduleExceptionOrder;
 import com.itheima.pinda.mapper.ScheduleExceptionOrderMapper;
 import com.itheima.pinda.service.IScheduleExceptionOrderService;
-import com.itheima.pinda.utils.IdUtils;
+import com.itheima.pinda.utils.IdConvert;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
@@ -24,19 +24,20 @@ public class ScheduleExceptionOrderServiceImpl extends ServiceImpl<ScheduleExcep
     /**
      * 登记无法调度的订单（幂等：同一订单存在待处理记录时不重复登记）
      *
-     * @param orderId  订单ID
-     * @param agencyId 当前机构ID
-     * @param reason   异常原因
+     * @param orderId 订单ID（pd-oms String 边界，落库转 Long）
+     * @param orgId   当前机构ID
+     * @param reason  异常原因
      * @return 是否新增登记
      */
     @Override
-    public boolean registerExceptionOrder(String orderId, String agencyId, String reason) {
+    public boolean registerExceptionOrder(String orderId, Long orgId, String reason) {
         if (StringUtils.isBlank(orderId)) {
             return false;
         }
+        Long orderIdLong = IdConvert.toLong(orderId);
         // 幂等：存在待处理的同订单记录则跳过
         LambdaQueryWrapper<ScheduleExceptionOrder> existsWrapper = new LambdaQueryWrapper<>();
-        existsWrapper.eq(ScheduleExceptionOrder::getOrderId, orderId)
+        existsWrapper.eq(ScheduleExceptionOrder::getOrderId, orderIdLong)
             .eq(ScheduleExceptionOrder::getStatus, ScheduleExceptionOrder.STATUS_PENDING);
         long exists = count(existsWrapper);
         if (exists > 0) {
@@ -45,9 +46,8 @@ public class ScheduleExceptionOrderServiceImpl extends ServiceImpl<ScheduleExcep
         }
 
         ScheduleExceptionOrder record = new ScheduleExceptionOrder();
-        record.setId(IdUtils.get());
-        record.setOrderId(orderId);
-        record.setAgencyId(agencyId);
+        record.setOrderId(orderIdLong);
+        record.setOrgId(orgId);
         record.setReason(StringUtils.defaultIfBlank(reason, "起始/目的机构信息缺失，无法完成线路规划"));
         record.setStatus(ScheduleExceptionOrder.STATUS_PENDING);
         record.setCreateTime(LocalDateTime.now());
@@ -83,7 +83,7 @@ public class ScheduleExceptionOrderServiceImpl extends ServiceImpl<ScheduleExcep
      * @return 是否成功
      */
     @Override
-    public boolean markHandled(String id, String remark) {
+    public boolean markHandled(Long id, String remark) {
         ScheduleExceptionOrder update = new ScheduleExceptionOrder();
         update.setId(id);
         update.setStatus(ScheduleExceptionOrder.STATUS_HANDLED);

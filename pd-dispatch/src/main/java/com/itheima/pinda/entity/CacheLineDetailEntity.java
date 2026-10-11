@@ -9,64 +9,64 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * 缓冲线路子表
+ * 算路缓存明细表（disp_cache_line_detail）：各段实际线路
  *
- * @author diesel 2020-04-16
+ * <p>业务线路ID（transportLineId）落库为 BIGINT；pd-base 线路 Feign 以 String 协议交互，
+ * 落库点完成转换。主键雪花 Long；tenant_id 由 TenantLineInnerInterceptor 自动填充。</p>
  */
 @Data
-@TableName("pd_cache_line_detail")
+@TableName("disp_cache_line_detail")
 public class CacheLineDetailEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     @Override
     public int hashCode() {
-        return id.hashCode();
+        return id == null ? 0 : id.hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof CacheLineDetailEntity) {
-            CacheLineDetailEntity cacheLineDetailEntity = (CacheLineDetailEntity) obj;
-            return (id.equals(cacheLineDetailEntity.id));
+            CacheLineDetailEntity other = (CacheLineDetailEntity) obj;
+            return id == null ? other.id == null : id.equals(other.id);
         }
         return super.equals(obj);
     }
 
     /**
-     * id
+     * 主键（雪花）
      */
-    @TableId(value = "id", type = IdType.INPUT)
-    private String id;
+    @TableId(value = "id", type = IdType.ASSIGN_ID)
+    private Long id;
 
     /**
-     * 缓冲线路表id
+     * 缓存路线ID
      */
-    private String cacheLineId;
+    private Long cacheLineId;
 
     /**
-     * 起始机构
+     * 段顺序
      */
-    private String startAgencyId;
+    private Integer sort;
 
     /**
-     * 终点机构
+     * 本段起始机构ID
      */
-    private String endAgencyId;
+    private Long startOrgId;
 
     /**
-     * 从1开始递增
+     * 本段目的机构ID
      */
-    private int sort;
+    private Long endOrgId;
 
     /**
-     * 业务表线路id
+     * 业务线路ID（base_transport_line.id，落库 BIGINT）
      */
-    private String transportLineId;
+    private Long transportLineId;
 
     /**
      * 创建时间
      */
-    private Date createDate;
-
+    private Date createTime;
 }

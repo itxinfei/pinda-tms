@@ -20,6 +20,7 @@ import com.itheima.pinda.feign.TransportTaskFeign;
 import com.itheima.pinda.feign.transportline.TransportLineFeign;
 import com.itheima.pinda.feign.transportline.TransportTripsFeign;
 import com.itheima.pinda.service.IBusinessOperationService;
+import com.itheima.pinda.utils.IdConvert;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +31,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -69,7 +71,8 @@ public class BusinessOperationServiceImpl implements IBusinessOperationService {
                     // 新订单 更新运单信息
                     for (String orderId : orderClassify.getOrders()) {
                         // 【P0优化】查询运单（下单时已预生成，理论上应该存在）
-                        TransportOrderDTO transportOrderDto = transportOrderFeign.findByOrderId(toLong(orderId));
+                        // 订单ID为 pd-oms String 边界，调 pd-work Feign 前转 Long
+                        TransportOrderDTO transportOrderDto = transportOrderFeign.findByOrderId(IdConvert.toLong(orderId));
                         if (transportOrderDto == null) {
                             // 【健壮性】单个订单缺失运单不应中断整轮调度，
                             // 记录错误并跳过该订单，避免影响其它线路/订单的正常调度。
@@ -87,7 +90,8 @@ public class BusinessOperationServiceImpl implements IBusinessOperationService {
                 }
                 //  查询运单信息构建运单集合（work Feign 已 Long 化，订单 ID 在此边界转换）
                 List<Long> orderIds = orderClassify.getOrders().stream()
-                        .map(BusinessOperationServiceImpl::toLong)
+                        .map(IdConvert::toLong)
+                        .filter(Objects::nonNull)
                         .collect(Collectors.toList());
                 List<TransportOrderDTO> transportOrders = transportOrderFeign.findByOrderIds(orderIds);
                 transportOrderIds.addAll(transportOrders.stream()
@@ -97,8 +101,8 @@ public class BusinessOperationServiceImpl implements IBusinessOperationService {
 
             // 创建运输任务
             TaskTransportDTO taskTranSportDto = new TaskTransportDTO();
-            taskTranSportDto.setStartOrgId(toLong(cacheLineDetail.getStartAgencyId()));
-            taskTranSportDto.setEndOrgId(toLong(cacheLineDetail.getEndAgencyId()));
+            taskTranSportDto.setStartOrgId(cacheLineDetail.getStartOrgId());
+            taskTranSportDto.setEndOrgId(cacheLineDetail.getEndOrgId());
             taskTranSportDto.setStatus(TransportTaskStatus.PENDING.getCode());
             taskTranSportDto.setAssignedStatus(TransportTaskAssignedStatus.TO_BE_DISTRIBUTED.getCode());
             taskTranSportDto.setLoadingStatus(TransportTaskLoadingStatus.HALF.getCode());
@@ -107,7 +111,7 @@ public class BusinessOperationServiceImpl implements IBusinessOperationService {
             if (taskTranSportDto == null || taskTranSportDto.getId() == null) {
                 log.error("运输任务创建失败: line={}, start={}, end={}",
                         cacheLineDetail.getTransportLineId(),
-                        cacheLineDetail.getStartAgencyId(), cacheLineDetail.getEndAgencyId());
+                        cacheLineDetail.getStartOrgId(), cacheLineDetail.getEndOrgId());
                 throw new PdException("运输任务创建失败，请稍后重试");
             }
 
@@ -116,8 +120,8 @@ public class BusinessOperationServiceImpl implements IBusinessOperationService {
             // 调度成功：回写关联运单为"已调度"（此前主链路不回写，运单永远停在待调度）
             markTransportOrdersScheduled(transportOrderIds);
 
-            // 线路管理运输任务 并返回
-            result.put(cacheLineDetail.getTransportLineId(), taskTranSportDto);
+            // 线路管理运输任务 并返回（transportLineId 为 pd-base String 边界，作为 Map key 保持 String）
+            result.put(IdConvert.toStr(cacheLineDetail.getTransportLineId()), taskTranSportDto);
 
         });
         return result;
@@ -138,13 +142,6 @@ public class BusinessOperationServiceImpl implements IBusinessOperationService {
         }
     }
 
-    /**
-     * 调度内部旧表 ID 为 String，work Feign 已 Long 化，在调用边界安全转换；空串/空白返回 null。
-     */
-    private static Long toLong(String id) {
-        return StringUtils.isBlank(id) ? null : Long.parseLong(id);
-    }
-
     @Override
     public void updateTransportTask(List<OrderLineTripsTruckDriverDTO> orderLineTripsTruckDriverDTOS, Map<String, TaskTransportDTO> transportTaskMap) {
         log.info("updateTransportTask:begin");
@@ -153,7 +150,7 @@ public class BusinessOperationServiceImpl implements IBusinessOperationService {
             TripsTruckDriverDTO tripsTruckDriver = orderLineTripsTruckDriverDTO.getTripsTruckDriverDTO();
 
             TransportTripsDto transportTrips = transportTripsFeign.fineById(tripsTruckDriver.getTripsId());
-            log.info("查询线路信息：{}", transportTrips);
+            log.info("查询车次信息：{}", transportTrips);
             if (transportTrips == null || StringUtils.isBlank(transportTrips.getDepartureTime())) {
                 log.error("车次[{}]不存在或无发车时间，跳过该线路司机作业单生成", tripsTruckDriver.getTripsId());
                 transportTaskMap.remove(transportLineId);
@@ -176,15 +173,15 @@ public class BusinessOperationServiceImpl implements IBusinessOperationService {
                 return;
             }
 
-            // 创建司机任务
+            // 创建司机任务（driverId 内部即 Long，直接装配）
             DriverJobDTO driverJobDto = new DriverJobDTO();
             driverJobDto.setStartOrgId(taskTransportDTO.getStartOrgId());
             driverJobDto.setEndOrgId(taskTransportDTO.getEndOrgId());
             driverJobDto.setStatus(DriverJobStatus.PENDING.getCode());
-            driverJobDto.setDriverId(toLong(tripsTruckDriver.getDriverId()));
+            driverJobDto.setDriverId(tripsTruckDriver.getDriverId());
             driverJobDto.setTaskTransportId(taskTransportDTO.getId());
-            driverJobDto.setPlanDepartureTime(DateUtils.getUTCTime(departureDate));
-            driverJobDto.setPlanArrivalTime(DateUtils.getUTCTime(arrivalTime));
+            driverJobDto.setPlanDepartureTime(DateUtils.shanghaiToUTC(departureDate));
+            driverJobDto.setPlanArrivalTime(DateUtils.shanghaiToUTC(arrivalTime));
             DriverJobDTO savedDriverJob = driverJobFeign.save(driverJobDto);
             if (savedDriverJob == null || savedDriverJob.getId() == null) {
                 log.error("司机作业单创建失败: taskId={}, driverId={}",
@@ -192,12 +189,12 @@ public class BusinessOperationServiceImpl implements IBusinessOperationService {
                 throw new PdException("司机作业单创建失败，请稍后重试");
             }
             log.info("创建司机任务:{}", savedDriverJob);
-            // 更新运输任务信息
+            // 更新运输任务信息（车次/车辆ID为 pd-base String 边界，落 pd-work BIGINT 列前转换）
             TaskTransportDTO taskTransportDTOUpdate = new TaskTransportDTO();
             taskTransportDTOUpdate.setTransportOrderIds(taskTransportDTO.getTransportOrderIds());
             taskTransportDTOUpdate.setAssignedStatus(TransportTaskAssignedStatus.DISTRIBUTED.getCode());
-            taskTransportDTOUpdate.setTripsId(toLong(tripsTruckDriver.getTripsId()));
-            taskTransportDTOUpdate.setTruckId(toLong(tripsTruckDriver.getTruckId()));
+            taskTransportDTOUpdate.setTripsId(IdConvert.toLong(tripsTruckDriver.getTripsId()));
+            taskTransportDTOUpdate.setTruckId(IdConvert.toLong(tripsTruckDriver.getTruckId()));
             taskTransportDTOUpdate.setPlanDepartureTime(departureDate);// 计划发车时间
             taskTransportDTOUpdate.setPlanArrivalTime(arrivalTime);// 计划到达时间
             taskTransportDTOUpdate.setPlanPickUpTime(departureDate);// 计划提货

@@ -21,13 +21,13 @@ import java.util.List;
 public class OrderClassifyAttachServiceImpl extends ServiceImpl<OrderClassifyAttachMapper, OrderClassifyAttachEntity> implements IOrderClassifyAttachService {
 
     @Override
-    public List<OrderClassifyAttachEntity> findAttachByClassifyId(String classifyId) {
+    public List<OrderClassifyAttachEntity> findAttachByClassifyId(Long classifyId) {
 
         LambdaQueryWrapper<OrderClassifyAttachEntity> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(OrderClassifyAttachEntity::getOrderClassifyId, classifyId);
+        wrapper.eq(OrderClassifyAttachEntity::getClassifyId, classifyId);
 
         // 正序排列  从先到后
-        wrapper.orderByAsc(OrderClassifyAttachEntity::getCreateDate);
+        wrapper.orderByAsc(OrderClassifyAttachEntity::getCreateTime);
         return this.baseMapper.selectList(wrapper);
     }
 }

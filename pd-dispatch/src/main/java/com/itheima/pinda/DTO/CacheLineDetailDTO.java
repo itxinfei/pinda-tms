@@ -2,8 +2,10 @@ package com.itheima.pinda.DTO;
 
 import com.itheima.pinda.entity.CacheLineDetailEntity;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
+@EqualsAndHashCode(callSuper = true)
 public class CacheLineDetailDTO extends CacheLineDetailEntity {
 
     /**
