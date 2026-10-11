@@ -9,7 +9,7 @@ import io.swagger.v3.oas.annotations.Hidden;
 import java.util.List;
 
 @FeignClient(name = "pd-base")
-@RequestMapping("scope")
+// 2026-10-10：Spring Cloud 2025 OpenFeign 禁止接口级 @RequestMapping，前缀下沉到方法路径（URL 不变）
 @Hidden
 public interface CourierScopeFeign {
     /**
@@ -18,7 +18,7 @@ public interface CourierScopeFeign {
      * @param dtoList 快递员业务范围信息
      * @return 返回信息
      */
-    @PostMapping("/courier/batch")
+    @PostMapping("scope/courier/batch")
     Result batchSaveCourierScope(@RequestBody List<CourierScopeDto> dtoList);
 
     /**
@@ -27,7 +27,7 @@ public interface CourierScopeFeign {
      * @param dto 参数
      * @return 返回信息
      */
-    @DeleteMapping("/courier")
+    @DeleteMapping("scope/courier")
     Result deleteCourierScope(@RequestBody CourierScopeDto dto);
 
     /**
@@ -37,6 +37,6 @@ public interface CourierScopeFeign {
      * @param userId 快递员id
      * @return 快递员业务范围列表
      */
-    @GetMapping("/courier")
+    @GetMapping("scope/courier")
     List<CourierScopeDto> findAllCourierScope(@RequestParam(name = "areaId", required = false) String areaId, @RequestParam(name = "userId", required = false) String userId);
 }

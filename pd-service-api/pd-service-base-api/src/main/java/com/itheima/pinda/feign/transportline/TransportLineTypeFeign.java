@@ -10,7 +10,7 @@ import io.swagger.v3.oas.annotations.Hidden;
 import java.util.List;
 
 @FeignClient(name = "pd-base")
-@RequestMapping("base/transportLine/type")
+// 2026-10-10：Spring Cloud 2025 OpenFeign 禁止接口级 @RequestMapping，前缀下沉到各方法路径（URL 不变）
 @Hidden
 public interface TransportLineTypeFeign {
     /**
@@ -19,7 +19,7 @@ public interface TransportLineTypeFeign {
      * @param dto 线路类型信息
      * @return 线路类型信息
      */
-    @PostMapping("")
+    @PostMapping("base/transportLine/type")
     TransportLineTypeDto saveTransportLineType(@RequestBody TransportLineTypeDto dto);
 
     /**
@@ -28,7 +28,7 @@ public interface TransportLineTypeFeign {
      * @param id 线路类型id
      * @return 线路类型详情
      */
-    @GetMapping("/{id}")
+    @GetMapping("base/transportLine/type/{id}")
     TransportLineTypeDto fineById(@PathVariable(name = "id") String id);
 
     /**
@@ -41,7 +41,7 @@ public interface TransportLineTypeFeign {
      * @param agencyType 机构类型
      * @return 线路类型分页数据
      */
-    @GetMapping("/page")
+    @GetMapping("base/transportLine/type/page")
     PageResponse<TransportLineTypeDto> findByPage(@RequestParam(name = "page") Integer page,
                                                   @RequestParam(name = "pageSize") Integer pageSize,
                                                   @RequestParam(name = "typeNumber", required = false) String typeNumber,
@@ -54,7 +54,7 @@ public interface TransportLineTypeFeign {
      * @param ids 线路类型id列表
      * @return 线路类型列表
      */
-    @GetMapping("")
+    @GetMapping("base/transportLine/type")
     List<TransportLineTypeDto> findAll(@RequestParam(name = "ids", required = false) List<String> ids);
 
     /**
@@ -64,7 +64,7 @@ public interface TransportLineTypeFeign {
      * @param dto 线路类型信息
      * @return 线路类型信息
      */
-    @PutMapping("/{id}")
+    @PutMapping("base/transportLine/type/{id}")
     TransportLineTypeDto update(@PathVariable(name = "id") String id, @RequestBody TransportLineTypeDto dto);
 
     /**
@@ -73,6 +73,6 @@ public interface TransportLineTypeFeign {
      * @param id 线路类型id
      * @return 返回信息
      */
-    @PutMapping("/{id}/disable")
+    @PutMapping("base/transportLine/type/{id}/disable")
     Result disable(@PathVariable(name = "id") String id);
 }

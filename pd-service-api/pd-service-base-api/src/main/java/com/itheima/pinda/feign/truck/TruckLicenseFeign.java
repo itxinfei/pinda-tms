@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Hidden;
 
 @FeignClient(name = "pd-base")
-@RequestMapping("base/truck/license")
+// 2026-10-10：Spring Cloud 2025 OpenFeign 禁止接口级 @RequestMapping，前缀下沉到方法路径（URL 不变）
 @Hidden
 public interface TruckLicenseFeign {
     /**
@@ -15,7 +15,7 @@ public interface TruckLicenseFeign {
      * @param dto 车辆行驶证信息
      * @return 车辆行驶证信息
      */
-    @PostMapping("")
+    @PostMapping("base/truck/license")
     TruckLicenseDto saveTruckLicense(@RequestBody TruckLicenseDto dto);
 
     /**
@@ -24,6 +24,6 @@ public interface TruckLicenseFeign {
      * @param id 车辆行驶证id
      * @return 车辆行驶证信息
      */
-    @GetMapping("/{id}")
+    @GetMapping("base/truck/license/{id}")
     TruckLicenseDto fineById(@PathVariable(name = "id") String id);
 }

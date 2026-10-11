@@ -12,7 +12,7 @@ import java.util.List;
 
 
 @FeignClient(name = "pd-base")
-@RequestMapping("base/truck/type")
+// 2026-10-10：Spring Cloud 2025 OpenFeign 禁止接口级 @RequestMapping，前缀下沉到各方法路径（URL 不变）
 @Hidden
 public interface TruckTypeFeign {
     /**
@@ -21,7 +21,7 @@ public interface TruckTypeFeign {
      * @param dto 车辆类型信息
      * @return 车辆类型信息
      */
-    @PostMapping("")
+    @PostMapping("base/truck/type")
     TruckTypeDto saveTruckType(@RequestBody TruckTypeDto dto);
 
     /**
@@ -30,7 +30,7 @@ public interface TruckTypeFeign {
      * @param id 车辆类型id
      * @return 车辆类型信息
      */
-    @GetMapping("/{id}")
+    @GetMapping("base/truck/type/{id}")
     TruckTypeDto fineById(@PathVariable(name = "id") String id);
 
     /**
@@ -43,7 +43,7 @@ public interface TruckTypeFeign {
      * @param allowableVolume 车辆体积
      * @return 车辆类型分页数据
      */
-    @GetMapping("/page")
+    @GetMapping("base/truck/type/page")
     PageResponse<TruckTypeDto> findByPage(@RequestParam(name = "page") Integer page,
                                           @RequestParam(name = "pageSize") Integer pageSize,
                                           @RequestParam(name = "name", required = false) String name,
@@ -56,7 +56,7 @@ public interface TruckTypeFeign {
      * @param ids 车辆类型id
      * @return 车辆类型列表
      */
-    @GetMapping("")
+    @GetMapping("base/truck/type")
     List<TruckTypeDto> findAll(@RequestParam(name = "ids", required = false) List<String> ids);
 
     /**
@@ -66,7 +66,7 @@ public interface TruckTypeFeign {
      * @param dto 车辆类型信息
      * @return 车辆类型信息
      */
-    @PutMapping("/{id}")
+    @PutMapping("base/truck/type/{id}")
     TruckTypeDto update(@PathVariable(name = "id") String id, @RequestBody TruckTypeDto dto);
 
     /**
@@ -75,6 +75,6 @@ public interface TruckTypeFeign {
      * @param id 车辆类型Id
      * @return 返回信息
      */
-    @PutMapping("/{id}/disable")
+    @PutMapping("base/truck/type/{id}/disable")
     Result disable(@PathVariable(name = "id") String id);
 }

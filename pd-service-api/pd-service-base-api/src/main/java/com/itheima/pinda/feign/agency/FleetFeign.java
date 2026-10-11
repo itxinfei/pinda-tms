@@ -10,7 +10,8 @@ import io.swagger.v3.oas.annotations.Hidden;
 import java.util.List;
 
 @FeignClient(name = "pd-base")
-@RequestMapping("sys/agency/fleet")
+// 2026-10-10：Spring Cloud 2025 OpenFeign 禁止接口级 @RequestMapping，
+// 原 "sys/agency/fleet" 前缀下沉到各方法路径（URL 不变）
 @Hidden
 public interface FleetFeign {
     /**
@@ -19,7 +20,7 @@ public interface FleetFeign {
      * @param dto 车队信息
      * @return 车队信息
      */
-    @PostMapping("")
+    @PostMapping("sys/agency/fleet")
     FleetDto saveAgencyType(@RequestBody FleetDto dto);
 
     /**
@@ -28,7 +29,7 @@ public interface FleetFeign {
      * @param id 车队id
      * @return 车队信息
      */
-    @GetMapping("/{id}")
+    @GetMapping("sys/agency/fleet/{id}")
     FleetDto fineById(@PathVariable(name = "id") String id);
 
     /**
@@ -41,7 +42,7 @@ public interface FleetFeign {
      * @param manager     负责人id
      * @return 车队分页数据
      */
-    @GetMapping("/page")
+    @GetMapping("sys/agency/fleet/page")
     PageResponse<FleetDto> findByPage(@RequestParam(name = "page") Integer page,
                                       @RequestParam(name = "pageSize") Integer pageSize,
                                       @RequestParam(name = "name", required = false) String name,
@@ -54,7 +55,7 @@ public interface FleetFeign {
      * @param ids 车队Id列表
      * @return 车队列表
      */
-    @GetMapping("")
+    @GetMapping("sys/agency/fleet")
     List<FleetDto> findAll(@RequestParam(value = "ids",required = false) List<String> ids,@RequestParam(value = "agencyId",required = false) String agencyId);
 
     /**
@@ -63,7 +64,7 @@ public interface FleetFeign {
      * @param dto 车队信息
      * @return 车队信息
      */
-    @PutMapping("/{id}")
+    @PutMapping("sys/agency/fleet/{id}")
     FleetDto update(@PathVariable(name = "id") String id, @RequestBody FleetDto dto);
 
     /**
@@ -72,6 +73,6 @@ public interface FleetFeign {
      * @param id 车队id
      * @return 返回信息
      */
-    @PutMapping("/{id}/disable")
+    @PutMapping("sys/agency/fleet/{id}/disable")
     Result disable(@PathVariable(name = "id") String id);
 }

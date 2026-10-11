@@ -10,7 +10,7 @@ import io.swagger.v3.oas.annotations.Hidden;
 import java.util.List;
 
 @FeignClient(name = "pd-base")
-@RequestMapping("sys/driver")
+// 2026-10-10：Spring Cloud 2025 OpenFeign 禁止接口级 @RequestMapping，前缀下沉到各方法路径（URL 不变）
 @Hidden
 public interface DriverFeign {
     /**
@@ -19,7 +19,7 @@ public interface DriverFeign {
      * @param dto 司机基本信息
      * @return 返回信息
      */
-    @PostMapping
+    @PostMapping("sys/driver")
     TruckDriverDto saveDriver(@RequestBody TruckDriverDto dto);
 
     /**
@@ -29,7 +29,7 @@ public interface DriverFeign {
      * @param fleetId 车队id
      * @return 司机基本信息列表
      */
-    @GetMapping
+    @GetMapping("sys/driver")
     List<TruckDriverDto> findAllDriver(@RequestParam(name = "userIds",required = false) List<String> userIds, @RequestParam(name = "fleetId",required = false) String fleetId);
 
     /**
@@ -38,7 +38,7 @@ public interface DriverFeign {
      * @param id 司机id
      * @return 司机基本信息
      */
-    @GetMapping("/{id}")
+    @GetMapping("sys/driver/{id}")
     TruckDriverDto findOneDriver(@PathVariable(name = "id") String id);
 
     /**
@@ -47,7 +47,7 @@ public interface DriverFeign {
      * @param dto 司机驾驶证信息
      * @return 返回信息
      */
-    @PostMapping("/driverLicense")
+    @PostMapping("sys/driver/driverLicense")
     TruckDriverLicenseDto saveDriverLicense(@RequestBody TruckDriverLicenseDto dto);
 
     /**
@@ -56,7 +56,7 @@ public interface DriverFeign {
      * @param id 司机id
      * @return 司机驾驶证信息
      */
-    @GetMapping("/{id}/driverLicense")
+    @GetMapping("sys/driver/{id}/driverLicense")
     TruckDriverLicenseDto findOneDriverLicense(@PathVariable(name = "id") String id);
 
     /**
@@ -65,7 +65,7 @@ public interface DriverFeign {
      * @param fleetId 车队id
      * @return 司机数量
      */
-    @GetMapping("/count")
+    @GetMapping("sys/driver/count")
     Integer count(@RequestParam(name = "fleetId", required = false) String fleetId);
 
     /**
@@ -76,7 +76,7 @@ public interface DriverFeign {
      * @param fleetId  车队id
      * @return 司机分页数据
      */
-    @GetMapping("/page")
+    @GetMapping("sys/driver/page")
     PageResponse<TruckDriverDto> findByPage(@RequestParam(name = "page") Integer page,
                                             @RequestParam(name = "pageSize") Integer pageSize,
                                             @RequestParam(name = "fleetId", required = false) String fleetId);
@@ -87,6 +87,6 @@ public interface DriverFeign {
      * @param ids
      * @return
      */
-    @GetMapping("/findAll")
+    @GetMapping("sys/driver/findAll")
     List<TruckDriverDto> findAll(@RequestParam(name = "ids", required = false) List<String> ids);
 }

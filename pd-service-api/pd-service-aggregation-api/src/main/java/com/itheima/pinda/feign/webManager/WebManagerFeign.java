@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import io.swagger.v3.oas.annotations.Hidden;
 
 @FeignClient(name = "pd-aggregation")
-@RequestMapping("webManager")
+// 2026-10-10：Spring Cloud 2025 OpenFeign 禁止接口级 @RequestMapping，前缀下沉到各方法路径（URL 不变）
 @Hidden
 public interface WebManagerFeign {
     /**
@@ -25,7 +25,7 @@ public interface WebManagerFeign {
      * @param dto 查询参数
      * @return 司机任务分页数据
      */
-    @PostMapping("driverJob/page")
+    @PostMapping("webManager/driverJob/page")
     PageResponse<DriverJobDTO> findDriverJobByPage(@RequestBody DriverJobQueryDTO dto);
 
     /**
@@ -34,7 +34,7 @@ public interface WebManagerFeign {
      * @param dto 查询参数
      * @return 取派件任务分页数据
      */
-    @PostMapping("taskPickupDispatchJob/page")
+    @PostMapping("webManager/taskPickupDispatchJob/page")
     PageResponse<TaskPickupDispatchDTO> findTaskPickupDispatchJobByPage(@RequestBody TaskPickupDispatchQueryDTO dto);
 
     /**
@@ -43,7 +43,7 @@ public interface WebManagerFeign {
      * @param dto 查询参数
      * @return 运单分页数据
      */
-    @PostMapping("transportOrder/page")
+    @PostMapping("webManager/transportOrder/page")
     PageResponse<TransportOrderDTO> findTransportOrderByPage(@RequestBody TransportOrderQueryDTO dto);
 
     /**
@@ -52,6 +52,6 @@ public interface WebManagerFeign {
      * @param dto 查询参数
      * @return 运输任务分页数据
      */
-    @PostMapping("taskTransport/page")
+    @PostMapping("webManager/taskTransport/page")
     PageResponse<TaskTransportDTO> findTaskTransportByPage(@RequestBody TaskTransportQueryDTO dto);
 }

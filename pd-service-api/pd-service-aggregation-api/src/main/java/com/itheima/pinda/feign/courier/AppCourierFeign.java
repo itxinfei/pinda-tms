@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import io.swagger.v3.oas.annotations.Hidden;
 
 @FeignClient(name = "pd-aggregation")
-@RequestMapping("appCourier")
+// 2026-10-10：Spring Cloud 2025 OpenFeign 禁止接口级 @RequestMapping，前缀下沉到方法路径（URL 不变）
 @Hidden
 public interface AppCourierFeign {
     /**
@@ -19,7 +19,7 @@ public interface AppCourierFeign {
      * @param dto
      * @return
      */
-    @PostMapping("page")
+    @PostMapping("appCourier/page")
     PageResponse<TaskPickupDispatchDTO> findByPage(@RequestBody AppCourierQueryDTO dto);
 
 }
