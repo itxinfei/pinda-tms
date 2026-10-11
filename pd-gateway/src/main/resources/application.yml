@@ -69,6 +69,14 @@ spring:
             - Path=/api/web-customer/**
           filters:
             - StripPrefix=2
+        # 轨迹/定位服务：/api/netty-service/** -> pd-netty，去掉 /api/netty-service 两段前缀
+        # （/api/netty-service/trace/replay -> /trace/replay；/api/netty-service/netty/push -> /netty/push）
+        - id: pd-netty
+          uri: lb://pd-netty
+          predicates:
+            - Path=/api/netty-service/**
+          filters:
+            - StripPrefix=2
   # Redis（Sa-Token 会话 + Same-Token 读取）
   data:
     redis:
