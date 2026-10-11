@@ -126,7 +126,7 @@
   }
 }
 
-/* 联云式侧边栏菜单：分组标题次级字重 + 紧凑高度 + 选中项主色竖条 */
+/* 联云式侧边栏菜单：分组标题紧凑标签 + 紧凑高度 + 选中项主色竖条 */
 .layout-root .layout-sidebar .el-menu {
   .el-menu-item,
   .el-sub-menu__title {
@@ -134,9 +134,25 @@
     line-height: 42px;
   }
 
-  .el-sub-menu__title {
-    font-size: 13px;
-    font-weight: 500;
+  // 分组标题：紧凑「组标签」样式（28px、12px 次级灰、去图标去箭头），不抢菜单项视觉
+  &:not(.el-menu--collapse) {
+    .el-sub-menu__title {
+      height: 28px;
+      line-height: 28px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--menu-text);
+      cursor: default;
+      pointer-events: none; // 分组默认展开，标题不可点，防止误触收起
+
+      .layout-menu-icon {
+        display: none;
+      }
+
+      .el-sub-menu__icon-arrow {
+        display: none;
+      }
+    }
   }
 
   // 选中菜单项：左侧 3px 主色竖条（对齐联云 TMS 的选中强调；分组标题不参与）
