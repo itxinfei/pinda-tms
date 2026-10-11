@@ -2,12 +2,12 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.itheima.pinda.mapper.WebManagerMapper">
     <select id="findDriverJobByPage" resultType="com.itheima.pinda.DTO.DriverJobDTO">
-        SELECT driver_job.* FROM pd_driver_job driver_job
+        SELECT driver_job.* FROM work_driver_job driver_job
         <if test="params.driverName != null and params.driverName != ''">
-            LEFT JOIN pd_auth_user auth_user ON driver_job.driver_id = auth_user.id
+            LEFT JOIN sys_user auth_user ON driver_job.driver_id = auth_user.id
         </if>
         <if test="params.taskTransportId != null and params.taskTransportId != ''">
-            LEFT JOIN pd_task_transport task_transport ON driver_job.task_transport_id = task_transport.id
+            LEFT JOIN work_task_transport task_transport ON driver_job.task_transport_id = task_transport.id
         </if>
         <where>
             <if test="params.status != null">
@@ -27,10 +27,10 @@
     </select>
 
     <select id="findTaskPickupDispatchJobByPage" resultType="com.itheima.pinda.DTO.TaskPickupDispatchDTO">
-        SELECT task_pickup_dispatch.* FROM pd_task_pickup_dispatch task_pickup_dispatch
-        LEFT JOIN pd_order pdorder ON task_pickup_dispatch.order_id=pdorder.id
-        LEFT JOIN pd_transport_order transport_order ON pdorder.id=transport_order.order_id
-        LEFT JOIN pd_auth_user auth_user ON task_pickup_dispatch.courier_id = auth_user.id
+        SELECT task_pickup_dispatch.* FROM work_pickup_dispatch_task task_pickup_dispatch
+        LEFT JOIN oms_order pdorder ON task_pickup_dispatch.order_id=pdorder.id
+        LEFT JOIN work_transport_order transport_order ON pdorder.id=transport_order.order_id
+        LEFT JOIN sys_user auth_user ON task_pickup_dispatch.courier_id = auth_user.id
         <where>
             <if test="params.taskType != null">
                 AND task_pickup_dispatch.task_type = #{params.taskType}
@@ -67,8 +67,8 @@
     </select>
 
     <select id="findTransportOrderByPage" resultType="com.itheima.pinda.DTO.TransportOrderDTO">
-        SELECT * FROM pd_transport_order transport_order
-        LEFT JOIN pd_order pdorder ON transport_order.order_id = pdorder.id
+        SELECT * FROM work_transport_order transport_order
+        LEFT JOIN oms_order pdorder ON transport_order.order_id = pdorder.id
         <where>
             <if test="params.id != null and params.id != ''">
                 AND transport_order.id LIKE CONCAT('%',#{params.id},'%')
@@ -111,9 +111,9 @@
     </select>
 
     <select id="findTaskTransportByPage" resultType="com.itheima.pinda.DTO.TaskTransportDTO">
-        SELECT * FROM pd_task_transport task_transport
-        LEFT JOIN pd_driver_job driver_job ON task_transport.id = driver_job.task_transport_id
-        LEFT JOIN pd_auth_user auth_user ON driver_job.driver_id = auth_user.id
+        SELECT * FROM work_task_transport task_transport
+        LEFT JOIN work_driver_job driver_job ON task_transport.id = driver_job.task_transport_id
+        LEFT JOIN sys_user auth_user ON driver_job.driver_id = auth_user.id
         <where>
             <if test="params.id != null and params.id != ''">
                 AND task_transport.id LIKE CONCAT('%',#{params.id},'%')

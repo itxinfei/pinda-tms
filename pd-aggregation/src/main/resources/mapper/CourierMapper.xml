@@ -1,36 +1,44 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.itheima.pinda.mapper.CourierMapper">
+    <!--
+      快递员端取派件任务分页（重构后口径）：
+      1. 已切换到 work_pickup_dispatch_task / oms_order / work_transport_order 新表；
+      2. Mapper 入参为 @Param("params")，条件必须用 params.xxx 前缀，
+         否则 courierId 过滤失效会造成快递员越权看到全员任务；
+      3. deleted=0 过滤逻辑删除数据（0 未删 1 已删）；
+      4. status / taskType 为 Integer，仅判 null。
+    -->
     <select id="findByPage" resultType="com.itheima.pinda.DTO.TaskPickupDispatchDTO"
             parameterType="com.itheima.pinda.DTO.AppCourierQueryDTO">
-        select tpd_.* from pd_task_pickup_dispatch tpd_
-        left join pd_order o_
-        on tpd_.order_id = o_.id
-        left join pd_transport_order to_
-        on o_.id = to_.order_id
+        SELECT tpd_.* FROM work_pickup_dispatch_task tpd_
+        LEFT JOIN oms_order o_
+            ON tpd_.order_id = o_.id
+        LEFT JOIN work_transport_order to_
+            ON o_.id = to_.order_id
         <where>
-            <if test="courierId != null and courierId != ''">
-                and tpd_.courier_id = #{courierId}
+            tpd_.deleted = 0
+            <if test="params.courierId != null and params.courierId != ''">
+                AND tpd_.courier_id = #{params.courierId}
             </if>
-            <if test="status != null and status != ''">
-                and tpd_.status = #{status}
+            <if test="params.status != null">
+                AND tpd_.status = #{params.status}
             </if>
-            <if test="taskType != null and taskType != ''">
-                and tpd_.task_type = #{taskType}
+            <if test="params.taskType != null">
+                AND tpd_.task_type = #{params.taskType}
             </if>
-            <if test="date != null and date != ''">
-
-                and tpd_.actual_end_time &gt;= STR_TO_DATE(CONCAT(#{date},' ','00:00:00'), '%Y-%m-%d %H:%i:%s')
-                and tpd_.actual_end_time &lt;= STR_TO_DATE(CONCAT(#{date},' ','23:59:59'), '%Y-%m-%d %H:%i:%s')
+            <if test="params.date != null and params.date != ''">
+                AND tpd_.actual_end_time &gt;= STR_TO_DATE(CONCAT(#{params.date},' ','00:00:00'), '%Y-%m-%d %H:%i:%s')
+                AND tpd_.actual_end_time &lt;= STR_TO_DATE(CONCAT(#{params.date},' ','23:59:59'), '%Y-%m-%d %H:%i:%s')
             </if>
-            <if test="keyword != null and keyword != ''">
-                and (
-                o_.sender_name LIKE CONCAT('%',#{keyword},'%')
-                or o_.sender_phone LIKE CONCAT('%',#{keyword},'%')
-                or to_.id LIKE CONCAT('%',#{keyword},'%')
+            <if test="params.keyword != null and params.keyword != ''">
+                AND (
+                    o_.sender_name LIKE CONCAT('%',#{params.keyword},'%')
+                    OR o_.sender_phone LIKE CONCAT('%',#{params.keyword},'%')
+                    OR to_.id LIKE CONCAT('%',#{params.keyword},'%')
                 )
             </if>
         </where>
-        order by tpd_.create_time desc
+        ORDER BY tpd_.create_time DESC
     </select>
 </mapper>

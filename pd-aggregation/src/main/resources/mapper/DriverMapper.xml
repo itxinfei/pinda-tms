@@ -1,23 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.itheima.pinda.mapper.DriverMapper">
+    <!--
+      司机端作业分页（重构后口径）：
+      1. work_driver_job 已含 start_org_id/end_org_id 及各计划/实际时间字段，
+         与 DriverJobDTO 一一对应，无需再 join work_task_transport / sys_user；
+      2. 旧 SQL 引用的 finish_time、sys_user.phone、start/end_agency_id 列均已不存在
+         （分别对应 actual_arrival_time、sys_user.mobile、start/end_org_id），原查询必 500；
+      3. Mapper 入参为 @Param("params")，条件必须用 params.xxx 前缀，
+         否则 driverId 过滤失效会造成司机越权看到全员任务；
+      4. deleted=0 过滤逻辑删除数据（0 未删 1 已删）。
+    -->
     <select id="findByPage" resultType="com.itheima.pinda.DTO.DriverJobDTO"
             parameterType="com.itheima.pinda.DTO.AppDriverQueryDTO">
         SELECT
             dj.id, dj.driver_id, dj.task_transport_id, dj.status,
-            dj.create_time, dj.update_time, dj.finish_time,
-            au.name as driver_name, au.phone as driver_phone,
-            tt.start_agency_id, tt.end_agency_id
-        FROM pd_driver_job dj
-        LEFT JOIN pd_auth_user au ON dj.driver_id = au.id
-        LEFT JOIN pd_task_transport tt ON dj.task_transport_id = tt.id
-        WHERE 1=1
-        <if test="driverId != null and driverId != ''">
-            AND dj.driver_id = #{driverId}
-        </if>
-        <if test="status != null">
-            AND dj.status = #{status}
-        </if>
+            dj.start_org_id, dj.end_org_id,
+            dj.start_handover, dj.finish_handover,
+            dj.plan_departure_time, dj.actual_departure_time,
+            dj.plan_arrival_time, dj.actual_arrival_time,
+            dj.create_time, dj.update_time
+        FROM work_driver_job dj
+        <where>
+            dj.deleted = 0
+            <if test="params.driverId != null and params.driverId != ''">
+                AND dj.driver_id = #{params.driverId}
+            </if>
+            <if test="params.status != null">
+                AND dj.status = #{params.status}
+            </if>
+        </where>
         ORDER BY dj.create_time DESC
     </select>
 </mapper>
