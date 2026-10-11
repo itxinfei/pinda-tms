@@ -9,7 +9,7 @@ package com.itheima.pinda.component;
  */
 public class MemberIdentityException extends RuntimeException {
 
-    /** 401 未登录或账号异常；400 账号未绑定手机号；500 会员服务异常 */
+    /** 401 未登录或账号异常；400 账号未绑定手机号；403 会员已被禁用；500 会员服务异常 */
     private final int code;
 
     public MemberIdentityException(int code, String message) {

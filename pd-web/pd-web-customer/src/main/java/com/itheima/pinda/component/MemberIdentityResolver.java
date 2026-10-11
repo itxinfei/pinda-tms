@@ -49,6 +49,21 @@ public class MemberIdentityResolver {
     }
 
     /**
+     * 获取当前会员并校验为正常状态（USR-01：禁用会员不可下单，下单/预估价入口调用）。
+     *
+     * @return 状态正常的当前会员
+     * @throws MemberIdentityException status=0 时以 403 拒绝
+     */
+    public MemberDTO requireActiveMember() {
+        MemberDTO member = requireCurrentMember();
+        if (member.getStatus() != null && Integer.valueOf(0).equals(member.getStatus())) {
+            log.warn("[会员身份] 会员已被禁用，拒绝下单: memberId={}", member.getId());
+            throw new MemberIdentityException(403, "账号已被禁用，无法下单，请联系客服");
+        }
+        return member;
+    }
+
+    /**
      * 获取当前登录用户对应的会员完整信息（不存在则按手机号自动建档），请求级缓存。
      */
     public MemberDTO requireCurrentMember() {

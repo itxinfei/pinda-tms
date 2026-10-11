@@ -35,7 +35,11 @@ public class MemberDTO implements Serializable {
      */
     private String avatar;
     /**
-     * 姓名
+     * 姓名（实体字段为 nickname）
      */
     private String name;
+    /**
+     * 状态：1 正常 0 禁用（禁用会员不可下单，见 USR-01）
+     */
+    private Integer status;
 }

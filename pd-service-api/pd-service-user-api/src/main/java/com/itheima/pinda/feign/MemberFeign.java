@@ -15,12 +15,35 @@ public interface MemberFeign {
     /**
      * 分页查询
      *
-     * @param page
-     * @param pageSize
+     * @param page     页码
+     * @param pageSize 每页条数
+     * @param phone    手机号（模糊匹配，可空）
+     * @param status   状态：1 正常 0 禁用，不传查全部
      * @return
      */
     @GetMapping("/member/page")
-    PageResponse<MemberDTO> page(@RequestParam("page") Integer page,@RequestParam("pageSize") Integer pageSize);
+    PageResponse<MemberDTO> page(@RequestParam("page") Integer page,
+                                 @RequestParam("pageSize") Integer pageSize,
+                                 @RequestParam(value = "phone", required = false) String phone,
+                                 @RequestParam(value = "status", required = false) Integer status);
+
+    /**
+     * 禁用会员（禁用后不可下单，USR-01）
+     *
+     * @param id 会员 id
+     * @return
+     */
+    @PutMapping("/member/{id}/disable")
+    Result disable(@PathVariable(name = "id") String id);
+
+    /**
+     * 启用会员
+     *
+     * @param id 会员 id
+     * @return
+     */
+    @PutMapping("/member/{id}/enable")
+    Result enable(@PathVariable(name = "id") String id);
 
     /**
      * 新增

@@ -153,8 +153,9 @@ public class MailingController {
     @PostMapping("totalPrice")
     public Result totalPrice(@RequestBody MailingSaveDTO entity) {
         log.info("预估总价：{}", entity);
-        // 预估也要校验收发地址归属本人，先解析会员身份
-        String memberId = memberIdentityResolver.requireCurrentMemberId();
+        // 预估也要校验收发地址归属本人，先解析会员身份；禁用会员在此即被拦截（USR-01）
+        MemberDTO activeMember = memberIdentityResolver.requireActiveMember();
+        String memberId = activeMember.getId();
         OrderDTO orderAddDto = buildOrderAndPrice(entity, memberId);
         log.info("结果：{}", orderAddDto);
         Result result = Result.ok().put("amount", orderAddDto.getAmount().toString());
@@ -172,8 +173,9 @@ public class MailingController {
     @PostMapping("")
     public Result save(@RequestBody MailingSaveDTO entity) {
         log.info("下单：{}", entity);
-        // 认证账号 ID 解析为会员雪花 ID，订单归属会员而非认证账号
-        String memberId = memberIdentityResolver.requireCurrentMemberId();
+        // 认证账号 ID 解析为会员雪花 ID，订单归属会员而非认证账号；禁用会员拒绝下单（USR-01）
+        MemberDTO activeMember = memberIdentityResolver.requireActiveMember();
+        String memberId = activeMember.getId();
 
         // 获取地址详细信息
         OrderDTO orderDTO = buildOrderAndPrice(entity, memberId);
