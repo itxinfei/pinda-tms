@@ -128,6 +128,9 @@
 
 /* 联云式侧边栏菜单：分组标题紧凑标签 + 紧凑高度 + 选中项主色竖条 */
 .layout-root .layout-sidebar .el-menu {
+  // 消除菜单顶部默认空白（Element Plus 默认有 padding-top）
+  padding-top: 0 !important;
+
   // 菜单项包裹层（AppLink → router-link/a）：块级占满、零边距，与 el-menu-item 完全贴合（消除 flex-center 两侧留白）
   a {
     display: block;
