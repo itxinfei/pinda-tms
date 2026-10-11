@@ -132,7 +132,7 @@ public class ConfigurationSupport extends WebMvcConfigurationSupport {
                     String fieldName = gen.getOutputContext().getCurrentName();
                     try {
                         //反射获取字段类型
-                        Field field = gen.getCurrentValue().getClass().getDeclaredField(fieldName);
+                        Field field = gen.currentValue().getClass().getDeclaredField(fieldName);
                         if (Objects.equals(field.getType(), String.class)) {
                             //字符串型空值""
                             gen.writeString("");
