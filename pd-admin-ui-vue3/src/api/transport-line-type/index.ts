@@ -23,7 +23,7 @@ export interface TransportLineTypeRecord {
   lastUpdateTime?: string;
   /** 更新人（后端回填） */
   updater?: SysUserSimple;
-  /** 状态：1 启用，0 停用（分页接口只返回启用项） */
+  /** 状态：1 启用，0 停用（分页接口默认返回全部，按 status 筛选时只传 0/1） */
   status?: number;
 }
 
@@ -33,6 +33,8 @@ export interface TransportLineTypePageQuery {
   pageSize: number;
   name?: string;
   typeNumber?: string;
+  /** 状态筛选：1 启用 / 0 停用；不传查全部 */
+  status?: number;
 }
 
 const TransportLineTypeAPI = {
@@ -72,6 +74,13 @@ const TransportLineTypeAPI = {
     return request<unknown, unknown>({
       url: `${TRANSPORT_LINE_TYPE_BASE_URL}/${id}`,
       method: "delete",
+    });
+  },
+  /** 启用线路类型（恢复停用项） */
+  enable(id: string) {
+    return request<unknown, unknown>({
+      url: `${TRANSPORT_LINE_TYPE_BASE_URL}/${id}/enable`,
+      method: "put",
     });
   },
 };

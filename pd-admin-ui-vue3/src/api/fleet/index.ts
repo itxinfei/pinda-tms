@@ -20,7 +20,7 @@ export interface FleetRecord {
   truckCount?: number;
   /** 司机总数 */
   driverCount?: number;
-  /** 状态：1 启用，0 停用（分页接口只返回启用项） */
+  /** 状态：1 启用，0 停用（分页接口默认返回全部，按 status 筛选时只传 0/1） */
   status?: number;
 }
 
@@ -39,6 +39,8 @@ export interface FleetPageQuery {
   name?: string;
   fleetNumber?: string;
   manager?: string;
+  /** 状态筛选：1 启用 / 0 停用；不传查全部 */
+  status?: number;
 }
 
 const FleetAPI = {
@@ -78,6 +80,13 @@ const FleetAPI = {
     return request<unknown, unknown>({
       url: `${FLEET_BASE_URL}/${id}`,
       method: "delete",
+    });
+  },
+  /** 启用车队（恢复停用项） */
+  enable(id: string) {
+    return request<unknown, unknown>({
+      url: `${FLEET_BASE_URL}/${id}/enable`,
+      method: "put",
     });
   },
 };

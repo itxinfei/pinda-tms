@@ -23,8 +23,11 @@ public interface IPdGoodsTypeService extends IService<PdGoodsType> {
 
     /**
      * 分页查询货物类型
+     *
+     * @param status 状态过滤：1=启用 0=停用，null=不过滤（查全部）
      */
-    IPage<PdGoodsType> findByPage(Integer page, Integer pageSize, String name, Long truckTypeId, String truckTypeName);
+    IPage<PdGoodsType> findByPage(Integer page, Integer pageSize, String name, Long truckTypeId, String truckTypeName,
+                                  Integer status);
 
     /**
      * 按id列表查询货物类型

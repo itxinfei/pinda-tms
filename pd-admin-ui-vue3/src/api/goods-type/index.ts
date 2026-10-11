@@ -14,7 +14,7 @@ export interface GoodsTypeRecord {
   defaultVolume?: number;
   /** 说明 */
   remark?: string;
-  /** 状态：1 启用，0 停用（分页接口只返回启用项） */
+  /** 状态：1 启用，0 停用（分页接口默认返回全部，按 status 筛选时只传 0/1） */
   status?: number;
 }
 
@@ -23,6 +23,8 @@ export interface GoodsTypePageQuery {
   page: number;
   pageSize: number;
   name?: string;
+  /** 状态筛选：1 启用 / 0 停用；不传查全部 */
+  status?: number;
 }
 
 const GoodsTypeAPI = {
@@ -62,6 +64,13 @@ const GoodsTypeAPI = {
     return request<unknown, unknown>({
       url: `${GOODS_TYPE_BASE_URL}/${id}`,
       method: "delete",
+    });
+  },
+  /** 启用货物类型（恢复停用项） */
+  enable(id: string) {
+    return request<unknown, unknown>({
+      url: `${GOODS_TYPE_BASE_URL}/${id}/enable`,
+      method: "put",
     });
   },
 };

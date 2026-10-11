@@ -81,6 +81,7 @@ public class TruckTypeController {
      * @param name            车辆类型名称
      * @param allowableLoad   车辆载重
      * @param allowableVolume 车辆体积
+     * @param status          状态：1=启用 0=停用，不传=查全部
      * @return 车辆类型分页数据
      */
     @GetMapping("/page")
@@ -88,9 +89,10 @@ public class TruckTypeController {
                                                  @RequestParam(name = "pageSize") Integer pageSize,
                                                  @RequestParam(name = "name", required = false) String name,
                                                  @RequestParam(name = "allowableLoad", required = false) BigDecimal allowableLoad,
-                                                 @RequestParam(name = "allowableVolume", required = false) BigDecimal allowableVolume) {
+                                                 @RequestParam(name = "allowableVolume", required = false) BigDecimal allowableVolume,
+                                                 @RequestParam(name = "status", required = false) Integer status) {
         IPage<PdTruckType> pdTruckTypePage = truckTypeService.findByPage(page, pageSize, name, allowableLoad,
-                allowableVolume);
+                allowableVolume, status);
         List<TruckTypeDto> dtoList = new ArrayList<>();
         pdTruckTypePage.getRecords().forEach(pdTruckType -> dtoList.add(toDto(pdTruckType)));
         return PageResponse.<TruckTypeDto>builder().items(dtoList).pagesize(pageSize).page(page)
@@ -151,6 +153,21 @@ public class TruckTypeController {
         PdTruckType truckType = new PdTruckType();
         truckType.setId(typeId);
         truckType.setStatus(Constant.DATA_DISABLE_STATUS);
+        truckTypeService.updateById(truckType);
+        return Result.ok();
+    }
+
+    /**
+     * 启用车辆类型（与停用对称，恢复为启用状态；不做关联校验）
+     *
+     * @param id 车辆类型Id
+     * @return 返回信息
+     */
+    @PutMapping("/{id}/enable")
+    public Result enable(@PathVariable(name = "id") String id) {
+        PdTruckType truckType = new PdTruckType();
+        truckType.setId(IdConverter.toLong(id));
+        truckType.setStatus(Constant.DATA_DEFAULT_STATUS);
         truckTypeService.updateById(truckType);
         return Result.ok();
     }

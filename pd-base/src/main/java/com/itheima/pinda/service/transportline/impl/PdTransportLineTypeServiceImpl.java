@@ -28,7 +28,7 @@ public class PdTransportLineTypeServiceImpl extends ServiceImpl<PdTransportLineT
 
     @Override
     public IPage<PdTransportLineType> findByPage(Integer page, Integer pageSize, String typeNumber, String name,
-                                                 Integer agencyType) {
+                                                 Integer agencyType, Integer status) {
         Page<PdTransportLineType> iPage = new Page<>(page, pageSize);
         LambdaQueryWrapper<PdTransportLineType> wrapper = new LambdaQueryWrapper<>();
         if (StringUtils.isNotEmpty(name)) {
@@ -41,7 +41,10 @@ public class PdTransportLineTypeServiceImpl extends ServiceImpl<PdTransportLineT
             wrapper.and(i -> i.eq(PdTransportLineType::getStartAgencyType, agencyType).or()
                     .eq(PdTransportLineType::getEndAgencyType, agencyType));
         }
-        wrapper.eq(PdTransportLineType::getStatus, Constant.DATA_DEFAULT_STATUS);
+        // status 为 null 时不过滤，档案列表可同时查看启用与停用项
+        if (status != null) {
+            wrapper.eq(PdTransportLineType::getStatus, status);
+        }
         wrapper.orderBy(true, true, PdTransportLineType::getId);
         return baseMapper.selectPage(iPage, wrapper);
     }
@@ -61,6 +64,14 @@ public class PdTransportLineTypeServiceImpl extends ServiceImpl<PdTransportLineT
         PdTransportLineType lineType = new PdTransportLineType();
         lineType.setId(id);
         lineType.setStatus(Constant.DATA_DISABLE_STATUS);
+        baseMapper.updateById(lineType);
+    }
+
+    @Override
+    public void enableById(Long id) {
+        PdTransportLineType lineType = new PdTransportLineType();
+        lineType.setId(id);
+        lineType.setStatus(Constant.DATA_DEFAULT_STATUS);
         baseMapper.updateById(lineType);
     }
 }

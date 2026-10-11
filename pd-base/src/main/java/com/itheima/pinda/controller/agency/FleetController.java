@@ -69,6 +69,7 @@ public class FleetController {
      * @param name        车队名称
      * @param fleetNumber 车队编号
      * @param manager     负责人id
+     * @param status      状态：1=启用 0=停用，不传=查全部
      * @return 车队分页数据
      */
     @GetMapping("/page")
@@ -76,8 +77,9 @@ public class FleetController {
                                              @RequestParam(name = "pageSize") Integer pageSize,
                                              @RequestParam(name = "name", required = false) String name,
                                              @RequestParam(name = "fleetNumber", required = false) String fleetNumber,
-                                             @RequestParam(name = "manager", required = false) String manager) {
-        IPage<PdFleet> fleetPage = fleetService.findByPage(page, pageSize, name, fleetNumber, manager);
+                                             @RequestParam(name = "manager", required = false) String manager,
+                                             @RequestParam(name = "status", required = false) Integer status) {
+        IPage<PdFleet> fleetPage = fleetService.findByPage(page, pageSize, name, fleetNumber, manager, status);
         List<FleetDto> dtoList = new ArrayList<>();
         fleetPage.getRecords().forEach(pdFleet -> dtoList.add(toDto(pdFleet)));
         return PageResponse.<FleetDto>builder().items(dtoList).pagesize(pageSize).page(page).counts(fleetPage.getTotal())
@@ -124,6 +126,18 @@ public class FleetController {
     @PutMapping("/{id}/disable")
     public Result disable(@PathVariable(name = "id") String id) {
         fleetService.disableById(IdConverter.toLong(id));
+        return Result.ok();
+    }
+
+    /**
+     * 启用车队（与停用对称，恢复为启用状态）
+     *
+     * @param id 车队id
+     * @return 返回信息
+     */
+    @PutMapping("/{id}/enable")
+    public Result enable(@PathVariable(name = "id") String id) {
+        fleetService.enableById(IdConverter.toLong(id));
         return Result.ok();
     }
 

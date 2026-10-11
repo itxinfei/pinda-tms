@@ -118,9 +118,10 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "获取车辆类型分页数据")
     @GetMapping("/truckType/page")
-    public PageResponse<TruckTypeVo> findTruckTypeByPage(@RequestParam(name = "page") Integer page, @RequestParam(name = "pageSize") Integer pageSize, @RequestParam(name = "name", required = false) String name, @RequestParam(name = "allowableLoad", required = false) BigDecimal allowableLoad, @RequestParam(name = "allowableVolume", required = false) BigDecimal allowableVolume) {
+    public PageResponse<TruckTypeVo> findTruckTypeByPage(@RequestParam(name = "page") Integer page, @RequestParam(name = "pageSize") Integer pageSize, @RequestParam(name = "name", required = false) String name, @RequestParam(name = "allowableLoad", required = false) BigDecimal allowableLoad, @RequestParam(name = "allowableVolume", required = false) BigDecimal allowableVolume, @RequestParam(name = "status", required = false) Integer status) {
         // 说明：当前按载重/体积精确匹配查询；如需上下区间浮动查询可在 service 层扩展 between 条件
-        PageResponse<TruckTypeDto> truckTypeDtoPage = truckTypeFeign.findByPage(page, pageSize, name, allowableLoad, allowableVolume);
+        // status 不传时下游查全部（含停用），供档案页状态筛选
+        PageResponse<TruckTypeDto> truckTypeDtoPage = truckTypeFeign.findByPage(page, pageSize, name, allowableLoad, allowableVolume, status);
         Set<String> goodsTypeSet = new HashSet<>();
         // 远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
         List<TruckTypeDto> truckTypeDtoList = Rx.items(truckTypeDtoPage);
@@ -191,6 +192,13 @@ public class TransforCenterBusinessController {
         return Result.ok();
     }
 
+    @Operation(summary = "启用车辆类型")
+    @PutMapping("/truckType/{id}/enable")
+    public Result enableTruckType(@PathVariable(name = "id") String id) {
+        // 停用为可逆软删，启用恢复其在档案与下拉中的可见性
+        return truckTypeFeign.enable(id);
+    }
+
     @Operation(summary = "添加货物类型")
     @PostMapping("/goodsType")
     public GoodsTypeVo saveGoodsType(@RequestBody GoodsTypeVo vo) {
@@ -218,10 +226,12 @@ public class TransforCenterBusinessController {
     @GetMapping("/goodsType/page")
     public PageResponse<GoodsTypeVo> findGoodsTypeByPage(@RequestParam(name = "page") Integer page,
                                                          @RequestParam(name = "pageSize") Integer pageSize,
-                                                         @RequestParam(name = "name", required = false) String name) {
+                                                         @RequestParam(name = "name", required = false) String name,
+                                                         @RequestParam(name = "status", required = false) Integer status) {
         // 货物类型与车辆类型的关联在车型页维护，管理端货物类型列表不回填关联车型
+        // status 不传时下游查全部（含停用），供档案页状态筛选
         PageResponse<GoodsTypeDto> dtoPage =
-                goodsTypeFeign.findByPage(page, pageSize, name, null, null);
+                goodsTypeFeign.findByPage(page, pageSize, name, null, null, status);
         List<GoodsTypeVo> voList = Rx.items(dtoPage).stream().map(dto -> {
             GoodsTypeVo vo = new GoodsTypeVo();
             BeanUtils.copyProperties(dto, vo);
@@ -252,6 +262,13 @@ public class TransforCenterBusinessController {
         return goodsTypeFeign.disable(id);
     }
 
+    @Operation(summary = "启用货物类型")
+    @PutMapping("/goodsType/{id}/enable")
+    public Result enableGoodsType(@PathVariable(name = "id") String id) {
+        // 停用为可逆软删，启用恢复其在档案与下拉中的可见性
+        return goodsTypeFeign.enable(id);
+    }
+
     @Operation(summary = "添加线路类型")
     @PostMapping("/transportLineType")
     public TransportLineTypeVo saveTransportLineType(@RequestBody TransportLineTypeVo vo) {
@@ -278,8 +295,9 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "获取线路类型分页数据")
     @GetMapping("/transportLineType/page")
-    public PageResponse<TransportLineTypeVo> findTransportLineTypeByPage(@RequestParam(name = "page") Integer page, @RequestParam(name = "pageSize") Integer pageSize, @RequestParam(name = "typeNumber", required = false) String typeNumber, @RequestParam(name = "name", required = false) String name, @RequestParam(name = "agencyType", required = false) Integer agencyType) {
-        PageResponse<TransportLineTypeDto> transportLineTypeDtoPage = transportLineTypeFeign.findByPage(page, pageSize, typeNumber, name, agencyType);
+    public PageResponse<TransportLineTypeVo> findTransportLineTypeByPage(@RequestParam(name = "page") Integer page, @RequestParam(name = "pageSize") Integer pageSize, @RequestParam(name = "typeNumber", required = false) String typeNumber, @RequestParam(name = "name", required = false) String name, @RequestParam(name = "agencyType", required = false) Integer agencyType, @RequestParam(name = "status", required = false) Integer status) {
+        // status 不传时下游查全部（含停用），供档案页状态筛选
+        PageResponse<TransportLineTypeDto> transportLineTypeDtoPage = transportLineTypeFeign.findByPage(page, pageSize, typeNumber, name, agencyType, status);
         //加工数据
         // 远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
         List<TransportLineTypeDto> transportLineTypeDtoList = Rx.items(transportLineTypeDtoPage);
@@ -357,6 +375,13 @@ public class TransforCenterBusinessController {
         return Result.ok();
     }
 
+    @Operation(summary = "启用线路类型")
+    @PutMapping("/transportLineType/{id}/enable")
+    public Result enableTransportLineType(@PathVariable(name = "id") String id) {
+        // 停用为可逆软删，启用恢复其在档案与下拉中的可见性
+        return transportLineTypeFeign.enable(id);
+    }
+
     @Operation(summary = "添加车队")
     @PostMapping("/fleet")
     public FleetVo saveFleet(@RequestBody FleetVo vo) {
@@ -392,8 +417,9 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "获取车队分页数据")
     @GetMapping("/fleet/page")
-    public PageResponse<FleetVo> findFleetByPage(@RequestParam(name = "page") Integer page, @RequestParam(name = "pageSize") Integer pageSize, @RequestParam(name = "name", required = false) String name, @RequestParam(name = "manager", required = false) String manager, @RequestParam(name = "fleetNumber", required = false) String fleetNumber) {
-        PageResponse<FleetDto> fleetDtoPage = fleetFeign.findByPage(page, pageSize, name, fleetNumber, manager);
+    public PageResponse<FleetVo> findFleetByPage(@RequestParam(name = "page") Integer page, @RequestParam(name = "pageSize") Integer pageSize, @RequestParam(name = "name", required = false) String name, @RequestParam(name = "manager", required = false) String manager, @RequestParam(name = "fleetNumber", required = false) String fleetNumber, @RequestParam(name = "status", required = false) Integer status) {
+        // status 不传时下游查全部（含停用），供档案页状态筛选
+        PageResponse<FleetDto> fleetDtoPage = fleetFeign.findByPage(page, pageSize, name, fleetNumber, manager, status);
         //加工数据
         // 远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
         List<FleetDto> fleetDtoList = Rx.items(fleetDtoPage);
@@ -465,6 +491,13 @@ public class TransforCenterBusinessController {
     public Result deleteFleet(@PathVariable(name = "id") String id) {
         fleetFeign.disable(id);
         return Result.ok();
+    }
+
+    @Operation(summary = "启用车队")
+    @PutMapping("/fleet/{id}/enable")
+    public Result enableFleet(@PathVariable(name = "id") String id) {
+        // 停用为可逆软删，启用恢复其在档案与下拉中的可见性
+        return fleetFeign.enable(id);
     }
 
     @Operation(summary = "添加车辆")

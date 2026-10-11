@@ -16,5 +16,6 @@ public interface PdGoodsTypeMapper extends BaseMapper<PdGoodsType> {
     List<PdGoodsType> findByPage(Page<PdGoodsType> page,
                                  @Param("name") String name,
                                  @Param("truckTypeId") Long truckTypeId,
-                                 @Param("truckTypeName") String truckTypeName);
+                                 @Param("truckTypeName") String truckTypeName,
+                                 @Param("status") Integer status);
 }

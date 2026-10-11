@@ -35,10 +35,10 @@ public class PdGoodsTypeServiceImpl extends ServiceImpl<PdGoodsTypeMapper, PdGoo
 
     @Override
     public IPage<PdGoodsType> findByPage(Integer page, Integer pageSize, String name, Long truckTypeId,
-                                         String truckTypeName) {
+                                         String truckTypeName, Integer status) {
         Page<PdGoodsType> pdPage = new Page<>(page, pageSize);
         pdPage.addOrder(OrderItem.asc("id"));
-        pdPage.setRecords(baseMapper.findByPage(pdPage, name, truckTypeId, truckTypeName));
+        pdPage.setRecords(baseMapper.findByPage(pdPage, name, truckTypeId, truckTypeName, status));
         return pdPage;
     }
 

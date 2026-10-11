@@ -41,6 +41,7 @@ public interface TruckTypeFeign {
      * @param name            车辆类型名称
      * @param allowableLoad   车辆载重
      * @param allowableVolume 车辆体积
+     * @param status          状态：1=启用 0=停用，不传=查全部
      * @return 车辆类型分页数据
      */
     @GetMapping("base/truck/type/page")
@@ -48,7 +49,8 @@ public interface TruckTypeFeign {
                                           @RequestParam(name = "pageSize") Integer pageSize,
                                           @RequestParam(name = "name", required = false) String name,
                                           @RequestParam(name = "allowableLoad", required = false) BigDecimal allowableLoad,
-                                          @RequestParam(name = "allowableVolume", required = false) BigDecimal allowableVolume);
+                                          @RequestParam(name = "allowableVolume", required = false) BigDecimal allowableVolume,
+                                          @RequestParam(name = "status", required = false) Integer status);
 
     /**
      * 获取车辆类型列表
@@ -77,4 +79,13 @@ public interface TruckTypeFeign {
      */
     @PutMapping("base/truck/type/{id}/disable")
     Result disable(@PathVariable(name = "id") String id);
+
+    /**
+     * 启用车辆类型
+     *
+     * @param id 车辆类型Id
+     * @return 返回信息
+     */
+    @PutMapping("base/truck/type/{id}/enable")
+    Result enable(@PathVariable(name = "id") String id);
 }

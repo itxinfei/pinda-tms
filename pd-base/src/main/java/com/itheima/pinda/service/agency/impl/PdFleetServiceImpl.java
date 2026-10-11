@@ -26,7 +26,8 @@ public class PdFleetServiceImpl extends ServiceImpl<PdFleetMapper, PdFleet> impl
     }
 
     @Override
-    public IPage<PdFleet> findByPage(Integer page, Integer pageSize, String name, String fleetNumber, String manager) {
+    public IPage<PdFleet> findByPage(Integer page, Integer pageSize, String name, String fleetNumber, String manager,
+                                     Integer status) {
         Page<PdFleet> iPage = new Page<>(page, pageSize);
         LambdaQueryWrapper<PdFleet> wrapper = new LambdaQueryWrapper<>();
         if (StringUtils.isNotEmpty(name)) {
@@ -38,7 +39,10 @@ public class PdFleetServiceImpl extends ServiceImpl<PdFleetMapper, PdFleet> impl
         if (StringUtils.isNotEmpty(manager)) {
             wrapper.eq(PdFleet::getManager, manager);
         }
-        wrapper.eq(PdFleet::getStatus, Constant.DATA_DEFAULT_STATUS);
+        // status 为 null 时不过滤，档案列表可同时查看启用与停用项
+        if (status != null) {
+            wrapper.eq(PdFleet::getStatus, status);
+        }
         wrapper.orderBy(true, true, PdFleet::getId);
         return baseMapper.selectPage(iPage, wrapper);
     }
@@ -62,6 +66,14 @@ public class PdFleetServiceImpl extends ServiceImpl<PdFleetMapper, PdFleet> impl
         PdFleet fleet = new PdFleet();
         fleet.setId(id);
         fleet.setStatus(Constant.DATA_DISABLE_STATUS);
+        baseMapper.updateById(fleet);
+    }
+
+    @Override
+    public void enableById(Long id) {
+        PdFleet fleet = new PdFleet();
+        fleet.setId(id);
+        fleet.setStatus(Constant.DATA_DEFAULT_STATUS);
         baseMapper.updateById(fleet);
     }
 }

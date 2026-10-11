@@ -55,7 +55,8 @@ public interface GoodsTypeFeign {
             @RequestParam(name = "pageSize") Integer pageSize,
             @RequestParam(name = "name", required = false) String name,
             @RequestParam(name = "truckTypeId", required = false) String truckTypeId,
-            @RequestParam(name = "truckTypeName", required = false) String truckTypeName);
+            @RequestParam(name = "truckTypeName", required = false) String truckTypeName,
+            @RequestParam(name = "status", required = false) Integer status);
 
     /**
      * 更新货物类型信息
@@ -74,4 +75,13 @@ public interface GoodsTypeFeign {
      */
     @PutMapping("/{id}/disable")
     Result disable(@PathVariable(name = "id") String id);
+
+    /**
+     * 启用货物类型
+     *
+     * @param id 货物类型id
+     * @return 返回信息
+     */
+    @PutMapping("/{id}/enable")
+    Result enable(@PathVariable(name = "id") String id);
 }

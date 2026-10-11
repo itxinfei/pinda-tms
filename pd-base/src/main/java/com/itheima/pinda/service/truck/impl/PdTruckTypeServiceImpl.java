@@ -38,7 +38,7 @@ public class PdTruckTypeServiceImpl extends ServiceImpl<PdTruckTypeMapper, PdTru
 
     @Override
     public IPage<PdTruckType> findByPage(Integer page, Integer pageSize, String name, BigDecimal allowableLoad,
-                                         BigDecimal allowableVolume) {
+                                         BigDecimal allowableVolume, Integer status) {
         Page<PdTruckType> iPage = new Page<>(page, pageSize);
         LambdaQueryWrapper<PdTruckType> wrapper = new LambdaQueryWrapper<>();
         if (name != null && !name.isEmpty()) {
@@ -50,7 +50,10 @@ public class PdTruckTypeServiceImpl extends ServiceImpl<PdTruckTypeMapper, PdTru
         if (allowableVolume != null) {
             wrapper.eq(PdTruckType::getAllowableVolume, allowableVolume);
         }
-        wrapper.eq(PdTruckType::getStatus, Constant.DATA_DEFAULT_STATUS);
+        // status 为 null 时不过滤，档案列表可同时查看启用与停用项
+        if (status != null) {
+            wrapper.eq(PdTruckType::getStatus, status);
+        }
         return baseMapper.selectPage(iPage, wrapper);
     }
 

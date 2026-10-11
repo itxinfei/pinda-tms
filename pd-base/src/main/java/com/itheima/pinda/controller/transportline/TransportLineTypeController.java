@@ -75,6 +75,7 @@ public class TransportLineTypeController {
      * @param typeNumber 类型编号
      * @param name       类型名称
      * @param agencyType 机构类型
+     * @param status     状态：1=启用 0=停用，不传=查全部
      * @return 线路类型分页数据
      */
     @GetMapping("/page")
@@ -82,9 +83,10 @@ public class TransportLineTypeController {
                                                          @RequestParam(name = "pageSize") Integer pageSize,
                                                          @RequestParam(name = "typeNumber", required = false) String typeNumber,
                                                          @RequestParam(name = "name", required = false) String name,
-                                                         @RequestParam(name = "agencyType", required = false) Integer agencyType) {
+                                                         @RequestParam(name = "agencyType", required = false) Integer agencyType,
+                                                         @RequestParam(name = "status", required = false) Integer status) {
         IPage<PdTransportLineType> transportLineTypePage = transportLineTypeService.findByPage(page, pageSize,
-                typeNumber, name, agencyType);
+                typeNumber, name, agencyType, status);
         List<TransportLineTypeDto> dtoList = new ArrayList<>();
         transportLineTypePage.getRecords().forEach(pdTransportLineType -> dtoList.add(toDto(pdTransportLineType)));
         return PageResponse.<TransportLineTypeDto>builder().items(dtoList).pagesize(pageSize).page(page)
@@ -137,6 +139,18 @@ public class TransportLineTypeController {
             return Result.error(400, "该线路类型下存在关联线路，无法删除");
         }
         transportLineTypeService.disableById(typeId);
+        return Result.ok();
+    }
+
+    /**
+     * 启用线路类型（与停用对称，恢复为启用状态）
+     *
+     * @param id 线路类型id
+     * @return 返回信息
+     */
+    @PutMapping("/{id}/enable")
+    public Result enable(@PathVariable(name = "id") String id) {
+        transportLineTypeService.enableById(IdConverter.toLong(id));
         return Result.ok();
     }
 

@@ -14,7 +14,10 @@
             LEFT JOIN base_truck_type truck_type ON 	truck_type_goods_type.truck_type_id=truck_type.id
         </if>
         <where>
-            goods_type.status=1
+            <!-- status 为 null 时不过滤，档案列表可同时查看启用与停用项 -->
+            <if test="status != null">
+                AND goods_type.status = #{status}
+            </if>
             <if test="truckTypeName != null">
                 AND truck_type.status=1
             </if>

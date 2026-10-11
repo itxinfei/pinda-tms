@@ -2,6 +2,7 @@ package com.itheima.pinda.controller.truck;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.itheima.pinda.DTO.truck.TruckDto;
+import com.itheima.pinda.common.utils.Constant;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.controller.support.IdConverter;
@@ -83,7 +84,9 @@ public class TruckController {
         IPage<PdTruck> truckPage;
         if (StringUtils.isNotBlank(fleetName) && StringUtils.isBlank(fleetId)) {
             // 按车队名称模糊查询：先查匹配的车队，再按车队ID列表查车辆
-            IPage<PdFleet> fleetPage = fleetService.findByPage(1, 1000, fleetName, null, null);
+            // 车辆页按车队名筛选，只取启用状态的车队
+            IPage<PdFleet> fleetPage = fleetService.findByPage(1, 1000, fleetName, null, null,
+                    Constant.DATA_DEFAULT_STATUS);
             List<Long> fleetIds = fleetPage.getRecords().stream()
                     .map(PdFleet::getId)
                     .toList();

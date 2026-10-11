@@ -18,9 +18,11 @@ public interface IPdTransportLineTypeService extends IService<PdTransportLineTyp
 
     /**
      * 获取线路类型分页数据
+     *
+     * @param status 状态过滤：1=启用 0=停用，null=不过滤（查全部）
      */
     IPage<PdTransportLineType> findByPage(Integer page, Integer pageSize, String typeNumber, String name,
-                                          Integer agencyType);
+                                          Integer agencyType, Integer status);
 
     /**
      * 获取线路类型列表
@@ -28,7 +30,12 @@ public interface IPdTransportLineTypeService extends IService<PdTransportLineTyp
     List<PdTransportLineType> findAll(List<Long> ids);
 
     /**
-     * 禁用线路类型
+     * 禁用线路类型（status=0，可逆）
      */
     void disableById(Long id);
+
+    /**
+     * 启用线路类型（status=1）
+     */
+    void enableById(Long id);
 }

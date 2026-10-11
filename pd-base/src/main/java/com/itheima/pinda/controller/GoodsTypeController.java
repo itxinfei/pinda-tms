@@ -121,6 +121,7 @@ public class GoodsTypeController {
      * @param name
      * @param truckTypeId
      * @param truckTypeName
+     * @param status        状态：1=启用 0=停用，不传=查全部
      * @return
      */
     @GetMapping("/page")
@@ -129,11 +130,12 @@ public class GoodsTypeController {
                                                  @RequestParam(name = "pageSize") Integer pageSize,
                                                  @RequestParam(name = "name", required = false) String name,
                                                  @RequestParam(name = "truckTypeId", required = false) String truckTypeId,
-                                                 @RequestParam(name = "truckTypeName", required = false) String truckTypeName){
+                                                 @RequestParam(name = "truckTypeName", required = false) String truckTypeName,
+                                                 @RequestParam(name = "status", required = false) Integer status){
 
         //分页查询
         IPage<PdGoodsType> goodsTypePage = goodsTypeService.findByPage(page, pageSize, name,
-                IdConverter.toLong(truckTypeId), truckTypeName);
+                IdConverter.toLong(truckTypeId), truckTypeName, status);
         List<PdGoodsType> goodsTypePageRecords = goodsTypePage.getRecords();
 
         if(goodsTypePageRecords != null && goodsTypePageRecords.size() > 0){
@@ -234,6 +236,22 @@ public class GoodsTypeController {
         PdGoodsType pdGoodsType = new PdGoodsType();
         pdGoodsType.setId(goodsTypeId);
         pdGoodsType.setStatus(Constant.DATA_DISABLE_STATUS);
+        goodsTypeService.updateById(pdGoodsType);
+        return Result.ok();
+    }
+
+    /**
+     * 启用货物类型（与停用对称，恢复为启用状态；不做关联校验）
+     *
+     * @param id 货物类型id
+     * @return 返回信息
+     */
+    @PutMapping("/{id}/enable")
+    @Operation(summary = "启用货物类型")
+    public Result enable(@PathVariable(name = "id") String id) {
+        PdGoodsType pdGoodsType = new PdGoodsType();
+        pdGoodsType.setId(IdConverter.toLong(id));
+        pdGoodsType.setStatus(Constant.DATA_DEFAULT_STATUS);
         goodsTypeService.updateById(pdGoodsType);
         return Result.ok();
     }

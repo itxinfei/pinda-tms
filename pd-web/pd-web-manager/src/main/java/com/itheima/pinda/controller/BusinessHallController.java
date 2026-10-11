@@ -6,6 +6,7 @@ import com.itheima.pinda.DTO.angency.AgencyScopeDto;
 import com.itheima.pinda.DTO.base.GoodsTypeDto;
 import com.itheima.pinda.DTO.truck.TruckTypeDto;
 import com.itheima.pinda.DTO.user.CourierScopeDto;
+import com.itheima.pinda.common.utils.Constant;
 import com.itheima.pinda.common.utils.EntCoordSyncJob;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
@@ -98,7 +99,8 @@ public class BusinessHallController {
                                                          @RequestParam(name = "truckTypeId", required = false) String truckTypeId,
                                                          @RequestParam(name = "truckTypeName", required = false) String truckTypeName) {
         // 远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
-        PageResponse<GoodsTypeDto> goodsTypePage = goodsTypeFeign.findByPage(page, pageSize, name, truckTypeId, truckTypeName);
+        // 营业厅下单仅允许选择启用状态的货物类型（档案页放开 status 过滤后，此处显式锁定）
+        PageResponse<GoodsTypeDto> goodsTypePage = goodsTypeFeign.findByPage(page, pageSize, name, truckTypeId, truckTypeName, Constant.DATA_DEFAULT_STATUS);
         //加工数据
         List<GoodsTypeDto> goodsTypeDtoList = Rx.items(goodsTypePage);
         Set<String> truckTypeSet = new HashSet<>();

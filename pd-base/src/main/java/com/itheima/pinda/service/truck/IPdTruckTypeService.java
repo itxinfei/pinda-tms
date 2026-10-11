@@ -29,9 +29,11 @@ public interface IPdTruckTypeService extends IService<PdTruckType> {
 
     /**
      * 获取车辆类型分页数据
+     *
+     * @param status 状态过滤：1=启用 0=停用，null=不过滤（查全部）
      */
     IPage<PdTruckType> findByPage(Integer page, Integer pageSize, String name, BigDecimal allowableLoad,
-                                  BigDecimal allowableVolume);
+                                  BigDecimal allowableVolume, Integer status);
 
     /**
      * 获取车辆类型列表

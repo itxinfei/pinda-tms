@@ -8,6 +8,12 @@
             <el-form-item label="名称" prop="name">
               <el-input v-model="query.name" placeholder="货物类型名称" clearable @keyup.enter="handleSearch" />
             </el-form-item>
+            <el-form-item label="状态" prop="status">
+              <el-select v-model="query.status" placeholder="全部状态" clearable style="width: 120px">
+                <el-option label="启用" :value="1" />
+                <el-option label="停用" :value="0" />
+              </el-select>
+            </el-form-item>
             <el-form-item>
               <el-button type="primary" @click="handleSearch">查询</el-button>
               <el-button @click="handleReset">重置</el-button>
@@ -27,10 +33,25 @@
           <el-table-column prop="remark" label="说明" min-width="220" show-overflow-tooltip>
             <template #default="scope">{{ scope.row.remark || "-" }}</template>
           </el-table-column>
+          <el-table-column label="状态" min-width="90" align="center">
+            <template #default="scope">
+              <el-tag :type="scope.row.status === 1 ? 'success' : 'info'" size="small">
+                {{ scope.row.status === 1 ? "启用" : "停用" }}
+              </el-tag>
+            </template>
+          </el-table-column>
           <el-table-column label="操作" fixed="right" width="120" align="center">
             <template #default="scope">
               <el-button type="primary" link size="small" @click="openEdit(scope.row as GoodsTypeRecord)">编辑</el-button>
-              <el-button type="danger" link size="small" @click="handleDisable(scope.row as GoodsTypeRecord)">停用</el-button>
+              <el-button
+                v-if="scope.row.status === 1"
+                type="danger"
+                link
+                size="small"
+                @click="handleDisable(scope.row as GoodsTypeRecord)"
+                >停用</el-button
+              >
+              <el-button v-else type="success" link size="small" @click="handleEnable(scope.row as GoodsTypeRecord)">启用</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -211,7 +232,7 @@ function resetForm() {
 async function handleDisable(row: GoodsTypeRecord) {
   try {
     await ElMessageBox.confirm(
-      `确认停用「${row.name}」？停用后将不再出现在列表及下拉选项中，不影响已有业务数据。`,
+      `确认停用「${row.name}」？停用后该货物类型将不可再被选择，不影响已有业务数据，可随时重新启用。若仍被车辆类型关联，后端会拦截并提示。`,
       "停用确认",
       { type: "warning", confirmButtonText: "停用", cancelButtonText: "取消" },
     );
@@ -221,13 +242,32 @@ async function handleDisable(row: GoodsTypeRecord) {
   try {
     await GoodsTypeAPI.disable(row.id!);
     ElMessage.success("已停用");
-    // 停用后数据从分页结果消失，停在末页且当前页清空时回退一页
-    if (list.value.length === 1 && query.value.page > 1) {
+    // 筛选"启用"状态时，停用后记录会从结果消失；末页仅剩一条则回退一页，避免停在空页
+    if (query.value.status === 1 && list.value.length === 1 && query.value.page > 1) {
       query.value.page -= 1;
     }
     loadList();
   } catch (e) {
     ElMessage.error(e instanceof Error ? e.message : "停用失败");
+  }
+}
+
+async function handleEnable(row: GoodsTypeRecord) {
+  try {
+    await ElMessageBox.confirm(`确认重新启用「${row.name}」？启用后将恢复在各下拉选项中的选择。`, "启用确认", {
+      type: "info",
+      confirmButtonText: "启用",
+      cancelButtonText: "取消",
+    });
+  } catch {
+    return;
+  }
+  try {
+    await GoodsTypeAPI.enable(row.id!);
+    ElMessage.success("已启用");
+    loadList();
+  } catch (e) {
+    ElMessage.error(e instanceof Error ? e.message : "启用失败");
   }
 }
 

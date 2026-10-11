@@ -40,6 +40,7 @@ public interface FleetFeign {
      * @param name        车队名称
      * @param fleetNumber 车队编号
      * @param manager     负责人id
+     * @param status      状态：1=启用 0=停用，不传=查全部
      * @return 车队分页数据
      */
     @GetMapping("sys/agency/fleet/page")
@@ -47,7 +48,8 @@ public interface FleetFeign {
                                       @RequestParam(name = "pageSize") Integer pageSize,
                                       @RequestParam(name = "name", required = false) String name,
                                       @RequestParam(name = "fleetNumber", required = false) String fleetNumber,
-                                      @RequestParam(name = "manager", required = false) String manager);
+                                      @RequestParam(name = "manager", required = false) String manager,
+                                      @RequestParam(name = "status", required = false) Integer status);
 
     /**
      * 获取车队列表
@@ -75,4 +77,13 @@ public interface FleetFeign {
      */
     @PutMapping("sys/agency/fleet/{id}/disable")
     Result disable(@PathVariable(name = "id") String id);
+
+    /**
+     * 启用车队
+     *
+     * @param id 车队id
+     * @return 返回信息
+     */
+    @PutMapping("sys/agency/fleet/{id}/enable")
+    Result enable(@PathVariable(name = "id") String id);
 }

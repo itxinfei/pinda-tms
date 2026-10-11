@@ -11,6 +11,12 @@
             <el-form-item label="编码" prop="typeNumber">
               <el-input v-model="query.typeNumber" placeholder="线路类型编码" clearable @keyup.enter="handleSearch" />
             </el-form-item>
+            <el-form-item label="状态" prop="status">
+              <el-select v-model="query.status" placeholder="全部状态" clearable style="width: 120px">
+                <el-option label="启用" :value="1" />
+                <el-option label="停用" :value="0" />
+              </el-select>
+            </el-form-item>
             <el-form-item>
               <el-button type="primary" @click="handleSearch">查询</el-button>
               <el-button @click="handleReset">重置</el-button>
@@ -36,10 +42,25 @@
             <template #default="scope">{{ scope.row.updater?.name || "-" }}</template>
           </el-table-column>
           <el-table-column prop="lastUpdateTime" label="最后更新时间" min-width="170" />
+          <el-table-column label="状态" min-width="90" align="center">
+            <template #default="scope">
+              <el-tag :type="scope.row.status === 1 ? 'success' : 'info'" size="small">
+                {{ scope.row.status === 1 ? "启用" : "停用" }}
+              </el-tag>
+            </template>
+          </el-table-column>
           <el-table-column label="操作" fixed="right" width="120" align="center">
             <template #default="scope">
               <el-button type="primary" link size="small" @click="openEdit(scope.row as TransportLineTypeRecord)">编辑</el-button>
-              <el-button type="danger" link size="small" @click="handleDisable(scope.row as TransportLineTypeRecord)">停用</el-button>
+              <el-button
+                v-if="scope.row.status === 1"
+                type="danger"
+                link
+                size="small"
+                @click="handleDisable(scope.row as TransportLineTypeRecord)"
+                >停用</el-button
+              >
+              <el-button v-else type="success" link size="small" @click="handleEnable(scope.row as TransportLineTypeRecord)">启用</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -235,7 +256,7 @@ function resetForm() {
 async function handleDisable(row: TransportLineTypeRecord) {
   try {
     await ElMessageBox.confirm(
-      `确认停用「${row.name}」？停用后将不再出现在列表及下拉选项中，不影响已有线路与业务数据。`,
+      `确认停用「${row.name}」？停用后该线路类型将不可再被选择，不影响已有线路与业务数据，可随时重新启用。`,
       "停用确认",
       { type: "warning", confirmButtonText: "停用", cancelButtonText: "取消" },
     );
@@ -245,12 +266,32 @@ async function handleDisable(row: TransportLineTypeRecord) {
   try {
     await TransportLineTypeAPI.disable(row.id!);
     ElMessage.success("已停用");
-    if (list.value.length === 1 && query.value.page > 1) {
+    // 筛选"启用"状态时，停用后记录会从结果消失；末页仅剩一条则回退一页，避免停在空页
+    if (query.value.status === 1 && list.value.length === 1 && query.value.page > 1) {
       query.value.page -= 1;
     }
     loadList();
   } catch (e) {
     ElMessage.error(e instanceof Error ? e.message : "停用失败");
+  }
+}
+
+async function handleEnable(row: TransportLineTypeRecord) {
+  try {
+    await ElMessageBox.confirm(`确认重新启用「${row.name}」？启用后将恢复在各下拉选项中的选择。`, "启用确认", {
+      type: "info",
+      confirmButtonText: "启用",
+      cancelButtonText: "取消",
+    });
+  } catch {
+    return;
+  }
+  try {
+    await TransportLineTypeAPI.enable(row.id!);
+    ElMessage.success("已启用");
+    loadList();
+  } catch (e) {
+    ElMessage.error(e instanceof Error ? e.message : "启用失败");
   }
 }
 

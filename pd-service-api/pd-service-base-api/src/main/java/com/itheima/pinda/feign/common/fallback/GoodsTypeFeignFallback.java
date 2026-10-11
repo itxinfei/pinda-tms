@@ -42,8 +42,8 @@ public class GoodsTypeFeignFallback implements GoodsTypeFeign {
     }
 
     @Override
-    public PageResponse<GoodsTypeDto> findByPage(Integer page, Integer pageSize, String name, String truckTypeId, String truckTypeName) {
-        log.warn("远程调用 pd-base 失败: findByPage(page={}, pageSize={}, name={}, truckTypeId={}, truckTypeName={}), 返回空分页", page, pageSize, name, truckTypeId, truckTypeName);
+    public PageResponse<GoodsTypeDto> findByPage(Integer page, Integer pageSize, String name, String truckTypeId, String truckTypeName, Integer status) {
+        log.warn("远程调用 pd-base 失败: findByPage(page={}, pageSize={}, name={}, truckTypeId={}, truckTypeName={}, status={}), 返回空分页", page, pageSize, name, truckTypeId, truckTypeName, status);
         PageResponse<GoodsTypeDto> result = new PageResponse<>();
         result.setCounts(0L);
         result.setPagesize(pageSize);
@@ -63,5 +63,11 @@ public class GoodsTypeFeignFallback implements GoodsTypeFeign {
     public Result disable(String id) {
         log.warn("远程调用 pd-base 失败: disable({}), 返回失败结果", id);
         return Result.error("服务降级，disable执行失败");
+    }
+
+    @Override
+    public Result enable(String id) {
+        log.warn("远程调用 pd-base 失败: enable({}), 返回失败结果", id);
+        return Result.error("服务降级，enable执行失败");
     }
 }
