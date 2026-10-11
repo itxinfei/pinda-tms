@@ -19,10 +19,6 @@ public class MemberDTO implements Serializable {
 
     private String id;
     /**
-     * 认证id
-     */
-    private String authId;
-    /**
      * 身份证号
      */
     private String idCardNo;

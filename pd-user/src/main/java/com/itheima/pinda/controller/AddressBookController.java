@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.itheima.pinda.DTO.AddressBookDTO;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
+import com.itheima.pinda.controller.support.IdConverter;
 import com.itheima.pinda.converter.AddressBookConverter;
 import com.itheima.pinda.entity.AddressBook;
 import com.itheima.pinda.service.IAddressBookService;
@@ -32,7 +33,7 @@ public class AddressBookController {
     /**
      * 新增地址簿
      *
-     * @param entity
+     * @param dto
      * @return
      */
     @PostMapping("")
@@ -52,7 +53,8 @@ public class AddressBookController {
         }
         AddressBook entity = addressBookConverter.toEntity(dto);
         if (isDefault(entity)) {
-            addressBookService.lambdaUpdate().set(AddressBook::getIsDefault, 0).eq(AddressBook::getUserId, entity.getUserId()).update();
+            addressBookService.lambdaUpdate().set(AddressBook::getIsDefault, 0)
+                    .eq(AddressBook::getMemberId, entity.getMemberId()).update();
         }
 
         boolean result = addressBookService.save(entity);
@@ -81,7 +83,7 @@ public class AddressBookController {
         if (ownerCheck != null) {
             return null;
         }
-        return addressBookConverter.toDto(addressBookService.getById(id));
+        return addressBookConverter.toDto(addressBookService.getById(IdConverter.toLong(id)));
     }
 
     /**
@@ -90,15 +92,16 @@ public class AddressBookController {
      * @param page
      * @param pageSize
      * @param userId
+     * @param keyword
      * @return
      */
     @GetMapping("page")
     public PageResponse<AddressBookDTO> page(Integer page, Integer pageSize, String userId, String keyword) {
         Page<AddressBook> iPage = new Page(page, pageSize);
         Page<AddressBook> pageResult = addressBookService.lambdaQuery()
-                .eq(StringUtils.isNotEmpty(userId), AddressBook::getUserId, userId)
+                .eq(StringUtils.isNotEmpty(userId), AddressBook::getMemberId, IdConverter.toLong(userId))
                 .and(StringUtils.isNotEmpty(keyword), wrapper ->
-                        wrapper.like(AddressBook::getName, keyword).or()
+                        wrapper.like(AddressBook::getContactName, keyword).or()
                                 .like(AddressBook::getPhoneNumber, keyword).or()
                                 .like(AddressBook::getCompanyName, keyword))
                 .page(iPage);
@@ -116,7 +119,7 @@ public class AddressBookController {
      * 修改
      *
      * @param id
-     * @param entity
+     * @param dto
      * @return
      */
     @PutMapping("/{id}")
@@ -132,11 +135,12 @@ public class AddressBookController {
         dto.setId(id);
         // 请求体里的 userId 一律丢弃：updateById 会把 body 的 userId 写进行，
         // 等于谁拿到 id 都能把这条地址改成自己的（或改成别人的）
-        String ownerUserId = addressBookService.getById(id).getUserId();
-        dto.setUserId(ownerUserId);
+        AddressBook existing = addressBookService.getById(IdConverter.toLong(id));
+        dto.setUserId(IdConverter.toStr(existing.getMemberId()));
         AddressBook entity = addressBookConverter.toEntity(dto);
         if (isDefault(entity)) {
-            addressBookService.lambdaUpdate().set(AddressBook::getIsDefault, 0).eq(AddressBook::getUserId, ownerUserId).update();
+            addressBookService.lambdaUpdate().set(AddressBook::getIsDefault, 0)
+                    .eq(AddressBook::getMemberId, existing.getMemberId()).update();
         }
         boolean result = addressBookService.updateById(entity);
         if (result) {
@@ -165,7 +169,7 @@ public class AddressBookController {
         if (ownerCheck != null) {
             return ownerCheck;
         }
-        boolean result = addressBookService.removeById(id);
+        boolean result = addressBookService.removeById(IdConverter.toLong(id));
         if (result) {
             return Result.ok();
         }
@@ -173,7 +177,7 @@ public class AddressBookController {
     }
 
     /**
-     * 行级归属校验：地址簿里的 name/phone/详址属于个人敏感信息，
+     * 行级归属校验：地址簿里的 contactName/phoneNumber/详址属于个人敏感信息，
      * 只允许本人（或本人所在登录会话）读写自己的行。
      *
      * <p>身份只认网关注入、并由 Feign 透传的 userid 头（见 RequestHeaderInterceptor），
@@ -186,12 +190,12 @@ public class AddressBookController {
         if (StringUtils.isBlank(callerId)) {
             return Result.error(401, "缺少身份信息，拒绝访问地址簿");
         }
-        AddressBook row = addressBookService.getById(id);
+        AddressBook row = addressBookService.getById(IdConverter.toLong(id));
         if (row == null) {
             return Result.error("地址不存在");
         }
-        if (!callerId.equals(row.getUserId())) {
-            log.warn("地址簿越权访问拦截: id 归属={}, 调用方={}", row.getUserId(), callerId);
+        if (!callerId.equals(IdConverter.toStr(row.getMemberId()))) {
+            log.warn("地址簿越权访问拦截: 会员归属={}, 调用方={}", row.getMemberId(), callerId);
             return Result.error(403, "无权访问该地址");
         }
         return null;
@@ -199,7 +203,7 @@ public class AddressBookController {
 
     /**
      * 取当前调用方身份。pd-user 没有注册 ContextHandlerInterceptor，
-     * 直接读头最可靠（与 MenuController 同一套做法）。
+     * 直接读头最可靠（与其他读头场景同一套做法）。
      */
     private String currentUserId() {
         try {

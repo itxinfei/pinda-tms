@@ -3,6 +3,7 @@ package com.itheima.pinda.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.itheima.pinda.DTO.MemberDTO;
+import com.itheima.pinda.controller.support.IdConverter;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.converter.MemberConverter;
@@ -48,7 +49,7 @@ public class MemberController {
      */
     @GetMapping("detail/{id}")
     public MemberDTO detail(@PathVariable(name = "id") String id) {
-        Member member = memberService.getById(id);
+        Member member = memberService.getById(IdConverter.toLong(id));
         if (member == null) {
             return null;
         }
@@ -87,7 +88,7 @@ public class MemberController {
     @PutMapping("/{id}")
     public Result update(@PathVariable(name = "id") String id, @RequestBody MemberDTO entity) {
         Member member = memberConverter.toEntity(entity);
-        member.setId(id);
+        member.setId(IdConverter.toLong(id));
         boolean result = memberService.updateById(member);
         if (result) {
             return Result.ok();
@@ -103,7 +104,7 @@ public class MemberController {
      */
     @DeleteMapping("/{id}")
     public Result del(@PathVariable(name = "id") String id) {
-        boolean result = memberService.removeById(id);
+        boolean result = memberService.removeById(IdConverter.toLong(id));
         if (result) {
             return Result.ok();
         }
