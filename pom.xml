@@ -25,7 +25,6 @@
         <module>pd-web</module>
         <module>pd-dispatch</module>
         <module>pd-aggregation</module>
-        <module>pd-druid</module>
         <module>pd-netty</module>
         <module>pd-gateway</module>
         <module>pd-auth</module>

@@ -39,11 +39,11 @@ digraph tms_business_flow {
     dispatching [label="派送中 23008\nCourierController:447\n（23007 待派送被跳过）⚠"];
     signed [label="签收 23009 / 拒收 23010\nCourierController:504-505\n无事务 ⚠"];
   }
-  subgraph cluster_trace { label="轨迹域 pd-netty / pd-druid（也写 pd_oms）"; style=dashed; color="#9aa0a6";
+  subgraph cluster_trace { label="轨迹域 pd-netty / pd-druid（已删；旧实现也写 pd_oms）"; style=dashed; color="#9aa0a6";
     gpsin [label="HTTP /netty/push + TCP 8194\n→ RabbitMQ tms_order_location\nNettyController:44 / NettyServerHandler:97"];
     store [label="消费落库 pd_truck_location\n(列 report_time)\nGpsTraceConsumer:248,294 ✅实测200/200"];
     alert [label="超速/停留/偏航告警\nGpsAlertService:55 仅 log.error\n无表 无接口 无页面 ⚠"];
-    druid [label="车辆位置查询(pd-druid)\nFROM tms_order_location\n表不存在 ⚠"];
+    druid [label="车辆位置查询(pd-druid)\n✅ 2026-10-11 服务已删除\n原 FROM tms_order_location（表不存在）⚠", style="filled,dashed", fillcolor="#e8f5e9"];
     archive [label="30天归档→删除\npd_truck_location_archive\n只写不读"];
   }
   subgraph cluster_finance { label="财务结算（半闭环）"; style=dashed; color="#9aa0a6";
@@ -69,13 +69,13 @@ digraph tms_business_flow {
   toload -> depart [label="司机装车发车"];
   depart -> exware -> arrive -> dispatching -> signed;
   signed -> settle [label="应触发", color="#c5221f"];
-  signed -> druid [label="展示签收前位置?", style=dotted, color="#c5221f"];
+  signed -> druid [label="展示签收前位置?（服务已删）", style=dotted, color="#999999"];
 
   // ---------- 异步旁路 ----------
   gpsin -> store [label="RabbitMQ 异步", color="#188038"];
   store -> alert [label="边消费边检测"];
   store -> archive [label="每 1h"];
-  store -> druid [label="应读 pd_truck_location\n实际读错表", color="#c5221f", style=dashed];
+  store -> druid [label="应读 pd_truck_location\n实际读错表（服务已删）", color="#999999", style=dashed];
   alert -> dispatcher [label="应通知（webhook 默认空）", style=dotted, color="#c5221f"];
   settle -> bills [label="下游无人写无人读", style=dotted];
   signed -> refund [label="若拒收/取消", style=dashed];

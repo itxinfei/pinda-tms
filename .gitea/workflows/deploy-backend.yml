@@ -19,9 +19,9 @@
 #   - pinda/jre21-fontconfig:1    = 后端运行时基础镜像
 #   - compose 顶层 name: pinda-apps；镜像 tag 支持 PD_<SVC>_TAG 逐服务覆盖
 #
-# 14 个可部署后端（compose 服务名 = 容器名 = 镜像名 pinda/<svc>）：
+# 13 个可部署后端（compose 服务名 = 容器名 = 镜像名 pinda/<svc>）：
 #   pd-auth(9000) pd-base(8185) pd-oms(8186) pd-work(8187) pd-user(8189)
-#   pd-dispatch(8190) pd-aggregation(8191) pd-netty(8192) pd-druid(8193)
+#   pd-dispatch(8190) pd-aggregation(8191) pd-netty(8192)
 #   pd-web-manager(8161) pd-web-driver(8162) pd-web-courier(8163) pd-web-customer(8164)
 #   pd-gateway(8760)
 # ============================================
@@ -31,7 +31,7 @@ on:
   workflow_dispatch:
     inputs:
       services:
-        description: "要部署的服务（逗号分隔）；all=全部 14 个后端。默认仅 pd-auth,pd-gateway"
+        description: "要部署的服务（逗号分隔）；all=全部 13 个后端。默认仅 pd-auth,pd-gateway"
         type: string
         default: "pd-auth,pd-gateway"
       db_approved:
@@ -94,14 +94,13 @@ jobs:
             echo '  [pd-dispatch]=pd-dispatch'
             echo '  [pd-aggregation]=pd-aggregation'
             echo '  [pd-netty]=pd-netty'
-            echo '  [pd-druid]=pd-druid'
             echo '  [pd-web-manager]=pd-web/pd-web-manager'
             echo '  [pd-web-driver]=pd-web/pd-web-driver'
             echo '  [pd-web-courier]=pd-web/pd-web-courier'
             echo '  [pd-web-customer]=pd-web/pd-web-customer'
             echo '  [pd-gateway]=pd-gateway'
             echo ')'
-            echo 'ORDER="pd-auth pd-base pd-oms pd-work pd-user pd-dispatch pd-aggregation pd-netty pd-druid pd-web-manager pd-web-driver pd-web-courier pd-web-customer pd-gateway"'
+            echo 'ORDER="pd-auth pd-base pd-oms pd-work pd-user pd-dispatch pd-aggregation pd-netty pd-web-manager pd-web-driver pd-web-courier pd-web-customer pd-gateway"'
           } > /tmp/pinda-svc.sh
           source /tmp/pinda-svc.sh
 

@@ -35,7 +35,7 @@ digraph current_runtime_topology {
     subgraph cluster_access {
       label="接入层（同一 Maven 链的两条 parent 之外：gateway 属 pd-authority 链）"; style=rounded; color="#b00000";
       gw [label="pd-gateway :8760/api\n🔴 现状 Zuul 1.x（非Gateway）\n5个自写Filter", shape=box, style=filled, fillcolor="#ffd9d9"];
-      auth [label="pd-auth-server :9000\nShiro1.4+JWT\n⚠️ 唯一依赖 Hystrix 的模块", shape=box, style=filled, fillcolor="#fff2cc"];
+      auth [label="旧 pd-auth-server :9000\nShiro1.4+JWT\n⚠️ 唯一依赖 Hystrix 的模块", shape=box, style=filled, fillcolor="#fff2cc"];
       webm [label="pd-web-manager :8161", shape=box];
       webd [label="pd-web-driver :8162", shape=box];
       webc [label="pd-web-courier :8163\n⚠️ 缺 AttachmentClient(S-1)→B-21", shape=box, style=filled, fillcolor="#ffe3e3"];
@@ -52,7 +52,7 @@ digraph current_runtime_topology {
       usr  [label="pd-user :8189", shape=box];
       net  [label="pd-netty :8192(+8194 TCP)\nNetty+RabbitMQ轨迹", shape=box, style=filled, fillcolor="#fff2cc"];
       agg  [label="pd-aggregation :8191\n15个文件/独立服务\n只读12张副本表(S-2)", shape=box, style=filled, fillcolor="#ffe3e3"];
-      drd  [label="pd-druid :8193\n9个文件/独立服务\n查不存在的表→B-05(S-1)", shape=box, style=filled, fillcolor="#ffe3e3"];
+      drd  [label="pd-druid :8193\n✅ 2026-10-11 已删除（模块整体移除）\n原9文件独立服务，查不存在的表、无调用方→B-05(S-1)", shape=box, style="filled,dashed", fillcolor="#e8f5e9"];
     }
 
     // ----- 数据层 -----
@@ -72,7 +72,7 @@ digraph current_runtime_topology {
   user -> gw     [label="HTTP :8760/api 设计路径"];
   user -> webd   [style=dashed, penwidth=2.0, color="#b00000", label="🔴 S-4 端口已发布(-p)\n伪造 userid:1 即绕过鉴权→B-19"];
   user -> agg    [style=dashed, color="#b00000", label="同 :8191"];
-  user -> drd    [style=dashed, color="#b00000", label="同 :8193"];
+  user -> drd    [style=dashed, color="#999999", label="已删除（原 :8193 端口直连风险）"];
 
   fe_old -> gw [label="nginx 反代 /api"];
   gw -> auth [label="鉴权 /anno/**放行"];
@@ -81,7 +81,7 @@ digraph current_runtime_topology {
   gw -> webc [label="路由"];
   gw -> webu [label="路由"];
   gw -> agg  [label="路由"];
-  gw -> drd  [label="路由"];
+  gw -> drd  [style=dashed, color="#999999", label="路由（服务已删）"];
 
   webm -> oms  [label="Feign"];
   webm -> work [label="Feign"];
@@ -103,7 +103,7 @@ digraph current_runtime_topology {
   usr  -> mysql [label="pd_users"];
   auth -> mysql [label="pd_auth"];
   net  -> mysql [color="#cc9900", label="🟡 S-2 轨迹写进 pd_oms（订单库承载3域）"];
-  drd  -> mysql [color="#cc9900", label="🟡 也连 pd_oms"];
+  drd  -> mysql [style=dashed, color="#999999", label="已删除（原也连 pd_oms）"];
   net  -> rmq   [label="发送轨迹"];
   net  -> base  [style=dashed, label="HTTP 回写心跳"];
   work -> rmq   [style=dashed, label="调度事件（消费端入口已注释→B-08）"];

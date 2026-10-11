@@ -198,7 +198,7 @@ x-nacos-env: &nacos-env
   # 该网段仅服务器 Docker 内部可达，本地 IDEA / 其他机器经 Nacos 服务发现拿到后连不上
   # （connection timeout）。统一注册为宿主 IP 后，本地与容器间都走可路由地址；
   # 换部署服务器只需改 .env 里的 NACOS_DISCOVERY_IP（或本行默认值）。
-  # ⚠️ 前置条件：宿主防火墙必须放行各服务端口（8161~8193/8760/9000 等）对 Docker 网段的
+  # ⚠️ 前置条件：宿主防火墙必须放行各服务端口（8161~8192/8194/8760/9000 等）对 Docker 网段的
   # 入站，否则容器间互调（原走容器 IP 直连）会超时——实测踩过（见 pd-gateway 段注释）。
   SPRING_CLOUD_NACOS_DISCOVERY_IP: ${NACOS_DISCOVERY_IP:-192.168.20.130}
   # 2026-10-11 Nacos 鉴权实际开启（NACOS_AUTH_ENABLE=true；2026-10-09 仅配了密钥但开关为 false，
@@ -385,22 +385,6 @@ services:
       # netty TCP 长连接吃堆外内存，显式恢复 256m（覆盖 jvm-core 锚点的 128m）
       JAVA_OPTS: "-Xms96m -Xmx192m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:MaxMetaspaceSize=192m -XX:MaxDirectMemorySize=256m -Xss512k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -Dmybatis-plus.mapper-locations=classpath*:/mapper/**/*.xml -Dmybatis-plus.typeAliasesPackage=com.itheima.pinda.entity -Dmybatis-plus.configuration.map-underscore-to-camel-case=true -Dmybatis-plus.configuration.cache-enabled=true -Dmybatis-plus.configuration.call-setters-on-nulls=false -Dmybatis-plus.configuration.jdbc-type-for-null=NULL -Dmybatis-plus.global-config.db-config.id-type=ASSIGN_ID -Dmybatis-plus.global-config.banner=false"
       # 单库 pinda_tms 后 netty 的 pd_alarm_record/pd_truck_location* 与其他表同库，URL 由 jar 内 application.yml 给出
-
-  pd-druid:
-    <<: *app-small
-    image: pinda/pd-druid:${PD_DRUID_TAG:-${TAG:-latest}}
-    container_name: pd-druid
-    restart: unless-stopped
-    ports: ["8193:8193"]
-    healthcheck:
-      <<: *hc-common
-      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8193' || exit 1"]
-    environment:
-      <<: [*jvm-small, *nacos-env, *redis-env]
-      # 2026-10-10：pd-druid 的 spring.datasource.url / driver-class-name 已落到 jar 内 application.yml
-      # （库名走单库 pinda_tms，可用 MYSQL_HOST/MYSQL_PORT/MYSQL_DATABASE 环境变量覆写），
-      # 原用于打断 bootstrap 自引用占位符的 SPRING_DATASOURCE_URL 字面量已删除——
-      # 它以系统属性优先级压住文件里的 ${MYSQL_*}，留着会让环境变量改库失效。
 
   # ---------- Web 聚合层 ----------
   pd-web-manager:

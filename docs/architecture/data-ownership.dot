@@ -9,8 +9,8 @@ digraph data_ownership {
 
   // 服务
   oms [label="pd-oms 订单"]; work [label="pd-work 运输作业"]; disp [label="pd-dispatch 调度"];
-  base [label="pd-base 主数据"]; user [label="pd-user 会员"]; auth [label="pd-auth-server 权限"];
-  agg [label="pd-aggregation 聚合读"]; netty [label="pd-netty 轨迹"]; druid [label="pd-druid 大屏/位置"];
+  base [label="pd-base 主数据"]; user [label="pd-user 会员"]; auth [label="旧 pd-auth-server 权限"];
+  agg [label="pd-aggregation 聚合读"]; netty [label="pd-netty 轨迹"]; druid [label="pd-druid 大屏/位置\n✅ 2026-10-11 已删", style="filled,dashed", fillcolor="#e8f5e9"];
   webm [label="pd-web-manager"]; webc [label="pd-web-courier"]; webd [label="pd-web-driver"]; webu [label="pd-web-customer"];
 
   // 库（红色对象为实测问题）
@@ -29,7 +29,7 @@ digraph data_ownership {
   oms -> dpdoms [label="读写"];
   work -> dpwork; disp -> dpdisp; base -> dpbase; user -> dpuser; auth -> dpauth;
   netty -> dpdoms [label="写轨迹\n(轨迹归到订单库 ⚠)", color="#c5221f"];
-  druid -> dpdoms [label="查 tms_order_location ❌\n（那是 RabbitMQ queue 名）", color="#c5221f"];
+  druid -> dpdoms [label="查 tms_order_location ❌（服务已删）\n（那是 RabbitMQ queue 名）", color="#999999", style=dashed];
   agg -> dpagg [label="JOIN 本地副本\nCourierMapper.xml:6-9\nWebManagerMapper.xml:32-35", color="#c5221f"];
   oms -> dpdoms [dir=back, label=""];
 

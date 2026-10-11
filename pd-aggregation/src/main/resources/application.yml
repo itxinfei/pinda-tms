@@ -37,9 +37,21 @@ spring:
         file-extension: yml
         username: ${NACOS_USERNAME:nacos}
         password: ${NACOS_PASSWORD:123456}
-  # 数据源由 pd-druid 共享 starter 配置提供（2026-10-10 R6 终验实测：生效 URL=pinda_tms，
-  # 对齐单库多租户架构；库名走 MYSQL_DATABASE 默认 pinda_tms，凭据走 MYSQL_PASSWORD 环境变量，
-  # 本地无凭据时数据链路仅部署环境可完整验证）——此处不再重复声明 datasource。
+  # 数据源：单库 pinda_tms（本模块 pom 直接依赖 druid-spring-boot-3-starter，数据源本地声明，
+  # 口径对齐 pd-work/pd-oms 单库多租户标准模式。Nacos pd-aggregation.yml 仅存的
+  # spring.datasource.db-name 键在本模块无消费者，属待清理残留）
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${MYSQL_HOST:192.168.20.130}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:pinda_tms}?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:123456}
+    druid:
+      initial-size: 5
+      min-idle: 5
+      max-active: 20
+      max-wait: 60000
+      test-while-idle: true
 
 mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml

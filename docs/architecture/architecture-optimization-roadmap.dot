@@ -55,7 +55,7 @@ digraph architecture_optimization_roadmap {
   // ---------- P2 ----------
   S1 [label="S-1 粒度拆错地方\npd-druid 9文件独立服务\npd-aggregation 15文件+独立库\nBFF 4份复制无共享模块", shape=diamond, style=filled, fillcolor="#eeeeee", color="#666666"];
   S1a [label="BFF 4→1（按端前缀分路由）\n省约3个JVM ≈0.5–0.7G 内存", shape=box, style="filled,dashed", fillcolor="#eeeeee"];
-  S1b [label="pd-druid 并入 pd-oms 或删除", shape=box, style="filled,dashed", fillcolor="#eeeeee"];
+  S1b [label="✅ pd-druid 已删除（2026-10-11 模块整体移除）\n原案：并入 pd-oms 或删除", shape=box, style="filled,dashed", fillcolor="#e8f5e9"];
   S1c [label="pd-aggregation 去留", shape=box, style="filled,dashed", fillcolor="#eeeeee"];
   OBS [label="可观测性 / 主从 / 多实例 / 灰度回滚\n按《32》D4=D5=D1= P0 口径推进", shape=box, style=filled, fillcolor="#eeeeee", color="#666666"];
 
