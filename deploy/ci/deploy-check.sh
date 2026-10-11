@@ -58,44 +58,60 @@ df -h / | tail -1 | awk '{print "  根分区: "$3" 已用 / "$5" 使用率 / "$4
 free -m | awk 'NR==2{printf "  内存: 用 %sM / 共 %sM，可用 %sM\n", $3, $2, $7} NR==3{printf "  交换: 用 %sM / 共 %sM\n", $3, $2}'
 
 echo
-echo "=== 6. 鉴权链路冒烟（nginx -> 网关 -> auth-server -> redis） ==="
+echo "=== 6. 鉴权链路冒烟（nginx -> 网关 -> pd-auth -> redis） ==="
 code=$(curl -s -o /dev/null -w '%{http_code}' -m 8 http://127.0.0.1:8081/prod-api/authority/anno/captcha)
 echo "  验证码接口: HTTP $code"
 [ "$code" = "200" ] || fail=1
 
 echo
-echo "=== 7. profile 与 Nacos dataId 是否配对（缺一条该服务就起不来） ==="
-# bootstrap-*.yml 用的是自指占位符，值必须由 <app>-<profile>.yml 覆盖。
-# 对不上时现象是容器反复重启但 docker ps 只显示 health: starting，前面几节都看不见。
+echo "=== 7. Nacos dataId 是否齐备（缺配置的服务起不来） ==="
+# 2026-10-10 起 dataId 不带 profile 后缀（<app>.yml，"profile 差异收进基础 dataId"，见《05》§6.3）；
+# pd-auth 历史遗留用 .yaml。缺配置时现象是容器反复重启但 docker ps 只显示 health: starting。
+# profile 仍从日志提取，仅用于证明服务走过 Spring Boot 启动流程。
 NS=${NS:-1cb93ce4-dc0e-4730-b759-d35fd7ed93c3}
 NACOS=${NACOS:-http://127.0.0.1:8848}
-for c in $(docker ps --format '{{.Names}}' | grep '^pd-' | grep -v admin-ui | sort); do
-  prof=$(docker logs "$c" 2>&1 | grep -m1 -oE "The following profiles are active: [a-z]+" | awk '{print $NF}')
+# 2026-10-11 起 Nacos 已开启鉴权（dev 账号 nacos/123456），查配置必须带 accessToken，
+# 否则一律 403，dataId 是否存在就无从判断。
+TOKEN=$(curl -s -m 5 -X POST "$NACOS/nacos/v1/auth/login" \
+  -d "username=${NACOS_USER:-nacos}&password=${NACOS_PASS:-123456}" \
+  | sed -n 's/.*"accessToken":"\([^"]*\)".*/\1/p')
+if [ -z "$TOKEN" ]; then
+  echo "  Nacos 登录失败（${NACOS_USER:-nacos}），第 7 节跳过"; fail=1
+else
+for c in $(docker ps --format '{{.Names}}' | grep '^pd-' | grep -v -- '-h5$' | sort); do
+  # 兼容 Boot 2（The following profiles are active: dev）与 Boot 3（The following 1 profile is active: "dev"）
+  prof=$(docker logs "$c" 2>&1 | grep -m1 -oE 'The following [0-9]+ profiles? (is|are) active: "?[a-z]+' | grep -oE '[a-z]+$')
   [ -n "$prof" ] || { printf "  %-18s %s\n" "$c" "读不到 profile（容器可能没起来）"; fail=1; continue; }
-  # 1.4.1 未开鉴权；dataId 不存在时返回 404
-  st=$(curl -s -o /dev/null -w '%{http_code}' -m 5 "$NACOS/nacos/v1/cs/configs?dataId=${c}-${prof}.yml&group=pinda-tms&tenant=${NS}")
+  # 开鉴权后：dataId 存在=200，不存在=404，未授权=403。先 .yml 再回退 .yaml（pd-auth）
+  did="${c}.yml"
+  st=$(curl -s -o /dev/null -w '%{http_code}' -m 5 "$NACOS/nacos/v1/cs/configs?dataId=${did}&group=pinda-tms&tenant=${NS}&accessToken=${TOKEN}")
+  if [ "$st" = "404" ]; then
+    did="${c}.yaml"
+    st=$(curl -s -o /dev/null -w '%{http_code}' -m 5 "$NACOS/nacos/v1/cs/configs?dataId=${did}&group=pinda-tms&tenant=${NS}&accessToken=${TOKEN}")
+  fi
   if [ "$st" = "200" ]; then
-    printf "  %-18s profile=%-6s %s-%s.yml 存在\n" "$c" "$prof" "$c" "$prof"
+    printf "  %-18s profile=%-6s %s 存在\n" "$c" "$prof" "$did"
   else
-    printf "  %-18s profile=%-6s 缺 %s-%s.yml (HTTP %s)\n" "$c" "$prof" "$c" "$prof" "$st"; fail=1
+    printf "  %-18s profile=%-6s %s/.yaml 均缺失 (HTTP %s)\n" "$c" "$prof" "$c.yml" "$st"; fail=1
   fi
 done
+fi
 
 echo
 echo "=== 8. JWT 签名密钥是否已请出仓库（轮换状态） ==="
 # 背景：仓内 client/pri.key 是被 git 跟踪的真实 RSA 私钥，而仓库同时推到公开 Gitee。
 # 轮换手册见 docs/部署文档.md §2.11；这一节只回答"在线现在用的是哪把"。
-pri=$(docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' pd-auth-server 2>/dev/null | sed -n 's/^PINDA_JWT_PRI_KEY_PATH=//p')
+pri=$(docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' pd-auth 2>/dev/null | sed -n 's/^PINDA_JWT_PRI_KEY_PATH=//p')
 if [ -n "$pri" ]; then
   target=${pri#file:}
   if [ -s "$target" ]; then
-    echo "  已轮换：pd-auth-server 用仓外私钥 $pri"
+    echo "  已轮换：pd-auth 用仓外私钥 $pri"
   else
     printf "  ! 配置指向 %s 但文件不存在或为空（容器会回落 classpath 那把旧钥）\n" "$pri"
     fail=1
   fi
 else
-  echo "  未轮换：pd-auth-server 仍从镜像内 classpath 读私钥（部署文档 §2.11）"
+  echo "  未轮换：pd-auth 仍从镜像内 classpath 读私钥（部署文档 §2.11）"
 fi
 ls -d /data/pinda-jwt >/dev/null 2>&1 \
   && echo "  宿主密钥目录: $(ls -l /data/pinda-jwt 2>/dev/null | tail -n +2 | wc -l) 个文件" \

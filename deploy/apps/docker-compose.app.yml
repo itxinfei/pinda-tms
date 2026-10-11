@@ -201,12 +201,13 @@ x-nacos-env: &nacos-env
   # ⚠️ 前置条件：宿主防火墙必须放行各服务端口（8161~8193/8760/9000 等）对 Docker 网段的
   # 入站，否则容器间互调（原走容器 IP 直连）会超时——实测踩过（见 pd-gateway 段注释）。
   SPRING_CLOUD_NACOS_DISCOVERY_IP: ${NACOS_DISCOVERY_IP:-192.168.20.130}
-  # 2026-10-09 Nacos 已开启鉴权（此前是 AUTH_DISABLED，任何人可读写全部配置，
-  # 而配置里含 MySQL/RabbitMQ 明文口令）。各服务 bootstrap-prod.yml 本就写了
-  # ${NACOS_USERNAME:pinda} / ${NACOS_PASSWORD:pinda}，只是服务端一直没校验；
-  # 现在必须由 compose 注入真实口令，否则服务读不到配置直接启动失败。
-  # 口令在服务器 apps/.env(0600)，不进 Git。Nacos 账号 pinda 已被授予
-  # pinda-tms 命名空间 (1cb93ce4-...) 的 READ,WRITE 权限。
+  # 2026-10-11 Nacos 鉴权实际开启（NACOS_AUTH_ENABLE=true；2026-10-09 仅配了密钥但开关为 false，
+  # 登录接口固定回 AUTH_DISABLED，任何人可读写含 MySQL/RabbitMQ 明文口令的配置）。
+  # 开启后服务必须带合法账号口令，否则拉配置 403、启动失败。
+  # dev 统一口径（CLAUDE.md §5.2）：全部微服务使用超管 nacos/123456，与 CI(/data/ci/apps.env)
+  # 及各 yml 的 ${NACOS_USERNAME:nacos}/${NACOS_PASSWORD:123456} 默认值一致。
+  # 口令在服务器 apps/.env(0600)，不进 Git。命名空间级应用账号 pinda/123456
+  # （仅有 1cb93ce4-... 的 READ,WRITE 权限）保留备用，生产收紧时切回该账号。
   NACOS_USERNAME: ${NACOS_USERNAME:?缺少 .env 里的 NACOS_USERNAME}
   NACOS_PASSWORD: ${NACOS_PASSWORD:?缺少 .env 里的 NACOS_PASSWORD}
 
