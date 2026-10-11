@@ -126,7 +126,8 @@
   }
 }
 
-/* 联云式侧边栏菜单：分组标题紧凑标签 + 紧凑高度 + 选中项主色竖条 */
+/* 侧边栏菜单：紧凑高度 + 选中项主色竖条。菜单平级铺开，无标题根布局壳已在 useLayout 拍平，
+   不渲染空 el-sub-menu；仅后端 sys_menu 配置的真实目录分组才渲染 el-sub-menu（正常可折叠）。 */
 .layout-root .layout-sidebar .el-menu {
   // 消除菜单顶部默认空白
   padding-top: 0 !important;
@@ -174,28 +175,7 @@
     font-size: 14px !important;
   }
 
-  // 分组标题：紧凑「组标签」样式（28px、12px 次级灰、去图标去箭头），不抢菜单项视觉
-  &:not(.el-menu--collapse) {
-    .el-sub-menu__title {
-      height: 28px;
-      line-height: 28px;
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--menu-text);
-      cursor: default;
-      pointer-events: none; // 分组默认展开，标题不可点，防止误触收起
-
-      .layout-menu-icon {
-        display: none;
-      }
-
-      .el-sub-menu__icon-arrow {
-        display: none;
-      }
-    }
-  }
-
-  // 选中菜单项：左侧 3px 主色竖条（对齐联云 TMS 的选中强调；分组标题不参与）
+  // 选中菜单项：左侧 3px 主色竖条（仅侧边栏，对齐联云 TMS 的选中强调）
   .el-menu-item.is-active {
     position: relative;
 
