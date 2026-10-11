@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 /**
  * 行政区划。全局共享数据，id 为国家标准行政区划代码（如 110000），不参与租户隔离。
  * 层级 level：0 省级 1 市级 2 县级 3 镇级 4 乡村级。
+ * id/parentId 使用 Long：村级为 12 位国标码（≈6.6e11），超出 Integer 上限。
  */
 @Data
 @TableName("dict_area")
@@ -17,10 +18,10 @@ public class Area {
 
     /** 国家标准行政区划代码，由外部数据提供，不使用雪花ID */
     @TableId(type = IdType.INPUT)
-    private Integer id;
+    private Long id;
 
     /** 父级行政区划代码 */
-    private Integer parentId;
+    private Long parentId;
 
     /** 全称 */
     private String name;

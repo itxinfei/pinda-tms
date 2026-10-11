@@ -14,6 +14,8 @@ import com.itheima.auth.mapper.AuthUserMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -35,8 +37,14 @@ public class AuthLoginService {
     private final AuthTenantMapper tenantMapper;
     private final AuthUserMapper userMapper;
     private final StringRedisTemplate redisTemplate;
+    private final Environment environment;
 
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
+    /** 开发环境不限制登录次数：跳过失败计数与锁定检查（线上环境仍生效） */
+    private boolean isDevProfile() {
+        return environment.acceptsProfiles(Profiles.of("dev"));
+    }
 
     @Value("${pinda.login.max-fail:5}")
     private int maxLoginFail;
@@ -52,11 +60,13 @@ public class AuthLoginService {
     public LoginDTO login(LoginParamDTO param, String ip) {
         String failKey = FAIL_KEY_PREFIX + param.getTenantCode() + ":" + param.getAccount() + ":" + ip;
 
-        // 1. 失败锁定检查
-        String failCount = redisTemplate.opsForValue().get(failKey);
-        if (failCount != null && Integer.parseInt(failCount) >= maxLoginFail) {
-            log.warn("账号已临时锁定: tenant={}, account={}, ip={}", param.getTenantCode(), param.getAccount(), ip);
-            throw new BizException("登录失败次数过多，账号已临时锁定，请" + lockSeconds / 60 + "分钟后再试");
+        // 1. 失败锁定检查（dev 环境跳过，不限制登录次数）
+        if (!isDevProfile()) {
+            String failCount = redisTemplate.opsForValue().get(failKey);
+            if (failCount != null && Integer.parseInt(failCount) >= maxLoginFail) {
+                log.warn("账号已临时锁定: tenant={}, account={}, ip={}", param.getTenantCode(), param.getAccount(), ip);
+                throw new BizException("登录失败次数过多，账号已临时锁定，请" + lockSeconds / 60 + "分钟后再试");
+            }
         }
 
         // 2. 验证码校验（一次性，通过即作废）
@@ -80,7 +90,9 @@ public class AuthLoginService {
         // 5. 密码校验。用户不存在与密码错误返回相同信息并计失败，防止探测有效账号
         boolean matched = user != null && passwordEncoder.matches(param.getPassword(), user.getPassword());
         if (!matched) {
-            recordLoginFail(failKey);
+            if (!isDevProfile()) {
+                recordLoginFail(failKey);
+            }
             log.warn("登录失败: tenant={}, account={}, ip={}", param.getTenantCode(), param.getAccount(), ip);
             throw BizException.validFail("账号或密码错误");
         }
