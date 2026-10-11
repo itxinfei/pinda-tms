@@ -10,23 +10,31 @@ package com.itheima.pinda.enums;
 public enum CoordSystem {
 
     /** WGS84：GPS 原始坐标系（北斗/GPS 终端默认） */
-    WGS84("WGS84", "WGS-84 原始坐标"),
+    WGS84(1, "WGS84", "WGS-84 原始坐标"),
 
     /** GCJ02：国测局火星坐标（高德/腾讯地图） */
-    GCJ02("GCJ02", "国测局火星坐标"),
+    GCJ02(2, "GCJ02", "国测局火星坐标"),
 
     /** BD09：百度坐标（后端 BaiduMapUtils 默认） */
-    BD09("BD09", "百度坐标"),
+    BD09(3, "BD09", "百度坐标"),
 
     /** CGCS2000：国家大地坐标系（北斗民用） */
-    CGCS2000("CGCS2000", "国家大地坐标系 2000");
+    CGCS2000(4, "CGCS2000", "国家大地坐标系 2000");
+
+    /** 数字码（iot 表 coord_system TINYINT：1WGS84 2GCJ02 3BD09 4CGCS2000） */
+    private final int numericCode;
 
     private final String code;
     private final String description;
 
-    CoordSystem(String code, String description) {
+    CoordSystem(int numericCode, String code, String description) {
+        this.numericCode = numericCode;
         this.code = code;
         this.description = description;
+    }
+
+    public int getNumericCode() {
+        return numericCode;
     }
 
     public String getCode() {

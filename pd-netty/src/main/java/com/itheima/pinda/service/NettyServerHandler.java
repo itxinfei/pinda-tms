@@ -14,6 +14,7 @@ import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.Objects;
@@ -52,6 +53,12 @@ public class NettyServerHandler extends ChannelInboundHandlerAdapter {
     private final ChannelGroup activeChannels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
 
     private final RabbitSender rabbitSender;
+
+    /**
+     * 默认租户ID：TCP 报文未自带 tenantId 时回落（设备直连无 HTTP 头）
+     */
+    @Value("${gps.tenant.default-id:1}")
+    private long defaultTenantId;
 
     @Autowired
     public NettyServerHandler(RabbitSender rabbitSender) {
@@ -148,6 +155,11 @@ public class NettyServerHandler extends ChannelInboundHandlerAdapter {
         } else if (!LocationSource.isValid(source)) {
             log.warn("[TCP上报] 来源非法被拒: businessId={}, source={}", message.getBusinessId(), source);
             return null;
+        }
+
+        // 租户兜底：TCP 报文未自带 tenantId 时回落默认租户，保证消费端能拿到
+        if (message.getTenantId() == null || message.getTenantId().trim().isEmpty()) {
+            message.setTenantId(String.valueOf(defaultTenantId));
         }
 
         return JSON.toJSONString(message);

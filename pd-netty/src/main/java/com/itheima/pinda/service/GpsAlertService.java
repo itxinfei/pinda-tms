@@ -1,8 +1,10 @@
 package com.itheima.pinda.service;
 
 import com.alibaba.fastjson2.JSON;
+import com.itheima.pinda.controller.support.IdConverter;
 import com.itheima.pinda.entity.AlarmRecord;
 import com.itheima.pinda.entity.LocationEntity;
+import com.itheima.pinda.enums.AlarmTypeEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,6 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -53,6 +56,11 @@ public class GpsAlertService {
     private IAlarmRecordService alarmRecordService;
 
     private final RestTemplate restTemplate = new RestTemplate();
+
+    /**
+     * 告警内容列长度（iot_alarm_record.alarm_content 为 VARCHAR(255)）
+     */
+    private static final int ALARM_CONTENT_MAX_LENGTH = 255;
 
     /**
      * 发出告警（带轨迹上下文，推荐使用）
@@ -132,21 +140,21 @@ public class GpsAlertService {
         try {
             LocalDateTime now = LocalDateTime.now();
             AlarmRecord record = new AlarmRecord();
-            record.setAlarmType(alertType);
-            record.setAlarmContent(truncate(message, 500));
+            record.setAlarmType(AlarmTypeEnum.codeOfKey(alertType));
+            record.setAlarmContent(truncate(message, ALARM_CONTENT_MAX_LENGTH));
             record.setAlarmTime(now);
             record.setStatus(0);
             record.setCreateTime(now);
             if (location != null) {
-                record.setTransportTaskId(location.getTransportTaskId());
+                record.setTransportTaskId(IdConverter.toLong(location.getTransportTaskId()));
                 // businessId 按上报类型区分车辆/司机；类型缺失时优先按车辆记录
                 if ("courier".equalsIgnoreCase(location.getType())) {
-                    record.setDriverId(location.getBusinessId());
+                    record.setDriverId(IdConverter.toLong(location.getBusinessId()));
                 } else {
-                    record.setTruckId(location.getBusinessId());
+                    record.setTruckId(IdConverter.toLong(location.getBusinessId()));
                 }
-                record.setLongitude(parseDouble(location.getLng()));
-                record.setLatitude(parseDouble(location.getLat()));
+                record.setLongitude(parseDecimal(location.getLng()));
+                record.setLatitude(parseDecimal(location.getLat()));
             }
             boolean inserted = alarmRecordService.saveIfNotDuplicate(record);
             if (inserted) {
@@ -159,17 +167,17 @@ public class GpsAlertService {
     }
 
     /**
-     * 安全解析 double，失败或入参为空时返回 null
+     * 安全解析为 BigDecimal，失败或入参为空时返回 null
      *
      * @param value 数字字符串
-     * @return Double 值或 null
+     * @return BigDecimal 值或 null
      */
-    private Double parseDouble(String value) {
+    private BigDecimal parseDecimal(String value) {
         if (value == null || value.trim().isEmpty()) {
             return null;
         }
         try {
-            return Double.parseDouble(value.trim());
+            return new BigDecimal(value.trim());
         } catch (NumberFormatException e) {
             return null;
         }

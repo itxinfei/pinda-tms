@@ -8,7 +8,6 @@ import com.itheima.pinda.service.IAlarmRecordService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 
@@ -45,11 +44,11 @@ public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, Alarm
         LambdaQueryWrapper<AlarmRecord> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(AlarmRecord::getAlarmType, alarmRecord.getAlarmType());
         wrapper.eq(AlarmRecord::getStatus, STATUS_UNHANDLED);
-        if (StringUtils.hasText(alarmRecord.getTransportTaskId())) {
+        if (alarmRecord.getTransportTaskId() != null) {
             wrapper.eq(AlarmRecord::getTransportTaskId, alarmRecord.getTransportTaskId());
-        } else if (StringUtils.hasText(alarmRecord.getTruckId())) {
+        } else if (alarmRecord.getTruckId() != null) {
             wrapper.eq(AlarmRecord::getTruckId, alarmRecord.getTruckId());
-        } else if (StringUtils.hasText(alarmRecord.getDriverId())) {
+        } else if (alarmRecord.getDriverId() != null) {
             wrapper.eq(AlarmRecord::getDriverId, alarmRecord.getDriverId());
         } else {
             // 无业务主体（如批量离线告警，仅有条数无车辆明细）：按类型+未处理+时间窗去重

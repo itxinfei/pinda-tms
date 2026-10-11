@@ -63,13 +63,16 @@ CREATE TABLE `iot_truck_location_archive` (
 
 -- ---------------------------------------------------------------------
 -- GPS 告警
--- alarm_type 1超速 2长时间停留 3偏离路线；status 0未处理 1已处理
+-- alarm_type 数字码（唯一真源 enums/AlarmTypeEnum）：
+--   GPS 自动检测：1超速 2长时间停留 3偏离路线 4车辆离线
+--   人工上报：    10货物破损 11客户拒收 12地址错误 13车辆故障 14货物损失 15延误 16其他异常
+-- status 0未处理 1已处理
 -- ---------------------------------------------------------------------
 DROP TABLE IF EXISTS `iot_alarm_record`;
 CREATE TABLE `iot_alarm_record` (
   `id`               BIGINT UNSIGNED NOT NULL COMMENT 'ID',
   `tenant_id`        BIGINT UNSIGNED NOT NULL COMMENT '租户ID',
-  `alarm_type`       TINYINT UNSIGNED NOT NULL COMMENT '告警类型 1超速 2长时停留 3偏离路线',
+  `alarm_type`       TINYINT UNSIGNED NOT NULL COMMENT '告警类型 GPS:1超速2长停留3偏离4离线 人工:10-16(见AlarmTypeEnum)',
   `transport_task_id` BIGINT UNSIGNED DEFAULT NULL COMMENT '运输任务ID',
   `truck_id`         BIGINT UNSIGNED DEFAULT NULL COMMENT '车辆ID',
   `driver_id`        BIGINT UNSIGNED DEFAULT NULL COMMENT '司机/快递员ID',

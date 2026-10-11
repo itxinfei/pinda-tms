@@ -4,8 +4,10 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.itheima.pinda.common.utils.Result;
+import com.itheima.pinda.controller.support.IdConverter;
 import com.itheima.pinda.DTO.ExceptionReportDTO;
 import com.itheima.pinda.entity.AlarmRecord;
+import com.itheima.pinda.enums.AlarmTypeEnum;
 import com.itheima.pinda.enums.ExceptionType;
 import com.itheima.pinda.service.IAlarmRecordService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -30,14 +33,19 @@ import java.util.Map;
 /**
  * GPS告警查询与处置接口
  *
- * <p>基于落库的 {@link AlarmRecord}（pd_alarm_record 表）提供：
- * 按运输任务/告警类型过滤的分页查询、标记已处理能力，供管理端告警监控页面使用。</p>
+ * <p>基于落库的 {@link AlarmRecord}（iot_alarm_record 表）提供：
+ * 按运输任务/告警类型/处理状态过滤的分页查询、标记已处理，以及一线人员异常上报。</p>
  */
 @Slf4j
 @RestController
 @RequestMapping("/alarm")
 @Tag(name = "GPS告警查询与处置")
 public class AlarmController {
+
+    /**
+     * 告警内容列长度（iot_alarm_record.alarm_content 为 VARCHAR(255)）
+     */
+    private static final int ALARM_CONTENT_MAX_LENGTH = 255;
 
     @Autowired
     private IAlarmRecordService alarmRecordService;
@@ -46,8 +54,8 @@ public class AlarmController {
      * 分页查询：按运输任务ID/告警类型/处理状态筛选
      *
      * @param transportTaskId 运输任务ID（可选）
-     * @param alarmType       告警类型（可选）：SPEED_OVER/STAY_TOO_LONG/DEVIATE_ROUTE/VEHICLE_OFFLINE 及人工上报异常类型
-     * @param status          处理状态（可选）：0-未处理 1-已处理
+     * @param alarmType       告警类型语义码（可选），见 {@link AlarmTypeEnum}
+     * @param status          处理状态（可选）：0未处理 1已处理
      * @param page            页码，默认1
      * @param pageSize        每页条数，默认10，最大200
      * @return 分页结果
@@ -65,12 +73,21 @@ public class AlarmController {
             return Result.error(400, "分页参数越界：page>=1，1<=pageSize<=200");
         }
 
-        LambdaQueryWrapper<AlarmRecord> wrapper = new LambdaQueryWrapper<>();
-        if (StringUtils.isNotBlank(transportTaskId)) {
-            wrapper.eq(AlarmRecord::getTransportTaskId, transportTaskId);
-        }
+        Long transportTaskIdValue = IdConverter.toLong(transportTaskId);
+        Integer alarmTypeValue = null;
         if (StringUtils.isNotBlank(alarmType)) {
-            wrapper.eq(AlarmRecord::getAlarmType, alarmType);
+            alarmTypeValue = AlarmTypeEnum.codeOfKey(alarmType);
+            if (alarmTypeValue == null) {
+                return Result.error(400, "alarmType 不合法，可选语义码见 AlarmTypeEnum");
+            }
+        }
+
+        LambdaQueryWrapper<AlarmRecord> wrapper = new LambdaQueryWrapper<>();
+        if (transportTaskIdValue != null) {
+            wrapper.eq(AlarmRecord::getTransportTaskId, transportTaskIdValue);
+        }
+        if (alarmTypeValue != null) {
+            wrapper.eq(AlarmRecord::getAlarmType, alarmTypeValue);
         }
         if (status != null) {
             wrapper.eq(AlarmRecord::getStatus, status);
@@ -96,10 +113,11 @@ public class AlarmController {
     @Operation(summary = "标记告警已处理")
     @PutMapping("/{id}/handle")
     public Result handle(@PathVariable("id") String id) {
-        if (StringUtils.isBlank(id)) {
-            return Result.error(400, "id不能为空");
+        Long idValue = IdConverter.toLong(id);
+        if (idValue == null) {
+            return Result.error(400, "id不能为空且必须为数字");
         }
-        AlarmRecord record = alarmRecordService.getById(id);
+        AlarmRecord record = alarmRecordService.getById(idValue);
         if (record == null) {
             return Result.error(404, "告警记录不存在");
         }
@@ -118,12 +136,8 @@ public class AlarmController {
     /**
      * 一线人员异常上报（移动三端 · D-41 快递员异常上报 / D-57 司机在途异常上报）
      *
-     * <p>由快递员端与司机端在 App 上<b>主动上报</b>异常，落库复用 {@link AlarmRecord}
-     * （pd_alarm_record）——与 GPS 自动检测告警（SPEED_OVER 等）同表共存，按
-     * {@code alarmType} 过滤即可区分来源。</p>
-     *
-     * <p><b>入参遵循定案 D-46「类型 + 照片 + 备注」三要素</b>：三者缺一不可，
-     * 其中 {@code attachmentIds} 为必填——照片是合规凭证，无凭证的异常不予受理。</p>
+     * <p>入参遵循定案 D-46「类型 + 照片 + 备注」三要素，照片为合规凭证，无凭证不予受理。
+     * 与 GPS 自动检测告警同表共存，按 alarm_type 数字码区分。</p>
      *
      * @param dto 上报入参
      * @return 落库后的告警记录（含id 供前端追单）
@@ -160,13 +174,14 @@ public class AlarmController {
         // 2. 组装并落库（复用既有幂等写入）
         LocalDateTime now = LocalDateTime.now();
         AlarmRecord record = new AlarmRecord();
-        record.setAlarmType(exceptionType.name());
-        record.setTransportTaskId(dto.getTransportTaskId());
-        // 上报人按角色分别记入 driverId（快递员/司机均属"人"，与 GPS 侧车辆区分）
-        record.setDriverId(dto.getReporterId());
-        record.setLongitude(dto.getLongitude());
-        record.setLatitude(dto.getLatitude());
-        record.setAlarmContent(truncate(dto.getRemark() + " | 凭证：" + dto.getAttachmentIds(), 500));
+        // 人工 7 种均已在 AlarmTypeEnum（10-16），code 必非 null
+        record.setAlarmType(AlarmTypeEnum.codeOfKey(exceptionType.name()));
+        record.setTransportTaskId(IdConverter.toLong(dto.getTransportTaskId()));
+        // 上报人记入 driverId（快递员/司机均属“人”，与 GPS 侧车辆区分）
+        record.setDriverId(IdConverter.toLong(dto.getReporterId()));
+        record.setLongitude(toBigDecimal(dto.getLongitude()));
+        record.setLatitude(toBigDecimal(dto.getLatitude()));
+        record.setAlarmContent(truncate(dto.getRemark() + " | 凭证：" + dto.getAttachmentIds(), ALARM_CONTENT_MAX_LENGTH));
         record.setAlarmTime(now);
         record.setStatus(0);
         record.setCreateTime(now);
@@ -181,7 +196,14 @@ public class AlarmController {
     }
 
     /**
-     * 按最大长度截断字符串，避免超过列长度导致整条记录落库失败
+     * Double → BigDecimal，null 安全
+     */
+    private BigDecimal toBigDecimal(Double value) {
+        return value == null ? null : BigDecimal.valueOf(value);
+    }
+
+    /**
+     * 按最大长度截断字符串，避免超过列长度导致整条告警落库失败
      *
      * @param value     原始字符串
      * @param maxLength 最大长度

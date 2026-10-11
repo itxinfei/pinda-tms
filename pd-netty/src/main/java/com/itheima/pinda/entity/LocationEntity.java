@@ -81,4 +81,14 @@ public class LocationEntity {
      */
     @Schema(description = "数据来源 MOBILE/PDA/JT808/NETTY_TCP/HTTP，缺失按入口兜底")
     private String source;
+
+    /**
+     * 租户ID（消息体透传字段）
+     *
+     * <p>设备/前端无需上报：HTTP 入口由 {@code NettyController} 从网关 tenantId 请求头取出后塞入，
+     * TCP 入口取报文自带值，随 MQ 消息透传给消费端，消费端据此设置租户上下文。
+     * 缺失时消费端回落默认租户（gps.tenant.default-id）。</p>
+     */
+    @Schema(description = "租户ID（网关注入透传，设备无需传）")
+    private String tenantId;
 }

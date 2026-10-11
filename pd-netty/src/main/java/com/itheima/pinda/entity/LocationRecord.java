@@ -7,30 +7,37 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * GPS轨迹明细记录（持久化到 MySQL pd_truck_location 表）
+ * GPS轨迹明细记录（持久化到 iot_truck_location 表）
  *
- * <p>由 {@link RabbitGpsTraceConsumer} 将 RabbitMQ 中的轨迹数据落库，
- * 字段与上报的 {@link LocationEntity} 一一对应，补充入库时间。</p>
+ * <p>由 {@code RabbitGpsTraceConsumer} 将上报协议模型 {@link LocationEntity}
+ * 在落库边界转换而来。类型字段（business_type/coord_system）用数字枚举，
+ * 坐标用 DECIMAL，上报时间用 DATETIME。tenant_id 不声明，由多租户插件在 insert 时补入。</p>
  */
 @Data
-@TableName("pd_truck_location")
+@TableName("iot_truck_location")
 public class LocationRecord implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     /**
-     * 主键（businessId#type#currentTime）
+     * 主键（雪花，由 MyBatis-Plus 生成）
      */
-    @TableId(value = "id", type = IdType.INPUT)
-    private String id;
+    @TableId(value = "id", type = IdType.ASSIGN_ID)
+    private Long id;
 
     /**
-     * 业务id: 快递员id 或 车辆id
+     * 业务id: 车辆id 或 快递员id
      */
-    private String businessId;
+    private Long businessId;
+
+    /**
+     * 业务类型: 1车辆 2快递员
+     */
+    private Integer businessType;
 
     /**
      * 司机/快递员名称
@@ -48,29 +55,24 @@ public class LocationRecord implements Serializable {
     private String licensePlate;
 
     /**
-     * 类型: truck-车辆 courier-快递员
+     * 经度（BD09）
      */
-    private String type;
+    private BigDecimal longitude;
 
     /**
-     * 经度
+     * 纬度（BD09）
      */
-    private String lng;
+    private BigDecimal latitude;
 
     /**
-     * 纬度
+     * 坐标系: 1WGS84 2GCJ02 3BD09 4CGCS2000；落库前坐标已统一为 BD09，故恒为 3
      */
-    private String lat;
+    private Integer coordSystem;
 
     /**
-     * 设备上报时间 yyyyMMddHHmmss
-     * <p>列名刻意不叫 current_time：那是 MySQL 保留字，手写 SQL 不加反引号时
-     * `select current_time from pd_truck_location` 会返回**当前时钟**而不是列值，
-     * 属于静默错数据。2026-10-07 已把列改名为 report_time（Java 字段名不变，
-     * 调用方无需改动）。</p>
+     * 数据来源: MOBILE/PDA/JT808/NETTY_TCP/HTTP
      */
-    @TableField("report_time")
-    private String currentTime;
+    private String source;
 
     /**
      * 所属车队
@@ -80,22 +82,16 @@ public class LocationRecord implements Serializable {
     /**
      * 运输任务id
      */
-    private String transportTaskId;
+    private Long transportTaskId;
+
+    /**
+     * 设备上报时间
+     */
+    @TableField("report_time")
+    private LocalDateTime reportTime;
 
     /**
      * 入库时间
      */
     private LocalDateTime createTime;
-
-    /**
-     * 坐标系标识（P0-4 北斗字段最小改造 · D-13）
-     * <p>WGS84 / GCJ02 / BD09 / CGCS2000，默认 BD09（与后端 BaiduMapUtils 一致）。</p>
-     */
-    private String coordSystem;
-
-    /**
-     * 数据来源（P0-4 北斗字段最小改造 · D-13）
-     * <p>MOBILE / PDA / JT808 / NETTY_TCP / HTTP。</p>
-     */
-    private String source;
 }

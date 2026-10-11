@@ -13,6 +13,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -40,9 +41,14 @@ public class NettyController {
      * 消费端 RabbitGpsTraceConsumer 会再做一次兜底，防御上游漏传。
      */
     @PostMapping("/push")
-    public Result push(@RequestBody LocationEntity locationEntity){
+    public Result push(@RequestBody LocationEntity locationEntity,
+                       @RequestHeader(value = "tenantId", required = false) String tenantId){
         if (locationEntity == null) {
             return Result.error(400, "上报数据不能为空");
+        }
+        // 租户由网关注入请求头，塞入消息体随 MQ 透传给消费端（不信任前端上报的 tenantId，一律以头为准）
+        if (StringUtils.isNotBlank(tenantId)) {
+            locationEntity.setTenantId(tenantId.trim());
         }
         // 必填字段与经纬度校验（与 TCP 入口完全一致）：businessId/type/currentTime/lng/lat
         String invalidMsg = GpsLocationValidator.validateRequired(locationEntity);

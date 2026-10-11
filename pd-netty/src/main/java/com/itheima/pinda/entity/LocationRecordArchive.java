@@ -7,29 +7,36 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * GPS轨迹归档记录（历史轨迹从 pd_truck_location 归档至 pd_truck_location_archive）
+ * GPS轨迹归档记录（持久化到 iot_truck_location_archive 表）
  *
- * <p>字段与 {@link LocationRecord} 一致，另补充归档时间 archiveTime。</p>
+ * <p>字段与 {@link LocationRecord} 一致，另补充归档时间 archiveTime。
+ * tenant_id 由多租户插件在归档 insert 时补入。</p>
  */
 @Data
-@TableName("pd_truck_location_archive")
+@TableName("iot_truck_location_archive")
 public class LocationRecordArchive implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     /**
-     * 主键（businessId#type#currentTime）
+     * 主键（沿用主表雪花 id）
      */
-    @TableId(value = "id", type = IdType.INPUT)
-    private String id;
+    @TableId(value = "id", type = IdType.ASSIGN_ID)
+    private Long id;
 
     /**
-     * 业务id: 快递员id 或 车辆id
+     * 业务id: 车辆id 或 快递员id
      */
-    private String businessId;
+    private Long businessId;
+
+    /**
+     * 业务类型: 1车辆 2快递员
+     */
+    private Integer businessType;
 
     /**
      * 司机/快递员名称
@@ -47,27 +54,24 @@ public class LocationRecordArchive implements Serializable {
     private String licensePlate;
 
     /**
-     * 类型: truck-车辆 courier-快递员
+     * 经度（BD09）
      */
-    private String type;
+    private BigDecimal longitude;
 
     /**
-     * 经度
+     * 纬度（BD09）
      */
-    private String lng;
+    private BigDecimal latitude;
 
     /**
-     * 纬度
+     *坐标系: 1WGS84 2GCJ02 3BD09 4CGCS2000
      */
-    private String lat;
+    private Integer coordSystem;
 
     /**
-     * 设备上报时间 yyyyMMddHHmmss
-     * <p>列名 report_time，理由同 {@link LocationRecord}：current_time 是 MySQL 保留字，
-     * 手写 SQL 忘加反引号会静默返回当前时钟。</p>
+     * 数据来源: MOBILE/PDA/JT808/NETTY_TCP/HTTP
      */
-    @TableField("report_time")
-    private String currentTime;
+    private String source;
 
     /**
      * 所属车队
@@ -77,7 +81,13 @@ public class LocationRecordArchive implements Serializable {
     /**
      * 运输任务id
      */
-    private String transportTaskId;
+    private Long transportTaskId;
+
+    /**
+     * 设备上报时间
+     */
+    @TableField("report_time")
+    private LocalDateTime reportTime;
 
     /**
      * 原始入库时间
@@ -88,15 +98,4 @@ public class LocationRecordArchive implements Serializable {
      * 归档时间
      */
     private LocalDateTime archiveTime;
-
-    /**
-     * 坐标系标识（P0-4 北斗字段最小改造 · D-13）
-     * <p>归档表字段与 {@link LocationRecord} 保持一致。</p>
-     */
-    private String coordSystem;
-
-    /**
-     * 数据来源（P0-4 北斗字段最小改造 · D-13）
-     */
-    private String source;
 }

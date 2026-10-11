@@ -2,8 +2,11 @@ package com.itheima.pinda.listener;
 
 import com.alibaba.fastjson2.JSON;
 import com.itheima.pinda.client.TruckBaseClient;
+import com.itheima.pinda.common.context.TenantContextHolder;
+import com.itheima.pinda.controller.support.IdConverter;
 import com.itheima.pinda.entity.LocationEntity;
 import com.itheima.pinda.entity.LocationRecord;
+import com.itheima.pinda.enums.BusinessType;
 import com.itheima.pinda.enums.CoordSystem;
 import com.itheima.pinda.enums.LocationSource;
 import com.itheima.pinda.service.GpsAlertService;
@@ -20,6 +23,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -86,6 +90,12 @@ public class RabbitGpsTraceConsumer {
     @Value("${gps.trace.retention-days:30}")
     private int retentionDays;
 
+    /**
+     * 默认租户ID：消息体未带 tenantId 时回落（HTTP 入口网关注入、TCP 入口报文自带/兜底）
+     */
+    @Value("${gps.tenant.default-id:1}")
+    private long defaultTenantId;
+
     static {
         CLEANUP_EXECUTOR.scheduleAtFixedRate(RabbitGpsTraceConsumer::cleanupExpiredCache, 1, 1, TimeUnit.HOURS);
     }
@@ -118,6 +128,8 @@ public class RabbitGpsTraceConsumer {
         log.info("[GPS清理] 内存缓存清理完成，剩余业务对象数: {}", TRACE_CACHE.size());
 
         if (retentionDays > 0) {
+            // 归档/删除是系统级任务（非某条消息触发），用默认租户上下文
+            TenantContextHolder.setTenantId(defaultTenantId);
             try {
                 int deleted = locationRecordService.cleanExpiredTraces(retentionDays);
                 if (deleted > 0) {
@@ -125,6 +137,8 @@ public class RabbitGpsTraceConsumer {
                 }
             } catch (Exception e) {
                 log.error("[GPS清理] 数据库过期轨迹清理失败", e);
+            } finally {
+                TenantContextHolder.clear();
             }
         }
     }
@@ -170,6 +184,8 @@ public class RabbitGpsTraceConsumer {
     public void consumeGpsTrace(Message message, Channel channel) {
         try {
             LocationEntity location = JSON.parseObject(message.getBody(), LocationEntity.class);
+            // 租户随消息体透传：设置上下文后，本线程的轨迹落库及告警落库都归属该租户
+            TenantContextHolder.setTenantId(resolveTenant(location.getTenantId()));
             LocationRecord locationRecord = buildLocationRecord(location);
             if (locationRecord != null) {
                 locationRecordService.save(locationRecord);
@@ -183,7 +199,35 @@ public class RabbitGpsTraceConsumer {
             } catch (Exception ex) {
                 log.error("[GPS落库] nack失败", ex);
             }
+        } finally {
+            // 线程会被容器复用，必须清理避免串租户
+            TenantContextHolder.clear();
         }
+    }
+
+    /**
+     * 解析消息携带的租户ID，空白或非法时回落默认租户
+     *
+     * @param tenantId 消息体中的租户ID
+     * @return 可用租户ID
+     */
+    private Long resolveTenant(String tenantId) {
+        if (tenantId != null && !tenantId.trim().isEmpty()) {
+            try {
+                return Long.parseLong(tenantId.trim());
+            } catch (NumberFormatException ignored) {
+                // 非法值落到默认租户
+            }
+        }
+        return defaultTenantId;
+    }
+
+    /**
+     * 上报类型别名 → business_type 数字码，缺失/未知按车辆
+     */
+    private Integer resolveBusinessType(String type) {
+        Integer code = BusinessType.codeOfAlias(type);
+        return code != null ? code : BusinessType.TRUCK.getCode();
     }
 
     private LocationRecord buildLocationRecord(LocationEntity location) {
@@ -250,19 +294,20 @@ public class RabbitGpsTraceConsumer {
         }
 
         LocationRecord record = new LocationRecord();
-        record.setId(location.getBusinessId() + "#" + location.getType() + "#" + location.getCurrentTime());
-        record.setBusinessId(location.getBusinessId());
+        // id 走雪花不手动设置；tenant_id 由多租户插件补入
+        record.setBusinessId(IdConverter.toLong(location.getBusinessId()));
+        record.setBusinessType(resolveBusinessType(location.getType()));
         record.setName(location.getName());
         record.setPhone(location.getPhone());
         record.setLicensePlate(location.getLicensePlate());
-        record.setType(location.getType());
-        record.setLng(location.getLng());
-        record.setLat(location.getLat());
-        record.setCurrentTime(location.getCurrentTime());
+        record.setLongitude(new BigDecimal(location.getLng()));
+        record.setLatitude(new BigDecimal(location.getLat()));
+        record.setReportTime(LocalDateTime.parse(location.getCurrentTime(), TIME_FORMATTER));
         record.setTeam(location.getTeam());
-        record.setTransportTaskId(location.getTransportTaskId());
+        record.setTransportTaskId(IdConverter.toLong(location.getTransportTaskId()));
         record.setCreateTime(LocalDateTime.now());
-        record.setCoordSystem(location.getCoordSystem());
+        // 坐标落库前已统一转换为 BD09
+        record.setCoordSystem(CoordSystem.BD09.getNumericCode());
         record.setSource(location.getSource());
         return record;
     }
@@ -276,6 +321,8 @@ public class RabbitGpsTraceConsumer {
 
     @Scheduled(fixedDelayString = "${gps.alert.offline-scan-interval-ms:60000}")
     public void scanOfflineTrucks() {
+        // 系统级扫描（非某消息触发），用默认租户上下文后再调 pd-base 与落离线告警
+        TenantContextHolder.setTenantId(defaultTenantId);
         try {
             LocalDateTime threshold = LocalDateTime.now().minusMinutes(heartbeatTimeoutMinutes);
             int affected = truckBaseClient.markOffline(threshold);
@@ -284,13 +331,15 @@ public class RabbitGpsTraceConsumer {
             } else if (affected > 0) {
                 log.info("[GPS心跳扫描] 离线车辆更新: {} 辆", affected);
                 // P0-5 新增规则：心跳超时置离线落告警记录（无具体车辆明细，按批量记一条；
-                // 去重由 AlarmRecordServiceImpl 的"无业务主体时间窗兜底"承担，防止每分钟刷屏）
+                // 去重由 AlarmRecordServiceImpl 的“无业务主体时间窗兜底”承担，防止每分钟刷屏）
                 gpsAlertService.alert("VEHICLE_OFFLINE", (String) null,
                     String.format("车辆离线提醒: %d 辆车心跳超过 %d 分钟未上报，已置离线",
                         affected, heartbeatTimeoutMinutes));
             }
         } catch (Exception e) {
             log.warn("[GPS心跳扫描] 扫描失败（已降级，不影响主流程）", e);
+        } finally {
+            TenantContextHolder.clear();
         }
     }
 

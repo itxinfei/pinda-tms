@@ -80,18 +80,18 @@ public class LocationRecordServiceImpl extends ServiceImpl<LocationRecordMapper,
             LocationRecordArchive archive = new LocationRecordArchive();
             archive.setId(record.getId());
             archive.setBusinessId(record.getBusinessId());
+            archive.setBusinessType(record.getBusinessType());
             archive.setName(record.getName());
             archive.setPhone(record.getPhone());
             archive.setLicensePlate(record.getLicensePlate());
-            archive.setType(record.getType());
-            archive.setLng(record.getLng());
-            archive.setLat(record.getLat());
-            archive.setCurrentTime(record.getCurrentTime());
+            archive.setLongitude(record.getLongitude());
+            archive.setLatitude(record.getLatitude());
+            archive.setReportTime(record.getReportTime());
             archive.setTeam(record.getTeam());
             archive.setTransportTaskId(record.getTransportTaskId());
             archive.setCreateTime(record.getCreateTime());
             archive.setArchiveTime(archiveTime);
-            // 修复归档丢字段：coordSystem/source 必须随主表记录一起归档，保证历史轨迹口径可追溯
+            // coordSystem/source 随主表记录一起归档，保证历史轨迹口径可追溯
             archive.setCoordSystem(record.getCoordSystem());
             archive.setSource(record.getSource());
             archiveList.add(archive);
