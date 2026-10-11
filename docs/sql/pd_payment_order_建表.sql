@@ -10,6 +10,7 @@
 
 CREATE TABLE IF NOT EXISTS `pd_payment_order` (
   `id`               VARCHAR(64)    NOT NULL                COMMENT '主键（雪花id，应用生成）',
+  `tenant_id`        BIGINT UNSIGNED NOT NULL               COMMENT '租户ID（TenantLineInnerInterceptor 写入时自动填充，实体不承载）',
   `order_id`         BIGINT         NOT NULL                COMMENT '订单id（关联 oms_order.id，雪花 BIGINT）',
   `pay_no`           VARCHAR(64)    NOT NULL                COMMENT '支付流水号（系统生成，按此查询并处理回调）',
   `pay_channel`      VARCHAR(32)    NOT NULL DEFAULT 'mock' COMMENT '支付渠道: wechat-微信 alipay-支付宝 mock-模拟',
@@ -23,7 +24,8 @@ CREATE TABLE IF NOT EXISTS `pd_payment_order` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_pay_no` (`pay_no`),
   UNIQUE KEY `uk_order_id` (`order_id`),
-  KEY `idx_status` (`status`)
+  KEY `idx_status` (`status`),
+  KEY `idx_tenant_status` (`tenant_id`,`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='订单支付单（统一承载微信/支付宝/模拟渠道支付流水）';
 
 -- 说明（现状口径，非本脚本问题）：
@@ -31,3 +33,6 @@ CREATE TABLE IF NOT EXISTS `pd_payment_order` (
 --    表示一个订单全生命周期只允许一条支付单记录；若后续要支持"关闭/退款后重新发起支付"，
 --    需先调整 PayServiceImpl 并发口径，再将本唯一索引改为普通索引或联合唯一索引。
 -- 2. 全新环境先执行本脚本再走支付流程，支付单落库不再因缺表报 500。
+-- 3. 已建表的存量环境补租户列走迁移脚本：pd_payment_order_加租户列_20261011.sql。
+--    外部渠道回调无登录租户上下文，PayServiceImpl.handleCallback 按 pay_no 跨租户反查
+--    tenant_id 后临时建立系统态上下文（PaymentOrderMapper.selectTenantIdByPayNo）。

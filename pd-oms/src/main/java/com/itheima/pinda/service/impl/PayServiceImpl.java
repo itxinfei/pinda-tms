@@ -2,10 +2,12 @@ package com.itheima.pinda.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.itheima.pinda.common.CustomIdGenerator;
+import com.itheima.pinda.common.context.TenantContextHolder;
 import com.itheima.pinda.common.utils.IdConverter;
 import com.itheima.pinda.entity.Order;
 import com.itheima.pinda.entity.PaymentOrder;
 import com.itheima.pinda.enums.OrderPaymentStatus;
+import com.itheima.pinda.mapper.PaymentOrderMapper;
 import com.itheima.pinda.pay.PayChannel;
 import com.itheima.pinda.service.IOrderService;
 import com.itheima.pinda.service.IPayService;
@@ -16,6 +18,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -35,6 +39,9 @@ public class PayServiceImpl implements IPayService {
 
     @Autowired
     private IPaymentOrderService paymentOrderService;
+
+    @Autowired
+    private PaymentOrderMapper paymentOrderMapper;
 
     @Autowired
     private IOrderService orderService;
@@ -167,56 +174,97 @@ public class PayServiceImpl implements IPayService {
             log.warn("[支付] 回调缺少支付流水号: channel={}", channelCode);
             return false;
         }
-        LambdaQueryWrapper<PaymentOrder> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(PaymentOrder::getPayNo, payNo);
-        PaymentOrder paymentOrder = paymentOrderService.getOne(wrapper);
-        if (paymentOrder == null) {
-            log.warn("[支付] 回调对应支付单不存在: payNo={}", payNo);
-            return false;
-        }
-        // 渠道一致性校验：回调渠道必须与支付单创建渠道一致，防止跨渠道伪造
-        if (!paymentOrder.getPayChannel().equals(channelCode)) {
-            log.warn("[支付] 回调渠道与支付单不一致: payNo={}, 支付单渠道={}, 回调渠道={}",
-                payNo, paymentOrder.getPayChannel(), channelCode);
-            return false;
-        }
-        // 金额一致性校验：回调金额与支付单金额一致才确认支付，防止篡改金额
-        if (params.get("amount") != null) {
-            try {
-                BigDecimal callbackAmount = new BigDecimal(params.get("amount"));
-                if (paymentOrder.getAmount() != null
-                        && callbackAmount.compareTo(paymentOrder.getAmount()) != 0) {
-                    log.warn("[支付] 回调金额与支付单不一致: payNo={}, 支付单金额={}, 回调金额={}",
-                        payNo, paymentOrder.getAmount(), callbackAmount);
-                    return false;
-                }
-            } catch (NumberFormatException e) {
-                log.warn("[支付] 回调金额格式非法: payNo={}, amount={}", payNo, params.get("amount"));
-                return false;
+        // 外部渠道（微信/支付宝）服务器回调无登录态、网关注入不了 tenantId 头，多租户插件会给
+        // 支付单/订单的查询与更新追加 tenant_id=0，回调必然落空。这里按全局唯一的 pay_no 反查
+        // 真实租户并临时建立系统态上下文（与 pd-netty MQ 消费端同模式），finally 清理防线程复用串租户。
+        // mock 渠道的回调发生在创建支付单的 HTTP 线程内（请求头已带租户），不会进入该分支。
+        boolean systemContext = false;
+        if (currentTenantAbsent()) {
+            Long callbackTenantId = paymentOrderMapper.selectTenantIdByPayNo(payNo);
+            if (callbackTenantId != null) {
+                TenantContextHolder.setTenantId(callbackTenantId);
+                systemContext = true;
             }
         }
-        if (PaymentOrder.STATUS_PAID == paymentOrder.getStatus()) {
-            log.info("[支付] 支付单已处理，跳过重复回调: payNo={}", payNo);
+        try {
+            LambdaQueryWrapper<PaymentOrder> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(PaymentOrder::getPayNo, payNo);
+            PaymentOrder paymentOrder = paymentOrderService.getOne(wrapper);
+            if (paymentOrder == null) {
+                log.warn("[支付] 回调对应支付单不存在: payNo={}", payNo);
+                return false;
+            }
+            // 渠道一致性校验：回调渠道必须与支付单创建渠道一致，防止跨渠道伪造
+            if (!paymentOrder.getPayChannel().equals(channelCode)) {
+                log.warn("[支付] 回调渠道与支付单不一致: payNo={}, 支付单渠道={}, 回调渠道={}",
+                    payNo, paymentOrder.getPayChannel(), channelCode);
+                return false;
+            }
+            // 金额一致性校验：回调金额与支付单金额一致才确认支付，防止篡改金额
+            if (params.get("amount") != null) {
+                try {
+                    BigDecimal callbackAmount = new BigDecimal(params.get("amount"));
+                    if (paymentOrder.getAmount() != null
+                            && callbackAmount.compareTo(paymentOrder.getAmount()) != 0) {
+                        log.warn("[支付] 回调金额与支付单不一致: payNo={}, 支付单金额={}, 回调金额={}",
+                            payNo, paymentOrder.getAmount(), callbackAmount);
+                        return false;
+                    }
+                } catch (NumberFormatException e) {
+                    log.warn("[支付] 回调金额格式非法: payNo={}, amount={}", payNo, params.get("amount"));
+                    return false;
+                }
+            }
+            if (PaymentOrder.STATUS_PAID == paymentOrder.getStatus()) {
+                log.info("[支付] 支付单已处理，跳过重复回调: payNo={}", payNo);
+                return true;
+            }
+
+            // 置支付单为已支付
+            PaymentOrder update = new PaymentOrder();
+            update.setId(paymentOrder.getId());
+            update.setStatus(PaymentOrder.STATUS_PAID);
+            update.setChannelTradeNo(params.get("tradeNo"));
+            update.setPayTime(LocalDateTime.now());
+            update.setUpdateTime(LocalDateTime.now());
+            paymentOrderService.updateById(update);
+
+            // 联动订单支付状态
+            Order orderUpdate = new Order();
+            orderUpdate.setId(paymentOrder.getOrderId());
+            orderUpdate.setPaymentStatus(OrderPaymentStatus.PAID.getStatus());
+            orderService.updateById(orderUpdate);
+
+            log.info("[支付] 支付回调处理成功: payNo={}, orderId={}", payNo, paymentOrder.getOrderId());
             return true;
+        } finally {
+            if (systemContext) {
+                TenantContextHolder.clear();
+            }
         }
+    }
 
-        // 置支付单为已支付
-        PaymentOrder update = new PaymentOrder();
-        update.setId(paymentOrder.getId());
-        update.setStatus(PaymentOrder.STATUS_PAID);
-        update.setChannelTradeNo(params.get("tradeNo"));
-        update.setPayTime(LocalDateTime.now());
-        update.setUpdateTime(LocalDateTime.now());
-        paymentOrderService.updateById(update);
-
-        // 联动订单支付状态
-        Order orderUpdate = new Order();
-        orderUpdate.setId(paymentOrder.getOrderId());
-        orderUpdate.setPaymentStatus(OrderPaymentStatus.PAID.getStatus());
-        orderService.updateById(orderUpdate);
-
-        log.info("[支付] 支付回调处理成功: payNo={}, orderId={}", payNo, paymentOrder.getOrderId());
-        return true;
+    /**
+     * 判断当前线程是否缺少有效租户上下文。
+     *
+     * <p>判定口径与 pd-oms 的 TenantLineHandler 保持一致：HTTP 请求头 tenantId（网关注入）
+     * 优先，其次系统态 {@link TenantContextHolder}，两级都缺失时由外部回调反查租户补上下文。</p>
+     */
+    private boolean currentTenantAbsent() {
+        ServletRequestAttributes attributes =
+                (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes != null) {
+            String headerTenantId = attributes.getRequest().getHeader("tenantId");
+            if (StringUtils.isNotBlank(headerTenantId)) {
+                try {
+                    Long.parseLong(headerTenantId.trim());
+                    return false;
+                } catch (NumberFormatException ignored) {
+                    // 非法头值与插件侧行为一致：落到系统态上下文判断
+                }
+            }
+        }
+        return TenantContextHolder.getTenantId() == null;
     }
 
     /**
