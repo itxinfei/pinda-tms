@@ -1,56 +1,21 @@
 package com.itheima.pinda.service.impl;
 
 import com.itheima.pinda.DTO.MemberDTO;
-import com.itheima.pinda.DTO.UserDTO;
-import com.itheima.pinda.common.utils.Result;
-import com.itheima.pinda.feign.MemberFeign;
-import com.itheima.pinda.feign.UserClient;
+import com.itheima.pinda.component.MemberIdentityResolver;
 import com.itheima.pinda.service.IMemberService;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-@Slf4j
 @Service
 public class MemberServiceImpl implements IMemberService {
 
-    @Autowired
-    private MemberFeign memberFeign;
+    private final MemberIdentityResolver memberIdentityResolver;
 
-    @Autowired
-    private UserClient userClient;
-
-
-    @Override
-    public MemberDTO detail(String userId) {
-        log.info("查找用户信息(本地):{}", userId);
-        MemberDTO member = memberFeign.detail(userId);
-        log.info("查找用户信息(本地):{} Result:{}", userId, member);
-
-        log.info("查找用户信息(远端):{}", userId);
-        UserDTO user = userClient.findById(Long.valueOf(userId));
-        log.info("查找用户信息(远端):{} Result:{}", userId, user);
-
-        if (member == null) {
-            // 本地不存在  创建一份
-            if (user != null) {
-                member = new MemberDTO();
-                member.setId(userId);
-                // 重构 v2：member_info 已移除 auth_id 列（无独立认证库，见 docs/mysql/重构v2/07_member.sql 决策2），不再设置 authId
-                member.setPhone(user.getMobile());
-                member.setAvatar(user.getAvatar());
-                member.setName(user.getName());
-                Result result = memberFeign.save(member);
-                log.info("查找用户信息(远端):{} 留存结果:{}", userId, result);
-            }
-        } else {
-            if (user != null) {
-                member.setAvatar(user.getAvatar());
-                member.setName(user.getName());
-            }
-        }
-
-        return member;
+    public MemberServiceImpl(MemberIdentityResolver memberIdentityResolver) {
+        this.memberIdentityResolver = memberIdentityResolver;
     }
 
+    @Override
+    public MemberDTO currentMember() {
+        return memberIdentityResolver.requireCurrentMember();
+    }
 }

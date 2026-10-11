@@ -3,8 +3,8 @@ package com.itheima.pinda.controller;
 
 import com.itheima.pinda.DTO.AddressBookDTO;
 import com.itheima.pinda.DTO.AreaDTO;
-import com.itheima.pinda.common.context.RequestContext;
 import com.itheima.pinda.common.utils.PageResponse;
+import com.itheima.pinda.component.MemberIdentityResolver;
 import com.itheima.pinda.util.Rx;
 import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.feign.AddressBookFeign;
@@ -41,9 +41,13 @@ public class AddressBookController {
 
     private final AreaFeign areaFeign;
 
-    public AddressBookController(AddressBookFeign addressBookFeign, AreaFeign areaFeign) {
+    private final MemberIdentityResolver memberIdentityResolver;
+
+    public AddressBookController(AddressBookFeign addressBookFeign, AreaFeign areaFeign,
+                                 MemberIdentityResolver memberIdentityResolver) {
         this.addressBookFeign = addressBookFeign;
         this.areaFeign = areaFeign;
+        this.memberIdentityResolver = memberIdentityResolver;
     }
 
     /**
@@ -57,10 +61,10 @@ public class AddressBookController {
     @Operation(summary = "地址簿分页查询")
     @GetMapping("page")
     public Result page(Integer page, Integer pageSize, String keyword) {
-        //获取userid
-        String userId = RequestContext.getUserId();
+        // 认证账号 ID 解析为会员雪花 ID（未登录/未绑手机号抛异常由全局 advice 处理）
+        String memberId = memberIdentityResolver.requireCurrentMemberId();
         // 远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
-        PageResponse<AddressBookDTO> result = addressBookFeign.page(page, pageSize, userId, keyword);
+        PageResponse<AddressBookDTO> result = addressBookFeign.page(page, pageSize, memberId, keyword);
         List<AddressBookDTO> items = Rx.items(result);
         Set<Long> areaSet = new HashSet<>();
         areaSet.addAll(items.stream().map(item -> item.getProvinceId()).collect(Collectors.toSet()));
@@ -96,10 +100,9 @@ public class AddressBookController {
     @PostMapping("")
     @Operation(summary = "新增")
     public Result save(@RequestBody AddressBookDTO entity) {
-        //获取userid
-        String userId = RequestContext.getUserId();
-        entity.setUserId(userId);
-        return addressBookFeign.save(entity);
+        String memberId = memberIdentityResolver.requireCurrentMemberId();
+        // 归属会员由服务端解析后显式传参，请求体里的 userId 下游会强制丢弃
+        return addressBookFeign.save(memberId, entity);
     }
 
     /**
@@ -112,10 +115,8 @@ public class AddressBookController {
     @PutMapping("/{id}")
     @Operation(summary = "修改")
     public Result update(@PathVariable(name = "id") String id, @RequestBody AddressBookDTO entity) {
-        //获取userid
-        String userId = RequestContext.getUserId();
-        entity.setUserId(userId);
-        return addressBookFeign.update(id, entity);
+        String memberId = memberIdentityResolver.requireCurrentMemberId();
+        return addressBookFeign.update(id, memberId, entity);
     }
 
     /**
@@ -127,7 +128,8 @@ public class AddressBookController {
     @DeleteMapping("/{id}")
     @Operation(summary = "删除")
     public Result del(@PathVariable(name = "id") String id) {
-        return addressBookFeign.del(id);
+        String memberId = memberIdentityResolver.requireCurrentMemberId();
+        return addressBookFeign.del(id, memberId);
     }
 
     /**
@@ -140,7 +142,8 @@ public class AddressBookController {
     @Operation(summary = "明细")
     @GetMapping("detail/{id}")
     public Result detail(@PathVariable(name = "id") String id) {
-        AddressBookDTO addressBook = addressBookFeign.detail(id);
+        String memberId = memberIdentityResolver.requireCurrentMemberId();
+        AddressBookDTO addressBook = addressBookFeign.detail(id, memberId);
         if (addressBook == null) {
             return Result.error();
         }

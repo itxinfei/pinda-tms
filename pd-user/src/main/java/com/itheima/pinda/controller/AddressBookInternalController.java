@@ -10,20 +10,34 @@ import com.itheima.pinda.entity.AddressBook;
 import com.itheima.pinda.service.IAddressBookService;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.*;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 地址簿
+ * 会员地址簿内部端点：仅供客户 BFF 通过 Feign 调用。
+ *
+ * <p>与旧 {@code /addressBook/**} 的区别：会员归属键改为显式 memberId 入参（会员雪花 ID
+ * 由客户 BFF 从认证账号解析得到），不再读 userid 请求头——认证账号 ID 与会员 ID 已不是
+ * 同一个键。路径 {@code /addressBook/internal/**} 预留统一 Same-Token 入站加固；
+ * 网关无 pd-user 路由，外部不可达。</p>
+ *
+ * <p>安全语义与旧端点完全一致：page 按 memberId 过滤；save/update 丢弃请求体 userId
+ * 强制回填归属；isDefault 先清零同会员旧默认；detail/update/del 做行级归属校验。</p>
  */
 @Log4j2
 @RestController
-@RequestMapping("addressBook")
-public class AddressBookController {
+@RequestMapping("addressBook/internal")
+public class AddressBookInternalController {
+
     @Autowired
     private IAddressBookService addressBookService;
 
@@ -32,31 +46,24 @@ public class AddressBookController {
 
     /**
      * 新增地址簿
-     *
-     * @param dto
-     * @return
      */
     @PostMapping("")
     @Transactional(rollbackFor = Exception.class)
-    public Result save(@RequestBody AddressBookDTO dto) {
-        if (dto == null || StringUtils.isBlank(dto.getUserId())) {
-            return Result.error("用户ID不能为空");
+    public Result save(@RequestParam("memberId") String memberId, @RequestBody AddressBookDTO dto) {
+        if (dto == null) {
+            return Result.error("请求数据不能为空");
         }
-        // 归属只能是自己：否则任意调用方可以给他人塞地址，再用别人的 addressBookId 下单
-        String callerId = currentUserId();
-        if (StringUtils.isBlank(callerId)) {
-            return Result.error(401, "缺少身份信息，拒绝写入地址簿");
+        if (IdConverter.toLong(memberId) == null) {
+            return Result.error(401, "缺少会员身份，拒绝写入地址簿");
         }
-        if (!callerId.equals(dto.getUserId())) {
-            log.warn("地址簿越权写入拦截: 声称归属={}, 调用方={}", dto.getUserId(), callerId);
-            return Result.error(403, "只能给自己的账号新增地址");
-        }
+        // 归属只能是自己：请求体里的 userId 一律丢弃，强制回填调用方会员，
+        // 否则任意调用方可以给他人塞地址，再用别人的 addressBookId 下单
+        dto.setUserId(memberId);
         AddressBook entity = addressBookConverter.toEntity(dto);
         if (isDefault(entity)) {
             addressBookService.lambdaUpdate().set(AddressBook::getIsDefault, 0)
                     .eq(AddressBook::getMemberId, entity.getMemberId()).update();
         }
-
         boolean result = addressBookService.save(entity);
         if (result) {
             return Result.ok();
@@ -65,21 +72,12 @@ public class AddressBookController {
     }
 
     /**
-     * 查询地址簿详情
-     *
-     * <p>这里原来挂着 {@code @Cache(region,key="ab",params="id")}：缓存键只含地址 id，
-     * 不含调用方身份，意味着 A 查过一次之后 B 用同一个 id 就能直接命中缓存拿到 A 的
-     * 姓名/手机/详址——归属校验也会被缓存旁路掉。按主键查库的代价本来就极低，
-     * 所以去掉这层缓存，改为每次走归属校验。</p>
-     *
-     * @param id 地址 id
-     * @return 地址详情（仅本人）
+     * 查询地址簿详情：不属于该会员/不存在一律返回 null，不泄露数据；调用方判空处理。
      */
     @GetMapping("detail/{id}")
-    public AddressBookDTO detail(@PathVariable(name = "id") String id) {
-        // R2④：直接返回 DTO（修复原 Feign 声明与 Result 包裹不一致导致消费方拿到空对象的缺陷）。
-        // 鉴权失败/不存在一律返回 null，不泄露数据；调用方判空处理。
-        Result ownerCheck = checkOwner(id);
+    public AddressBookDTO detail(@PathVariable(name = "id") String id,
+                                 @RequestParam("memberId") String memberId) {
+        Result ownerCheck = checkOwner(id, memberId);
         if (ownerCheck != null) {
             return null;
         }
@@ -87,19 +85,16 @@ public class AddressBookController {
     }
 
     /**
-     * 分页查询
-     *
-     * @param page
-     * @param pageSize
-     * @param userId
-     * @param keyword
-     * @return
+     * 分页查询某会员的地址簿
      */
     @GetMapping("page")
-    public PageResponse<AddressBookDTO> page(Integer page, Integer pageSize, String userId, String keyword) {
-        Page<AddressBook> iPage = new Page(page, pageSize);
+    public PageResponse<AddressBookDTO> page(@RequestParam("page") Integer page,
+                                             @RequestParam("pageSize") Integer pageSize,
+                                             @RequestParam("memberId") String memberId,
+                                             @RequestParam(value = "keyword", required = false) String keyword) {
+        Page<AddressBook> iPage = new Page<>(page, pageSize);
         Page<AddressBook> pageResult = addressBookService.lambdaQuery()
-                .eq(StringUtils.isNotEmpty(userId), AddressBook::getMemberId, IdConverter.toLong(userId))
+                .eq(StringUtils.isNotEmpty(memberId), AddressBook::getMemberId, IdConverter.toLong(memberId))
                 .and(StringUtils.isNotEmpty(keyword), wrapper ->
                         wrapper.like(AddressBook::getContactName, keyword).or()
                                 .like(AddressBook::getPhoneNumber, keyword).or()
@@ -117,18 +112,16 @@ public class AddressBookController {
 
     /**
      * 修改
-     *
-     * @param id
-     * @param dto
-     * @return
      */
     @PutMapping("/{id}")
     @Transactional(rollbackFor = Exception.class)
-    public Result update(@PathVariable(name = "id") String id, @RequestBody AddressBookDTO dto) {
+    public Result update(@PathVariable(name = "id") String id,
+                         @RequestParam("memberId") String memberId,
+                         @RequestBody AddressBookDTO dto) {
         if (dto == null) {
             return Result.error("请求数据不能为空");
         }
-        Result ownerCheck = checkOwner(id);
+        Result ownerCheck = checkOwner(id, memberId);
         if (ownerCheck != null) {
             return ownerCheck;
         }
@@ -150,8 +143,7 @@ public class AddressBookController {
     }
 
     /**
-     * isDefault 是 Integer，客户端不传就是 null；原来的 {@code 1 == entity.getIsDefault()}
-     * 会在拆箱时抛 NPE，直接 500（新增/修改地址不带这个字段就会踩）。
+     * isDefault 是 Integer，客户端不传就是 null；直接拆箱比较会抛 NPE。
      */
     private boolean isDefault(AddressBook entity) {
         return Integer.valueOf(1).equals(entity.getIsDefault());
@@ -159,13 +151,10 @@ public class AddressBookController {
 
     /**
      * 删除
-     *
-     * @param id
-     * @return
      */
     @DeleteMapping("/{id}")
-    public Result del(@PathVariable(name = "id") String id) {
-        Result ownerCheck = checkOwner(id);
+    public Result del(@PathVariable(name = "id") String id, @RequestParam("memberId") String memberId) {
+        Result ownerCheck = checkOwner(id, memberId);
         if (ownerCheck != null) {
             return ownerCheck;
         }
@@ -178,43 +167,23 @@ public class AddressBookController {
 
     /**
      * 行级归属校验：地址簿里的 contactName/phoneNumber/详址属于个人敏感信息，
-     * 只允许本人（或本人所在登录会话）读写自己的行。
-     *
-     * <p>身份只认网关注入、并由 Feign 透传的 userid 头（见 RequestHeaderInterceptor），
-     * 不接受任何查询参数或请求体里的 userId —— 否则 ?userId=别人 就能枚举别人的地址。</p>
+     * 只允许归属会员本人读写自己的行。
      *
      * @return 校验通过返回 null；否则返回要直接回给调用方的错误响应
      */
-    private Result checkOwner(String id) {
-        String callerId = currentUserId();
-        if (StringUtils.isBlank(callerId)) {
-            return Result.error(401, "缺少身份信息，拒绝访问地址簿");
+    private Result checkOwner(String id, String memberId) {
+        Long callerId = IdConverter.toLong(memberId);
+        if (callerId == null) {
+            return Result.error(401, "缺少会员身份，拒绝访问地址簿");
         }
         AddressBook row = addressBookService.getById(IdConverter.toLong(id));
         if (row == null) {
             return Result.error("地址不存在");
         }
-        if (!callerId.equals(IdConverter.toStr(row.getMemberId()))) {
+        if (!callerId.equals(row.getMemberId())) {
             log.warn("地址簿越权访问拦截: 会员归属={}, 调用方={}", row.getMemberId(), callerId);
             return Result.error(403, "无权访问该地址");
         }
         return null;
-    }
-
-    /**
-     * 取当前调用方身份。pd-user 没有注册 ContextHandlerInterceptor，
-     * 直接读头最可靠（与其他读头场景同一套做法）。
-     */
-    private String currentUserId() {
-        try {
-            ServletRequestAttributes attributes =
-                    (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-            if (attributes == null) {
-                return null;
-            }
-            return attributes.getRequest().getHeader("userid");
-        } catch (Exception e) {
-            return null;
-        }
     }
 }

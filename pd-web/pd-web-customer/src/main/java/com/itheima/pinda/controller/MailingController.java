@@ -6,12 +6,12 @@ import com.google.common.collect.Maps;
 import com.itheima.pinda.DTO.*;
 import com.itheima.pinda.DTO.angency.AgencyScopeDto;
 import com.itheima.pinda.DTO.user.CourierScopeDto;
-import com.itheima.pinda.common.context.RequestContext;
 import com.itheima.pinda.common.utils.DateUtils;
 import com.itheima.pinda.common.utils.EntCoordSyncJob;
 import com.itheima.pinda.common.utils.OwnershipAssert;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
+import com.itheima.pinda.component.MemberIdentityResolver;
 import com.itheima.pinda.util.Rx;
 import com.itheima.pinda.DTO.MemberDTO;
 import com.itheima.pinda.enums.OrderPaymentStatus;
@@ -70,8 +70,9 @@ public class MailingController {
     private final AddressBookFeign addressBookFeign;
     private final CourierScopeFeign courierScopeFeign;
     private final EventPublisher eventPublisher;
+    private final MemberIdentityResolver memberIdentityResolver;
 
-    public MailingController(AgencyScopeFeign agencyScopeFeign, OrgFeign orgFeign, TransportTaskFeign transportTaskFeign, TransportOrderFeign transportOrderFeign, UserFeign userFeign, AreaFeign areaFeign, PickupDispatchTaskFeign pickupDispatchTaskFeign, OrderFeign orderFeign, PayFeign payFeign, CargoFeign cargoFeign, IMemberService memberService, AddressBookFeign addressBookFeign, CourierScopeFeign courierScopeFeign, EventPublisher eventPublisher) {
+    public MailingController(AgencyScopeFeign agencyScopeFeign, OrgFeign orgFeign, TransportTaskFeign transportTaskFeign, TransportOrderFeign transportOrderFeign, UserFeign userFeign, AreaFeign areaFeign, PickupDispatchTaskFeign pickupDispatchTaskFeign, OrderFeign orderFeign, PayFeign payFeign, CargoFeign cargoFeign, IMemberService memberService, AddressBookFeign addressBookFeign, CourierScopeFeign courierScopeFeign, EventPublisher eventPublisher, MemberIdentityResolver memberIdentityResolver) {
         this.agencyScopeFeign = agencyScopeFeign;
         this.orgFeign = orgFeign;
         this.transportTaskFeign = transportTaskFeign;
@@ -86,18 +87,19 @@ public class MailingController {
         this.addressBookFeign = addressBookFeign;
         this.courierScopeFeign = courierScopeFeign;
         this.eventPublisher = eventPublisher;
+        this.memberIdentityResolver = memberIdentityResolver;
     }
 
-    private OrderDTO buildOrderAndPrice(MailingSaveDTO entity) {
-        // 获取地址详细信息
+    private OrderDTO buildOrderAndPrice(MailingSaveDTO entity, String memberId) {
+        // 获取地址详细信息（地址归属校验：只能用本人地址簿中的地址下单/预估价）
         if (StringUtils.isBlank(entity.getSendAddress()) || StringUtils.isBlank(entity.getReceiptAddress())) {
             throw new IllegalArgumentException("收发地址不能为空");
         }
-        AddressBookDTO sendAddress = addressBookFeign.detail(entity.getSendAddress());
+        AddressBookDTO sendAddress = addressBookFeign.detail(entity.getSendAddress(), memberId);
         if (sendAddress == null) {
             throw new IllegalArgumentException("发货地址不存在");
         }
-        AddressBookDTO receiptAddress = addressBookFeign.detail(entity.getReceiptAddress());
+        AddressBookDTO receiptAddress = addressBookFeign.detail(entity.getReceiptAddress(), memberId);
         if (receiptAddress == null) {
             throw new IllegalArgumentException("收货地址不存在");
         }
@@ -151,7 +153,9 @@ public class MailingController {
     @PostMapping("totalPrice")
     public Result totalPrice(@RequestBody MailingSaveDTO entity) {
         log.info("预估总价：{}", entity);
-        OrderDTO orderAddDto = buildOrderAndPrice(entity);
+        // 预估也要校验收发地址归属本人，先解析会员身份
+        String memberId = memberIdentityResolver.requireCurrentMemberId();
+        OrderDTO orderAddDto = buildOrderAndPrice(entity, memberId);
         log.info("结果：{}", orderAddDto);
         Result result = Result.ok().put("amount", orderAddDto.getAmount().toString());
         log.info("返回结果：{}", result);
@@ -168,12 +172,12 @@ public class MailingController {
     @PostMapping("")
     public Result save(@RequestBody MailingSaveDTO entity) {
         log.info("下单：{}", entity);
-        //获取userid
-        String userId = RequestContext.getUserId();
+        // 认证账号 ID 解析为会员雪花 ID，订单归属会员而非认证账号
+        String memberId = memberIdentityResolver.requireCurrentMemberId();
 
         // 获取地址详细信息
-        OrderDTO orderDTO = buildOrderAndPrice(entity);
-        orderDTO.setMemberId(userId);
+        OrderDTO orderDTO = buildOrderAndPrice(entity, memberId);
+        orderDTO.setMemberId(memberId);
         log.info("构建订单信息：{}", orderDTO);
 
         // 根据下单发货地址调用百度坐标计算分配的网点
@@ -579,24 +583,24 @@ public class MailingController {
     @PutMapping("/{id}")
     public Result update(@PathVariable("id") String id, @RequestBody MailingSaveDTO entity) {
         log.info("修改订单 id:{} params：{}", id, entity);
-        //获取userid
-        String userId = RequestContext.getUserId();
+        // 认证账号 ID 解析为会员雪花 ID
+        String memberId = memberIdentityResolver.requireCurrentMemberId();
 
         OrderDTO order = orderFeign.findById(id);
         log.info("原订单 id:{} result：{}", id, order);
         if (order == null) {
             return Result.error(400, "订单不存在");
         }
-        // 归属校验（deny-by-default）：只允许订单归属人修改，防止越权改他人订单
-        if (order.getMemberId() == null || !userId.equals(String.valueOf(order.getMemberId()))) {
-            log.warn("[订单] 越权改单被拒绝: id={}, userId={}, orderMemberId={}", id, userId, order.getMemberId());
+        // 归属校验（deny-by-default）：只允许订单归属会员修改，防止越权改他人订单
+        if (order.getMemberId() == null || !memberId.equals(String.valueOf(order.getMemberId()))) {
+            log.warn("[订单] 越权改单被拒绝: id={}, memberId={}, orderMemberId={}", id, memberId, order.getMemberId());
             return Result.error(403, "无权操作他人订单");
         }
         String oldSenderCountId = order.getSenderCountyId();
         String oldSendAdress = order.getSenderAddress();
         // 获取地址详细信息
-        OrderDTO orderDTO = buildOrderAndPrice(entity);
-        orderDTO.setMemberId(userId);
+        OrderDTO orderDTO = buildOrderAndPrice(entity, memberId);
+        orderDTO.setMemberId(memberId);
         orderDTO.setCreateTime(LocalDateTime.now());
         // 补货物信息，供改价专用端点服务端重算运费
         orderDTO.setOrderCargoDto(buildOrderCargo(entity));
@@ -759,16 +763,17 @@ public class MailingController {
     @Operation(summary = "支付")
     @PutMapping("/pay/{id}")
     public Result pay(@PathVariable("id") String id) {
+        // 在 try 外解析会员身份：身份异常交由全局 advice 返回明确提示，不被下方通用 catch 吞掉
+        String memberId = memberIdentityResolver.requireCurrentMemberId();
         try {
-            // 归属校验（deny-by-default）：无法确认身份或订单无归属人时一律拒绝，防止越权支付
-            String userId = RequestContext.getUserId();
+            // 归属校验（deny-by-default）：订单无归属人或不属于当前会员一律拒绝，防止越权支付
             OrderDTO order = orderFeign.findById(id);
             if (order == null) {
                 return Result.error(400, "订单不存在");
             }
-            if (userId == null || order.getMemberId() == null
-                    || !userId.equals(String.valueOf(order.getMemberId()))) {
-                log.warn("[订单] 越权支付被拒绝: id={}, userId={}, orderMemberId={}", id, userId, order.getMemberId());
+            if (order.getMemberId() == null
+                    || !memberId.equals(String.valueOf(order.getMemberId()))) {
+                log.warn("[订单] 越权支付被拒绝: id={}, memberId={}, orderMemberId={}", id, memberId, order.getMemberId());
                 return Result.error(403, "无权操作他人订单");
             }
             // 走统一支付服务创建支付单（微信/支付宝/模拟渠道），返回预支付参数供前端拉起支付
@@ -789,18 +794,19 @@ public class MailingController {
     @PutMapping("/cancel/{id}")
     public Result cancel(@PathVariable("id") String id) {
         log.info("客户取消订单：{}", id);
+        // 在 try 外解析会员身份：身份异常交由全局 advice 返回明确提示，不被下方通用 catch 吞掉
+        String memberId = memberIdentityResolver.requireCurrentMemberId();
         // 增加分布式锁，防止用户在揽收时取消订单，造成脏数据
         try {
             log.info("加锁成功：{}", id);
-            // 归属校验（deny-by-default）：只允许订单归属人取消，防止越权取消他人订单
-            String userId = RequestContext.getUserId();
+            // 归属校验（deny-by-default）：只允许订单归属会员取消，防止越权取消他人订单
             OrderDTO existing = orderFeign.findById(id);
             if (existing == null) {
                 return Result.error(400, "订单不存在");
             }
-            if (userId == null || existing.getMemberId() == null
-                    || !userId.equals(String.valueOf(existing.getMemberId()))) {
-                log.warn("[订单] 越权取消被拒绝: id={}, userId={}, existing.getMemberId={}", id, userId, existing.getMemberId());
+            if (existing.getMemberId() == null
+                    || !memberId.equals(String.valueOf(existing.getMemberId()))) {
+                log.warn("[订单] 越权取消被拒绝: id={}, memberId={}, existing.getMemberId={}", id, memberId, existing.getMemberId());
                 return Result.error(403, "无权操作他人订单");
             }
             // 获取地址详细信息
@@ -832,8 +838,8 @@ public class MailingController {
     @Operation(summary = "待处理数量查询")
     @GetMapping("count")
     public Result count(MailingQueryDTO dto) {
-        //获取userid
-        String userId = RequestContext.getUserId();
+        // 认证账号 ID 解析为会员雪花 ID
+        String memberId = memberIdentityResolver.requireCurrentMemberId();
 
         OrderSearchDTO orderSearchDto = new OrderSearchDTO();
         orderSearchDto.setPage(1);
@@ -841,10 +847,10 @@ public class MailingController {
         orderSearchDto.setKeyword(dto.getKeyword());
         if (0 == dto.getMailType()) {
             // 我寄的
-            orderSearchDto.setMemberId(userId);
+            orderSearchDto.setMemberId(memberId);
         } else {
             // 我收的 通过收件人手机号查询
-            MemberDTO member = memberService.detail(userId);
+            MemberDTO member = memberService.currentMember();
             if (member == null || StringUtils.isEmpty(member.getPhone())) {
                 return Result.ok().put("count", 0);
             }
@@ -867,8 +873,8 @@ public class MailingController {
     @SneakyThrows
     @GetMapping("page")
     public Result page(MailingQueryDTO dto) {
-        //获取userid
-        String userId = RequestContext.getUserId();
+        // 认证账号 ID 解析为会员雪花 ID
+        String memberId = memberIdentityResolver.requireCurrentMemberId();
 
         OrderSearchDTO orderSearchDto = new OrderSearchDTO();
         orderSearchDto.setPage(dto.getPage());
@@ -876,10 +882,10 @@ public class MailingController {
         orderSearchDto.setKeyword(dto.getKeyword());
         if (0 == dto.getMailType()) {
             // 我寄的
-            orderSearchDto.setMemberId(userId);
+            orderSearchDto.setMemberId(memberId);
         } else {
             // 我收的 通过收件人手机号查询
-            MemberDTO member = memberService.detail(userId);
+            MemberDTO member = memberService.currentMember();
             if (member == null || StringUtils.isEmpty(member.getPhone())) {
                 return new Result().ok().put("data", PageResponse.<CustomerOrderDTO>builder().page(dto.getPage()).pagesize(dto.getPagesize()).pages(0L).counts(0L).build());
             }
@@ -964,15 +970,15 @@ public class MailingController {
     @GetMapping("detail")
     public Result detail(String id) {
         CustomerOrderDetailDTO.CustomerOrderDetailDTOBuilder builder = CustomerOrderDetailDTO.builder();
-        //获取userid
-        String userId = RequestContext.getUserId();
+        // 认证账号 ID 解析为会员雪花 ID
+        String memberId = memberIdentityResolver.requireCurrentMemberId();
         //订单信息
         OrderDTO orderDTO = orderFeign.findById(id);
         if (orderDTO == null) {
             return Result.error(400, "订单不存在");
         }
-        // 归属校验：订单必须属于当前登录用户，防止越权查看他人订单明细
-        Result deny = OwnershipAssert.checkEquals(orderDTO.getMemberId(), userId, "无权查看他人订单");
+        // 归属校验：订单必须属于当前会员，防止越权查看他人订单明细
+        Result deny = OwnershipAssert.checkEquals(orderDTO.getMemberId(), memberId, "无权查看他人订单");
         if (deny != null) {
             return deny;
         }
@@ -1040,13 +1046,15 @@ public class MailingController {
     @Operation(summary = "路由")
     @GetMapping("route")
     public Result route(String id) {
+        // 认证账号 ID 解析为会员雪花 ID
+        String memberId = memberIdentityResolver.requireCurrentMemberId();
         //订单信息
         OrderDTO orderDTO = orderFeign.findById(id);
         if (orderDTO == null) {
             return Result.error(400, "订单不存在");
         }
-        // 归属校验：订单必须属于当前登录用户，防止越权拉取他人订单路由
-        Result deny = OwnershipAssert.checkEquals(orderDTO.getMemberId(), RequestContext.getUserId(), "无权查看他人订单");
+        // 归属校验：订单必须属于当前会员，防止越权拉取他人订单路由
+        Result deny = OwnershipAssert.checkEquals(orderDTO.getMemberId(), memberId, "无权查看他人订单");
         if (deny != null) {
             return deny;
         }

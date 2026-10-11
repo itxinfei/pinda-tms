@@ -3,9 +3,9 @@ package com.itheima.pinda.controller;
 import com.itheima.pinda.DTO.OrderDTO;
 import com.itheima.pinda.DTO.TaskTransportDTO;
 import com.itheima.pinda.DTO.TransportOrderDTO;
-import com.itheima.pinda.common.context.RequestContext;
 import com.itheima.pinda.common.utils.OwnershipAssert;
 import com.itheima.pinda.common.utils.Result;
+import com.itheima.pinda.component.MemberIdentityResolver;
 import com.itheima.pinda.feign.OrderFeign;
 import com.itheima.pinda.feign.TraceFeign;
 import com.itheima.pinda.feign.TransportOrderFeign;
@@ -41,15 +41,18 @@ public class OrderTraceController {
     private final TransportOrderFeign transportOrderFeign;
     private final TransportTaskFeign transportTaskFeign;
     private final TraceFeign traceFeign;
+    private final MemberIdentityResolver memberIdentityResolver;
 
     public OrderTraceController(OrderFeign orderFeign,
                                 TransportOrderFeign transportOrderFeign,
                                 TransportTaskFeign transportTaskFeign,
-                                TraceFeign traceFeign) {
+                                TraceFeign traceFeign,
+                                MemberIdentityResolver memberIdentityResolver) {
         this.orderFeign = orderFeign;
         this.transportOrderFeign = transportOrderFeign;
         this.transportTaskFeign = transportTaskFeign;
         this.traceFeign = traceFeign;
+        this.memberIdentityResolver = memberIdentityResolver;
     }
 
     @Operation(summary = "按订单查轨迹")
@@ -58,13 +61,14 @@ public class OrderTraceController {
         if (StringUtils.isBlank(orderId)) {
             return Result.error(400, "orderId不能为空");
         }
-        String userId = RequestContext.getUserId();
+        // 认证账号 ID 解析为会员雪花 ID（未登录/未绑手机号抛异常由全局 advice 处理）
+        String memberId = memberIdentityResolver.requireCurrentMemberId();
         OrderDTO order = orderFeign.findById(orderId);
         if (order == null) {
             return Result.error(400, "订单不存在");
         }
         // 归属校验：只允许查本人订单，防止水平越权
-        Result deny = OwnershipAssert.checkEquals(order.getMemberId(), userId, "无权查看他人订单");
+        Result deny = OwnershipAssert.checkEquals(order.getMemberId(), memberId, "无权查看他人订单");
         if (deny != null) {
             return deny;
         }

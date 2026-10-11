@@ -1,11 +1,9 @@
 package com.itheima.pinda.controller;
 
 
-import com.itheima.pinda.DTO.UserProfileDTO;
-import com.itheima.pinda.common.context.RequestContext;
-import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.DTO.MemberDTO;
-import com.itheima.pinda.feign.UserClient;
+import com.itheima.pinda.DTO.UserProfileDTO;
+import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.service.IMemberService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,12 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 /**
- * <p>
- * 运单表 前端控制器
- * </p>
- *
- * @author diesel
- * @since 2020-03-19
+ * 客户个人信息
  */
 @Slf4j
 @Tag(name = "用户管理")
@@ -30,12 +23,9 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @RequestMapping("user")
 public class UserController {
 
-    private final UserClient userClient;
-
     private final IMemberService memberService;
 
-    public UserController(UserClient userClient, IMemberService memberService) {
-        this.userClient = userClient;
+    public UserController(IMemberService memberService) {
         this.memberService = memberService;
     }
 
@@ -44,20 +34,14 @@ public class UserController {
     @ResponseBody
     @GetMapping("profile")
     public Result profile() {
-
-        //    并放入参数
-        String userId = RequestContext.getUserId();
-
-        MemberDTO member = memberService.detail(userId);
-        if (member != null) {
-            return Result.ok().put("data", UserProfileDTO.builder()
-                    .id(userId)
-                    .avatar(member.getAvatar())
-                    .name(member.getName())
-                    .phone(member.getPhone())
-                    .build());
-        } else {
-            return Result.ok().put("data", UserProfileDTO.builder().build());
-        }
+        // 未登录/未绑手机号等身份异常由 MemberIdentityExceptionHandler 统一转 Result
+        MemberDTO member = memberService.currentMember();
+        // 返回的 id 是会员雪花 ID（member_info.id），不是认证账号 ID
+        return Result.ok().put("data", UserProfileDTO.builder()
+                .id(member.getId())
+                .avatar(member.getAvatar())
+                .name(member.getName())
+                .phone(member.getPhone())
+                .build());
     }
 }
