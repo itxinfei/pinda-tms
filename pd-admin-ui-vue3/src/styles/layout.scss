@@ -126,6 +126,37 @@
   }
 }
 
+/* 联云式侧边栏菜单：分组标题次级字重 + 紧凑高度 + 选中项主色竖条 */
+.layout-root .layout-sidebar .el-menu {
+  .el-menu-item,
+  .el-sub-menu__title {
+    height: 42px;
+    line-height: 42px;
+  }
+
+  .el-sub-menu__title {
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  // 选中菜单项：左侧 3px 主色竖条（对齐联云 TMS 的选中强调；分组标题不参与）
+  .el-menu-item.is-active {
+    position: relative;
+
+    &::before {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 3px;
+      height: 18px;
+      content: "";
+      background: var(--el-color-primary);
+      border-radius: 0 2px 2px 0;
+      transform: translateY(-50%);
+    }
+  }
+}
+
 /* 隐藏侧边栏 el-scrollbar 的水平滚动条（el-scrollbar 的 wrap 宽度因滚动条 gutter 比内容少 1px，导致 .el-menu--collapse 始终溢出） */
 .layout-sidebar .el-scrollbar__bar.is-horizontal {
   display: none !important;

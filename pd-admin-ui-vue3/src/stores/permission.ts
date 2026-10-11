@@ -22,7 +22,7 @@ export const usePermissionStore = defineStore("permission", () => {
   async function generateRoutes(): Promise<RouteRecordRaw[]> {
     try {
       const routeData = await MenuAPI.getRoutes();
-      const menuRoutes = buildRoutes(routeData);
+      const menuRoutes = buildRoutes(groupFlatMenus(routeData));
       const registerRoutes = filterRoutes(menuRoutes);
 
       routes.value = [...constantRoutes, ...menuRoutes];
@@ -125,6 +125,64 @@ export const usePermissionStore = defineStore("permission", () => {
     refreshPermissions,
   };
 });
+
+/**
+ * 平级菜单分组映射：把后端下发的平级顶级菜单按业务归组成目录树，
+ * 对齐联云 TMS 的「顶级项独立 + 业务分组 + 子项缩进」式侧边栏设计。
+ * key 为菜单 path；组信息沿用静态路由的既定分组（工作台/订单中心/调度中心/运输在途/基础档案/系统管理）。
+ * 后端若改为树状下发（sys_menu 目录层级），有 children 的项自动保持原样，本映射不参与。
+ */
+const MENU_GROUP_MAP: Record<string, { path: string; title: string; icon: string }> = {
+  "/dashboard": { path: "/workbench", title: "工作台", icon: "homepage" },
+  "/order": { path: "/order-center", title: "订单中心", icon: "document" },
+  "/transport": { path: "/order-center", title: "订单中心", icon: "document" },
+  "/task": { path: "/dispatch-center", title: "调度中心", icon: "el-icon-Operation" },
+  "/pickup-dispatch": { path: "/dispatch-center", title: "调度中心", icon: "el-icon-Operation" },
+  "/driver-job": { path: "/dispatch-center", title: "调度中心", icon: "el-icon-Operation" },
+  "/dispatch": { path: "/dispatch-center", title: "调度中心", icon: "el-icon-Operation" },
+  "/monitor": { path: "/transit", title: "运输在途", icon: "monitor" },
+  "/alarm": { path: "/transit", title: "运输在途", icon: "monitor" },
+  "/truck": { path: "/archive", title: "基础档案", icon: "file" },
+  "/driver": { path: "/archive", title: "基础档案", icon: "file" },
+  "/transport-line": { path: "/archive", title: "基础档案", icon: "file" },
+  "/org": { path: "/system", title: "系统管理", icon: "setting" },
+  "/station": { path: "/system", title: "系统管理", icon: "setting" },
+  "/area": { path: "/system", title: "系统管理", icon: "setting" },
+  "/audit": { path: "/system", title: "系统管理", icon: "setting" },
+};
+
+/**
+ * 平级菜单归组：仅归组「无 children 且命中映射」的顶级项；
+ * 已分组（有 children）与未命中映射的顶级项保持原样，避免菜单丢失。
+ */
+function groupFlatMenus(menus: RouteItem[]): RouteItem[] {
+  const alreadyGrouped = menus.filter((menu) => (menu.children ?? []).length > 0);
+
+  const groups = new Map<string, RouteItem>();
+  menus.forEach((menu) => {
+    if ((menu.children ?? []).length > 0) return;
+    const group = MENU_GROUP_MAP[menu.path ?? ""];
+    if (!group) return;
+
+    const existing = groups.get(group.path);
+    if (existing) {
+      existing.children!.push(menu);
+    } else {
+      groups.set(group.path, {
+        path: group.path,
+        name: group.path,
+        meta: { title: group.title, icon: group.icon },
+        children: [menu],
+      });
+    }
+  });
+
+  const ungrouped = menus.filter(
+    (menu) => (menu.children ?? []).length === 0 && !MENU_GROUP_MAP[menu.path ?? ""]
+  );
+
+  return [...alreadyGrouped, ...groups.values(), ...ungrouped];
+}
 
 // 目录菜单 component 的占位值，标记该级只作路由容器
 const LAYOUT_COMPONENT = "Layout";
