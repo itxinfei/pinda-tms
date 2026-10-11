@@ -1,33 +1,26 @@
 <template>
   <div v-if="!item.meta || !item.meta.hidden">
     <template v-if="leafMenu">
-      <AppLink
+      <el-menu-item
         v-if="leafMenu.meta"
-        :to="{
-          path: resolvePath(leafMenu.path),
-          meta: leafMenu.meta,
-          query: leafMenu.meta.params,
-        }"
+        :index="resolvePath(leafMenu.path)"
+        :class="{ 'submenu-title-noDropdown': !isNest }"
+        @click="handleNavigate(leafMenu)"
       >
-        <el-menu-item
-          :index="resolvePath(leafMenu.path)"
-          :class="{ 'submenu-title-noDropdown': !isNest }"
-        >
-          <template v-if="leafMenu.meta">
-            <LayoutMenuIcon :icon="leafMenu.meta.icon || item.meta?.icon" />
-            <span
-              v-if="leafMenu.meta.title"
-              class="ml-1"
-              :title="translateRouteTitle(leafMenu.meta.title)"
-            >
-              {{ translateRouteTitle(leafMenu.meta.title) }}
-            </span>
-            <span v-if="getBadge(leafMenu.meta)" class="menu-badge">
-              {{ getBadge(leafMenu.meta) }}
-            </span>
-          </template>
-        </el-menu-item>
-      </AppLink>
+        <template v-if="leafMenu.meta">
+          <LayoutMenuIcon :icon="leafMenu.meta.icon || item.meta?.icon" />
+          <span
+            v-if="leafMenu.meta.title"
+            class="ml-1"
+            :title="translateRouteTitle(leafMenu.meta.title)"
+          >
+            {{ translateRouteTitle(leafMenu.meta.title) }}
+          </span>
+          <span v-if="getBadge(leafMenu.meta)" class="menu-badge">
+            {{ getBadge(leafMenu.meta) }}
+          </span>
+        </template>
+      </el-menu-item>
     </template>
 
     <el-sub-menu v-else :index="resolvePath(item.path)" :data-path="item.path" teleported>
@@ -55,6 +48,7 @@
 </template>
 
 <script setup lang="ts">
+import { useRouter } from "vue-router";
 import path from "path-browserify";
 import type { RouteMeta, RouteRecordRaw } from "vue-router";
 import { isExternal } from "@/utils";
@@ -65,6 +59,8 @@ defineOptions({
   name: "LayoutSidebarItem",
   inheritAttrs: false,
 });
+
+const router = useRouter();
 
 /**
  * 侧边栏菜单项
@@ -122,6 +118,23 @@ function resolvePath(routePath: string) {
 function getBadge(meta: RouteMeta | undefined): string {
   const params = meta?.params as Record<string, unknown> | undefined;
   return params?.badge ? String(params.badge) : "";
+}
+
+/**
+ * 菜单点击跳转：内链 router.push（携带路由参数），外链新标签页打开。
+ * el-menu-item 自带 index 激活机制，无需 router-link 包裹（消除旧模板 a>li 双层结构造成的留白）。
+ */
+function handleNavigate(route: RouteRecordRaw) {
+  const target = resolvePath(route.path);
+  if (isExternal(target)) {
+    window.open(target, "_blank");
+    return;
+  }
+  const query = (route.meta?.params ?? {}) as Record<
+    string,
+    string | null | Array<string | null>
+  >;
+  router.push({ path: target, query });
 }
 </script>
 
