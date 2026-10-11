@@ -6,10 +6,11 @@ spring:
     name: pd-gateway
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
-  # Spring Cloud 2023 标准接入方式（取代旧 bootstrap.yml）；optional 表示远程配置缺失不阻断启动
+  # Spring Cloud 标准接入方式（取代旧 bootstrap.yml）；optional 表示远程配置缺失不阻断启动。
+  # 2026-10-10 修复：dataId 扩展名与 Nacos 实际配置对齐（pd-gateway.yml，原 .yaml 不匹配导致远程配置未被加载）
   config:
     import:
-      - optional:nacos:pd-gateway.yaml
+      - optional:nacos:pd-gateway.yml
   cloud:
     nacos:
       # 服务注册
@@ -46,6 +47,26 @@ spring:
           uri: lb://pd-web-manager
           predicates:
             - Path=/api/manager/**
+          filters:
+            - StripPrefix=2
+        # 移动三端 BFF：/api/web-{driver,courier,customer}/** -> 对应 pd-web-*，去掉 /api/web-* 两段前缀
+        # 前端 H5 走 /prod-api/web-*（容器 nginx rewrite 成网关 /api/web-*），App/小程序直连 :8760/api/web-*
+        - id: pd-web-driver
+          uri: lb://pd-web-driver
+          predicates:
+            - Path=/api/web-driver/**
+          filters:
+            - StripPrefix=2
+        - id: pd-web-courier
+          uri: lb://pd-web-courier
+          predicates:
+            - Path=/api/web-courier/**
+          filters:
+            - StripPrefix=2
+        - id: pd-web-customer
+          uri: lb://pd-web-customer
+          predicates:
+            - Path=/api/web-customer/**
           filters:
             - StripPrefix=2
   # Redis（Sa-Token 会话 + Same-Token 读取）
