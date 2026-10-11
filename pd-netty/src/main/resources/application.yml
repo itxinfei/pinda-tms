@@ -19,7 +19,8 @@ spring:
     host: ${RABBITMQ_HOST:192.168.20.130}
     port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USERNAME:pinda}
-    password: ${RABBITMQ_PASSWORD:}
+    # dev 统一口令默认值（口径见 CLAUDE.md §5.2 /《57-账号密码与凭据总表》）；线上由环境变量覆盖
+    password: ${RABBITMQ_PASSWORD:123456}
     virtual-host: ${RABBITMQ_VHOST:/}
     listener:
       simple:

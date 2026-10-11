@@ -23,9 +23,7 @@
     "footer": "Copyright © 2026-2026 Pinda TMS",
     "accounts": {
       "admin": "Administrator",
-      "dispatch": "Dispatcher",
-      "driver": "Driver",
-      "customer": "Customer"
+      "pinda": "Pinda Account"
     },
     "capsLock": "Caps Lock is On",
     "rememberMe": "Remember Me",

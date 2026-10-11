@@ -23,9 +23,7 @@
     "footer": "Copyright © 2026-2026 品达物流 TMS",
     "accounts": {
       "admin": "管理员",
-      "dispatch": "调度员",
-      "driver": "司机",
-      "customer": "客户"
+      "pinda": "品达账号"
     },
     "capsLock": "大写锁定已打开",
     "rememberMe": "记住我",

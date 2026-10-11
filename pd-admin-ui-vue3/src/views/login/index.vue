@@ -166,12 +166,10 @@ const loginRules = computed(() => ({
   captchaCode: [{ required: true, trigger: "blur", message: t("login.message.captchaCode.required") }],
 }));
 
-// 品达物流演示账号
+// 品达物流演示账号（必须是 pd_auth_user 中真实存在的账号，口径见《57-账号密码与凭据总表》）
 const demoAccounts = computed(() => [
   { username: "admin", label: t("login.accounts.admin") },
-  { username: "dispatch", label: t("login.accounts.dispatch") },
-  { username: "driver", label: t("login.accounts.driver") },
-  { username: "customer", label: t("login.accounts.customer") },
+  { username: "pinda", label: t("login.accounts.pinda") },
 ]);
 
 /**

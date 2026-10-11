@@ -30,7 +30,8 @@ spring:
   datasource:
     url: jdbc:mysql://${MYSQL_HOST:192.168.20.130}:${MYSQL_PORT:3306}/pinda_tms?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
     username: ${MYSQL_USERNAME:root}
-    password: ${MYSQL_PASSWORD:}
+    # dev 统一口令默认值（口径见 CLAUDE.md §5.2 /《57-账号密码与凭据总表》）；线上由环境变量覆盖
+    password: ${MYSQL_PASSWORD:123456}
     driver-class-name: com.mysql.cj.jdbc.Driver
   # Redis（Sa-Token 会话持久化 + 验证码 + 登录失败计数）
   data:
