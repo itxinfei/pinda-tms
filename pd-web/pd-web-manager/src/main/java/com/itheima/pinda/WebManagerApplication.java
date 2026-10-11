@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalTimeDeserializer;
@@ -102,14 +103,36 @@ public class WebManagerApplication {
                 .build();
         objectMapper = JsonMapper.builder(jsonFactory).build();
 
-        //反序列化时，属性不存在的兼容处理
-        objectMapper.getDeserializationConfig().withoutFeatures(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        // 注意：JsonMapper.builder(jsonFactory).build() 产出的是全新裸 ObjectMapper，
+        // 前面 builder 上的配置与 Spring Boot 自动注册的 JavaTimeModule 都不会继承，
+        // 必须在此重新配置；否则 Feign 解码含 LocalDateTime 的 DTO（运单/运输任务聚合接口）
+        // 会抛 InvalidDefinitionException: Java 8 date/time type not supported。
+        objectMapper
+                .setLocale(Locale.CHINA)
+                .setTimeZone(TimeZone.getTimeZone("Asia/Shanghai"))
+                .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
+                //忽略未知字段（原写法 getDeserializationConfig().withoutFeatures(...) 返回新对象未接住，等于没配）
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                //时间序列化为格式化字符串，不输出时间戳数组
+                .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
+                //旧 Date 类型统一格式
+                .setDateFormat(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
+
+        // Java 8 时间模块（显式注册，与上方 customizer 的契约保持一致）
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        JavaTimeModule javaTimeModule = new JavaTimeModule();
+        javaTimeModule.addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(dateTimeFormatter));
+        javaTimeModule.addSerializer(LocalDate.class, new LocalDateSerializer(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+        javaTimeModule.addSerializer(LocalTime.class, new LocalTimeSerializer(DateTimeFormatter.ofPattern("HH:mm:ss")));
+        javaTimeModule.addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer(dateTimeFormatter));
+        javaTimeModule.addDeserializer(LocalDate.class, new LocalDateDeserializer(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+        javaTimeModule.addDeserializer(LocalTime.class, new LocalTimeDeserializer(DateTimeFormatter.ofPattern("HH:mm:ss")));
 
         SimpleModule simpleModule = new SimpleModule()
                 .addSerializer(BigInteger.class, ToStringSerializer.instance)
                 .addSerializer(BigDecimal.class, ToStringSerializer.instance)
                 .addDeserializer(Enum.class, EnumDeserializer.INSTANCE);
 
-        return objectMapper.registerModule(simpleModule);
+        return objectMapper.registerModule(javaTimeModule).registerModule(simpleModule);
     }
 }
