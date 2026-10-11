@@ -36,7 +36,7 @@ public class MemberServiceImpl implements IMemberService {
             if (user != null) {
                 member = new MemberDTO();
                 member.setId(userId);
-                member.setAuthId(userId);
+                // 重构 v2：member_info 已移除 auth_id 列（无独立认证库，见 docs/mysql/重构v2/07_member.sql 决策2），不再设置 authId
                 member.setPhone(user.getMobile());
                 member.setAvatar(user.getAvatar());
                 member.setName(user.getName());

@@ -68,6 +68,11 @@
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-openfeign</artifactId>
         </dependency>
+        <!-- Spring Cloud LoadBalancer：Cloud 2025 已移除 Ribbon，Feign 用 lb://服务名 调用必需（同 pd-web-manager） -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-loadbalancer</artifactId>
+        </dependency>
         <!-- Resilience4j 熔断降级（Feign Fallback 生效前提；版本由 Spring Cloud BOM 托管） -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
