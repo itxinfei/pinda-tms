@@ -7,7 +7,7 @@
 # 说明：
 #   - 微服务通过宿主机 IP 192.168.20.130 访问 MySQL/Redis/Nacos/RabbitMQ；
 #   - 各服务沿用自身 bootstrap 中写定的 active profile，Nacos dataId 与之对应；
-#   - gateway / auth-server 的 Nacos 地址与命名空间由 NACOS_* 环境变量注入。
+#   - gateway / auth 的 Nacos 地址与命名空间由 NACOS_* 环境变量注入。
 #
 # 加固（2026-10-06）：
 #   1) ulimits nofile=65535：容器默认软限只有 1024，长连接的 gateway/netty 最先
@@ -28,7 +28,7 @@
 #      预留合计 应用 7.7G（9×640m + 5×384m + 32m）+ 中间件 2.4G ≈ 10.1G，小于 15.5G
 #      物理内存，是刻意的：构建峰值（Maven 单轮实测 3.3G）压过来时，被回收的应该是
 #      构建容器，而不是正在服务的 JVM 和数据库缓冲池。
-#   6) cpu_shares（权重，不是硬顶）：16 核。给链路必经的 gateway/auth-server/netty
+#   6) cpu_shares（权重，不是硬顶）：16 核。给链路必经的 gateway/auth/netty
 #      加倍权重，构建期（runner 限 --cpus=8）用户请求不会被 JIT/GC 抢光 CPU。
 #      不给应用设硬 cpus 上限：JVM 启动期就要吃满几核，硬顶只会把部署拖成"起不来"。
 #   7) oom_score_adj：中间件 -500、应用 -200、构建容器 +500（在 act_runner 的
@@ -161,7 +161,7 @@ x-app-core: &app-core
   oom_score_adj: -200
   cpu_shares: 1024
   ulimits: *app-ulimits
-# 链路必经（gateway / auth-server / netty）：CPU 权重加倍，构建期不抢它们的核
+# 链路必经（gateway / auth / netty）：CPU 权重加倍，构建期不抢它们的核
 x-app-edge: &app-edge
   <<: *app-core
   cpu_shares: 2048
@@ -185,7 +185,7 @@ x-hc-common: &hc-common
   retries: 5
   start_period: 120s
 
-# gateway / auth-server 接入 Nacos 所需的公共环境变量
+# gateway / auth 接入 Nacos 所需的公共环境变量
 x-nacos-env: &nacos-env
   NACOS_IP: 192.168.20.130
   NACOS_PORT: "8848"
@@ -253,7 +253,7 @@ services:
       # 注意：本服务显式写了 JAVA_OPTS，会整体覆盖 x-jvm-core 锚点，
       # 所以堆外与 OOM 参数必须在下面这一行重复一遍，否则锚点的加固对网关无效。
       JAVA_OPTS: "-Xms96m -Xmx192m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:MaxMetaspaceSize=192m -XX:MaxDirectMemorySize=128m -Xss512k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -Dcors.allowed.origins=http://192.168.20.130,http://192.168.20.130:8080,http://192.168.20.130:8081,http://192.168.20.130:8082,http://192.168.20.130:8083,http://192.168.20.130:8084,http://localhost:8080,http://localhost:3000"
-      # JWT 验签公钥的外部来源（详见 pd-auth-server 段注释与部署文档 §2.11）
+      # JWT 验签公钥的外部来源（详见 pd-auth 段注释与部署文档 §2.11）
       PINDA_JWT_PUB_KEY_PATH: ${PINDA_JWT_PUB_KEY_PATH:-}
       # 网关镜像不含任何 JDBC 连接池（无 druid/hikari/tomcat-jdbc），却因 mysql.yml 强制
       # spring.datasource.type=com.alibaba.druid.pool.DruidDataSource 而触发 DataSourceAutoConfiguration
@@ -263,10 +263,10 @@ services:
     volumes:
       - ${PINDA_JWT_HOST_DIR:-/data/pinda-jwt}:/data/pinda-jwt:ro
 
-  pd-auth-server:
+  pd-auth:
     <<: *app-edge
-    image: pinda/pd-auth-server:${PD_AUTH_SERVER_TAG:-${TAG:-latest}}
-    container_name: pd-auth-server
+    image: pinda/pd-auth:${PD_AUTH_TAG:-${TAG:-latest}}
+    container_name: pd-auth
     restart: unless-stopped
     ports: ["9000:9000"]
     healthcheck:
@@ -276,10 +276,11 @@ services:
       <<: [*jvm-core, *nacos-env, *redis-env]
       # JWT 签名密钥对的外部来源。
       #
-      # 背景：仓内 pd-auth-server/src/main/resources/client/pri.key 与
-      # pd-tools-jwt/src/main/resources/pri.key 是被 git 跟踪的真实 RSA-2048 私钥，
-      # 而这个仓库同时推到公开的 Gitee——任何读到源码的人都能签发任意 userId 的合法
-      # token，网关的验签与吊销黑名单因此形同虚设。轮换的完整步骤在 docs/部署文档.md §2.11。
+      # 背景：仓内旧模块 pd-auth-server/src/main/resources/client/pri.key 与
+      # pd-tools-jwt/src/main/resources/pri.key 是被 git 跟踪的真实 RSA-2048 私钥（该旧链已于
+      # 2026-10-10 删除，此处仅为历史口径），而仓库同时推到公开的 Gitee——任何读到源码的人都能
+      # 签发任意 userId 的合法 token，网关的验签与吊销黑名单因此形同虚设。
+      # 轮换的完整步骤在 docs/部署文档.md §2.11。
       #
       # 语义：留空等于"未设置"，RsaKeyHelper 会照旧回落 classpath，所以现在这套
       # 配置不改变任何在线行为；把新密钥放到宿主 /data/pinda-jwt 并在
