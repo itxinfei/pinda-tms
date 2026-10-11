@@ -152,6 +152,20 @@ const MENU_GROUP_MAP: Record<string, { path: string; title: string; icon: string
 };
 
 /**
+ * 按前缀匹配菜单所属分组（后端下发的 path 可能是 /order/list 等完整路径，用前缀匹配而非精确匹配）
+ */
+function findGroupByPath(path: string): { path: string; title: string; icon: string } | null {
+  // 先精确匹配
+  if (MENU_GROUP_MAP[path]) return MENU_GROUP_MAP[path];
+  // 再前缀匹配（按 key 长度降序，避免短前缀误匹配）
+  const sortedKeys = Object.keys(MENU_GROUP_MAP).sort((a, b) => b.length - a.length);
+  for (const key of sortedKeys) {
+    if (path.startsWith(key)) return MENU_GROUP_MAP[key];
+  }
+  return null;
+}
+
+/**
  * 平级菜单归组：仅归组「无 children 且命中映射」的顶级项；
  * 已分组（有 children）与未命中映射的顶级项保持原样，避免菜单丢失。
  */
@@ -161,7 +175,7 @@ function groupFlatMenus(menus: RouteItem[]): RouteItem[] {
   const groups = new Map<string, RouteItem>();
   menus.forEach((menu) => {
     if ((menu.children ?? []).length > 0) return;
-    const group = MENU_GROUP_MAP[menu.path ?? ""];
+    const group = findGroupByPath(menu.path ?? "");
     if (!group) return;
 
     const existing = groups.get(group.path);
@@ -178,7 +192,7 @@ function groupFlatMenus(menus: RouteItem[]): RouteItem[] {
   });
 
   const ungrouped = menus.filter(
-    (menu) => (menu.children ?? []).length === 0 && !MENU_GROUP_MAP[menu.path ?? ""]
+    (menu) => (menu.children ?? []).length === 0 && !findGroupByPath(menu.path ?? "")
   );
 
   return [...alreadyGrouped, ...groups.values(), ...ungrouped];
