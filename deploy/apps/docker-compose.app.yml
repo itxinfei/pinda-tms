@@ -98,8 +98,10 @@ x-jvm-core: &jvm-core
   MYBATIS_PLUS_GLOBAL_CONFIG_DB_CONFIG_ID_TYPE: "ASSIGN_ID"
   MYBATIS_PLUS_GLOBAL_CONFIG_DB_CONFIG_FIELD_STRATEGY: "NOT_NULL"
   MYBATIS_PLUS_GLOBAL_CONFIG_DB_CONFIG_COLUMN_UNDERLINE: "true"
-  MYBATIS_PLUS_GLOBAL_CONFIG_DB_CONFIG_LOGIC_DELETE_VALUE: "0"
-  MYBATIS_PLUS_GLOBAL_CONFIG_DB_CONFIG_LOGIC_NOT_DELETE_VALUE: "1"
+  # 逻辑删除口径与全项目 @TableLogic 实体对齐：deleted 0=未删 1=已删（MP 默认值）。
+  # 历史上这里配反（DELETE=0/NOT_DELETE=1），新 pd-auth 切 sys_ 表后登录查租户拼 deleted=1 必然落空。
+  MYBATIS_PLUS_GLOBAL_CONFIG_DB_CONFIG_LOGIC_DELETE_VALUE: "1"
+  MYBATIS_PLUS_GLOBAL_CONFIG_DB_CONFIG_LOGIC_NOT_DELETE_VALUE: "0"
   MYBATIS_PLUS_GLOBAL_CONFIG_BANNER: "false"
 x-jvm-small: &jvm-small
   JAVA_OPTS: "-Xms64m -Xmx128m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:MaxMetaspaceSize=160m -XX:MaxDirectMemorySize=64m -Xss512k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -Dmybatis-plus.mapper-locations=classpath*:/mapper/**/*.xml -Dmybatis-plus.typeAliasesPackage=com.itheima.pinda.entity -Dmybatis-plus.configuration.map-underscore-to-camel-case=true -Dmybatis-plus.configuration.cache-enabled=true -Dmybatis-plus.configuration.call-setters-on-nulls=false -Dmybatis-plus.configuration.jdbc-type-for-null=NULL -Dmybatis-plus.global-config.db-config.id-type=ASSIGN_ID -Dmybatis-plus.global-config.banner=false"
@@ -146,8 +148,10 @@ x-jvm-small: &jvm-small
   MYBATIS_PLUS_GLOBAL_CONFIG_DB_CONFIG_ID_TYPE: "ASSIGN_ID"
   MYBATIS_PLUS_GLOBAL_CONFIG_DB_CONFIG_FIELD_STRATEGY: "NOT_NULL"
   MYBATIS_PLUS_GLOBAL_CONFIG_DB_CONFIG_COLUMN_UNDERLINE: "true"
-  MYBATIS_PLUS_GLOBAL_CONFIG_DB_CONFIG_LOGIC_DELETE_VALUE: "0"
-  MYBATIS_PLUS_GLOBAL_CONFIG_DB_CONFIG_LOGIC_NOT_DELETE_VALUE: "1"
+  # 逻辑删除口径与全项目 @TableLogic 实体对齐：deleted 0=未删 1=已删（MP 默认值）。
+  # 历史上这里配反（DELETE=0/NOT_DELETE=1），新 pd-auth 切 sys_ 表后登录查租户拼 deleted=1 必然落空。
+  MYBATIS_PLUS_GLOBAL_CONFIG_DB_CONFIG_LOGIC_DELETE_VALUE: "1"
+  MYBATIS_PLUS_GLOBAL_CONFIG_DB_CONFIG_LOGIC_NOT_DELETE_VALUE: "0"
   MYBATIS_PLUS_GLOBAL_CONFIG_BANNER: "false"
 
 # 服务级加固档位
