@@ -24,10 +24,6 @@ public class DriverJob implements Serializable {
     @TableId(value = "id", type = IdType.ASSIGN_ID)
     private Long id;
 
-    /**
-     * 租户ID
-     */
-    private Long tenantId;
 
     /**
      * 司机 base_truck_driver.id

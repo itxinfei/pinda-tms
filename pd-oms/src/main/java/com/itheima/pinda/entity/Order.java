@@ -27,10 +27,6 @@ public class Order implements Serializable {
     @TableId(value = "id", type = IdType.ASSIGN_ID)
     private Long id;
 
-    /**
-     * 租户ID
-     */
-    private Long tenantId;
 
     /**
      * 订单号（展示用，可与id同值）

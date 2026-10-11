@@ -19,8 +19,6 @@ public class PdTruckDriverLicense {
     @TableId(type = IdType.ASSIGN_ID)
     private Long id;
 
-    /** 租户ID */
-    private Long tenantId;
 
     /** 司机 base_truck_driver.id */
     private Long driverId;

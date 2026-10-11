@@ -29,10 +29,6 @@ public class ChargeRule implements Serializable {
     @TableId(value = "id", type = IdType.ASSIGN_ID)
     private Long id;
 
-    /**
-     * 租户ID，0为系统默认
-     */
-    private Long tenantId;
 
     /**
      * 规则标识

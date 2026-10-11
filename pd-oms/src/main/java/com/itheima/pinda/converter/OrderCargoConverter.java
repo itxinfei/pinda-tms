@@ -23,7 +23,6 @@ public interface OrderCargoConverter {
 
     /** DTO 转实体（审计字段由多租户插件/MyBatis-Plus 自动填充，DTO 不承载） */
     @Mapping(source = "tranOrderId", target = "transportOrderId")
-    @Mapping(target = "tenantId", ignore = true)
     @Mapping(target = "createBy", ignore = true)
     @Mapping(target = "createTime", ignore = true)
     @Mapping(target = "updateBy", ignore = true)

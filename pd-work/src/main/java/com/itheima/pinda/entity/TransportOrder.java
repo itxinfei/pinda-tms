@@ -24,10 +24,6 @@ public class TransportOrder implements Serializable {
     @TableId(value = "id", type = IdType.ASSIGN_ID)
     private Long id;
 
-    /**
-     * 租户ID
-     */
-    private Long tenantId;
 
     /**
      * 订单ID（来源订单 oms_order.id）

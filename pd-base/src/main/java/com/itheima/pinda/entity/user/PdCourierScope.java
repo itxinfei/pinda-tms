@@ -15,8 +15,6 @@ public class PdCourierScope {
     @TableId(type = IdType.ASSIGN_ID)
     private Long id;
 
-    /** 租户ID */
-    private Long tenantId;
 
     /** 快递员账号 sys_user.id */
     private Long courierId;

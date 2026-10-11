@@ -25,10 +25,6 @@ public class TaskTransport implements Serializable {
     @TableId(value = "id", type = IdType.ASSIGN_ID)
     private Long id;
 
-    /**
-     * 租户ID
-     */
-    private Long tenantId;
 
     /**
      * 车次 base_transport_trips.id

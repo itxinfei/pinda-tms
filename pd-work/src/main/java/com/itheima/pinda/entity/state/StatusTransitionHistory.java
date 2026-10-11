@@ -25,10 +25,6 @@ public class StatusTransitionHistory implements Serializable {
     @TableId(value = "id", type = IdType.ASSIGN_ID)
     private Long id;
 
-    /**
-     * 租户ID
-     */
-    private Long tenantId;
 
     /**
      * 业务类型：1运输任务（可扩展）

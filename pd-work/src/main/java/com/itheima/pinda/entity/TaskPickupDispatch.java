@@ -24,10 +24,6 @@ public class TaskPickupDispatch implements Serializable {
     @TableId(value = "id", type = IdType.ASSIGN_ID)
     private Long id;
 
-    /**
-     * 租户ID
-     */
-    private Long tenantId;
 
     /**
      * 订单ID（oms_order.id）

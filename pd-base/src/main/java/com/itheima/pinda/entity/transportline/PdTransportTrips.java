@@ -18,8 +18,6 @@ public class PdTransportTrips {
     @TableId(type = IdType.ASSIGN_ID)
     private Long id;
 
-    /** 租户ID */
-    private Long tenantId;
 
     /** 车次名称 */
     private String name;

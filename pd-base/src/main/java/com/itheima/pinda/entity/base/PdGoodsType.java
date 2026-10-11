@@ -19,8 +19,6 @@ public class PdGoodsType {
     @TableId(type = IdType.ASSIGN_ID)
     private Long id;
 
-    /** 租户ID */
-    private Long tenantId;
 
     /** 货物类型名称 */
     private String name;

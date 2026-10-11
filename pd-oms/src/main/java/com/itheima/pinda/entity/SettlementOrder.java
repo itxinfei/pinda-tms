@@ -75,10 +75,6 @@ public class SettlementOrder implements Serializable {
     @TableId(value = "id", type = IdType.ASSIGN_ID)
     private Long id;
 
-    /**
-     * 租户ID
-     */
-    private Long tenantId;
 
     /**
      * 结算单号（STL+雪花）

@@ -18,8 +18,6 @@ public class PdTruckDriver {
     @TableId(type = IdType.ASSIGN_ID)
     private Long id;
 
-    /** 租户ID */
-    private Long tenantId;
 
     /** 关联账号 sys_user.id */
     private Long userId;

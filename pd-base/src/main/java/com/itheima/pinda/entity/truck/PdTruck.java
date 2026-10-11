@@ -19,8 +19,6 @@ public class PdTruck {
     @TableId(type = IdType.ASSIGN_ID)
     private Long id;
 
-    /** 租户ID */
-    private Long tenantId;
 
     /** 车辆类型ID */
     private Long truckTypeId;

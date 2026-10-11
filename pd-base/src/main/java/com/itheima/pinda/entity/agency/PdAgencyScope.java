@@ -15,8 +15,6 @@ public class PdAgencyScope {
     @TableId(type = IdType.ASSIGN_ID)
     private Long id;
 
-    /** 租户ID */
-    private Long tenantId;
 
     /** 机构 sys_org.id */
     private Long orgId;

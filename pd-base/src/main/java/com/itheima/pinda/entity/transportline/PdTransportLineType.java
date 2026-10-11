@@ -18,8 +18,6 @@ public class PdTransportLineType {
     @TableId(type = IdType.ASSIGN_ID)
     private Long id;
 
-    /** 租户ID */
-    private Long tenantId;
 
     /** 线路类型名称 */
     private String name;
