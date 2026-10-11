@@ -21,8 +21,14 @@ public interface OrderCargoConverter {
     @Mapping(source = "transportOrderId", target = "tranOrderId")
     OrderCargoDto toDto(OrderCargo orderCargo);
 
-    /** DTO 转实体 */
+    /** DTO 转实体（审计字段由多租户插件/MyBatis-Plus 自动填充，DTO 不承载） */
     @Mapping(source = "tranOrderId", target = "transportOrderId")
+    @Mapping(target = "tenantId", ignore = true)
+    @Mapping(target = "createBy", ignore = true)
+    @Mapping(target = "createTime", ignore = true)
+    @Mapping(target = "updateBy", ignore = true)
+    @Mapping(target = "updateTime", ignore = true)
+    @Mapping(target = "deleted", ignore = true)
     OrderCargo toEntity(OrderCargoDto orderCargoDto);
 
     /** 实体列表转 DTO 列表 */

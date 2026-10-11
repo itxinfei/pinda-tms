@@ -273,7 +273,7 @@ public class MailingController {
         String[] pickupTimeStrs = pickupTimes[1].split(":");
         LocalDateTime pickupDateTime = LocalDateTime.now().withHour(Integer.parseInt(pickupTimeStrs[0])).withMinute(Integer.parseInt(pickupTimeStrs[1])).withSecond(00);
         pickupDispatchTaskDTO.setEstimatedStartTime(LocalDateTime.now());
-        pickupDispatchTaskDTO.setEstimatedEndTime(DateUtils.getUTCTime(pickupDateTime));
+        pickupDispatchTaskDTO.setEstimatedEndTime(DateUtils.shanghaiToUTC(pickupDateTime));
         if (StringUtils.isNotBlank(courierId)) {
             pickupDispatchTaskDTO.setAssignedStatus(PickupDispatchTaskAssignedStatus.DISTRIBUTED.getCode());
         } else {
@@ -710,7 +710,7 @@ public class MailingController {
                 LocalDateTime pickupDateTime = LocalDateTime.now().withHour(Integer.parseInt(pickupTimeStrs[0])).withMinute(Integer.parseInt(pickupTimeStrs[1])).withSecond(00);
                 log.info("预计取件时间：{}  {}", pickupDateTime, LocalDateTime.now());
                 pickupDispatchTaskDTO.setEstimatedStartTime(LocalDateTime.now());
-                pickupDispatchTaskDTO.setEstimatedEndTime(DateUtils.getUTCTime(pickupDateTime));
+                pickupDispatchTaskDTO.setEstimatedEndTime(DateUtils.shanghaiToUTC(pickupDateTime));
                 if (StringUtils.isNotBlank(courierId)) {
                     pickupDispatchTaskDTO.setAssignedStatus(PickupDispatchTaskAssignedStatus.DISTRIBUTED.getCode());
                 } else {
@@ -737,7 +737,7 @@ public class MailingController {
             String[] pickupTimeStrs = pickupTimes[1].split(":");
             LocalDateTime pickupDateTime = LocalDateTime.now().withHour(Integer.parseInt(pickupTimeStrs[0])).withMinute(Integer.parseInt(pickupTimeStrs[1])).withSecond(00);
             pickupDispatchTaskDTO.setEstimatedStartTime(LocalDateTime.now());
-            pickupDispatchTaskDTO.setEstimatedEndTime(DateUtils.getUTCTime(pickupDateTime));
+            pickupDispatchTaskDTO.setEstimatedEndTime(DateUtils.shanghaiToUTC(pickupDateTime));
             if (StringUtils.isNotBlank(courierId)) {
                 pickupDispatchTaskDTO.setAssignedStatus(PickupDispatchTaskAssignedStatus.DISTRIBUTED.getCode());
             } else {

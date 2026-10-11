@@ -2,11 +2,13 @@ package com.itheima.pinda.DTO;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.util.List;
 
 @Schema(description = "订单模糊搜索参数")
 @Data
+@EqualsAndHashCode(callSuper = true)
 public class OrderSearchDTO extends OrderDTO {
 
     /**

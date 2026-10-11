@@ -30,7 +30,7 @@ public class EnumDeserializer extends StdDeserializer<Enum<?>> {
 
     @Override
     public Enum<?> deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
-        JsonToken token = p.getCurrentToken();
+        JsonToken token = p.currentToken();
         String value = null;
         while (!token.isStructEnd()) {
             if (ALL_ENUM_KEY_FIELD.equals(p.getText())) {
@@ -39,17 +39,17 @@ public class EnumDeserializer extends StdDeserializer<Enum<?>> {
             } else {
                 p.nextToken();
             }
-            token = p.getCurrentToken();
+            token = p.currentToken();
         }
         if (value == null || "".equals(value)) {
             return null;
         }
 
-        Object obj = p.getCurrentValue();
+        Object obj = p.currentValue();
         if (obj == null) {
             return null;
         }
-        Field field = findField(obj.getClass(), p.getCurrentName());
+        Field field = findField(obj.getClass(), p.currentName());
         //找不到字段
         if (field == null) {
             return null;

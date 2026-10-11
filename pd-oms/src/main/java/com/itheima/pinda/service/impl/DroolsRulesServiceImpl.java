@@ -4,6 +4,7 @@ import com.itheima.pinda.entity.fact.AddressRule;
 import com.itheima.pinda.service.DroolsRulesService;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,7 +28,7 @@ public class DroolsRulesServiceImpl implements DroolsRulesService {
         //超过首重部分重量=总重量-首重
         BigDecimal lost = totalWeight.subtract(firstWeight);//3.5
         //只保留整数部分
-        lost = lost.setScale(0,BigDecimal.ROUND_DOWN);
+        lost = lost.setScale(0, RoundingMode.DOWN);
         return continuedFee.multiply(lost).add(firstFee).toString();
     }
 

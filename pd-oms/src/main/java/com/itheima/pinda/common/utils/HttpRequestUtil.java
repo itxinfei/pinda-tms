@@ -19,7 +19,6 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -316,7 +315,7 @@ public class HttpRequestUtil {
             response = httpClient.execute(httpPost);
             HttpEntity entity = response.getEntity();
             InputStream in = entity.getContent();
-            result = IOUtils.toString(in, HTTP.UTF_8);
+            result = IOUtils.toString(in, StandardCharsets.UTF_8);
             logger.info("postByMap返回结果-->" + result);
         } catch (IOException e) {
             logger.error("postByMap IO异常, url: {}, error: {}", url, e);
@@ -346,7 +345,7 @@ public class HttpRequestUtil {
             response = httpClient.execute(httpPost);
             HttpEntity entity = response.getEntity();
             InputStream in = entity.getContent();
-            result = IOUtils.toString(in, HTTP.UTF_8);
+            result = IOUtils.toString(in, StandardCharsets.UTF_8);
             logger.info("postUpgradeByMap返回结果-->" + result);
         } catch (IOException e) {
             logger.error("postUpgradeByMap IO异常, url: {}, error: {}", url, e);

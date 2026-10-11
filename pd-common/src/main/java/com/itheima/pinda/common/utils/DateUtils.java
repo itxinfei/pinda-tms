@@ -34,6 +34,7 @@ public class DateUtils {
      * @return UTC时间
      * @deprecated 请使用 {@link #shanghaiToUTC(LocalDateTime)} 替代
      */
+    @Deprecated
     public static LocalDateTime getUTCTime(LocalDateTime localDateTime) {
         return shanghaiToUTC(localDateTime);
     }

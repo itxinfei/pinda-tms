@@ -8,6 +8,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DecimalFormat;
@@ -179,7 +180,7 @@ public class BaiduMapUtils {
         StringBuilder json = new StringBuilder();
         HttpURLConnection urlConnection = null;
         try {
-            URL url = new URL(httpUrl);
+            URL url = URI.create(httpUrl).toURL();
             urlConnection = (HttpURLConnection) url.openConnection();
             urlConnection.setConnectTimeout(CONNECT_TIMEOUT);
             urlConnection.setReadTimeout(READ_TIMEOUT);

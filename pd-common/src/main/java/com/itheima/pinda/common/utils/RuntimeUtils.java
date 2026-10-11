@@ -57,6 +57,6 @@ public class RuntimeUtils {
      * @return 当前线程ID
      */
     public static long getCurrentThreadId() {
-        return Thread.currentThread().getId();
+        return Thread.currentThread().threadId();
     }
 }

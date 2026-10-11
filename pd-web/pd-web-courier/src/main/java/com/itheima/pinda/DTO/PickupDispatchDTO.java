@@ -117,8 +117,8 @@ public class PickupDispatchDTO implements Serializable {
         this.actualTime = item.getActualEndTime();
         if (estimatedTime != null) {
             log.info("时间计算：{},{}", LocalDateTime.now(), estimatedTime);
-            log.info("时间计算：{},{}", LocalDateTime.now(), DateUtils.getUTCTime(estimatedTime));
-            java.time.Duration duration = java.time.Duration.between(LocalDateTime.now(), DateUtils.getUTCTime(estimatedTime));
+            log.info("时间计算：{},{}", LocalDateTime.now(), DateUtils.shanghaiToUTC(estimatedTime));
+            java.time.Duration duration = java.time.Duration.between(LocalDateTime.now(), DateUtils.shanghaiToUTC(estimatedTime));
             log.info("时间计算：{},{}", duration, duration.toMinutes());
             this.finishTime = duration.toMinutes();
         } else {

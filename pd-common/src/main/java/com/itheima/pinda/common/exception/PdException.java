@@ -1,11 +1,13 @@
 package com.itheima.pinda.common.exception;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * 自定义异常
  */
 @Data
+@EqualsAndHashCode(callSuper = false)
 public class PdException extends RuntimeException {
 	private static final long serialVersionUID = 1L;
 	

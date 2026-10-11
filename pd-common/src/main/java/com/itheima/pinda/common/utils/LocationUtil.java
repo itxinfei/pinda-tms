@@ -2,6 +2,7 @@ package com.itheima.pinda.common.utils;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.HashMap;
@@ -28,7 +29,7 @@ public class LocationUtil {
             // 将地址转换成utf-8的16进制
             address = URLEncoder.encode(address, "UTF-8");
 
-            URL resjson = new URL(String.format("http://api.map.baidu.com/geocoding/v3/?&output=json&address=%s&ak=%s", address, AK));
+            URL resjson = URI.create(String.format("http://api.map.baidu.com/geocoding/v3/?&output=json&address=%s&ak=%s", address, AK)).toURL();
             BufferedReader in = new BufferedReader(new InputStreamReader(resjson.openStream()));
             String res;
             StringBuilder sb = new StringBuilder("");
