@@ -309,10 +309,19 @@ public class MailingController {
         pickupDispatchTaskDTO.setCreateTime(LocalDateTime.now());
         pickupDispatchTaskDTO.setOrgId(parseId(agencyId));
         pickupDispatchTaskDTO.setCourierId(parseId(courierId));
-        pickupDispatchTaskDTO.setOrgId(parseId(agencyId));
-        String[] pickupTimes = entity.getPickUpTime().split("-");
-        String[] pickupTimeStrs = pickupTimes[1].split(":");
-        LocalDateTime pickupDateTime = LocalDateTime.now().withHour(Integer.parseInt(pickupTimeStrs[0])).withMinute(Integer.parseInt(pickupTimeStrs[1])).withSecond(00);
+        // 取件时间只取 HH:mm 用于预计上门时间。原 split("-")+split(":") 写法对标准格式
+        // "2026-10-12 21:30"（split 后第二段是 "10" 无冒号）直接数组越界，下单在任务创建前崩溃。
+        // 改为正则提取时:分；解析不出时回退 2 小时后。
+        LocalDateTime pickupDateTime = LocalDateTime.now().plusHours(2);
+        java.util.regex.Matcher timeMatcher = java.util.regex.Pattern
+                .compile("(\\d{1,2}):(\\d{2})").matcher(StringUtils.defaultString(entity.getPickUpTime()));
+        if (timeMatcher.find()) {
+            int hour = Integer.parseInt(timeMatcher.group(1));
+            int minute = Integer.parseInt(timeMatcher.group(2));
+            if (hour <= 23 && minute <= 59) {
+                pickupDateTime = LocalDateTime.now().withHour(hour).withMinute(minute).withSecond(0);
+            }
+        }
         pickupDispatchTaskDTO.setEstimatedStartTime(LocalDateTime.now());
         pickupDispatchTaskDTO.setEstimatedEndTime(DateUtils.shanghaiToUTC(pickupDateTime));
         if (StringUtils.isNotBlank(courierId)) {
