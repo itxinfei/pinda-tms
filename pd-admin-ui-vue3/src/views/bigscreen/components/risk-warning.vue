@@ -159,10 +159,10 @@ const topItems = computed(() => props.items.slice(0, 6));
     grid-template-columns: 3px 56px 1fr 1.4fr 78px;
     align-items: center;
     gap: 8px;
-    height: 30px;
+    height: 34px;
     padding: 0 6px;
     border-bottom: 1px dashed rgba(0, 190, 255, 0.12);
-    font-size: 12px;
+    font-size: 13px;
 
     &--high {
       background: linear-gradient(90deg, rgba(255, 91, 107, 0.12), transparent);

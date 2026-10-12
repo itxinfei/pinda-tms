@@ -36,7 +36,7 @@ const option = computed<EChartsOption>(() => {
       type: "value",
       minInterval: 1,
       splitLine: { lineStyle: { color: "rgba(0,150,255,0.12)" } },
-      axisLabel: { color: "rgba(148,197,255,0.65)", fontSize: 11 },
+      axisLabel: { color: "rgba(148,197,255,0.65)", fontSize: 13 },
     },
     yAxis: {
       type: "category",
@@ -45,8 +45,8 @@ const option = computed<EChartsOption>(() => {
       axisTick: { show: false },
       axisLabel: {
         color: "#9fc7e8",
-        fontSize: 11,
-        width: 110,
+        fontSize: 13,
+        width: 130,
         overflow: "truncate",
       },
     },
@@ -70,7 +70,7 @@ const option = computed<EChartsOption>(() => {
           show: true,
           position: "right",
           color: "#00eaff",
-          fontSize: 11,
+          fontSize: 13,
           fontFamily: "DIN, sans-serif",
         },
       },

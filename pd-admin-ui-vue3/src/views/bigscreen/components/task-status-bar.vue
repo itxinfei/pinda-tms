@@ -35,7 +35,7 @@ const option = computed<EChartsOption>(() => {
       type: "value",
       minInterval: 1,
       splitLine: { lineStyle: { color: "rgba(0,150,255,0.12)" } },
-      axisLabel: { color: "rgba(148,197,255,0.6)", fontSize: 11 },
+      axisLabel: { color: "rgba(148,197,255,0.6)", fontSize: 13 },
       axisLine: { show: false },
       axisTick: { show: false },
     },

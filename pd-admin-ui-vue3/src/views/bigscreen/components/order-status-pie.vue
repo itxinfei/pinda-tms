@@ -36,10 +36,10 @@ const option = computed<EChartsOption>(() => ({
   },
   legend: {
     bottom: 2,
-    itemWidth: 10,
-    itemHeight: 10,
+    itemWidth: 12,
+    itemHeight: 12,
     icon: "circle",
-    textStyle: { color: "#9fc7e8", fontSize: 12 },
+    textStyle: { color: "#9fc7e8", fontSize: 13 },
   },
   series: [
     {

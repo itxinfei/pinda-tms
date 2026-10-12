@@ -216,7 +216,7 @@ const option = computed<EChartsOption>(() => ({
         show: false,
         position: "right",
         color: "#cfe8ff",
-        fontSize: 11,
+        fontSize: 13,
         formatter: "{b}",
       },
       emphasis: { label: { show: true } },

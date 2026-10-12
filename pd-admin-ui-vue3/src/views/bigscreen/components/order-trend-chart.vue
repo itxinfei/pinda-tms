@@ -32,7 +32,7 @@ const option = computed<EChartsOption>(() => {
       right: 8,
       itemWidth: 14,
       itemHeight: 8,
-      textStyle: { color: "#7fa8c9", fontSize: 12 },
+      textStyle: { color: "#7fa8c9", fontSize: 13 },
       data: ["下单量", "签收量"],
     },
     xAxis: {
@@ -41,13 +41,13 @@ const option = computed<EChartsOption>(() => {
       data: dates,
       axisLine: { lineStyle: { color: "rgba(0,234,255,0.25)" } },
       axisTick: { show: false },
-      axisLabel: { color: "rgba(148,197,255,0.65)", fontSize: 11 },
+      axisLabel: { color: "rgba(148,197,255,0.65)", fontSize: 13 },
     },
     yAxis: {
       type: "value",
       minInterval: 1,
       splitLine: { lineStyle: { color: "rgba(0,150,255,0.12)" } },
-      axisLabel: { color: "rgba(148,197,255,0.65)", fontSize: 11 },
+      axisLabel: { color: "rgba(148,197,255,0.65)", fontSize: 13 },
     },
     series: [
       {

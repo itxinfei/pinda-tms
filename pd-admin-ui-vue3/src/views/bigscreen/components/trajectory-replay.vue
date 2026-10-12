@@ -249,7 +249,7 @@ onBeforeUnmount(stop);
   &__speed {
     flex: none;
     padding: 2px 6px;
-    font-size: 11px;
+    font-size: 12px;
     line-height: 1.4;
     color: var(--bs-text-dim);
     background: transparent;
