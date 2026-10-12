@@ -14,6 +14,7 @@ import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.component.MemberIdentityResolver;
 import com.itheima.pinda.util.Rx;
 import com.itheima.pinda.DTO.MemberDTO;
+import com.itheima.pinda.DTO.base.GoodsTypeDto;
 import com.itheima.pinda.enums.OrderPaymentStatus;
 import com.itheima.pinda.enums.OrderStatus;
 import com.itheima.pinda.enums.OrderType;
@@ -26,6 +27,7 @@ import com.itheima.pinda.event.OrderConfirmedEvent;
 import com.itheima.pinda.feign.*;
 import com.itheima.pinda.mq.EventPublisher;
 import com.itheima.pinda.feign.agency.AgencyScopeFeign;
+import com.itheima.pinda.feign.common.GoodsTypeFeign;
 import com.itheima.pinda.feign.user.CourierScopeFeign;
 import com.itheima.pinda.future.PdCompletableFuture;
 import com.itheima.pinda.service.IMemberService;
@@ -71,8 +73,9 @@ public class MailingController {
     private final CourierScopeFeign courierScopeFeign;
     private final EventPublisher eventPublisher;
     private final MemberIdentityResolver memberIdentityResolver;
+    private final GoodsTypeFeign goodsTypeFeign;
 
-    public MailingController(AgencyScopeFeign agencyScopeFeign, OrgFeign orgFeign, TransportTaskFeign transportTaskFeign, TransportOrderFeign transportOrderFeign, UserFeign userFeign, AreaFeign areaFeign, PickupDispatchTaskFeign pickupDispatchTaskFeign, OrderFeign orderFeign, PayFeign payFeign, CargoFeign cargoFeign, IMemberService memberService, AddressBookFeign addressBookFeign, CourierScopeFeign courierScopeFeign, EventPublisher eventPublisher, MemberIdentityResolver memberIdentityResolver) {
+    public MailingController(AgencyScopeFeign agencyScopeFeign, OrgFeign orgFeign, TransportTaskFeign transportTaskFeign, TransportOrderFeign transportOrderFeign, UserFeign userFeign, AreaFeign areaFeign, PickupDispatchTaskFeign pickupDispatchTaskFeign, OrderFeign orderFeign, PayFeign payFeign, CargoFeign cargoFeign, IMemberService memberService, AddressBookFeign addressBookFeign, CourierScopeFeign courierScopeFeign, EventPublisher eventPublisher, MemberIdentityResolver memberIdentityResolver, GoodsTypeFeign goodsTypeFeign) {
         this.agencyScopeFeign = agencyScopeFeign;
         this.orgFeign = orgFeign;
         this.transportTaskFeign = transportTaskFeign;
@@ -88,6 +91,7 @@ public class MailingController {
         this.courierScopeFeign = courierScopeFeign;
         this.eventPublisher = eventPublisher;
         this.memberIdentityResolver = memberIdentityResolver;
+        this.goodsTypeFeign = goodsTypeFeign;
     }
 
     private OrderDTO buildOrderAndPrice(MailingSaveDTO entity, String memberId) {
@@ -126,6 +130,9 @@ public class MailingController {
 
         orderAddDto.setOrderType(orderAddDto.getReceiverCityId().equals(orderAddDto.getSenderCityId()) ? OrderType.INCITY.getCode() : OrderType.OUTCITY.getCode());
         orderAddDto.setPickupType(entity.getPickupType());
+        // 预估价也必须带货物信息：pd-oms orderMsg 契约要求 orderCargoDto 非空且重量>0，
+        // 否则返回空 map，BFF 端 getOrDefault("amount","23") 恒落兜底价，预估价失去意义
+        orderAddDto.setOrderCargoDto(buildOrderCargo(entity));
         Map map = orderFeign.getOrderMsg(orderAddDto);
         orderAddDto.setAmount(new BigDecimal(map.getOrDefault("amount", "23").toString()));
         //费用计算在订单服务中
@@ -136,11 +143,39 @@ public class MailingController {
     private OrderCargoDto buildOrderCargo(MailingSaveDTO entity) {
         OrderCargoDto cargoDto = new OrderCargoDto();
         cargoDto.setName(entity.getGoodsName());
-        cargoDto.setGoodsTypeId(entity.getGoodsType());
+        // 前端传的是货物类型名称（如"日用品"），goodsTypeId 需为数字字典 id——
+        // 直接把名称塞给 goodsTypeId 会让 pd-oms 解析 Long 抛 NumberFormatException，
+        // 订单已入库但货物行保存失败（整单被 fallback 误报失败）。此处按名称换 id。
+        String goodsTypeId = resolveGoodsTypeId(entity.getGoodsType());
+        if (goodsTypeId != null) {
+            cargoDto.setGoodsTypeId(goodsTypeId);
+        }
         cargoDto.setWeight(new BigDecimal(entity.getGoodsWeight()));
         cargoDto.setQuantity(1);
         cargoDto.setTotalWeight(cargoDto.getWeight().multiply(new BigDecimal(cargoDto.getQuantity())));
         return cargoDto;
+    }
+
+    /**
+     * 按货物类型名称解析字典 id；未知名称返回 null（pd-oms 对空 goodsTypeId 容错，货物明细仍落库）
+     */
+    private String resolveGoodsTypeId(String goodsTypeName) {
+        if (StringUtils.isBlank(goodsTypeName)) {
+            return null;
+        }
+        try {
+            List<GoodsTypeDto> goodsTypes = goodsTypeFeign.findAll(null);
+            if (goodsTypes != null) {
+                for (GoodsTypeDto goodsType : goodsTypes) {
+                    if (goodsTypeName.equals(goodsType.getName())) {
+                        return goodsType.getId();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("货物类型名称换 id 失败，按空 id 落库: name={}", goodsTypeName, e);
+        }
+        return null;
     }
 
     /**
