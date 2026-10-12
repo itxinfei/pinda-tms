@@ -173,16 +173,16 @@ jobs:
       - name: Maven 打包选中模块（m2 基线增量优先，异常自动回退 -am）
         # 提速逻辑（与宿主 deploy-be.sh 同构）：
         #   1. 全量发布（all）：维持 -pl 全模块 -am clean package；
-        #   2. 单/多服务：读 /data/m2/.pinda-baseline.revision（build-check 每次 push 刷新），
-        #      git diff 基线..HEAD 把变更文件归属到内部模块（向上找最近含 pom.xml 的目录），
-        #      变更的上游模块先 clean install 进 /data/m2，目标模块只 clean package（不带 -am）；
+        #   2. 单/多服务：读 /root/.m2/.pinda-baseline.revision（build-check 每次 push 刷新；
+        #      容器内 /root/.m2 = 宿主 /data/m2），git diff 基线..HEAD 把变更文件归属到内部
+        #      模块（向上找最近含 pom.xml 的目录），变更的上游模块先 clean install，目标只
+        #      clean package（不带 -am）；
         #   3. 无基线 / 基线 commit 不在浅克隆历史 / 命中任意 pom.xml / install 或 package 失败，
         #      一律回退原 -am 全链构建——任何不确定场景退化为旧行为，不会打出缺依赖的包。
         run: |
           set -e
-          M2_REPO=/data/m2/repository
-          BASELINE_FILE=/data/m2/.pinda-baseline.revision
-          MVN_COMMON="-B -Dmaven.test.skip=true -Dmaven.repo.local=$M2_REPO -s /ci/maven-settings.xml"
+          BASELINE_FILE=/root/.m2/.pinda-baseline.revision
+          MVN_COMMON="-B -Dmaven.test.skip=true -s /ci/maven-settings.xml"
 
           fallback_build() {
             echo "::warning::回退 -am 全链构建（目标模块：$MODS）"
@@ -195,7 +195,7 @@ jobs:
             exit 0
           fi
 
-          ls -ld /data/m2 || { echo "::error::/data/m2 未挂载，检查 act_runner valid_volumes"; exit 1; }
+          ls -ld /root/.m2 || { echo "::error::/root/.m2 未挂载，检查 act_runner container.options"; exit 1; }
 
           baseline=""
           [ -f "$BASELINE_FILE" ] && baseline=$(cat "$BASELINE_FILE" 2>/dev/null || true)

@@ -3,14 +3,16 @@
 #
 # 策略（2026-10-12 提速改造）：
 # - 触发：push 到 master（每次推送兜底校验主干可编译）+ workflow_dispatch（可手动补跑）
-# - 执行：ci/pinda-ci（JDK21 + Maven 3.9.9），act_runner 自动挂载宿主 /data/m2
+# - 执行：ci/pinda-ci（JDK21 + Maven 3.9.9）
+# - 容器内路径（act_runner config.yaml container.options 决定）：
+#     宿主 /data/m2 -> 容器 /root/.m2；宿主 /data/ci -> 容器 /ci:ro
+#   settings.xml 已写死 localRepository=/root/.m2/repository，缓存本就持久共享，
+#   历史浪费点只有一个：只 compile 不 install，内部 SNAPSHOT 从不进仓库。
 # - mvn clean install（不再只 compile）双重作用：
 #     ① 编译门禁，主干不可编译直接红；
-#     ② 全部 SNAPSHOT（含 pd-common/pd-service-api 等内部模块）装进持久卷，
+#     ② 全部 SNAPSHOT（pd-common/pd-service-api 等内部模块）装进 /root/.m2/repository，
 #        作为 deploy-backend.yml / deploy-be.sh 单服务发布去掉 -am 后的上游制品基线；
-#        成功后把 HEAD 写入 /data/m2/.pinda-baseline.revision 供发布做增量判定。
-# - 必须显式 -Dmaven.repo.local=/data/m2/repository：/ci/maven-settings.xml 内写死
-#   /root/.m2/repository（job 容器匿名层、不持久），命令行参数覆盖后才命中持久卷。
+#        成功后把 HEAD 写入 /root/.m2/.pinda-baseline.revision（=宿主 /data/m2/ 同名文件）。
 # - concurrency：连续 push 只保留最新一轮，旧 run 自动取消，配合 runner capacity=1 不排队空转。
 # ============================================
 name: build-check
@@ -37,10 +39,8 @@ jobs:
       - name: Maven 全量 install（JDK21，编译门禁 + 刷新单服务发布的 m2 基线）
         run: |
           set -e
-          ls -ld /data/m2 || { echo "::error::/data/m2 未挂载，检查 act_runner valid_volumes"; exit 1; }
-          mvn -B clean install -T 1C -Dmaven.test.skip=true \
-            -Dmaven.repo.local=/data/m2/repository \
-            -s /ci/maven-settings.xml
-          git rev-parse HEAD > /data/m2/.pinda-baseline.revision
-          echo "m2 基线已刷新: $(cat /data/m2/.pinda-baseline.revision)"
+          ls -ld /root/.m2 || { echo "::error::/root/.m2 未挂载，检查 act_runner container.options"; exit 1; }
+          mvn -B clean install -T 1C -Dmaven.test.skip=true -s /ci/maven-settings.xml
+          git rev-parse HEAD > /root/.m2/.pinda-baseline.revision
+          echo "m2 基线已刷新: $(cat /root/.m2/.pinda-baseline.revision)"
         timeout-minutes: 25
