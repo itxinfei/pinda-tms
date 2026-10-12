@@ -232,7 +232,7 @@ COMMIT;   -- 确认无误后提交；若报错则 ROLLBACK
 -- 步骤 1：查 auth-server 实时清单（服务直连 9000，绕过网关）
 --   curl -s "http://192.168.20.130:9000/resource/list" | head -c 600
 --   期望：返回的数组里出现 "GET/user/profile"、"POST/mailing/page" 等新增标识。
---   ⚠️ 若没有，可能是 auth-server 有缓存，需重启 pd-auth-server。
+--   ⚠️ 若没有，可能是 auth-server 有缓存，需重启 pd-auth（旧名 pd-auth-server）。
 --
 -- 步骤 2：★必须清网关缓存，否则改了库也不生效
 --   AccessFilter 用 j2cache 缓存 RESOURCE_NEED_TO_CHECK（缓存 key=该常量名）。

@@ -123,6 +123,11 @@ deploy/ci/docker-compose.ci.yml
 .claude/
 .atomcode/
 .creative-design/
+# Playwright MCP 工具的日志/页面快照输出（工具私域，非项目代码）
+.playwright-mcp/
+# 根目录临时验证截图与一次性数据补丁（本地调试产物，不入库）
+*-after-fix.png
+_tc*_patch.sql
 # .gitea 下仅放行 CI workflow（Gitea Actions 必须在默认分支才有流水线可手动 Run）；
 # 其余（操作配置等）仍忽略。注意：不能写 .gitea/ 整目录排除，否则无法再放行子目录。
 .gitea/*

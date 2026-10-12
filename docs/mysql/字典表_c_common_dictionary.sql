@@ -16,7 +16,7 @@
  *      pd-admin-ui/src/views/pinda/base/dict/{Dictionary,DictionaryItem,DictionaryItemEdit,Edit,Index}.vue
  *      docs/sql/前端缺失接口补齐.sql:9-14 已为这 6 个端点注册过 pd_auth_resource —— 而端点服务端不存在，调用必然 404。
  *   4. 前端另有一个"枚举字典"入口与上面的库表**无关**，别混为一谈：
- *      GET /enums（AuthorityGeneralController.enums()，pd-auth-server，无类级 @RequestMapping）
+ *      GET /enums（AuthorityGeneralController.enums()，旧 pd-auth-server，无类级 @RequestMapping）
  *      返回 Map<枚举简名, Map<code, desc>>，固定 5 组：HttpMethod / DataScopeType / LogType / AuthorizeType / Sex；
  *      code 取 BaseEnum.getCode()（各枚举均重写为 name()，故 key 是大写常量名，DataScopeType 也是 ALL/THIS_LEVEL/… 而非数字），
  *      desc 取中文。网关侧 GeneratorController 另有 /dictionary/enums 聚合入口（Feign 调 authorityGeneralApi.enums()）。

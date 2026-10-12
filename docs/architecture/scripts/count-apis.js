@@ -1,8 +1,8 @@
 // 统计方法级 HTTP 映射注解数量（《08-后端接口文档》接口数的可复跑口径）
 // 用法: node count-apis.js [相对仓库根的模块路径 ...]   不带参数 = 脚本里 MODULES 的默认清单
 // 规则: 类级 @RequestMapping 不计入; 目录含 /feign/ 的接口声明一律剔除（它们也带映射注解，计入会虚增对外接口数）。
-// 2026-10-09 基线（与《08-后端接口文档》一致，复跑须逐字相等）:
-//   manager 82/13 · driver 11/4 · courier 16/5 · customer 20/8 · netty 8/3 · pd-auth-server 91/14
+// 2026-10-09 基线（与《08-后端接口文档》一致，复跑须逐字相等；旧栈 pd-authority 链口径）:
+//   manager 82/13 · driver 11/4 · courier 16/5 · customer 20/8 · netty 8/3 · 旧 pd-auth-server 91/14
 const fs = require('fs');
 const path = require('path');
 
@@ -26,6 +26,8 @@ const MODULES = [
   'pd-web/pd-web-courier',
   'pd-web/pd-web-customer',
   'pd-netty',
+  // ↓↓ 这两条是 2026-10-09 基线的旧栈扫描目标（史料口径）：pd-authority 链已于 2026-10-10 架构重置时删除，
+  //    源码仅存本地归档 codeback/pd-authority/...；现行认证模块为根 pd-auth（SB3.5.7 + Sa-Token），旧计数口径不适用，故清单不改名为新模块。
   'pd-authority/pd-apps/pd-auth/pd-auth-server',
   'pd-authority/pd-apps/pd-gateway',
   'pd-dispatch',
