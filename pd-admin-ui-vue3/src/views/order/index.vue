@@ -17,9 +17,13 @@
           </el-select>
         </el-form-item>
         <el-form-item label="订单类型" prop="orderType">
-          <el-select v-model="query.orderType" placeholder="全部类型" clearable style="width: 140px">
-            <el-option label="同城订单" :value="1" />
-            <el-option label="城际订单" :value="2" />
+          <el-select v-model="query.orderType" placeholder="全部类型" clearable style="width: 150px">
+            <el-option
+              v-for="item in ORDER_TYPE_OPTIONS"
+              :key="item.value"
+              :value="item.value"
+              :label="item.label"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="收件人" prop="receiverName">
@@ -29,19 +33,24 @@
           <el-input v-model="query.receiverPhone" placeholder="收件人电话" clearable @keyup.enter="handleSearch" />
         </el-form-item>
         <el-form-item label="付款方式" prop="paymentMethod">
-          <el-select v-model="query.paymentMethod" placeholder="全部" clearable style="width: 130px">
-            <el-option label="预结" :value="1" />
-            <el-option label="到付" :value="2" />
+          <el-select v-model="query.paymentMethod" placeholder="全部方式" clearable style="width: 150px">
+            <el-option
+              v-for="item in PAYMENT_METHOD_OPTIONS"
+              :key="item.value"
+              :value="item.value"
+              :label="item.label"
+            />
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="handleSearch">查询</el-button>
+          <el-button type="primary" :loading="loading" @click="handleSearch">查询</el-button>
           <el-button @click="handleReset">重置</el-button>
         </el-form-item>
       </el-form>
 
       <div class="page-table-wrapper">
         <el-table v-loading="loading" :data="list" class="page-table" border height="100%">
+          <el-table-column type="index" label="#" width="50" align="center" />
           <el-table-column prop="id" label="订单号" min-width="180" show-overflow-tooltip />
           <el-table-column prop="orderType" label="订单类型" width="100" align="center">
             <template #default="scope">
@@ -53,20 +62,24 @@
           <el-table-column label="收件人" min-width="160">
             <template #default="scope">
               <div>{{ scope.row.receiverName || "-" }}</div>
-              <div class="page-text-sub">{{ scope.row.receiverPhone }}</div>
+              <div v-if="scope.row.receiverPhone" class="page-text-sub">{{ scope.row.receiverPhone }}</div>
             </template>
           </el-table-column>
-          <el-table-column prop="receiverAddress" label="收件地址" min-width="200" show-overflow-tooltip />
+          <el-table-column label="收件地址" min-width="200" show-overflow-tooltip>
+            <template #default="scope">{{ scope.row.receiverAddress || "-" }}</template>
+          </el-table-column>
           <el-table-column label="发件人" min-width="150">
             <template #default="scope">
               <div>{{ scope.row.senderName || "-" }}</div>
-              <div class="page-text-sub">{{ scope.row.senderPhone }}</div>
+              <div v-if="scope.row.senderPhone" class="page-text-sub">{{ scope.row.senderPhone }}</div>
             </template>
           </el-table-column>
           <el-table-column prop="paymentMethod" label="付款方式" width="100" align="center">
             <template #default="scope">{{ paymentMethodLabel(scope.row.paymentMethod) }}</template>
           </el-table-column>
-          <el-table-column prop="amount" label="金额(元)" width="100" align="right" />
+          <el-table-column label="金额(元)" width="110" align="right">
+            <template #default="scope">{{ formatAmount(scope.row.amount) }}</template>
+          </el-table-column>
           <el-table-column prop="status" label="订单状态" width="110" align="center">
             <template #default="scope">
               <el-tag :type="statusTagType(scope.row.status)">{{ statusLabel(scope.row.status) }}</el-tag>
@@ -82,6 +95,7 @@
                 type="danger"
                 link
                 size="small"
+                :loading="cancellingId === scope.row.id"
                 @click="handleCancel(scope.row as OrderRecord)"
               >
                 取消
@@ -99,16 +113,21 @@
           :total="total"
           background
           layout="total, sizes, prev, pager, next, jumper"
-          @size-change="loadList"
+          @size-change="handleSizeChange"
           @current-change="loadList"
         />
       </div>
     </el-card>
 
     <!-- 订单详情 -->
-    <el-drawer v-model="detailVisible" title="订单详情" size="620px">
+    <el-drawer v-model="detailVisible" title="订单详情" size="min(620px, 92%)">
       <div v-loading="detailLoading" class="order-detail">
-        <template v-if="detail">
+        <el-result v-if="detailError" icon="error" title="详情加载失败" sub-title="请检查网络后重试">
+          <template #extra>
+            <el-button type="primary" @click="reloadDetail">重新加载</el-button>
+          </template>
+        </el-result>
+        <template v-else-if="detail">
           <!-- 订单进度：12 级状态机时间轴（T-044） -->
           <div class="order-detail__block">
             <div class="order-detail__title">订单进度</div>
@@ -127,7 +146,10 @@
           </div>
 
           <el-descriptions title="基本信息" :column="2" border>
-            <el-descriptions-item label="订单号" :span="2">{{ detail.id }}</el-descriptions-item>
+            <el-descriptions-item label="订单号" :span="2">
+              {{ detail.id }}
+              <CopyButton :text="detail.id" class="order-detail__copy" />
+            </el-descriptions-item>
             <el-descriptions-item label="订单类型">{{ orderTypeLabel(detail.orderType) }}</el-descriptions-item>
             <el-descriptions-item label="取件类型">{{ pickupTypeLabel(detail.pickupType) }}</el-descriptions-item>
             <el-descriptions-item label="订单状态">
@@ -136,8 +158,8 @@
             <el-descriptions-item label="下单时间">{{ detail.createTime || "-" }}</el-descriptions-item>
             <el-descriptions-item label="付款方式">{{ paymentMethodLabel(detail.paymentMethod) }}</el-descriptions-item>
             <el-descriptions-item label="付款状态">{{ paymentStatusLabel(detail.paymentStatus) }}</el-descriptions-item>
-            <el-descriptions-item label="金额(元)">{{ detail.amount ?? "-" }}</el-descriptions-item>
-            <el-descriptions-item label="距离(公里)">{{ detail.distance ?? "-" }}</el-descriptions-item>
+            <el-descriptions-item label="金额(元)">{{ formatAmount(detail.amount) }}</el-descriptions-item>
+            <el-descriptions-item label="距离(公里)">{{ formatNumber(detail.distance) }}</el-descriptions-item>
             <el-descriptions-item label="预计到达">{{ detail.estimatedArrivalTime || "-" }}</el-descriptions-item>
             <el-descriptions-item label="客户ID">{{ detail.memberId || "-" }}</el-descriptions-item>
             <template v-if="detail.status === OrderStatus.CANCELLED">
@@ -147,15 +169,13 @@
           </el-descriptions>
 
           <div class="order-detail__block">
-            <div class="order-detail__title">
-              货物信息
-              <el-button type="primary" link size="small" @click="goCargoFromDetail">管理货物</el-button>
-            </div>
-            <el-descriptions :column="2" border>
-              <el-descriptions-item label="货物明细">
-                点击「管理货物」可维护该订单的货物项（新增 / 编辑 / 删除），变更后列表与详情同步刷新。
-              </el-descriptions-item>
-            </el-descriptions>
+            <div class="order-detail__title">货物信息</div>
+            <el-empty
+              description="货物明细在「货物维护」页查看与维护（新增 / 编辑 / 删除）"
+              :image-size="56"
+            >
+              <el-button type="primary" @click="goCargoFromDetail">管理货物</el-button>
+            </el-empty>
           </div>
 
           <el-descriptions title="收件信息" :column="2" border class="order-detail__block">
@@ -172,25 +192,30 @@
             <el-descriptions-item label="详细地址" :span="2">{{ detail.senderAddress || "-" }}</el-descriptions-item>
           </el-descriptions>
 
-          <div
-            v-for="item in pickupDispatchBlocks"
-            :key="item.title"
-            class="order-detail__block"
-          >
-            <div class="order-detail__title">{{ item.title }}</div>
-            <el-descriptions :column="2" border>
-              <el-descriptions-item label="任务编号">{{ item.task.id }}</el-descriptions-item>
-              <el-descriptions-item label="任务状态">{{ taskStatusLabel(item.task.status) }}</el-descriptions-item>
-              <el-descriptions-item label="所属网点">{{ item.task.agency?.name || "-" }}</el-descriptions-item>
-              <el-descriptions-item label="快递员">{{ item.task.courier?.name || "-" }}</el-descriptions-item>
-              <el-descriptions-item label="快递员电话">{{ item.task.courier?.mobile || "-" }}</el-descriptions-item>
-              <el-descriptions-item label="分配状态">{{ assignedStatusLabel(item.task.assignedStatus) }}</el-descriptions-item>
-              <el-descriptions-item label="预计开始">{{ item.task.estimatedStartTime || "-" }}</el-descriptions-item>
-              <el-descriptions-item label="实际开始">{{ item.task.actualStartTime || "-" }}</el-descriptions-item>
-              <el-descriptions-item label="预计完成">{{ item.task.estimatedEndTime || "-" }}</el-descriptions-item>
-              <el-descriptions-item label="实际完成">{{ item.task.actualEndTime || "-" }}</el-descriptions-item>
-              <el-descriptions-item label="备注" :span="2">{{ item.task.mark || "-" }}</el-descriptions-item>
-            </el-descriptions>
+          <div class="order-detail__block">
+            <div class="order-detail__title">取派件任务</div>
+            <template v-if="pickupDispatchBlocks.length">
+              <div v-for="item in pickupDispatchBlocks" :key="item.title" class="order-detail__task-block">
+                <div class="order-detail__subtitle">{{ item.title }}</div>
+                <el-descriptions :column="2" border>
+                  <el-descriptions-item label="任务编号">
+                    {{ item.task.id }}
+                    <CopyButton :text="item.task.id" class="order-detail__copy" />
+                  </el-descriptions-item>
+                  <el-descriptions-item label="任务状态">{{ taskStatusLabel(item.task.status) }}</el-descriptions-item>
+                  <el-descriptions-item label="所属网点">{{ item.task.agency?.name || "-" }}</el-descriptions-item>
+                  <el-descriptions-item label="快递员">{{ item.task.courier?.name || "-" }}</el-descriptions-item>
+                  <el-descriptions-item label="快递员电话">{{ item.task.courier?.mobile || "-" }}</el-descriptions-item>
+                  <el-descriptions-item label="分配状态">{{ assignedStatusLabel(item.task.assignedStatus) }}</el-descriptions-item>
+                  <el-descriptions-item label="预计开始">{{ item.task.estimatedStartTime || "-" }}</el-descriptions-item>
+                  <el-descriptions-item label="实际开始">{{ item.task.actualStartTime || "-" }}</el-descriptions-item>
+                  <el-descriptions-item label="预计完成">{{ item.task.estimatedEndTime || "-" }}</el-descriptions-item>
+                  <el-descriptions-item label="实际完成">{{ item.task.actualEndTime || "-" }}</el-descriptions-item>
+                  <el-descriptions-item label="备注" :span="2">{{ item.task.mark || "-" }}</el-descriptions-item>
+                </el-descriptions>
+              </div>
+            </template>
+            <el-empty v-else description="暂无取派件任务" :image-size="56" />
           </div>
 
           <el-descriptions
@@ -200,13 +225,30 @@
             border
             class="order-detail__block"
           >
-            <el-descriptions-item label="运单号" :span="2">{{ detail.transportOrder.id }}</el-descriptions-item>
+            <el-descriptions-item label="运单号" :span="2">
+              {{ detail.transportOrder.id }}
+              <CopyButton :text="detail.transportOrder.id" class="order-detail__copy" />
+            </el-descriptions-item>
             <el-descriptions-item label="运单状态">{{ transportStatusLabel(detail.transportOrder.status) }}</el-descriptions-item>
             <el-descriptions-item label="调度状态">{{ schedulingStatusLabel(detail.transportOrder.schedulingStatus) }}</el-descriptions-item>
             <el-descriptions-item label="创建时间" :span="2">{{ detail.transportOrder.createTime || "-" }}</el-descriptions-item>
           </el-descriptions>
+          <el-empty v-else description="暂无运单信息" :image-size="56" class="order-detail__block" />
         </template>
       </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button
+            v-if="detail && canCancel(detail.status)"
+            type="danger"
+            :loading="cancellingId === detail.id"
+            @click="handleCancel(detail)"
+          >
+            取消订单
+          </el-button>
+          <el-button @click="detailVisible = false">关闭</el-button>
+        </div>
+      </template>
     </el-drawer>
   </div>
 </template>
