@@ -24,7 +24,7 @@
 hs_err_pid*
 
 
-*/target/
+# Maven 构建输出（全仓库任意层级，覆盖各 pd-* 微服务模块；target/ 本身即匹配深层目录）
 target/
 
 # AI 助手/工具私域目录（含 memory、临时脚本、配置备份，禁止提交）
@@ -36,8 +36,9 @@ logs/
 log.path_IS_UNDEFINED/
 *.log
 
-# 前端依赖与构建产物
+# 前端依赖目录（全仓库任意层级，覆盖 pd-admin-ui-vue3 / pd-mobile 各端及包内嵌套 node_modules）
 node_modules/
+# 前端构建产物
 dist/
 
 # 操作系统垃圾文件
