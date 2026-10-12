@@ -301,7 +301,7 @@
 <tr>
 <td align="center" width="50%">
   <img src="docs/screenshots/ops-mysql.png" alt="MySQL 数据库"/>
-  <br/><sub><b>MySQL 8.0 数据库</b> · 单库分域表结构（InnoDB）</sub>
+  <br/><sub><b>MySQL 8.0 数据库</b> · 终端直连查询 · pinda_tms 全部 54 张表（InnoDB）</sub>
 </td>
 <td align="center" width="50%">
   <img src="docs/screenshots/ops-redis.png" alt="Redis 键管理"/>
