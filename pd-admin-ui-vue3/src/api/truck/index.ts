@@ -11,7 +11,7 @@ export interface TruckRecord {
   brand?: string;
   licensePlate?: string;
   deviceGpsId?: string;
-  /** 准载重量（t） */
+  /** 准载重量（后端落库 kg；列表/详情/表单统一按吨展示，÷1000 回显、×1000 提交） */
   allowableLoad?: number;
   /** 准载体积（m³） */
   allowableVolume?: number;
@@ -44,6 +44,23 @@ export interface TruckLicenseRecord {
   picture?: string;
 }
 
+/** 车辆保存入参：车型/车队为选填嵌套对象，清空时传 null（pd-base 实体配 FieldStrategy.ALWAYS 落 null） */
+export interface TruckSavePayload {
+  id?: string;
+  /** 品牌（选填） */
+  brand?: string | null;
+  /** 车牌（必填） */
+  licensePlate: string;
+  /** GPS 设备号（选填） */
+  deviceGpsId?: string | null;
+  /** 准载重量（kg，表单吨 ×1000；选填清空传 null） */
+  allowableLoad?: number | null;
+  /** 准载体积（m³，选填清空传 null） */
+  allowableVolume?: number | null;
+  truckType?: { id: string } | null;
+  fleet?: { id: string } | null;
+}
+
 /** 车辆分页查询条件（GET 参数，空字段不参与过滤） */
 export interface TruckPageQuery {
   page: number;
@@ -74,6 +91,29 @@ const TruckAPI = {
     return request<unknown, TruckLicenseRecord>({
       url: `${TRUCK_BASE_URL}/${id}/license`,
       method: "get",
+    });
+  },
+  /** 新增车辆 */
+  save(data: TruckSavePayload) {
+    return request<unknown, TruckRecord>({
+      url: TRUCK_BASE_URL,
+      method: "post",
+      data,
+    });
+  },
+  /** 更新车辆 */
+  update(id: string, data: TruckSavePayload) {
+    return request<unknown, TruckRecord>({
+      url: `${TRUCK_BASE_URL}/${id}`,
+      method: "put",
+      data,
+    });
+  },
+  /** 删除车辆（BFF 实为软停用；存在未完成运输任务时后端 400 拒绝） */
+  remove(id: string) {
+    return request<unknown, unknown>({
+      url: `${TRUCK_BASE_URL}/${id}`,
+      method: "delete",
     });
   },
 };

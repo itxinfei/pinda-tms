@@ -9,11 +9,22 @@
 
 <p>
   <img src="docs/badges/spring-cloud.svg" alt="Spring Cloud"/>
+  <img src="docs/badges/jdk.svg" alt="JDK 21"/>
+  <img src="docs/badges/gateway.svg" alt="Spring Cloud Gateway"/>
+  <img src="docs/badges/sa-token.svg" alt="Sa-Token"/>
   <img src="docs/badges/nacos.svg" alt="Nacos"/>
   <img src="docs/badges/mysql.svg" alt="MySQL"/>
   <img src="docs/badges/redis.svg" alt="Redis"/>
+  <img src="docs/badges/minio.svg" alt="MinIO"/>
+  <img src="docs/badges/elasticsearch.svg" alt="Elasticsearch"/>
+  <img src="docs/badges/xxl-job.svg" alt="XXL-Job"/>
+  <img src="docs/badges/kafka.svg" alt="Kafka"/>
   <img src="docs/badges/drools.svg" alt="Drools"/>
-  <img src="docs/badges/redisson.svg" alt="Redisson"/>
+  <img src="docs/badges/or-tools.svg" alt="OR-Tools"/>
+  <img src="docs/badges/resilience4j.svg" alt="Resilience4j"/>
+  <img src="docs/badges/mapstruct.svg" alt="MapStruct"/>
+  <img src="docs/badges/zipkin.svg" alt="Zipkin"/>
+  <img src="docs/badges/druid.svg" alt="Druid"/>
   <img src="docs/badges/baidu-map.svg" alt="百度地图"/>
   <img src="docs/badges/netty.svg" alt="Netty"/>
   <img src="docs/badges/vue.svg" alt="Vue"/>
@@ -42,7 +53,7 @@
 - **动态规则引擎**：集成 Drools 规则引擎，运费计算与业务规则可灵活配置，告别硬编码。
 - **智能调度分配**：基于定时调度与路径规划，自动完成订单分类、运输任务创建与车辆 / 司机分配。
 - **实时定位与轨迹**：GPS 车辆定位 + 轨迹回放，运输过程全程可视，异常可及时发现。
-- **开箱即用的支撑平台**：内置通用权限系统、文件服务、注册登录与短信能力，基础支撑直接复用。
+- **开箱即用的支撑平台**：基于开源 Sa-Token 的统一认证与多租户权限、验证码，基础支撑直接复用。
 
 ---
 
@@ -97,7 +108,7 @@
 | **回单与结算** | 回单签收留证、费用结算、对账 |
 | **数据报表** | 运输量、时效、成本、绩效等多维统计 |
 | **基础信息维护** | 组织机构、菜单、权限、字典等支撑数据 |
-| **通用权限** | 用户、角色、菜单、认证与鉴权统一管理 |
+| **统一认证与权限** | 基于开源 Sa-Token 的用户、角色、菜单、多租户认证与鉴权 |
 
 ### 5.3 订单状态机（示例）
 
@@ -126,13 +137,38 @@
 
 ### 6.4 技术亮点
 
+> 标注「规划中」的技术为技术演进评审通过的规划项，尚未落地（见《全量重构总体规划》与《53》R2）。
+
 | 技术 | 在系统中的作用 |
 | --- | --- |
-| **Drools 动态规则引擎** | 运费计算与业务规则配置，规则可热更新 |
-| **Redisson 分布式锁** | 分布式环境下的并发控制与资源互斥 |
-| **百度地图 API** | 地址解析、距离计算、轨迹与地图展示 |
-| **Netty** | 高并发 TCP / HTTP 通道，支撑轨迹与设备接入 |
-| **通用权限平台** | 统一用户、角色、菜单、认证与鉴权 |
+| **JDK 21 虚拟线程** | 高并发 IO 场景吞吐提升，降低线程开销 |
+| **Drools 8.38 动态规则引擎** | 运费计算与业务规则配置，规则可热更新 |
+| **XXL-Job 2.4.1 分布式任务调度** | 替代 Quartz，统一编排智能调度等周期任务 |
+| **Sa-Token + JWT 多租户认证中心** | 统一用户、角色、菜单、登录认证与无状态鉴权，支持多租户与验证码 |
+| **Spring Cloud Gateway 统一网关** | 路由转发、登录态校验与防直连 |
+| **Micrometer Tracing + Zipkin 链路追踪**（规划中） | 微服务调用链监控与问题定位 |
+| **Resilience4j 服务容错**（规划中） | 熔断、降级与限流（Spring Cloud CircuitBreaker） |
+| **MapStruct 对象映射**（规划中） | 替代反射拷贝，编译期生成类型安全转换 |
+| **Netty** | 高并发 TCP 通道，支撑轨迹上报与设备接入 |
+| **百度地图 + 鹰眼轨迹服务** | 地址解析、距离计算、轨迹展示；鹰眼提供轨迹纠偏与电子围栏（规划中） |
+| **MinIO 对象存储**（规划中） | 回单、签收照片等非结构化数据存储（S3 协议） |
+| **Elasticsearch 检索**（规划中） | 运单多条件与地址模糊查询、运营聚合统计 |
+| **Kafka 消息流**（规划中） | 轨迹流管线（Netty → Kafka → 时序存储），高吞吐解耦 |
+| **Google OR-Tools 智能排线**（规划中） | VRP 组合优化求解（CVRP / VRPTW），辅助调度配载 |
+| **Druid 数据库连接池** | 连接管理与 SQL 监控 |
+
+### 6.5 数据库设计
+
+全量重构后系统收敛为**单库 MySQL**（`pinda_tms`），按业务域划分表前缀，规模化后可按域平滑拆分：
+
+| 业务域 | 主要表内容 |
+| --- | --- |
+| 基础数据 | 货物类型、车辆、车队、线路、组织、站点等 |
+| 订单（OMS） | 订单、货物信息、订单位置等 |
+| 物流作业 | 取派件任务、运输任务、司机作业单、运单等 |
+| 智能调度 | 订单分类、路线缓存等调度数据 |
+| 认证与权限 | 租户、用户、角色、菜单、资源等 |
+| 轨迹与位置 | 车辆轨迹与位置信息（规模化后将引入时序库，见 §6.4 规划项） |
 
 ---
 
@@ -140,10 +176,10 @@
 
 ### 7.1 环境与技术栈
 
-- **后端**：基于 Spring Cloud 微服务架构，Nacos 作为注册 / 配置中心，服务间通过 Feign 调用，统一网关鉴权。
-- **前端**：管理端 Vue 工程；三端移动 App（客户端 / 快递员端 / 司机端）。
-- **存储与中间件**：MySQL（按业务分库）、Redis 缓存、消息队列、地图服务等。
-- **支撑服务**：通用权限系统、文件服务、短信服务、注册登录服务（均开箱集成）。
+- **后端**：JDK 21 + Spring Boot 3.5.7 + Spring Cloud 2025.0.0（Spring Cloud Alibaba 2025.0.0.0）微服务架构，Nacos 注册 / 配置中心，OpenFeign 服务调用，Spring Cloud Gateway 统一网关鉴权，Sa-Token 多租户认证，XXL-Job 分布式任务调度，Drools 规则引擎。
+- **前端**：管理端 `pd-admin-ui-vue3`（Vue 3 + Vite + Element Plus + Pinia + ECharts）；移动端 uni-app（Vue 3 / Vite + uview-plus）三端 App（客户端 / 快递员端 / 司机端）。
+- **存储与中间件**：MySQL（单库分域）、Redis 缓存、RabbitMQ 消息队列、Druid 连接池；MinIO 对象存储与 Elasticsearch 检索为规划项（见 §6.4）。
+- **支撑服务**：统一认证中心（Sa-Token 多租户 + 验证码）、网关防直连、Netty 轨迹接入。
 
 ### 7.2 启动步骤（概览）
 
@@ -152,13 +188,13 @@
 3. **导入并构建工程**：导入 Maven 工程与各微服务，完成编译。
 4. **启动微服务与前端**：依次启动后端微服务与管理端 / 移动端，即可访问。
 
-> 详细的部署、配置与二次开发说明见下方「9. 相关资料」。
+> 详细的部署、配置与二次开发说明见下方「9. 相关资料」。运行本项目需配套虚拟机镜像，请见文末「10. 配套虚拟机」向作者索取。
 
 ---
 
 ## 8. 📸 系统截图
 
-> 以下截图来自真实运行环境。**后台管理端业务页面与三端 App 界面截图将在项目运行后陆续补充**（讲义与需求文档中没有对应的成品界面图），届时直接替换占位框即可。
+> 以下截图来自真实运行环境（2026-10-12 更新，`192.168.20.130`）。**后台管理端核心业务页面已补充**；三端 App 界面截图将在移动端项目运行后陆续补充，届时直接替换占位框即可。
 
 ### 8.1 后台管理端
 
@@ -169,8 +205,18 @@
   <br/><sub><b>管理端登录</b> · 统一账号 + 验证码校验</sub>
 </td>
 <td align="center" width="50%">
+  <img src="docs/screenshots/admin-dashboard.png" alt="管理端仪表盘"/>
+  <br/><sub><b>工作台仪表盘</b> · 订单 / 告警 / 待办与图表统计</sub>
+</td>
+</tr>
+<tr>
+<td align="center" width="50%">
+  <img src="docs/screenshots/admin-order.png" alt="订单管理"/>
+  <br/><sub><b>订单管理</b> · 状态筛选 / 分页列表（真实数据）</sub>
+</td>
+<td align="center" width="50%">
   <div style="border:2px dashed #d0d7de;border-radius:8px;padding:52px 12px;color:#8b949e;background:#fafbfc;">
-    📷 待补充<br/><sub>订单管理 / 调度管理 / 运单管理等业务页面<br/>（项目运行后截图替换）</sub>
+    📷 待补充<br/><sub>调度管理 / 运单管理等业务页面<br/>（项目运行后截图替换）</sub>
   </div>
 </td>
 </tr>
@@ -211,8 +257,8 @@
   <br/><sub><b>RabbitMQ 管理台</b> · 消息队列运行监控</sub>
 </td>
 <td align="center" width="50%">
-  <img src="docs/screenshots/dev-api-docs.png" alt="接口文档"/>
-  <br/><sub><b>Knife4j 聚合接口文档</b> · 网关统一入口在线调试</sub>
+  <img src="docs/screenshots/ops-xxljob.png" alt="XXL-Job 调度中心"/>
+  <br/><sub><b>XXL-Job 任务调度中心</b> · 定时任务与调度报表</sub>
 </td>
 </tr>
 </table>
@@ -239,5 +285,57 @@
 
 ---
 
+## 10. 📦 配套虚拟机（环境镜像）
+
+> 本项目的学习与部署**依赖配套的虚拟机镜像**——镜像中已预置好运行所需的中间件、数据库与基础环境，省去自行搭建的繁琐。
+> 该镜像通过**百度网盘**分发，**链接不公开**，需要请直接向作者索取最新网盘地址。
+
+---
+
+## 11. 🤝 商业服务与联系
+
+<div align="center">
+
+<table>
+<tr>
+<td align="center" width="50%">
+
+### 11.1 🛠️ 付费技术服务
+
+本项目 **Apache-2.0 完全开源免费**。同时作者提供商业支持，助你少走弯路：
+
+- 🔧 **二次开发 / 功能定制**（对接平台、新增业务、UI 调整）
+- 🚀 **私有化部署交付**（服务器、域名、环境一条龙，含配套虚拟机镜像）
+- 🎓 **项目讲解 / 毕设答疑**（架构、源码、面试考点）
+- 📦 **全量建库脚本 + 演示数据**
+- 💬 日常技术答疑与长期维护支持
+
+<b>👉 商务联系 QQ：<code>747011882</code></b>
+
+</td>
+<td align="center" width="50%">
+
+### 11.2 💬 加入社区
+
+<img src="docs/心飞为你飞.jpg" width="170" alt="微信公众号二维码" style="border-radius:8px;border:1px solid #e5e7eb;">
+
+<sub>扫码关注微信公众号「心飞为你飞」</sub>
+
+<br>
+
+🔗 仓库：[gitee.com/itxinfei/pinda-tms](https://gitee.com/itxinfei/pinda-tms)
+🏠 作者主页：[gitee.com/itxinfei](https://gitee.com/itxinfei)
+
+</td>
+</tr>
+</table>
+
+<br>
+
+### 11.3 ⭐ 如果这个项目对你有帮助，欢迎点个 Star 支持，这是对我最大的鼓励！
+
+</div>
+
+---
 
 <p align="center"><sub>品达物流 TMS · 开源运输管理系统 · 全流程 · 四端协同 · 微服务架构</sub></p>

@@ -24,12 +24,14 @@ export interface FleetRecord {
   status?: number;
 }
 
-/** 车队保存入参：负责人只提交 userId，由 BFF 转为 manager 字段 */
+/** 车队保存入参：负责人只提交 userId，由 BFF 转为 manager 字段；机构只提交 id */
 export interface FleetSavePayload {
   id?: string;
   name: string;
   fleetNumber?: string;
   manager?: { userId: string } | null;
+  /** 所属机构：必填，编辑时必须原样回传，否则 BFF 会回退为当前用户机构/缺省 1 */
+  agency?: { id: string } | null;
 }
 
 /** 车队分页查询条件（GET 参数，空字段不参与过滤；manager 为负责人 userId） */

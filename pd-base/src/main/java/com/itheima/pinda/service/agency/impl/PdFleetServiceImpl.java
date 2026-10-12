@@ -63,17 +63,15 @@ public class PdFleetServiceImpl extends ServiceImpl<PdFleetMapper, PdFleet> impl
 
     @Override
     public void disableById(Long id) {
-        PdFleet fleet = new PdFleet();
-        fleet.setId(id);
-        fleet.setStatus(Constant.DATA_DISABLE_STATUS);
-        baseMapper.updateById(fleet);
+        // 仅更新 status 列：fleetNumber/manager 配了 FieldStrategy.ALWAYS，用实体 updateById 会把未赋值字段一并置 null
+        lambdaUpdate().set(PdFleet::getStatus, Constant.DATA_DISABLE_STATUS)
+                .eq(PdFleet::getId, id).update();
     }
 
     @Override
     public void enableById(Long id) {
-        PdFleet fleet = new PdFleet();
-        fleet.setId(id);
-        fleet.setStatus(Constant.DATA_DEFAULT_STATUS);
-        baseMapper.updateById(fleet);
+        // 仅更新 status 列，理由同 disableById
+        lambdaUpdate().set(PdFleet::getStatus, Constant.DATA_DEFAULT_STATUS)
+                .eq(PdFleet::getId, id).update();
     }
 }

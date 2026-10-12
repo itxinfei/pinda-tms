@@ -92,10 +92,9 @@ public class PdTruckServiceImpl extends ServiceImpl<PdTruckMapper, PdTruck> impl
 
     @Override
     public void disableById(Long id) {
-        PdTruck truck = new PdTruck();
-        truck.setId(id);
-        truck.setStatus(Constant.DATA_DISABLE_STATUS);
-        baseMapper.updateById(truck);
+        // 仅更新 status 列：业务字段配了 FieldStrategy.ALWAYS，用实体 updateById 会把未赋值字段一并置 null
+        lambdaUpdate().set(PdTruck::getStatus, Constant.DATA_DISABLE_STATUS)
+                .eq(PdTruck::getId, id).update();
     }
 
     @Override

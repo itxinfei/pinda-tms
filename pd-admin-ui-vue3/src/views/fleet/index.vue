@@ -108,6 +108,19 @@
         <el-form-item label="车队编号" prop="fleetNumber">
           <el-input v-model="form.fleetNumber" placeholder="选填，请输入车队编号" maxlength="32" />
         </el-form-item>
+        <el-form-item label="所属机构" prop="agencyId">
+          <el-tree-select
+            v-model="form.agencyId"
+            :data="orgTree"
+            :props="{ label: 'name', children: 'children' }"
+            node-key="id"
+            check-strictly
+            filterable
+            :render-after-expand="false"
+            placeholder="请选择所属机构"
+            style="width: 100%"
+          />
+        </el-form-item>
         <el-form-item label="负责人" prop="managerId">
           <el-select
             v-model="form.managerId"
@@ -143,9 +156,14 @@ import { ref, reactive, computed, onMounted } from "vue";
 import { Plus } from "@element-plus/icons-vue";
 import type { FormInstance, FormRules } from "element-plus";
 import FleetAPI from "@/api/fleet";
-import type { FleetRecord, FleetPageQuery } from "@/api/fleet";
+import type { FleetRecord, FleetPageQuery, FleetSavePayload } from "@/api/fleet";
 import CommonSimpleAPI from "@/api/common-simple";
 import type { SysUserSimple } from "@/api/common-simple";
+import OrgAPI from "@/api/org";
+import type { OrgNode } from "@/api/org";
+
+/** 所属机构树（弹窗选择，节点 id 为 number，提交时转 string） */
+const orgTree = ref<OrgNode[]>([]);
 
 /** 负责人下拉选项（查询栏与弹窗共用） */
 const userOptions = ref<SysUserSimple[]>([]);
@@ -216,6 +234,8 @@ interface FleetForm {
   name: string;
   fleetNumber: string;
   managerId?: string;
+  /** 所属机构 id（树节点为 number，提交时 String 转换） */
+  agencyId?: number;
 }
 
 const formVisible = ref(false);
@@ -227,11 +247,13 @@ const createDefaultForm = (): FleetForm => ({
   name: "",
   fleetNumber: "",
   managerId: undefined,
+  agencyId: undefined,
 });
 const form = reactive<FleetForm>(createDefaultForm());
 
 const rules: FormRules<FleetForm> = {
   name: [{ required: true, message: "请输入车队名称", trigger: "blur" }],
+  agencyId: [{ required: true, message: "请选择所属机构", trigger: "change" }],
 };
 
 const formTitle = computed(() => (editingId.value ? "编辑车队" : "新增车队"));
@@ -250,6 +272,8 @@ async function openEdit(row: FleetRecord) {
     name: detail.name ?? "",
     fleetNumber: detail.fleetNumber ?? "",
     managerId: detail.manager?.userId,
+    // 机构 id 详情为 string，树节点 node-key 为 number，回填需转换否则树无法高亮
+    agencyId: detail.agency?.id ? Number(detail.agency.id) : undefined,
   });
   formVisible.value = true;
 }
@@ -261,10 +285,12 @@ async function handleSubmit() {
   }
   saving.value = true;
   try {
-    const payload = {
+    // 机构必填且编辑必须原样回传：BFF 在 agencyId 缺失时会回退当前用户机构/缺省 1
+    const payload: FleetSavePayload = {
       name: form.name.trim(),
       fleetNumber: form.fleetNumber.trim() || undefined,
       manager: form.managerId ? { userId: form.managerId } : null,
+      agency: form.agencyId ? { id: String(form.agencyId) } : null,
     };
     if (editingId.value) {
       await FleetAPI.update(editingId.value, payload);
@@ -332,5 +358,8 @@ onMounted(() => {
   loadList();
   // 预载全部用户，下拉直接可选；输入关键字时再走 remote 模糊查询
   searchUsers();
+  OrgAPI.getTree().then((res) => {
+    orgTree.value = res ?? [];
+  });
 });
 </script>

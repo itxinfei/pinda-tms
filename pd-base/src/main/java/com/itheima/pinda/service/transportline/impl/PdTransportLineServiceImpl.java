@@ -64,9 +64,8 @@ public class PdTransportLineServiceImpl extends ServiceImpl<PdTransportLineMappe
 
     @Override
     public void disable(Long id) {
-        PdTransportLine line = new PdTransportLine();
-        line.setId(id);
-        line.setStatus(Constant.DATA_DISABLE_STATUS);
-        baseMapper.updateById(line);
+        // 仅更新 status 列：业务字段配了 FieldStrategy.ALWAYS，用实体 updateById 会把未赋值字段一并置 null
+        lambdaUpdate().set(PdTransportLine::getStatus, Constant.DATA_DISABLE_STATUS)
+                .eq(PdTransportLine::getId, id).update();
     }
 }

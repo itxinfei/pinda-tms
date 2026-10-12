@@ -1,6 +1,8 @@
 package com.itheima.pinda.entity.agency;
 
+import com.baomidou.mybatisplus.annotation.FieldStrategy;
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -22,13 +24,15 @@ public class PdFleet {
     /** 车队名称 */
     private String name;
 
-    /** 车队编号 */
+    /** 车队编号（选填，编辑清空需落 null） */
+    @TableField(updateStrategy = FieldStrategy.ALWAYS)
     private String fleetNumber;
 
-    /** 所属组织ID */
+    /** 所属组织ID（必填，编辑始终回传） */
     private Long orgId;
 
-    /** 负责人 */
+    /** 负责人（userId，选填，清空需落 null） */
+    @TableField(updateStrategy = FieldStrategy.ALWAYS)
     private String manager;
 
     /** 1正常 0禁用 */
