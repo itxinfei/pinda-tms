@@ -44,12 +44,17 @@ spring:
       circuitbreaker:
         enabled: true
     # BFF 在 CompletableFuture 异步线程富化关联档案（车型货型/车辆/线路等关联名），Feign 真实调用
-    # 又被默认 ThreadPoolBulkhead 切到池化线程，RequestContextHolder 与异步线程快照双重丢失→
-    # 下游回落 tenant=0，富化关联名恒为 null。改信号量隔离（对齐 pd-dispatch 939ba4a、manager b287ce2），
-    # 不切线程、租户正常透传；熔断与 FeignFallback 不受影响，超时由 Feign 连接/读超时兜底。
+    # 又被 Resilience4j 默认线程池二次 submit 切到池化线程，RequestContextHolder 与
+    # AsyncRequestHeaders 异步快照双重丢失→下游回落 tenant=0，富化查询 Total:0、toMap NPE。
+    # 注意：本服务 fat jar 缺 resilience4j-bulkhead，enable-semaphore-default-bulkhead 空转；
+    # 仅关 TimeLimiter 也不阻止 submit（对齐 pd-dispatch c92fdfe 字节码结论）。唯一有效手段：
+    # disable-thread-pool=true 让 Feign 留在 ForkJoinPool 富化线程同线程执行，租户快照正常透传；
+    # 熔断与 FeignFallback 不受影响，超时由 Feign 连接/读超时兜底。
     circuitbreaker:
       resilience4j:
+        disable-thread-pool: true
         disable-time-limiter: true
+        # fat jar 补 resilience4j-bulkhead 依赖后此项才生效（信号量隔离，同样不切线程），先保留意向
         enable-semaphore-default-bulkhead: true
   # Redis：BFF 需与网关/pd-auth/pd-netty 接同一个 db0，InternalAuthRequestInterceptor 才能
   # 读到网关签发的 Same-Token（容器内 REDIS_* 由 compose 注入，本地走默认值）
