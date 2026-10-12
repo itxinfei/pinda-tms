@@ -28,6 +28,16 @@ spring:
       circuitbreaker:
         # Feign 熔断降级总开关（实现为 Resilience4j；各 XxxFeignFallback 由此生效）
         enabled: true
+    # 关闭 Resilience4j TimeLimiter 的独立线程池执行。
+    # 默认 TimeLimiter 会把 Feign 真实调用（含出站 RequestInterceptor）submit 到独立线程池，
+    # 调用线程只在 future.get 等待；系统态调度线程写入 TenantContextHolder 的租户是普通 ThreadLocal，
+    # 切换到池化线程后丢失，InternalAuthRequestInterceptor 读不到租户→不带 tenantId 头→下游 pd-oms
+    # 跨 JVM 只能读入站头，缺失回落租户0，SQL 拼 tenant_id=0，调度分类恒查不到 status=4 的租户订单。
+    # 关闭后 Feign 在调用线程同步执行，租户/RequestContextHolder 正常透传；失败率熔断与 fallback 不受影响，
+    # 超时仍由 Feign 自身连接/读取超时兜底。仅作用于本服务（pd-web 各端默认未开 Feign 熔断，不走此层）。
+    circuitbreaker:
+      resilience4j:
+        disable-time-limiter: true
     nacos:
       # 服务注册
       discovery:

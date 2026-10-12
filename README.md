@@ -54,7 +54,7 @@
 
 ---
 
-## 1. 项目是什么 · 解决什么问题
+## 一、项目是什么 · 解决什么问题
 
 物流运输市场最普遍的四种业态是 **快递、快运、专线、三方**，它们支撑着全国商品货物的流通。无论是哪一类企业，核心痛点都高度一致：**车辆、驾驶员、线路散落难管，运输过程不透明，调度与计费靠人工，成本与时效无从考核**。
 
@@ -64,7 +64,7 @@
 
 ---
 
-## 2. ✨ 核心优势
+## 二、✨ 核心优势
 
 ### 2.1 六大差异化亮点
 
@@ -127,7 +127,7 @@
 
 ---
 
-## 3. 🎯 解决的核心痛点
+## 三、🎯 解决的核心痛点
 
 | 行业痛点 | 品达 TMS 的解法 |
 | --- | --- |
@@ -140,7 +140,7 @@
 
 ---
 
-## 4. 📱 四端协同
+## 四、📱 四端协同
 
 | 端 | 名称 | 使用对象 | 核心能力 |
 | --- | --- | --- | --- |
@@ -151,11 +151,11 @@
 
 ---
 
-## 5. 🔍 功能全景
+## 五、🔍 功能全景
 
 ### 5.1 整体业务流程
 
-![整体业务流程](docs/整体业务流程.png)
+![整体业务流程](docs/business-flow.png)
 
 从寄件人下单到收件人签收，品达 TMS 覆盖完整业务链路：
 
@@ -192,7 +192,7 @@
 
 ---
 
-## 6. 🏗 技术方案
+## 六、🏗 技术方案
 
 ### 6.0 项目结构
 
@@ -217,19 +217,19 @@ pinda-tms/
 
 ### 6.1 系统架构
 
-![系统架构](docs/系统架构.png)
+![系统架构](docs/system-arch.png)
 
 > 系统分四层：**展示层**（管理端 Vue3 + 移动三端 uni-app）→ **网关层**（Spring Cloud Gateway，Sa-Token 鉴权 + Same-Token 防直连）→ **服务层**（13 个业务微服务，Nacos 注册/配置中心）→ **数据层**（MySQL 单库分域 + Redis + RabbitMQ）。
 
 ### 6.2 微服务架构
 
-![微服务架构](docs/微服务架构.png)
+![微服务架构](docs/microservice-arch.png)
 
 > 微服务按业务域拆分：`pd-auth`（认证）、`pd-gateway`（网关）、`pd-base`（基础数据）、`pd-oms`（订单）、`pd-dispatch`（调度）、`pd-work`（作业）、`pd-netty`（轨迹接入）、`pd-aggregation`（聚合）等，通过 OpenFeign 互调，Nacos 统一注册发现。
 
 ### 6.3 技术架构
 
-![技术架构](docs/技术架构.png)
+![技术架构](docs/tech-arch.png)
 
 > 后端 JDK 21 + Spring Boot 3.5.7 + Spring Cloud 2025.0.0 + MyBatis-Plus + Drools + XXL-Job；前端 Vue 3 + Vite + Element Plus + Pinia + ECharts；移动端 uni-app Vue3 + uview-plus；中间件 MySQL 8 + Redis 7 + RabbitMQ + Nacos + Docker Compose。
 
@@ -320,7 +320,7 @@ public class LocationServerHandler extends SimpleChannelInboundHandler<ByteBuf> 
 
 ---
 
-## 7. 🚀 快速了解
+## 七、🚀 快速了解
 
 ### 7.1 环境与技术栈
 
@@ -344,7 +344,7 @@ docker-compose up -d        # 起中间件：MySQL / Redis / RabbitMQ / Nacos
 
 ---
 
-## 8. 📸 系统截图
+## 八、📸 系统截图
 
 > 以下截图来自真实运行环境（2026-10-12 更新，`192.168.20.130`）。管理端核心业务页与移动三端均已补充截图。
 
@@ -440,7 +440,7 @@ docker-compose up -d        # 起中间件：MySQL / Redis / RabbitMQ / Nacos
 
 ---
 
-## 9. 📚 相关资料
+## 九、📚 相关资料
 
 以下文档均为仓库内本地文件，可直接跳转阅读。**根目录 `docs/` 与 `docs/需求文档/` 为两套独立编号体系，序号互不相关**：
 
@@ -462,18 +462,18 @@ docker-compose up -d        # 起中间件：MySQL / Redis / RabbitMQ / Nacos
 | [docs/需求文档/00-索引.md](docs/需求文档/00-索引.md) | 需求文档总索引 |
 | [docs/需求文档/01-业务需求全景.md](docs/需求文档/01-业务需求全景.md) | 业务需求全景 |
 
-**设计图**（位于 `docs/`）：`系统架构.png`、`技术架构.png`、`整体业务流程.png`、`微服务架构.png`、`软件架构体系.png`、`服务列表.png`。
+**设计图**（位于 `docs/`）：`system-arch.png`（系统架构）、`microservice-arch.png`（微服务架构）、`tech-arch.png`（技术架构）、`business-flow.png`（整体业务流程）、`软件架构体系.png`、`服务列表.png`。
 
 ---
 
-## 10. 📦 配套虚拟机（环境镜像）
+## 十、📦 配套虚拟机（环境镜像）
 
 > 本项目的学习与部署**依赖配套的虚拟机镜像**——镜像中已预置好运行所需的中间件、数据库与基础环境，省去自行搭建的繁琐。
 > 该镜像通过**百度网盘**分发，**链接不公开**，需要请直接向作者索取最新网盘地址。
 
 ---
 
-## 11. 🤝 商业服务与联系
+## 十一、🤝 商业服务与联系
 
 <div align="center">
 
@@ -519,7 +519,7 @@ docker-compose up -d        # 起中间件：MySQL / Redis / RabbitMQ / Nacos
 
 ---
 
-## 12. 🗓️ 里程碑
+## 十二、🗓️ 里程碑
 
 | 时间 | 进展 |
 | --- | --- |
@@ -531,7 +531,7 @@ docker-compose up -d        # 起中间件：MySQL / Redis / RabbitMQ / Nacos
 
 ---
 
-## 13. ❓ 常见问题（FAQ）
+## 十三、❓ 常见问题（FAQ）
 
 **Q: 能商用吗？**
 A: Apache-2.0 协议，商用免费，无附加条件。
@@ -547,7 +547,7 @@ A: uni-app 三端架构（App / H5 / 小程序），当前以 H5 为主，小程
 
 ---
 
-## 14. 🤝 参与贡献
+## 十四、🤝 参与贡献
 
 <div align="center">
 
