@@ -73,9 +73,10 @@
             </template>
           </el-table-column>
           <el-table-column prop="createTime" label="下单时间" width="170" />
-          <el-table-column label="操作" fixed="right" width="90" align="center">
+          <el-table-column label="操作" fixed="right" width="150" align="center">
             <template #default="scope">
               <el-button type="primary" link size="small" @click="openDetail(scope.row as OrderRecord)">详情</el-button>
+              <el-button type="primary" link size="small" @click="goCargo(scope.row as OrderRecord)">货物</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -132,6 +133,18 @@
             <el-descriptions-item label="客户ID">{{ detail.memberId || "-" }}</el-descriptions-item>
           </el-descriptions>
 
+          <div class="order-detail__block">
+            <div class="order-detail__title">
+              货物信息
+              <el-button type="primary" link size="small" @click="goCargoFromDetail">管理货物</el-button>
+            </div>
+            <el-descriptions :column="2" border>
+              <el-descriptions-item label="货物明细">
+                点击「管理货物」可维护该订单的货物项（新增 / 编辑 / 删除），变更后列表与详情同步刷新。
+              </el-descriptions-item>
+            </el-descriptions>
+          </div>
+
           <el-descriptions title="收件信息" :column="2" border class="order-detail__block">
             <el-descriptions-item label="收件人">{{ detail.receiverName || "-" }}</el-descriptions-item>
             <el-descriptions-item label="电话">{{ detail.receiverPhone || "-" }}</el-descriptions-item>
@@ -187,6 +200,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
 import OrderAPI from "@/api/order";
 import { OrderStatus, type OrderRecord, type OrderDetail, type OrderPageQuery, type PickupDispatchTask } from "@/api/order";
 
@@ -274,6 +288,17 @@ async function openDetail(row: OrderRecord) {
     detail.value = await OrderAPI.getDetail(row.id);
   } finally {
     detailLoading.value = false;
+  }
+}
+
+/** 跳转货物编辑页（列表操作列 / 详情抽屉共用） */
+const router = useRouter();
+function goCargo(row: OrderRecord) {
+  router.push({ path: "/order/cargoEdit", query: { orderId: row.id, orderNo: row.id } });
+}
+function goCargoFromDetail() {
+  if (detail.value?.id) {
+    router.push({ path: "/order/cargoEdit", query: { orderId: detail.value.id, orderNo: detail.value.id } });
   }
 }
 
