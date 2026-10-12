@@ -88,6 +88,28 @@
     <!-- 取派件任务详情（直接展示该行，无详情接口） -->
     <el-drawer v-model="detailVisible" title="取派件任务详情" size="640px">
       <template v-if="detail">
+        <!-- 任务进度：状态时间轴（T-046 同系列） -->
+        <div class="pickup-dispatch-detail__block">
+          <div class="pickup-dispatch-detail__title">任务进度</div>
+          <el-alert
+            v-if="detail.status === PickupDispatchStatus.CANCELLED"
+            class="pickup-dispatch-detail__cancel-alert"
+            type="error"
+            :closable="false"
+            show-icon
+            title="该任务已取消，流程终止"
+          />
+          <el-steps class="pickup-dispatch-detail__steps" :active="taskStepActive" align-center finish-status="success">
+            <el-step
+              v-for="step in taskSteps"
+              :key="step.label"
+              :title="step.label"
+              :description="step.time"
+              :status="step.status"
+            />
+          </el-steps>
+        </div>
+
         <el-descriptions title="基本信息" :column="2" border>
           <el-descriptions-item label="任务号" :span="2">{{ detail.id }}</el-descriptions-item>
           <el-descriptions-item label="任务类型">
@@ -242,6 +264,33 @@ function openDetail(row: PickupDispatchRecord) {
   detailVisible.value = true;
 }
 
+/** 任务进度步骤条（T-046 同系列）：4 个主节点按既有时间字段推进；已取消时流程终止（顶部 alert 提示，步骤停驻） */
+type PickupTaskStep = { label: string; time: string; status: "success" | "process" | "wait" };
+
+const taskSteps = computed<PickupTaskStep[]>(() => {
+  const d = detail.value;
+  const cancelled = d?.status === PickupDispatchStatus.CANCELLED;
+  const steps: { label: string; time: string }[] = [
+    { label: "待执行", time: d?.createTime ?? "" },
+    { label: "开始执行", time: d?.actualStartTime ?? "" },
+    { label: "完成待确认", time: d?.actualEndTime ?? "" },
+    { label: "确认完成", time: d?.confirmTime ?? "" },
+  ];
+  return steps.map(({ label, time }) => ({
+    label,
+    time,
+    status: cancelled ? "wait" : time ? "success" : "wait",
+  }));
+});
+
+/** 当前推进到的步骤下标：待执行 0 / 待确认 2（1 为保留态）；已完成 4；已取消停在 0（由 alert 承载语义） */
+const taskStepActive = computed(() => {
+  const s = detail.value?.status;
+  if (s === PickupDispatchStatus.TO_CONFIRM) return 2;
+  if (s === PickupDispatchStatus.FINISHED) return 4;
+  return 0;
+});
+
 const joinArea = (...areas: ({ name?: string } | undefined)[]) =>
   areas.map((area) => area?.name).filter(Boolean).join(" / ") || "-";
 const senderArea = computed(() =>
@@ -258,5 +307,26 @@ onMounted(loadList);
 /* 取派件任务详情抽屉：各描述区块之间留白 */
 .pickup-dispatch-detail__block {
   margin-top: 16px;
+}
+
+/* 自定义区块标题：与 el-descriptions 默认标题视觉对齐（首个区块顶格） */
+.pickup-dispatch-detail__title {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.pickup-dispatch-detail__block .pickup-dispatch-detail__title:first-child {
+  margin-top: 0;
+}
+
+/* 任务进度步骤条：与描述区块视觉密度一致；已取消提示条与步骤条留白 */
+.pickup-dispatch-detail__steps {
+  margin: 8px 0 4px;
+}
+
+.pickup-dispatch-detail__cancel-alert {
+  margin-bottom: 8px;
 }
 </style>
