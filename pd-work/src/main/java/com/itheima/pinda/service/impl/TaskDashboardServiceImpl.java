@@ -64,7 +64,33 @@ public class TaskDashboardServiceImpl
         dto.setPendingTruckCount(countDistinctTrucks(
                 Arrays.asList(TransportTaskStatus.PENDING.getCode(), TransportTaskStatus.CONFIRM.getCode())));
         dto.setTaskStatusCounts(countGroupByStatus());
+        // 准时率：口径与司机绩效「准点率」一致（docs/需求文档/20），全局聚合版。
+        // 已送达=actual_arrival_time 非空；准时=actual_arrival_time <= plan_arrival_time。
+        dto.setOnTimeRate(computeOnTimeRate());
         return dto;
+    }
+
+    /**
+     * 准时率（百分比，0~100，整数）：已送达任务中实际到达不晚于计划到达的占比。
+     * 无已送达任务（actual_arrival_time 全空）返回 null，前端显示「--」。
+     * 口径对齐 docs/需求文档/20 司机绩效「准点率」（actualArrivalTime <= planArrivalTime 趟次 ÷ 总趟次）。
+     */
+    private Integer computeOnTimeRate() {
+        QueryWrapper<TaskTransport> wrapper = new QueryWrapper<>();
+        wrapper.select(
+                "COUNT(*) AS delivered",
+                "SUM(CASE WHEN actual_arrival_time <= plan_arrival_time THEN 1 ELSE 0 END) AS onTime")
+                .isNotNull("actual_arrival_time");
+        List<Map<String, Object>> rows = baseMapper.selectMaps(wrapper);
+        if (rows == null || rows.isEmpty()) {
+            return null;
+        }
+        long delivered = toLong(rows.get(0).get("delivered"));
+        if (delivered == 0) {
+            return null;
+        }
+        long onTime = toLong(rows.get(0).get("onTime"));
+        return (int) Math.round((double) onTime / delivered * 100);
     }
 
     @Override

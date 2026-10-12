@@ -62,6 +62,8 @@ export interface BigScreenSummary {
   taskStatusCounts: NameValue[];
   /** 近 7 日各线路运量 Top10 */
   lineVolumes: LineVolume[];
+  /** 准时率（百分比，0~100；无已送达任务为 null，前端显示 --） */
+  onTimeRate?: number | null;
 }
 
 /** 运输量趋势单点 */

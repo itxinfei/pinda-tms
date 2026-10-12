@@ -36,4 +36,11 @@ public class TaskDashboardSummaryDTO implements Serializable {
 
     @Schema(description = "运输任务按 5 态分组计数（固定顺序，零值补 0）")
     private List<NameValueDTO> taskStatusCounts;
+
+    /**
+     * 准时率（百分比，0~100，整数；无已送达任务为 null）。
+     * 口径：已送达任务（actual_arrival_time 非空）中实际到达 <= 计划到达的占比，
+     * 与司机绩效「准点率」一致（docs/需求文档/20 全局聚合版）。
+     */
+    private Integer onTimeRate;
 }

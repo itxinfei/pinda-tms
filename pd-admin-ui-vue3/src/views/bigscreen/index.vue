@@ -11,7 +11,7 @@
         :pending-truck-count="summary?.pendingTruckCount ?? 0"
         :idle-truck-count="summary?.idleTruckCount ?? 0"
         :pending-alarm-count="pendingAlarmCount"
-        :on-time-rate="null"
+        :on-time-rate="summary?.onTimeRate ?? null"
       />
 
       <main class="bs-main">

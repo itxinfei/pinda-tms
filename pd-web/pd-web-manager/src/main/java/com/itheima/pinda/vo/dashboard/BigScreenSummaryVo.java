@@ -46,4 +46,7 @@ public class BigScreenSummaryVo implements Serializable {
 
     @Schema(description = "近7日各线路运量 Top10")
     private List<LineVolumeVo> lineVolumes;
+
+    @Schema(description = "准时率（百分比，0~100，整数；无已送达任务为 null）。口径同司机绩效准点率")
+    private Integer onTimeRate;
 }

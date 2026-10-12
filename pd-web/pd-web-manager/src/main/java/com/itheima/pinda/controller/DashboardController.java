@@ -100,6 +100,8 @@ public class DashboardController {
             vo.setPendingTruckCount(nvl(taskSummary.getPendingTruckCount()));
             vo.setTaskStatusCounts(taskSummary.getTaskStatusCounts() == null
                     ? Collections.emptyList() : taskSummary.getTaskStatusCounts());
+            // 准时率：work 端已按统一口径（实际到达<=计划到达 ÷ 已送达）计算，无已送达时为 null
+            vo.setOnTimeRate(taskSummary.getOnTimeRate());
         } else {
             vo.setTodayTransportOrderCount(0L);
             vo.setTodayTaskCount(0L);
