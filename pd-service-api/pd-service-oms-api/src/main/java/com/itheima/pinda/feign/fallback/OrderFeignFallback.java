@@ -3,6 +3,9 @@ package com.itheima.pinda.feign.fallback;
 import com.itheima.pinda.DTO.OrderDTO;
 import com.itheima.pinda.DTO.OrderLocationDto;
 import com.itheima.pinda.DTO.OrderSearchDTO;
+import com.itheima.pinda.DTO.dashboard.OrderOverviewDTO;
+import com.itheima.pinda.DTO.dashboard.OrderTrendDTO;
+import com.itheima.pinda.DTO.dashboard.PendingOrderDTO;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
 // R2④：list 返回类型已改为 OrderDTO，不再依赖 entity 包
@@ -109,5 +112,28 @@ public class OrderFeignFallback implements OrderFeign {
     public int deleteOrderLocation(OrderLocationDto orderLocationDto) {
         log.warn("远程调用 pd-oms 失败: deleteOrderLocation({}), 返回0", orderLocationDto);
         return 0;
+    }
+
+    @Override
+    public OrderOverviewDTO dashboardOverview() {
+        log.warn("远程调用 pd-oms 失败: dashboardOverview(), 返回全0总览");
+        OrderOverviewDTO dto = new OrderOverviewDTO();
+        dto.setTodayCount(0L);
+        dto.setPendingCount(0L);
+        dto.setInTransitCount(0L);
+        dto.setCompletedCount(0L);
+        return dto;
+    }
+
+    @Override
+    public List<OrderTrendDTO> dashboardTrend(Integer days) {
+        log.warn("远程调用 pd-oms 失败: dashboardTrend({}), 返回空列表", days);
+        return Collections.emptyList();
+    }
+
+    @Override
+    public List<PendingOrderDTO> dashboardPending(Integer limit) {
+        log.warn("远程调用 pd-oms 失败: dashboardPending({}), 返回空列表", limit);
+        return Collections.emptyList();
     }
 }

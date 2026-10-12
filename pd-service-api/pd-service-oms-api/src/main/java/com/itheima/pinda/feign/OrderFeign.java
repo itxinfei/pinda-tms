@@ -3,6 +3,9 @@ package com.itheima.pinda.feign;
 import com.itheima.pinda.DTO.OrderDTO;
 import com.itheima.pinda.DTO.OrderLocationDto;
 import com.itheima.pinda.DTO.OrderSearchDTO;
+import com.itheima.pinda.DTO.dashboard.OrderOverviewDTO;
+import com.itheima.pinda.DTO.dashboard.OrderTrendDTO;
+import com.itheima.pinda.DTO.dashboard.PendingOrderDTO;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
 // R2④：list 返回类型已改为 OrderDTO，不再依赖 entity 包
@@ -105,5 +108,31 @@ public interface OrderFeign {
 
     @PostMapping("del")
     int deleteOrderLocation(@RequestBody OrderLocationDto orderLocationDto);
+
+    /**
+     * 工作台-订单总览（今日/待处理/运输中/已签收计数）
+     *
+     * @return 总览统计
+     */
+    @GetMapping("/dashboard/overview")
+    OrderOverviewDTO dashboardOverview();
+
+    /**
+     * 工作台-近 N 日运输量趋势
+     *
+     * @param days 天数（服务端钳制 1~30，默认 7）
+     * @return 每日趋势点（缺日补 0）
+     */
+    @GetMapping("/dashboard/trend")
+    List<OrderTrendDTO> dashboardTrend(@RequestParam(name = "days", defaultValue = "7") Integer days);
+
+    /**
+     * 工作台-最新待处理运单
+     *
+     * @param limit 返回条数（服务端钳制 1~20，默认 5）
+     * @return 待处理运单列表
+     */
+    @GetMapping("/dashboard/pending")
+    List<PendingOrderDTO> dashboardPending(@RequestParam(name = "limit", defaultValue = "5") Integer limit);
 
 }

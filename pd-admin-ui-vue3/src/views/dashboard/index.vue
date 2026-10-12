@@ -16,20 +16,17 @@
       </div>
     </section>
 
-    <!-- 4 个核心 KPI -->
-    <section class="dash-stats">
+    <!-- 4 个核心 KPI（数字均来自后端聚合接口，无环比数据源故不展示假箭头） -->
+    <section v-loading="overviewLoading" class="dash-stats">
       <div class="stat-card">
         <div class="stat-card__icon stat-card__icon--order">
           <el-icon :size="18"><Document /></el-icon>
         </div>
         <div class="stat-card__body">
-          <span class="stat-card__label">今日运单</span>
-          <span class="stat-card__num">{{ todayOrderCount }}</span>
+          <span class="stat-card__label">今日新增运单</span>
+          <span class="stat-card__num">{{ overview.todayOrderCount }}</span>
         </div>
-        <span class="stat-card__trend stat-card__trend--success">
-          <el-icon :size="12"><ArrowUp /></el-icon>
-          12.5%
-        </span>
+        <span class="stat-card__badge">今日</span>
       </div>
 
       <div class="stat-card">
@@ -38,7 +35,7 @@
         </div>
         <div class="stat-card__body">
           <span class="stat-card__label">在途车辆</span>
-          <span class="stat-card__num">{{ onTruckCount }}</span>
+          <span class="stat-card__num">{{ overview.onTruckCount }}</span>
         </div>
         <span class="stat-card__badge stat-card__badge--on">实时</span>
       </div>
@@ -51,10 +48,7 @@
           <span class="stat-card__label">异常告警</span>
           <span class="stat-card__num">{{ alertCount }}</span>
         </div>
-        <span class="stat-card__trend stat-card__trend--danger">
-          <el-icon :size="12"><ArrowUp /></el-icon>
-          3
-        </span>
+        <span class="stat-card__badge stat-card__badge--danger">未处理</span>
       </div>
 
       <div class="stat-card">
@@ -63,12 +57,9 @@
         </div>
         <div class="stat-card__body">
           <span class="stat-card__label">准时率</span>
-          <span class="stat-card__num">{{ onTimeRate }}%</span>
+          <span class="stat-card__num">--</span>
         </div>
-        <span class="stat-card__trend stat-card__trend--success">
-          <el-icon :size="12"><ArrowUp /></el-icon>
-          2.1%
-        </span>
+        <span class="stat-card__badge">暂无数据</span>
       </div>
     </section>
 
@@ -82,7 +73,7 @@
             <el-radio-button label="近30天" :value="30" />
           </el-radio-group>
         </div>
-        <div class="card__body card__body--chart">
+        <div v-loading="trendLoading" class="card__body card__body--chart">
           <ECharts :options="trendChartOptions" height="260px" />
         </div>
       </div>
@@ -90,21 +81,21 @@
       <div class="card dash-chart__overview">
         <div class="card__head">
           <h3 class="card__title">运单状态概览</h3>
-          <el-tag type="primary" size="small" effect="plain">待处理 {{ pendingCount }}</el-tag>
+          <el-tag type="primary" size="small" effect="plain">待处理 {{ overview.pendingCount }}</el-tag>
         </div>
-        <div class="card__body overview-card">
+        <div v-loading="overviewLoading" class="card__body overview-card">
           <div class="overview-summary">
             <div class="overview-summary__item">
-              <span class="overview-summary__label">待调度</span>
-              <strong class="overview-summary__value">{{ pendingDispatch }}</strong>
+              <span class="overview-summary__label">待处理</span>
+              <strong class="overview-summary__value">{{ overview.pendingCount }}</strong>
             </div>
             <div class="overview-summary__item">
               <span class="overview-summary__label">运输中</span>
-              <strong class="overview-summary__value">{{ transporting }}</strong>
+              <strong class="overview-summary__value">{{ overview.inTransitCount }}</strong>
             </div>
             <div class="overview-summary__item">
-              <span class="overview-summary__label">已完成</span>
-              <strong class="overview-summary__value">{{ completed }}</strong>
+              <span class="overview-summary__label">已签收</span>
+              <strong class="overview-summary__value">{{ overview.completedCount }}</strong>
             </div>
           </div>
           <div class="overview-bars">
@@ -130,27 +121,30 @@
       </div>
     </section>
 
-    <!-- 底部：待办 + 告警 -->
+    <!-- 底部：待办 + 告警（均为后端真实数据） -->
     <section class="dash-bottom">
       <div class="card">
         <div class="card__head">
           <h3 class="card__title">待处理运单</h3>
-          <el-tag size="small">{{ pendingList.length }} 单</el-tag>
+          <el-tag size="small">{{ todoList.length }} 单</el-tag>
         </div>
-        <div class="card__body">
+        <div v-loading="todoLoading" class="card__body">
+          <el-empty v-if="todoList.length === 0" :image-size="56" description="暂无待处理运单" />
           <div
-            v-for="item in pendingList"
+            v-for="item in todoList"
             :key="item.id"
             class="todo-row"
           >
             <el-icon :size="16" class="todo-row__icon--pending">
               <Clock />
             </el-icon>
-            <span class="todo-row__title">{{ item.orderNo }} - {{ item.customer }}</span>
+            <span class="todo-row__title">
+              {{ item.orderNo }}<template v-if="item.senderName"> - {{ item.senderName }}</template>
+            </span>
             <el-tag type="warning" size="small" effect="plain" class="todo-row__tag">
-              {{ item.status }}
+              {{ item.statusText || "待处理" }}
             </el-tag>
-            <span class="todo-row__time">{{ item.time }}</span>
+            <span class="todo-row__time">{{ formatShortTime(item.createTime) }}</span>
           </div>
         </div>
       </div>
@@ -160,12 +154,13 @@
           <h3 class="card__title">最新告警</h3>
           <el-tag type="danger" size="small">{{ alertList.length }} 条</el-tag>
         </div>
-        <div class="card__body card__body--scroll">
+        <div v-loading="alarmLoading" class="card__body card__body--scroll">
+          <el-empty v-if="alertList.length === 0" :image-size="56" description="暂无未处理告警" />
           <div class="feed">
             <div v-for="item in alertList" :key="item.id" class="feed__item">
               <span class="feed__dot feed__dot--danger" />
-              <span class="feed__text">{{ item.content }}</span>
-              <span class="feed__time">{{ item.time }}</span>
+              <span class="feed__text">{{ item.alarmContent || "未命名告警" }}</span>
+              <span class="feed__time">{{ formatShortTime(item.alarmTime || item.createTime) }}</span>
             </div>
           </div>
         </div>
@@ -177,7 +172,7 @@
 <script setup lang="ts">
 defineOptions({ name: "Dashboard", inheritAttrs: false });
 
-import { ref, computed, watch, onMounted } from "vue";
+import { ref, reactive, computed, watch, onMounted } from "vue";
 import { useUserStore } from "@/stores/user";
 import {
   User,
@@ -185,9 +180,14 @@ import {
   Van,
   Warning,
   CircleCheck,
-  ArrowUp,
   Clock,
 } from "@element-plus/icons-vue";
+import DashboardAPI, {
+  type DashboardOverview,
+  type OrderTrendPoint,
+  type PendingOrder,
+} from "@/api/dashboard";
+import AlarmAPI, { AlarmHandleStatus, type AlarmRecord } from "@/api/alarm";
 
 const userStore = useUserStore();
 
@@ -208,60 +208,61 @@ const currentDateStr = computed(() => {
   return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 星期${w[d.getDay()]}`;
 });
 
-// KPI 数据（后面接真实接口）
-const todayOrderCount = ref(128);
-const onTruckCount = ref(36);
-const alertCount = ref(5);
-const onTimeRate = ref(96.2);
+// ---- 总览 KPI + 运单三桶（pd-oms 订单统计 + pd-work 在途任务聚合） ----
+const overviewLoading = ref(false);
+const overview = reactive<DashboardOverview>({
+  todayOrderCount: 0,
+  onTruckCount: 0,
+  pendingCount: 0,
+  inTransitCount: 0,
+  completedCount: 0,
+});
 
-// 运单状态
-const pendingCount = ref(23);
-const pendingDispatch = ref(15);
-const transporting = ref(36);
-const completed = ref(77);
+// 未处理告警：与"最新告警"列表共用一次 netty 请求，total 即未处理总数
+const alertCount = ref(0);
+const alarmLoading = ref(false);
+const alertList = ref<AlarmRecord[]>([]);
 
-// 待处理运单列表
-const pendingList = ref([
-  { id: 1, orderNo: "YD20261008001", customer: "华为技术有限公司", status: "待调度", time: "10分钟前" },
-  { id: 2, orderNo: "YD20261008002", customer: "小米科技", status: "待装车", time: "30分钟前" },
-  { id: 3, orderNo: "YD20261008003", customer: "顺丰速运", status: "待确认", time: "1小时前" },
-  { id: 4, orderNo: "YD20261008004", customer: "京东物流", status: "待调度", time: "2小时前" },
-  { id: 5, orderNo: "YD20261008005", customer: "菜鸟网络", status: "待装车", time: "昨天 18:30" },
-]);
+// 待处理运单
+const todoLoading = ref(false);
+const todoList = ref<PendingOrder[]>([]);
 
-// 告警列表
-const alertList = ref([
-  { id: 1, content: "车辆 鄂A12345 偏离路线", time: "5分钟前" },
-  { id: 2, content: "运单 YD20261007089 预计超时", time: "20分钟前" },
-  { id: 3, content: "司机 张三 连续驾驶超4小时", time: "1小时前" },
-  { id: 4, content: "车辆 鄂A67890 温度异常", time: "2小时前" },
-  { id: 5, content: "仓库 武汉仓 库存不足", time: "昨天 16:42" },
-]);
+// 三桶进度条（占比按三桶总量，拒收/取消不计入）
+const statusBars = computed(() => {
+  const p = overview.pendingCount;
+  const t = overview.inTransitCount;
+  const c = overview.completedCount;
+  const total = p + t + c;
+  const pct = (v: number) => (total > 0 ? Math.round((v / total) * 100) : 0);
+  return [
+    { label: "待处理", value: p, percent: pct(p) },
+    { label: "运输中", value: t, percent: pct(t) },
+    { label: "已签收", value: c, percent: pct(c) },
+  ];
+});
 
-// 状态进度条
-const statusBars = computed(() => [
-  { label: "待调度", value: pendingDispatch.value, percent: pendingDispatch.value / 100 * 100 },
-  { label: "运输中", value: transporting.value, percent: transporting.value / 100 * 100 },
-  { label: "已完成", value: completed.value, percent: completed.value / 100 * 100 },
-]);
-
-// 趋势图表
+// ---- 运输量趋势 ----
 const trendDateRange = ref(7);
+const trendLoading = ref(false);
 const trendChartOptions = ref({});
 
-function updateTrendChart() {
+/** 后端 "yyyy-MM-dd HH:mm:ss" → "MM-dd HH:mm"；无值返回空串 */
+function formatShortTime(value?: string) {
+  if (!value) return "";
+  return value.length >= 16 ? value.substring(5, 16) : value;
+}
+
+/** 后端 yyyy-MM-dd → M/d */
+function dayLabel(date: string) {
+  const parts = date.split("-");
+  return parts.length === 3 ? `${Number(parts[1])}/${Number(parts[2])}` : date;
+}
+
+function renderTrend(points: OrderTrendPoint[]) {
   const primary = getCssVar("--el-color-primary", "#409eff");
   const success = getCssVar("--el-color-success", "#67c23a");
   const textSecondary = getCssVar("--el-text-color-secondary", "#909399");
   const borderLighter = getCssVar("--el-border-color-lighter", "#ebeef5");
-
-  const days = trendDateRange.value;
-  const dates = [];
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    dates.push(`${d.getMonth() + 1}/${d.getDate()}`);
-  }
 
   trendChartOptions.value = {
     tooltip: { trigger: "axis" },
@@ -269,11 +270,12 @@ function updateTrendChart() {
     grid: { left: "0%", right: "3%", bottom: "14%", top: "5%", containLabel: true },
     xAxis: {
       type: "category",
-      data: dates,
+      data: points.map((p) => dayLabel(p.date)),
       axisLabel: { fontSize: 11, color: textSecondary },
     },
     yAxis: {
       type: "value",
+      minInterval: 1,
       axisLabel: { fontSize: 11, color: textSecondary },
       splitLine: { lineStyle: { type: "dashed", color: borderLighter } },
     },
@@ -282,7 +284,7 @@ function updateTrendChart() {
         name: "运单量",
         type: "line",
         smooth: true,
-        data: dates.map(() => Math.floor(Math.random() * 50) + 80),
+        data: points.map((p) => Number(p.orderCount) || 0),
         lineStyle: { color: primary, width: 2.2 },
         itemStyle: { color: primary },
         areaStyle: { opacity: 0.1 },
@@ -291,7 +293,7 @@ function updateTrendChart() {
         name: "完成量",
         type: "line",
         smooth: true,
-        data: dates.map(() => Math.floor(Math.random() * 40) + 70),
+        data: points.map((p) => Number(p.completedCount) || 0),
         lineStyle: { color: success, width: 1.8 },
         itemStyle: { color: success },
       },
@@ -304,10 +306,68 @@ function getCssVar(name: string, fallback: string) {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
 }
 
-watch(() => trendDateRange.value, () => updateTrendChart());
+async function loadOverview() {
+  overviewLoading.value = true;
+  try {
+    const data = await DashboardAPI.getOverview();
+    if (data) {
+      overview.todayOrderCount = Number(data.todayOrderCount) || 0;
+      overview.onTruckCount = Number(data.onTruckCount) || 0;
+      overview.pendingCount = Number(data.pendingCount) || 0;
+      overview.inTransitCount = Number(data.inTransitCount) || 0;
+      overview.completedCount = Number(data.completedCount) || 0;
+    }
+  } finally {
+    overviewLoading.value = false;
+  }
+}
 
+async function loadTrend() {
+  trendLoading.value = true;
+  try {
+    const points = await DashboardAPI.getTrend(trendDateRange.value);
+    renderTrend(Array.isArray(points) ? points : []);
+  } catch (e) {
+    renderTrend([]);
+  } finally {
+    trendLoading.value = false;
+  }
+}
+
+async function loadTodo() {
+  todoLoading.value = true;
+  try {
+    const list = await DashboardAPI.getTodo(5);
+    todoList.value = Array.isArray(list) ? list : [];
+  } finally {
+    todoLoading.value = false;
+  }
+}
+
+async function loadAlarms() {
+  alarmLoading.value = true;
+  try {
+    // 一次请求同时拿到最新 5 条未处理告警与未处理总数 total
+    const res = await AlarmAPI.page({
+      page: 1,
+      pageSize: 5,
+      status: AlarmHandleStatus.PENDING,
+    });
+    alertList.value = res?.items ?? [];
+    alertCount.value = Number(res?.total) || 0;
+  } finally {
+    alarmLoading.value = false;
+  }
+}
+
+watch(() => trendDateRange.value, () => loadTrend());
+
+// 各区块独立加载、独立容错，单个接口失败不拖垮整页
 onMounted(() => {
-  updateTrendChart();
+  loadOverview();
+  loadTrend();
+  loadTodo();
+  loadAlarms();
 });
 </script>
 
@@ -461,6 +521,10 @@ $pad: 10px;
 
     &--on {
       color: var(--el-color-success);
+    }
+
+    &--danger {
+      color: var(--el-color-danger);
     }
   }
 
