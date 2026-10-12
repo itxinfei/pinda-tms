@@ -264,10 +264,8 @@ public class MailingController {
             return Result.error("发货地址不存在,请输入真实地址便于计算距离");
         }
 
-        if (orderDTO.getId() != null) {
-            cargoDto.setOrderId(orderDTO.getId());
-            cargoFeign.save(cargoDto);
-        }
+        // 货物明细不再在此重复保存：pd-oms OrderController.save 已内置"订单入库后同步保存货物明细"，
+        // BFF 再 cargoFeign.save 一遍会产生重复货物行（E2E 实测 2 条）。
 
         // 【P0优化】订单确认时预生成运单，参考大厂标准流程
         // 优势：1. 揽收前已有运单号，可提前打印面单
