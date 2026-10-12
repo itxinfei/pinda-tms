@@ -1,8 +1,11 @@
 package com.itheima.pinda;
 
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.json.JsonReadFeature;
+import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
@@ -29,6 +32,7 @@ import org.springframework.format.FormatterRegistry;
 import org.springframework.format.datetime.standard.DateTimeFormatterRegistrar;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.SimpleDateFormat;
@@ -36,6 +40,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Locale;
 import java.util.TimeZone;
 
@@ -55,11 +60,31 @@ public class WebManagerApplication {
     @Bean
     public Jackson2ObjectMapperBuilderCustomizer jackson2ObjectMapperBuilderCustomizer() {
         // 日期时间序列化契约（沿用旧 DateUtils 常量：date-time / date / time）
+        // LocalDateTime 反序列化必须同时兼容两种线上格式：
+        //   ① "yyyy-MM-dd HH:mm:ss"（pd-work/pd-base 等经全局 Jackson 序列化输出）；
+        //   ② ISO "yyyy-MM-dd'T'HH:mm:ss"（pd-oms 的 LocalDateTime 字段经 JavaTimeModule 默认序列化输出，
+        //      如 OrderDTO.estimatedArrivalTime）。只认①时，pd-oms 分页响应解码失败被 fallback 吞成空页。
+        DateTimeFormatter spaceDateTime = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         return builder -> builder
-                .serializerByType(LocalDateTime.class, new LocalDateTimeSerializer(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+                .serializerByType(LocalDateTime.class, new LocalDateTimeSerializer(spaceDateTime))
                 .serializerByType(LocalDate.class, new LocalDateSerializer(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
                 .serializerByType(LocalTime.class, new LocalTimeSerializer(DateTimeFormatter.ofPattern("HH:mm:ss")))
-                .deserializerByType(LocalDateTime.class, new LocalDateTimeDeserializer(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+                .deserializerByType(LocalDateTime.class, new JsonDeserializer<LocalDateTime>() {
+                    @Override
+                    public LocalDateTime deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+                        String value = p.getValueAsString();
+                        if (value == null || value.isBlank()) {
+                            return null;
+                        }
+                        value = value.trim();
+                        try {
+                            return LocalDateTime.parse(value, spaceDateTime);
+                        } catch (DateTimeParseException ignored) {
+                            // 非"空格"格式，按 ISO-8601 兜底解析
+                            return LocalDateTime.parse(value);
+                        }
+                    }
+                })
                 .deserializerByType(LocalDate.class, new LocalDateDeserializer(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
                 .deserializerByType(LocalTime.class, new LocalTimeDeserializer(DateTimeFormatter.ofPattern("HH:mm:ss")));
     }
