@@ -558,6 +558,12 @@ This project is **fully open source &amp; free under Apache-2.0**. The author al
 
 </div>
 
+### 11.4 ☕ Sponsorship
+
+> This project is **developed with AI assistance**, and continuous iteration requires significant time and AI tool costs. If Pinda TMS helps you, please consider sponsoring the author to keep it updated.
+
+> 📌 **Sponsorship contact**: add **QQ: `747011882`** to discuss (sponsor list will be updated in this README); WeChat / Alipay QR-code entry coming soon.
+
 ---
 
 <a id="sec-milestones"></a>
