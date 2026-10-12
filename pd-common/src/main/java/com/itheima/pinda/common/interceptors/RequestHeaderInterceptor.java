@@ -12,14 +12,16 @@ import jakarta.servlet.http.HttpServletRequest;
 /**
  * Feign 请求拦截器
  *
- * <p>透传网关注入的用户身份头（userid），保证 Feign 跨服务调用时下游可识别当前用户
- * （如 pd-oms PayController 的身份校验依赖 userid 头）。
+ * <p>透传网关注入的用户身份头（userid）与租户头（tenantId），保证 Feign 跨服务调用时
+ * 下游可识别当前用户与租户（如 pd-oms PayController 的身份校验依赖 userid 头；
+ * pd-oms/pd-user 等多租户插件的 tenant_id 过滤依赖 tenantId 头，缺失时下游回落租户 0
+ * 导致查询恒空）。
  */
 @Component
 public class RequestHeaderInterceptor implements RequestInterceptor {
     @Override
     public void apply(RequestTemplate template) {
-        // 透传网关注入的用户身份头（userid），避免 Feign 调用被下游身份门禁误判为匿名
+        // 透传网关注入的身份/租户头，避免 Feign 调用被下游身份门禁误判为匿名、或多租户过滤落空
         try {
             ServletRequestAttributes attributes =
                 (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
@@ -28,6 +30,10 @@ public class RequestHeaderInterceptor implements RequestInterceptor {
                 String userId = request.getHeader("userid");
                 if (StringUtils.isNotBlank(userId)) {
                     template.header("userid", userId);
+                }
+                String tenantId = request.getHeader("tenantId");
+                if (StringUtils.isNotBlank(tenantId)) {
+                    template.header("tenantId", tenantId);
                 }
             }
         } catch (Exception e) {
