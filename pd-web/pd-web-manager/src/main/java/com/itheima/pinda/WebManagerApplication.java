@@ -57,6 +57,30 @@ public class WebManagerApplication {
      *
      * @return
      */
+    /**
+     * LocalDateTime 反序列化：兼容两种线上格式——
+     * ① "yyyy-MM-dd HH:mm:ss"（pd-work/pd-base 等全局 Jackson 输出）；
+     * ② ISO "yyyy-MM-dd'T'HH:mm:ss"（pd-oms 的 LocalDateTime 字段经 JavaTimeModule 默认序列化输出）。
+     * 只认①时，pd-oms 订单分页响应（含 estimatedArrivalTime）解码失败被 fallback 吞成空页。
+     */
+    private static final JsonDeserializer<LocalDateTime> FLEXIBLE_LOCAL_DATE_TIME_DESERIALIZER =
+            new JsonDeserializer<LocalDateTime>() {
+                @Override
+                public LocalDateTime deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+                    String value = p.getValueAsString();
+                    if (value == null || value.isBlank()) {
+                        return null;
+                    }
+                    value = value.trim();
+                    try {
+                        return LocalDateTime.parse(value, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                    } catch (DateTimeParseException ignored) {
+                        // 非"空格"格式，按 ISO-8601 兜底解析
+                        return LocalDateTime.parse(value);
+                    }
+                }
+            };
+
     @Bean
     public Jackson2ObjectMapperBuilderCustomizer jackson2ObjectMapperBuilderCustomizer() {
         // 日期时间序列化契约（沿用旧 DateUtils 常量：date-time / date / time）
@@ -144,12 +168,13 @@ public class WebManagerApplication {
                 .setDateFormat(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
 
         // Java 8 时间模块（显式注册，与上方 customizer 的契约保持一致）
+        // LocalDateTime 反序列化同 customizer：兼容"空格"与 ISO 两种线上格式
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         JavaTimeModule javaTimeModule = new JavaTimeModule();
         javaTimeModule.addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(dateTimeFormatter));
         javaTimeModule.addSerializer(LocalDate.class, new LocalDateSerializer(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
         javaTimeModule.addSerializer(LocalTime.class, new LocalTimeSerializer(DateTimeFormatter.ofPattern("HH:mm:ss")));
-        javaTimeModule.addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer(dateTimeFormatter));
+        javaTimeModule.addDeserializer(LocalDateTime.class, FLEXIBLE_LOCAL_DATE_TIME_DESERIALIZER);
         javaTimeModule.addDeserializer(LocalDate.class, new LocalDateDeserializer(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
         javaTimeModule.addDeserializer(LocalTime.class, new LocalTimeDeserializer(DateTimeFormatter.ofPattern("HH:mm:ss")));
 
