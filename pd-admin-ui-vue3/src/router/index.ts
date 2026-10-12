@@ -11,10 +11,10 @@ export const Layout = () => import("@/layouts/index.vue");
  */
 export const screenRoutes: RouteRecordRaw[] = [
   {
-    path: "/data-screen",
-    name: "DataScreen",
-    component: () => import("@/views/data-screen/index.vue"),
-    meta: { hidden: true, title: "数据大屏" },
+    path: "/dashboard/bigscreen",
+    name: "BigScreen",
+    component: () => import("@/views/bigscreen/index.vue"),
+    meta: { hidden: true, title: "运营监控大屏" },
   },
 ];
 
@@ -95,6 +95,13 @@ export const constantRoutes: RouteRecordRaw[] = [
         name: "Order",
         component: () => import("@/views/order/index.vue"),
         meta: { title: "订单管理", icon: "el-icon-Document", keepAlive: true },
+      },
+      {
+        // 货物编辑（订单中心子页）：从订单列表「货物」或订单详情「管理货物」进入，hidden 不入菜单
+        path: "/order/cargoEdit",
+        name: "OrderCargoEdit",
+        component: () => import("@/views/order/cargoEdit.vue"),
+        meta: { title: "货物编辑", icon: "el-icon-Goods", hidden: true, keepAlive: true },
       },
       {
         path: "/transport",

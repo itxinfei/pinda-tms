@@ -1,0 +1,61 @@
+/**
+ * 运营大屏专属深色 token（与管理端亮色主题隔离，仅大屏作用域生效）。
+ * 所有大屏组件只允许引用这里的变量，不在各组件散落硬编码色值。
+ */
+.bs-screen {
+  // 品牌/序列色
+  --bs-cyan: #00eaff;
+  --bs-blue: #2f6bff;
+  --bs-green: #00ff7f;
+  --bs-orange: #ff8a3d;
+  --bs-yellow: #ffc14d;
+  --bs-red: #ff5b6b;
+
+  // 文字
+  --bs-text: #d6ecff;
+  --bs-text-dim: #7fa8c9;
+  --bs-axis: rgba(148, 197, 255, 0.55);
+
+  // 面板
+  --bs-panel-bg: rgba(3, 18, 58, 0.52);
+  --bs-panel-border: rgba(0, 190, 255, 0.28);
+  --bs-panel-title: #9fdfff;
+
+  // 数字/标题字体
+  --bs-font-num: DIN, "DIN Alternate", "Microsoft YaHei", sans-serif;
+  --bs-font-title: YouSheBiaoTiHei, "Microsoft YaHei", sans-serif;
+}
+
+/** 科技面板四角装饰（配合 panel-frame.vue） */
+.bs-corner {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-color: var(--bs-cyan);
+  border-style: solid;
+  pointer-events: none;
+
+  &--tl { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+  &--tr { top: -1px; right: -1px; border-width: 2px 2px 0 0; }
+  &--bl { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; }
+  &--br { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+}
+
+/** 大屏细滚动条（告警列表用） */
+.bs-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 234, 255, 0.35) transparent;
+
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0, 234, 255, 0.35);
+    border-radius: 2px;
+  }
+  &::-webkit-scrollbar-track { background: transparent; }
+}
+
+/** 告警列表无缝向上滚动 */
+@keyframes bs-scroll-up {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-50%); }
+}
