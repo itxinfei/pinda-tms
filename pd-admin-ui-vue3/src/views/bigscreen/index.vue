@@ -32,6 +32,20 @@
             <LineVolumeChart v-if="lineVolumes.length" :items="lineVolumes" />
             <div v-else class="bs-empty">暂无数据</div>
           </PanelFrame>
+          <PanelFrame title="重点车辆轨迹回放" class="bs-panel--scan bs-track-panel">
+            <template #extra>
+              <select
+                v-model="selectedVehicle"
+                class="bs-track-select"
+                :disabled="!vehicleOptions.length"
+              >
+                <option v-for="o in vehicleOptions" :key="o.id" :value="o.id">
+                  {{ o.label }}（{{ o.count }}）
+                </option>
+              </select>
+            </template>
+            <TrajectoryReplay :trail="selectedTrail" :vehicle-name="selectedVehicleName" />
+          </PanelFrame>
         </div>
 
         <!-- 中列：全国地图（车辆+网点+流向）/ 在险预警 / 运输任务五态 -->
@@ -70,7 +84,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import DashboardAPI, {
   type BigScreenSummary,
   type DashboardOverview,
@@ -94,6 +108,7 @@ import VehicleMap from "./components/vehicle-map.vue";
 import TaskStatusBar from "./components/task-status-bar.vue";
 import AlertScroll from "./components/alert-scroll.vue";
 import RiskWarning, { type RiskItem } from "./components/risk-warning.vue";
+import TrajectoryReplay, { type TrailPoint } from "./components/trajectory-replay.vue";
 import TodoList from "./components/todo-list.vue";
 import TruckStatusPie from "./components/truck-status-pie.vue";
 
@@ -122,6 +137,76 @@ const todoList = ref<PendingOrder[]>([]);
 const locations = ref<LocationRecordItem[]>([]);
 const orgPoints = ref<OrgPoint[]>([]);
 const pendingAlarmCount = ref(0);
+
+/**
+ * 重点车辆轨迹回放（吸收中交兴路轨迹回放时间轴）。
+ * 后端暂无历史轨迹端点，这里采用"跨轮询累积"方案：每次轮询拿到的在途车辆最新定位点，
+ * 按 businessId 去重（同时间戳不重复）累积成轨迹，模拟回放所需的连续路径。
+ * 待真实历史轨迹端点就绪，只需把 trailHistory 的来源替换为该端点即可（组件接口不变）。
+ */
+const trailHistory = ref<Record<string, TrailPoint[]>>({});
+const vehicleMeta = ref<Record<string, { name?: string; licensePlate?: string }>>({});
+const selectedVehicle = ref("");
+
+/** 单辆车轨迹最多保留点数，防止长时间运行内存膨胀 */
+const TRAIL_MAX_POINTS = 80;
+
+/** 把本轮定位点累积进历史轨迹（同一车辆跨轮询连成路径） */
+const accumulateTrails = (items: LocationRecordItem[]) => {
+  const history: Record<string, TrailPoint[]> = { ...trailHistory.value };
+  const meta: Record<string, { name?: string; licensePlate?: string }> = { ...vehicleMeta.value };
+  for (const it of items) {
+    const lng = Number(it.longitude);
+    const lat = Number(it.latitude);
+    if (!it.businessId || !Number.isFinite(lng) || !Number.isFinite(lat)) continue;
+    const t = it.reportTime
+      ? new Date(it.reportTime).getTime()
+      : it.createTime
+        ? new Date(it.createTime).getTime()
+        : Date.now();
+    if (!Number.isFinite(t)) continue;
+    const arr = history[it.businessId] ? [...history[it.businessId]] : [];
+    if (!arr.some((p) => p.t === t)) {
+      arr.push({ lng, lat, t });
+      arr.sort((a, b) => a.t - b.t);
+      if (arr.length > TRAIL_MAX_POINTS) arr.splice(0, arr.length - TRAIL_MAX_POINTS);
+      history[it.businessId] = arr;
+    }
+    meta[it.businessId] = { name: it.name, licensePlate: it.licensePlate };
+  }
+  trailHistory.value = history;
+  vehicleMeta.value = meta;
+};
+
+/** 可选车辆列表：仅保留轨迹点数 ≥ 2 的车辆，按点数降序 */
+const vehicleOptions = computed(() =>
+  Object.entries(trailHistory.value)
+    .filter(([, pts]) => pts.length >= 2)
+    .map(([id, pts]) => {
+      const m = vehicleMeta.value[id];
+      return {
+        id,
+        label: m?.licensePlate || m?.name || `车辆${id}`,
+        count: pts.length,
+      };
+    })
+    .sort((a, b) => b.count - a.count),
+);
+
+const selectedTrail = computed<TrailPoint[]>(() => trailHistory.value[selectedVehicle.value] ?? []);
+const selectedVehicleName = computed(() => {
+  const m = vehicleMeta.value[selectedVehicle.value];
+  return m?.licensePlate || m?.name || (selectedVehicle.value ? `车辆${selectedVehicle.value}` : "");
+});
+
+/** 无选中或选中车辆已无轨迹时，自动切到列表首项 */
+watch(vehicleOptions, (opts) => {
+  if (!selectedVehicle.value && opts.length) {
+    selectedVehicle.value = opts[0].id;
+  } else if (selectedVehicle.value && !opts.some((o) => o.id === selectedVehicle.value)) {
+    selectedVehicle.value = opts[0]?.id ?? "";
+  }
+});
 
 /**
  * 风险预警卡数据源（吸收 Shipsy At-Risk 控制塔范式）。
@@ -214,6 +299,7 @@ const loadAll = async () => {
   }
   if (results[6].status === "fulfilled" && results[6].value) {
     locations.value = results[6].value.items ?? [];
+    accumulateTrails(locations.value);
   }
   if (results[7].status === "fulfilled" && results[7].value) {
     orgPoints.value = flattenOrgs(results[7].value ?? []);
@@ -274,18 +360,23 @@ onBeforeUnmount(() => {
   gap: 12px;
   min-height: 0;
 
-  > :first-child {
-    flex: 1.1;
+  > :nth-child(1) {
+    flex: 1;
     min-height: 0;
   }
 
   > :nth-child(2) {
-    flex: 1;
+    flex: 0.9;
     min-height: 0;
   }
 
-  > :last-child {
-    flex: 1;
+  > :nth-child(3) {
+    flex: 0.9;
+    min-height: 0;
+  }
+
+  > :nth-child(4) {
+    flex: 1.3;
     min-height: 0;
   }
 }
@@ -320,5 +411,23 @@ onBeforeUnmount(() => {
   color: var(--bs-text-dim);
   font-size: 13px;
   letter-spacing: 2px;
+}
+
+.bs-track-select {
+  margin-left: auto;
+  max-width: 168px;
+  padding: 2px 6px;
+  font-size: 12px;
+  color: var(--bs-cyan);
+  background: rgba(0, 234, 255, 0.08);
+  border: 1px solid var(--bs-panel-border);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
 }
 </style>
