@@ -162,8 +162,8 @@
 
       <template #footer>
         <div class="dialog-footer">
-          <el-button type="primary" @click="handleSubmit">确定</el-button>
-          <el-button @click="closeDialog">取消</el-button>
+          <el-button type="primary" :loading="submitting" @click="handleSubmit">确定</el-button>
+          <el-button :disabled="submitting" @click="closeDialog">取消</el-button>
         </div>
       </template>
     </el-dialog>
@@ -208,6 +208,9 @@ const queryParams = reactive<DeptQueryParams>({
 });
 
 const { selectedIds, hasSelection, handleSelectionChange } = useTableSelection<DeptItem>();
+
+// 弹窗提交中：禁用确定/取消，防止重复创建
+const submitting = ref(false);
 
 const dialogState = reactive({
   title: "",
@@ -313,7 +316,7 @@ async function openDialog(parentId?: string, deptId?: string): Promise<void> {
     },
   ];
 
-  dialogState.visible = true;
+  // 先取数回填再开弹窗，避免空表单闪现或在 id 回填前误走新增
   if (deptId) {
     dialogState.title = "修改部门";
     const form = await DeptAPI.getFormData(deptId);
@@ -322,6 +325,7 @@ async function openDialog(parentId?: string, deptId?: string): Promise<void> {
     dialogState.title = "新增部门";
     formData.parentId = parentId || "0";
   }
+  dialogState.visible = true;
 }
 
 /**
@@ -334,7 +338,7 @@ async function handleSubmit(): Promise<void> {
   );
   if (!valid) return;
 
-  loading.value = true;
+  submitting.value = true;
   try {
     const deptId = formData.id;
     if (deptId) {
@@ -347,7 +351,7 @@ async function handleSubmit(): Promise<void> {
     closeDialog();
     fetchData();
   } finally {
-    loading.value = false;
+    submitting.value = false;
   }
 }
 

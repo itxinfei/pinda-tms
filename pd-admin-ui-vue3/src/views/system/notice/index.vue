@@ -227,7 +227,10 @@
           <DictSelect v-model="formData.level" code="notice_level" />
         </el-form-item>
         <el-form-item label="目标类型" prop="targetType">
-          <el-radio-group v-model="formData.targetType">
+          <el-radio-group
+            v-model="formData.targetType"
+            @change="noticeFormRef?.clearValidate('targetUsers')"
+          >
             <el-radio :value="NOTICE_TARGET_ALL">全体</el-radio>
             <el-radio :value="NOTICE_TARGET_SPECIFIED">指定</el-radio>
           </el-radio-group>
@@ -237,7 +240,13 @@
           label="指定用户"
           prop="targetUsers"
         >
-          <el-select v-model="formData.targetUsers" multiple search placeholder="请选择指定用户">
+          <el-select
+            v-model="formData.targetUsers"
+            multiple
+            filterable
+            placeholder="请选择指定用户"
+            style="width: 100%"
+          >
             <el-option
               v-for="item in userOptions"
               :key="item.value"
@@ -252,8 +261,10 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button type="primary" @click="handleSubmit()">确定</el-button>
-          <el-button @click="closeDialog()">取消</el-button>
+          <el-button type="primary" :loading="submitting" @click="handleSubmit()">
+            确定
+          </el-button>
+          <el-button :disabled="submitting" @click="closeDialog()">取消</el-button>
         </div>
       </template>
     </el-dialog>
@@ -356,6 +367,9 @@ const { selectedIds, hasSelection, handleSelectionChange } = useTableSelection<N
 
 const userOptions = ref<OptionItem[]>([]);
 
+// 弹窗提交中：禁用确定/取消，防止重复提交
+const submitting = ref(false);
+
 const dialogState = reactive({
   title: "",
   visible: false,
@@ -386,6 +400,21 @@ const rules: FormRules<NoticeForm> = {
     },
   ],
   type: [{ required: true, message: "请选择通知类型", trigger: "change" }],
+  targetUsers: [
+    {
+      trigger: "change",
+      validator: (_rule, value: number[], callback) => {
+        if (
+          formData.targetType === NOTICE_TARGET_SPECIFIED &&
+          (!value || value.length === 0)
+        ) {
+          callback(new Error("请选择指定用户"));
+        } else {
+          callback();
+        }
+      },
+    },
+  ],
 };
 
 const detailDialog = reactive({
@@ -394,8 +423,8 @@ const detailDialog = reactive({
 const currentNotice = ref<NoticeDetail>({});
 
 /**
- * 将后端返回的 `targetUserIds`（可能是数组、JSON 字符串、逗号分隔字符串）标准化为数字数组
- * 用于编辑回显时把后端字段转换成表单 `targetUsers` 字段
+ * 将目标用户值（可能是数组、JSON 字符串、逗号分隔字符串）标准化为数字数组
+ * 用于编辑回显时兼容后端返回的多种形态
  *
  * @param value 后端返回的原始值
  */
@@ -435,13 +464,13 @@ function normalizeTargetUsers(value?: unknown): number[] {
 
 /**
  * 构造提交给后端的 payload
- * 字段名转换：targetUsers → targetUserIds
+ * 目标类型为"全体"时清空指定用户，避免残留上一次"指定"时的选择
  */
-function buildSubmitPayload(): Omit<NoticeForm, "targetUsers"> & { targetUserIds: number[] } {
-  const { targetUsers, ...rest } = formData;
+function buildSubmitPayload(): NoticeForm {
   return {
-    ...rest,
-    targetUserIds: formData.targetType === NOTICE_TARGET_SPECIFIED ? (targetUsers ?? []) : [],
+    ...formData,
+    targetUsers:
+      formData.targetType === NOTICE_TARGET_SPECIFIED ? (formData.targetUsers ?? []) : [],
   };
 }
 
@@ -472,23 +501,24 @@ function toggleDialogFullscreen(): void {
  */
 async function openDialog(id?: string): Promise<void> {
   dialogState.fullscreen = false;
-  // 用户选项与弹窗并行加载
-  UserAPI.getOptions().then((data) => {
-    userOptions.value = data;
-  });
+  // 先取数回填再开弹窗，避免空表单闪现或在 id 回填前误走新增
+  const [users, form] = await Promise.all([
+    UserAPI.getOptions(),
+    id ? NoticeAPI.getFormData(id) : Promise.resolve(undefined),
+  ]);
+  userOptions.value = users;
 
-  dialogState.visible = true;
-  if (id) {
+  if (id && form) {
     dialogState.title = "修改公告";
-    const data = await NoticeAPI.getFormData(id);
     Object.assign(formData, {
-      ...data,
-      targetUsers: normalizeTargetUsers(data.targetUsers),
+      ...form,
+      targetUsers: normalizeTargetUsers(form.targetUsers),
     });
   } else {
     resetForm();
     dialogState.title = "新增公告";
   }
+  dialogState.visible = true;
 }
 
 /**
@@ -510,7 +540,7 @@ async function handleSubmit(): Promise<void> {
   );
   if (!valid) return;
 
-  loading.value = true;
+  submitting.value = true;
   try {
     const payload = buildSubmitPayload();
     const id = formData.id;
@@ -524,7 +554,7 @@ async function handleSubmit(): Promise<void> {
     closeDialog();
     handleResetQuery();
   } finally {
-    loading.value = false;
+    submitting.value = false;
   }
 }
 
@@ -534,6 +564,17 @@ async function handleSubmit(): Promise<void> {
  * @param id 通知 ID
  */
 async function handlePublish(id: string): Promise<void> {
+  try {
+    await ElMessageBox.confirm("确认发布该通知吗？发布后目标用户即可见。", "发布确认", {
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+      type: "warning",
+    });
+  } catch {
+    ElMessage.info("已取消发布");
+    return;
+  }
+
   await NoticeAPI.publish(id);
   ElMessage.success("发布成功");
   fetchData();
@@ -545,6 +586,17 @@ async function handlePublish(id: string): Promise<void> {
  * @param id 通知 ID
  */
 async function handleRevoke(id: string): Promise<void> {
+  try {
+    await ElMessageBox.confirm("确认撤回该通知吗？撤回后目标用户不可见。", "撤回确认", {
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+      type: "warning",
+    });
+  } catch {
+    ElMessage.info("已取消撤回");
+    return;
+  }
+
   await NoticeAPI.revoke(id);
   ElMessage.success("撤回成功");
   fetchData();

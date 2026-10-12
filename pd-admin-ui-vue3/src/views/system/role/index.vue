@@ -265,8 +265,8 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button type="primary" @click="handleSubmit">确定</el-button>
-          <el-button @click="closeDialog">取消</el-button>
+          <el-button type="primary" :loading="submitting" @click="handleSubmit">确定</el-button>
+          <el-button :disabled="submitting" @click="closeDialog">取消</el-button>
         </div>
       </template>
     </el-dialog>
@@ -709,6 +709,9 @@ async function handleSavePerm(): Promise<void> {
   }
 }
 
+// 弹窗提交中：禁用确定/取消，防止重复创建
+const submitting = ref(false);
+
 const dialogState = reactive({
   title: "",
   visible: false,
@@ -805,7 +808,7 @@ async function handleSubmit(): Promise<void> {
     submitData.deptIds = undefined;
   }
 
-  loading.value = true;
+  submitting.value = true;
   try {
     const roleId = formData.id;
     if (roleId) {
@@ -818,7 +821,7 @@ async function handleSubmit(): Promise<void> {
     closeDialog();
     fetchRoles(roleId);
   } finally {
-    loading.value = false;
+    submitting.value = false;
   }
 }
 
