@@ -35,25 +35,32 @@ const option = computed<EChartsOption>(() => ({
     formatter: "{b}：{c} 单（{d}%）",
   },
   legend: {
-    bottom: 2,
-    itemWidth: 12,
-    itemHeight: 12,
+    bottom: 4,
+    itemWidth: 13,
+    itemHeight: 13,
+    itemGap: 16,
     icon: "circle",
-    textStyle: { color: "#9fc7e8", fontSize: 13 },
+    textStyle: { color: "#cfe8ff", fontSize: 14 },
   },
   series: [
     {
       type: "pie",
-      radius: ["46%", "74%"],
-      center: ["50%", "46%"],
+      radius: ["38%", "50%"],
+      center: ["50%", "49%"],
       avoidLabelOverlap: true,
+      padAngle: 2,
+      itemStyle: {
+        borderColor: "rgba(5,12,30,0.65)",
+        borderWidth: 2,
+        borderRadius: 5,
+      },
       label: {
         show: true,
         position: "inside",
         formatter: "{d}%",
         color: "#04101f",
-        fontSize: 12,
-        fontWeight: 600,
+        fontSize: 14,
+        fontWeight: 700,
       },
       labelLine: { show: false },
       emphasis: {
@@ -79,7 +86,7 @@ const option = computed<EChartsOption>(() => ({
 
   &__center {
     position: absolute;
-    top: 46%;
+    top: 49%;
     left: 50%;
     transform: translate(-50%, -50%);
     text-align: center;
@@ -88,9 +95,9 @@ const option = computed<EChartsOption>(() => ({
 
   &__total {
     font-family: var(--bs-font-title);
-    font-size: 30px;
+    font-size: 32px;
     color: #fff;
-    text-shadow: 0 0 12px rgba(0, 234, 255, 0.5);
+    text-shadow: 0 0 14px rgba(0, 234, 255, 0.6);
   }
 
   &__hint {

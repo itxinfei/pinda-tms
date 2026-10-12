@@ -21,7 +21,7 @@
             <OrderTrendChart v-if="trend.length" :points="trend" />
             <div v-else class="bs-empty">暂无数据</div>
           </PanelFrame>
-          <PanelFrame title="订单状态构成" class="bs-panel--scan">
+          <PanelFrame title="订单状态构成" class="bs-panel--scan bs-col__pie-lg">
             <OrderStatusPie
               :pending="overview?.pendingCount ?? 0"
               :in-transit="overview?.inTransitCount ?? 0"
@@ -70,7 +70,7 @@
           <PanelFrame title="待处理订单">
             <TodoList :items="todoList" />
           </PanelFrame>
-          <PanelFrame title="车辆状态构成">
+          <PanelFrame title="车辆状态构成" class="bs-col__pie-lg">
             <TruckStatusPie
               :active="summary?.activeTruckCount ?? 0"
               :pending="summary?.pendingTruckCount ?? 0"
@@ -377,6 +377,12 @@ onBeforeUnmount(() => {
 
   > :nth-child(4) {
     flex: 1.3;
+    min-height: 0;
+  }
+
+  /* 两个饼图面板加高，使饼图绝对尺寸更大、文字更清晰 */
+  > .bs-col__pie-lg {
+    flex: 1.5;
     min-height: 0;
   }
 }

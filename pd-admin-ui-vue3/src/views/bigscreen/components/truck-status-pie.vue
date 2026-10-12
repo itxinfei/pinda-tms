@@ -32,23 +32,38 @@ const option = computed<EChartsOption>(() => ({
     formatter: "{b}：{c} 辆（{d}%）",
   },
   legend: {
-    bottom: 2,
-    itemWidth: 10,
-    itemHeight: 10,
+    bottom: 4,
+    itemWidth: 13,
+    itemHeight: 13,
+    itemGap: 16,
     icon: "circle",
-    textStyle: { color: "#9fc7e8", fontSize: 12 },
+    textStyle: { color: "#cfe8ff", fontSize: 14 },
   },
   series: [
     {
       type: "pie",
-      radius: ["52%", "70%"],
-      center: ["50%", "44%"],
+      radius: ["38%", "50%"],
+      center: ["50%", "49%"],
       avoidLabelOverlap: true,
-      label: { show: false },
+      padAngle: 2,
+      itemStyle: {
+        borderColor: "rgba(5,12,30,0.65)",
+        borderWidth: 2,
+        borderRadius: 5,
+      },
+      label: {
+        show: true,
+        position: "inside",
+        formatter: "{d}%",
+        color: "#04101f",
+        fontSize: 14,
+        fontWeight: 700,
+      },
+      labelLine: { show: false },
       emphasis: {
         scale: true,
         scaleSize: 6,
-        label: { show: false },
+        label: { show: true },
       },
       data: [
         { value: props.active, name: "在途", itemStyle: { color: "#00eaff" } },
@@ -68,7 +83,7 @@ const option = computed<EChartsOption>(() => ({
 
   &__center {
     position: absolute;
-    top: 44%;
+    top: 49%;
     left: 50%;
     transform: translate(-50%, -50%);
     text-align: center;

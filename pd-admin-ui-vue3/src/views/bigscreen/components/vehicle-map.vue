@@ -9,7 +9,7 @@
 // echarts/core 是模块单例：此处 registerMap 与全局 ECharts 组件共享同一份注册表，
 // 必须在组件模块求值阶段（早于子组件 mounted）完成注册。
 import * as echarts from "echarts/core";
-import { HeatmapChart } from "echarts/charts";
+import { HeatmapChart, ScatterChart } from "echarts/charts";
 import chinaGeoJSON from "../assets/chinaGeoJSON.json";
 import { computed } from "vue";
 import type { EChartsOption } from "echarts";
@@ -17,8 +17,8 @@ import ECharts from "@/components/ECharts/index.vue";
 import type { LocationRecordItem } from "@/api/trace";
 
 echarts.registerMap("china", chinaGeoJSON as never);
-// 热力图（在途车辆密度）需按需注册，复用 echarts/core 单例
-echarts.use(HeatmapChart);
+// 热力图（在途车辆密度）+ 网点散点需按需注册，复用 echarts/core 单例
+echarts.use([HeatmapChart, ScatterChart]);
 
 defineOptions({ name: "VehicleMap" });
 
