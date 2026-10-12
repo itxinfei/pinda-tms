@@ -895,7 +895,8 @@ public class MailingController {
         orderSearchDto.setPage(1);
         orderSearchDto.setPageSize(1);
         orderSearchDto.setKeyword(dto.getKeyword());
-        if (0 == dto.getMailType()) {
+        // mailType 缺省（如首页计数不传参）按 0=我寄的 处理，避免 Integer 为 null 拆箱 NPE
+        if (dto.getMailType() == null || dto.getMailType() == 0) {
             // 我寄的
             orderSearchDto.setMemberId(memberId);
         } else {
@@ -910,7 +911,8 @@ public class MailingController {
 
         PageResponse<OrderDTO> result = orderFeign.pageLikeForCustomer(orderSearchDto);
 
-        return Result.ok().put("count", result.getCounts());
+        long totalCount = (result != null && result.getCounts() != null) ? result.getCounts() : 0L;
+        return Result.ok().put("count", totalCount);
     }
 
     /**
@@ -930,7 +932,8 @@ public class MailingController {
         orderSearchDto.setPage(dto.getPage());
         orderSearchDto.setPageSize(dto.getPagesize());
         orderSearchDto.setKeyword(dto.getKeyword());
-        if (0 == dto.getMailType()) {
+        // mailType 缺省（如首页计数不传参）按 0=我寄的 处理，避免 Integer 为 null 拆箱 NPE
+        if (dto.getMailType() == null || dto.getMailType() == 0) {
             // 我寄的
             orderSearchDto.setMemberId(memberId);
         } else {
@@ -993,8 +996,8 @@ public class MailingController {
             return new Result().ok().put("data", PageResponse.<CustomerOrderDTO>builder()
                     .page(dto.getPage())
                     .pagesize(dto.getPagesize())
-                    .pages(result != null ? result.getPages() : 0L)
-                    .counts(result != null ? result.getCounts() : 0L)
+                    .pages(result != null && result.getPages() != null ? result.getPages() : 0L)
+                    .counts(result != null && result.getCounts() != null ? result.getCounts() : 0L)
                     .items(newItem)
                     .build());
         } else {

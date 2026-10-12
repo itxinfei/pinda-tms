@@ -49,7 +49,12 @@ public class PdCompletableFuture {
             } else if (station != null && station == Constant.UserStation.DRIVER.getStation()) {
                 stationId = StaticStation.DRIVER_ID;
             }
-            List<Long> ids = userSet.stream().map(Long::valueOf).collect(Collectors.toList());
+            // 仅保留可解析为用户 id 的值；历史脏数据（如 base_fleet.manager 误存姓名）跳过，
+            // 避免 NumberFormatException 导致整个分页接口 500，富化不到的关联项显示为空
+            List<Long> ids = userSet.stream()
+                    .filter(StringUtils::isNumeric)
+                    .map(Long::valueOf)
+                    .collect(Collectors.toList());
             List<UserDTO> userList = userFeign.list(ids, stationId, name, StringUtils.isNotEmpty(agencyId) ? Long.valueOf(agencyId) : null);
             if (userList == null) {
                 userList = new ArrayList<>();

@@ -489,8 +489,8 @@ public class TransforCenterBusinessController {
         FleetDto dto = fleetFeign.fineById(id);
         FleetVo vo = new FleetVo();
         BeanUtils.copyProperties(dto, vo);
-        //负责人信息
-        if (StringUtils.isNotEmpty(dto.getManager())) {
+        //负责人信息（manager 契约为用户 id；历史脏数据可能是姓名等非数字，跳过富化避免 500）
+        if (StringUtils.isNumeric(dto.getManager())) {
             // 远程调用直接返回 UserDTO，可能为 null，判空避免 NPE
             UserDTO manager = userFeign.get(Long.valueOf(dto.getManager()));
             if (manager != null) {

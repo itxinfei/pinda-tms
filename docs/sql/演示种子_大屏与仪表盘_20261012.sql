@@ -80,7 +80,8 @@ INSERT INTO `base_fleet`
   (`id`,`tenant_id`,`name`,`fleet_number`,`org_id`,`manager`,`status`,
    `create_by`,`create_time`,`update_by`,`update_time`,`deleted`)
 VALUES
-  (610,@tenant_id,'品达自营车队','FLEET01',100,'王建国',1,NULL,NOW(),NULL,NOW(),0);
+  -- manager 契约为 sys_user.id（非姓名）：610 挂 driver01(9101)
+  (610,@tenant_id,'品达自营车队','FLEET01',100,'9101',1,NULL,NOW(),NULL,NOW(),0);
 
 -- ---------------------------------------------------------------------
 -- 3. 线路（6 条干线）

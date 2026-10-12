@@ -217,13 +217,14 @@ DELETE FROM `base_fleet` WHERE tenant_id=@tenant_id AND id BETWEEN 611 AND 617;
 INSERT INTO `base_fleet`
 (`id`,`tenant_id`,`name`,`fleet_number`,`org_id`,`manager`,`status`,`create_by`,`create_time`,`update_time`,`deleted`)
 VALUES
-(611,@tenant_id,'北京自营车队','BJ-FLEET-02',201,'高志军',1,1000,NOW(),NOW(),0),
-(612,@tenant_id,'上海自营车队','SH-FLEET-03',202,'钱学礼',1,1000,NOW(),NOW(),0),
-(613,@tenant_id,'广州自营车队','GZ-FLEET-04',203,'黄启邦',1,1000,NOW(),NOW(),0),
-(614,@tenant_id,'成都自营车队','CD-FLEET-05',204,'唐建军',1,1000,NOW(),NOW(),0),
-(615,@tenant_id,'武汉自营车队','WH-FLEET-06',205,'罗承运',1,1000,NOW(),NOW(),0),
-(616,@tenant_id,'西安自营车队','XA-FLEET-07',206,'安保国',1,1000,NOW(),NOW(),0),
-(617,@tenant_id,'沈阳自营车队','SY-FLEET-08',207,'杨守义',1,1000,NOW(),NOW(),0);
+-- manager 契约为 sys_user.id（非姓名）：优先挂同机构司机用户，206/207 无员工挂 admin01/admin02
+(611,@tenant_id,'北京自营车队','BJ-FLEET-02',201,'9111',1,1000,NOW(),NOW(),0),
+(612,@tenant_id,'上海自营车队','SH-FLEET-03',202,'9113',1,1000,NOW(),NOW(),0),
+(613,@tenant_id,'广州自营车队','GZ-FLEET-04',203,'9115',1,1000,NOW(),NOW(),0),
+(614,@tenant_id,'成都自营车队','CD-FLEET-05',204,'9116',1,1000,NOW(),NOW(),0),
+(615,@tenant_id,'武汉自营车队','WH-FLEET-06',205,'9117',1,1000,NOW(),NOW(),0),
+(616,@tenant_id,'西安自营车队','XA-FLEET-07',206,'9001',1,1000,NOW(),NOW(),0),
+(617,@tenant_id,'沈阳自营车队','SY-FLEET-08',207,'9002',1,1000,NOW(),NOW(),0);
 
 -- 6.2 车辆类型（既有 601 中型厢式保留）
 DELETE FROM `base_truck_type` WHERE tenant_id=@tenant_id AND id BETWEEN 602 AND 604;

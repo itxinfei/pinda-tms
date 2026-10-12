@@ -84,8 +84,9 @@ public class AgencyController {
                 .items(newRecords)
                 .pagesize(pagesize)
                 .page(page)
-                .pages(pageResult != null ? pageResult.getPages() : 0L)
-                .counts(pageResult != null ? pageResult.getCounts() : 0L)
+                // 下游 PageResponse 的 pages/counts 本身可能为 null，三元表达式拆箱仍会 NPE，需双判空
+                .pages(pageResult != null && pageResult.getPages() != null ? pageResult.getPages() : 0L)
+                .counts(pageResult != null && pageResult.getCounts() != null ? pageResult.getCounts() : 0L)
                 .build());
     }
 
