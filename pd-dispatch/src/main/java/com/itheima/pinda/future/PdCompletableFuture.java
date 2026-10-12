@@ -1,5 +1,6 @@
 package com.itheima.pinda.future;
 
+import com.itheima.pinda.common.context.AsyncRequestHeaders;
 import com.itheima.pinda.DTO.AreaDTO;
 import com.itheima.pinda.DTO.OrderCargoDto;
 import com.itheima.pinda.DTO.OrgDTO;
@@ -35,7 +36,7 @@ public class PdCompletableFuture {
      * @return 执行结果
      */
     public static final CompletableFuture<Map<Long, OrgDTO>> agencyMapFuture(OrgFeign feign, Integer agencyType, Set<Long> ids, Long countyId) {
-        return CompletableFuture.supplyAsync(() -> {
+        return AsyncRequestHeaders.supplyAsync(() -> {
             log.info("agencyMapFuture : {} , {} , {}", agencyType, ids, countyId);
             List<Long> idList = new ArrayList<>(ids);
             if (!CollectionUtils.isEmpty(idList)) {
@@ -53,7 +54,7 @@ public class PdCompletableFuture {
     }
 
     public static CompletableFuture<Map<Long, OrgDTO>> businessHallMapFuture(OrgFeign feign, Set<Long> set) {
-        return CompletableFuture.supplyAsync(() -> {
+        return AsyncRequestHeaders.supplyAsync(() -> {
             List<Long> list = new ArrayList<>(set);
             List<OrgDTO> orgs = feign.listByCountyIds(OrgType.BUSINESS_HALL.getType(), list);
             if (orgs == null) {
@@ -64,7 +65,7 @@ public class PdCompletableFuture {
     }
 
     public static CompletableFuture<Map<String, String>> agencyScopeMapFuture(AgencyScopeFeign feign, Set<String> set) {
-        return CompletableFuture.supplyAsync(() -> {
+        return AsyncRequestHeaders.supplyAsync(() -> {
             List<String> list = set.stream().collect(Collectors.toList());
             List<AgencyScopeDto> agencyScopeDtos = feign.findAllAgencyScope(null, null, null, list);
             return agencyScopeDtos.stream().collect(Collectors.toMap(AgencyScopeDto::getAreaId, value -> value.getAgencyId()));
@@ -72,7 +73,7 @@ public class PdCompletableFuture {
     }
 
     public static CompletableFuture<Map<String, OrderCargoDto>> orderCargoMapFuture(CargoFeign feign, Set<String> set) {
-        return CompletableFuture.supplyAsync(() -> {
+        return AsyncRequestHeaders.supplyAsync(() -> {
             List<String> list = set.stream().collect(Collectors.toList());
             List<OrderCargoDto> orderCargoDtos = feign.list(list);
             return orderCargoDtos.stream().collect(Collectors.toMap(OrderCargoDto::getOrderId, value -> value));
@@ -80,7 +81,7 @@ public class PdCompletableFuture {
     }
 
     public static CompletableFuture<Map<String, TransportLineDto>> transportLineIdMapFuture(TransportLineFeign api, Set<String> transportLineIdSet) {
-        return CompletableFuture.supplyAsync(() -> {
+        return AsyncRequestHeaders.supplyAsync(() -> {
             List<String> list = transportLineIdSet.stream().collect(Collectors.toList());
             List<TransportLineDto> result = api.findAll(list, null, null);
             return result.stream().collect(Collectors.toMap(TransportLineDto::getId, item -> item));
@@ -88,7 +89,7 @@ public class PdCompletableFuture {
     }
 
     public static CompletableFuture<Map<String, TransportTripsDto>> tripsMapFuture(TransportTripsFeign api, Set<String> tripsIdSet) {
-        return CompletableFuture.supplyAsync(() -> {
+        return AsyncRequestHeaders.supplyAsync(() -> {
             List<String> list = tripsIdSet.stream().collect(Collectors.toList());
             List<TransportTripsDto> result = api.findAll(null, list);
             // 远程调用失败(fallback 返回 null)时返回空 Map，避免 NPE
@@ -100,7 +101,7 @@ public class PdCompletableFuture {
     }
 
     public static CompletableFuture<Map<String, TruckDto>> truckMapFuture(TruckFeign api, Set<String> truckIdSet) {
-        return CompletableFuture.supplyAsync(() -> {
+        return AsyncRequestHeaders.supplyAsync(() -> {
             List<String> list = truckIdSet.stream().collect(Collectors.toList());
             List<TruckDto> result = api.findAll(list, null);
             return result.stream().collect(Collectors.toMap(TruckDto::getId, item -> item));
@@ -108,7 +109,7 @@ public class PdCompletableFuture {
     }
 
     public static CompletableFuture<Map<Long, UserDTO>> driverMapFuture(UserFeign api, Set<Long> driverIdSet) {
-        return CompletableFuture.supplyAsync(() -> {
+        return AsyncRequestHeaders.supplyAsync(() -> {
             List<Long> list = new ArrayList<>(driverIdSet);
 
             List<UserDTO> result = api.list(list, null, null, null);
@@ -121,7 +122,7 @@ public class PdCompletableFuture {
 
     public static final CompletableFuture<Map<Long, AreaDTO>> areaMapFuture(AreaFeign api, Long parentId, Set<Long> areaSet) {
         List<AreaDTO> result = api.findAll(parentId, new ArrayList<>(areaSet));
-        return CompletableFuture.supplyAsync(() -> {
+        return AsyncRequestHeaders.supplyAsync(() -> {
                     if (result == null) {
                         return new HashMap<Long, AreaDTO>();
                     }

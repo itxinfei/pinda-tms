@@ -8,6 +8,7 @@ import com.itheima.pinda.DTO.transportline.TransportLineDto;
 import com.itheima.pinda.DTO.transportline.TransportLineTypeDto;
 import com.itheima.pinda.DTO.truck.TruckDto;
 import com.itheima.pinda.DTO.truck.TruckTypeDto;
+import com.itheima.pinda.common.context.AsyncRequestHeaders;
 import com.itheima.pinda.common.utils.Constant;
 import com.itheima.pinda.constant.StaticStation;
 import com.itheima.pinda.feign.OrgFeign;
@@ -40,7 +41,7 @@ public class PdCompletableFuture {
      * @return 执行结果
      */
     public static final CompletableFuture<Map> userMapFuture(UserFeign userFeign, Set<String> userSet, Integer station, String name, String agencyId) {
-        return CompletableFuture.supplyAsync(() -> {
+        return AsyncRequestHeaders.supplyAsync(() -> {
             //查询创建者信息列表
             Long stationId = null;
             if (station != null && station == Constant.UserStation.COURIER.getStation()) {
@@ -65,7 +66,7 @@ public class PdCompletableFuture {
      * @return 执行结果
      */
     public static final CompletableFuture<SysUserVo> userFuture(UserFeign userFeign, String id) {
-        return CompletableFuture.supplyAsync(() -> {
+        return AsyncRequestHeaders.supplyAsync(() -> {
             UserDTO user = userFeign.get(Long.valueOf(id));
             if (user == null) {
                 return new SysUserVo();
@@ -82,7 +83,7 @@ public class PdCompletableFuture {
      * @return 执行结果
      */
     public static final CompletableFuture<Map> agencyMapFuture(OrgFeign orgFeign, Set<Long> agencySet) {
-        return CompletableFuture.supplyAsync(() -> {
+        return AsyncRequestHeaders.supplyAsync(() -> {
             //查询所属机构信息列表
             List<OrgDTO> orgList = orgFeign.list(null, new ArrayList<>(agencySet), null, null, null);
             Map<String, AgencyVo> voMap = new HashMap<>();
@@ -108,7 +109,7 @@ public class PdCompletableFuture {
      * @return 执行结果
      */
     public static final CompletableFuture<Map> transportLineTypeMapFuture(TransportLineTypeFeign feign, Set<String> transportLineTypeSet) {
-        return CompletableFuture.supplyAsync(() -> {
+        return AsyncRequestHeaders.supplyAsync(() -> {
             List<TransportLineTypeDto> transportLineTypeDtoList = feign.findAll(new ArrayList<>(transportLineTypeSet));
             return transportLineTypeDtoList.stream().map(dto -> {
                 TransportLineTypeVo vo = new TransportLineTypeVo();
@@ -126,7 +127,7 @@ public class PdCompletableFuture {
      * @return 执行结果
      */
     public static final CompletableFuture<Map> transportLineMapFuture(TransportLineFeign feign, Set<String> transportLineSet, String agencyId, List<String> agencyIds) {
-        return CompletableFuture.supplyAsync(() -> {
+        return AsyncRequestHeaders.supplyAsync(() -> {
             List<TransportLineDto> transportLineDtoList = feign.findAll(new ArrayList<>(transportLineSet), agencyId, agencyIds);
             return transportLineDtoList.stream().map(dto -> {
                 TransportLineVo vo = new TransportLineVo();
@@ -144,7 +145,7 @@ public class PdCompletableFuture {
      * @return 执行结果
      */
     public static final CompletableFuture<Map> fleetMapFuture(FleetFeign feign, Set<String> fleetSet, String agencyId) {
-        return CompletableFuture.supplyAsync(() -> {
+        return AsyncRequestHeaders.supplyAsync(() -> {
             //查询所属机构信息列表
             List<FleetDto> fleetList = feign.findAll(new ArrayList<>(fleetSet), agencyId);
             return fleetList.stream().map(fleetDto -> {
@@ -163,7 +164,7 @@ public class PdCompletableFuture {
      * @return 执行结果
      */
     public static final CompletableFuture<Map> truckTypeMapFuture(TruckTypeFeign feign, Set<String> truckTypeSet) {
-        return CompletableFuture.supplyAsync(() -> {
+        return AsyncRequestHeaders.supplyAsync(() -> {
             List<TruckTypeDto> truckTypeDtoList = feign.findAll(new ArrayList<>(truckTypeSet));
             return truckTypeDtoList.stream().map(truckTypeDto -> {
                 TruckTypeVo vo = new TruckTypeVo();
@@ -181,7 +182,7 @@ public class PdCompletableFuture {
      * @return 执行结果
      */
     public static final CompletableFuture<Map> truckMapFuture(TruckFeign feign, Set<String> truckSet, String fleetId) {
-        return CompletableFuture.supplyAsync(() -> {
+        return AsyncRequestHeaders.supplyAsync(() -> {
             List<TruckDto> truckDtoList = feign.findAll(new ArrayList<>(truckSet), fleetId);
             return truckDtoList.stream().map(dto -> {
                 TruckVo vo = new TruckVo();
@@ -199,7 +200,7 @@ public class PdCompletableFuture {
      * @return 执行结果
      */
     public static final CompletableFuture<Map> goodsTypeMapFuture(GoodsTypeFeign feign, Set<String> goodsTypeSet) {
-        return CompletableFuture.supplyAsync(() -> {
+        return AsyncRequestHeaders.supplyAsync(() -> {
             List<GoodsTypeDto> goodsTypeDtoList = feign.findAll(new ArrayList<>(goodsTypeSet));
             return goodsTypeDtoList.stream().map(goodsTypeDto -> {
                 GoodsTypeVo vo = new GoodsTypeVo();
@@ -217,7 +218,7 @@ public class PdCompletableFuture {
      * @return 执行结果
      */
     public static final CompletableFuture<TruckTypeVo> truckTypeFuture(TruckTypeFeign feign, String id) {
-        return CompletableFuture.supplyAsync(() -> {
+        return AsyncRequestHeaders.supplyAsync(() -> {
             //查询车辆类型信息
             TruckTypeDto dto = feign.fineById(id);
             TruckTypeVo vo = new TruckTypeVo();
@@ -234,7 +235,7 @@ public class PdCompletableFuture {
      * @return 执行结果
      */
     public static final CompletableFuture<FleetVo> fleetFuture(FleetFeign feign, String id) {
-        return CompletableFuture.supplyAsync(() -> {
+        return AsyncRequestHeaders.supplyAsync(() -> {
             //查询车队信息
             FleetDto dto = feign.fineById(id);
             FleetVo vo = new FleetVo();
@@ -257,7 +258,7 @@ public class PdCompletableFuture {
      * @return 执行结果
      */
     public static final CompletableFuture<List<OrgDTO>> agencyListFuture(OrgFeign orgFeign, Integer agencyType, List<Long> ids, Long countyId) {
-        return CompletableFuture.supplyAsync(() -> {
+        return AsyncRequestHeaders.supplyAsync(() -> {
             List<OrgDTO> list = orgFeign.list(agencyType, ids, countyId, null, null);
             return list != null ? list : new ArrayList<>();
         });
@@ -271,7 +272,7 @@ public class PdCompletableFuture {
      * @return 执行结果
      */
     public static final CompletableFuture<List<TruckTypeDto>> truckTypeListFuture(TruckTypeFeign feign, List<String> ids) {
-        return CompletableFuture.supplyAsync(() -> feign.findAll(ids));
+        return AsyncRequestHeaders.supplyAsync(() -> feign.findAll(ids));
     }
 
     /**
@@ -282,7 +283,7 @@ public class PdCompletableFuture {
      * @return 执行结果
      */
     public static final CompletableFuture<List<GoodsTypeDto>> goodsTypeListFuture(GoodsTypeFeign feign, List<String> ids) {
-        return CompletableFuture.supplyAsync(() -> feign.findAll(ids));
+        return AsyncRequestHeaders.supplyAsync(() -> feign.findAll(ids));
     }
 
     /**
@@ -293,7 +294,7 @@ public class PdCompletableFuture {
      * @return 执行结果
      */
 //    public static final CompletableFuture<AgencyVo> agencyFuture(OrgFeign orgFeign, Long id) {
-//        return CompletableFuture.supplyAsync(() -> {
+//        return AsyncRequestHeaders.supplyAsync(() -> {
 //            UserDTO result = orgFeign.get(id);
 //            AgencySimpleVo agencyVo = new AgencySimpleVo();
 //            // 说明：数据处理逻辑待补全
@@ -309,7 +310,7 @@ public class PdCompletableFuture {
      * @return 执行结果
      */
     public static final CompletableFuture<TransportLineTypeVo> transportLineTypeFuture(TransportLineTypeFeign feign, String id) {
-        return CompletableFuture.supplyAsync(() -> {
+        return AsyncRequestHeaders.supplyAsync(() -> {
             TransportLineTypeDto dto = feign.fineById(id);
             TransportLineTypeVo vo = new TransportLineTypeVo();
             BeanUtils.copyProperties(dto, vo);
@@ -325,7 +326,7 @@ public class PdCompletableFuture {
      * @return 执行结果
      */
     public static final CompletableFuture<TransportLineVo> transportLineFuture(TransportLineFeign feign, String id) {
-        return CompletableFuture.supplyAsync(() -> {
+        return AsyncRequestHeaders.supplyAsync(() -> {
             TransportLineDto dto = feign.fineById(id);
             TransportLineVo vo = new TransportLineVo();
             BeanUtils.copyProperties(dto, vo);

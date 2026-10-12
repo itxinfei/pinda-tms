@@ -5,6 +5,7 @@ import com.itheima.pinda.DTO.OrgDTO;
 import com.itheima.pinda.DTO.TaskTransportDTO;
 import com.itheima.pinda.DTO.UserDTO;
 import com.itheima.pinda.DTO.transportline.TransportTripsDto;
+import com.itheima.pinda.common.context.AsyncRequestHeaders;
 import com.itheima.pinda.common.utils.Constant;
 import com.itheima.pinda.constant.StaticStation;
 import com.itheima.pinda.feign.TransportTaskFeign;
@@ -34,7 +35,7 @@ public class PdCompletableFuture {
      * @return 执行结果
      */
     public static final CompletableFuture<Map> userMapFuture(UserFeign feign, Set<Long> userSet, Integer station, String name, String agencyId) {
-        return CompletableFuture.supplyAsync(() -> {
+        return AsyncRequestHeaders.supplyAsync(() -> {
             //查询创建者信息列表
             Long stationId = null;
             if (station != null && station == Constant.UserStation.COURIER.getStation()) {
@@ -60,7 +61,7 @@ public class PdCompletableFuture {
      * @return 执行结果
      */
     public static final CompletableFuture<List<OrgDTO>> agencyListFuture(OrgFeign feign, Integer agencyType, Set<Long> ids, Long countyId) {
-        return CompletableFuture.supplyAsync(() -> {
+        return AsyncRequestHeaders.supplyAsync(() -> {
             List<OrgDTO> result = feign.list(agencyType, new ArrayList<>(ids), countyId, null, null);
             // 远程调用失败(fallback 返回 null)按空列表降级
             return Rx.list(result);
@@ -70,18 +71,18 @@ public class PdCompletableFuture {
     public static final CompletableFuture<Map> areaMapFuture(AreaFeign feign, Long parentId, Set<Long> areaSet) {
         List<AreaDTO> result = feign.findAll(parentId, new ArrayList<>(areaSet));
         // 远程调用结果可能为 null，统一通过 Rx 安全取值，避免 NPE
-        return CompletableFuture.supplyAsync(() -> Rx.list(result).stream().map(BeanUtil::parseArea2Vo).collect(Collectors.toMap(AreaSimpleVo::getId, vo -> vo)));
+        return AsyncRequestHeaders.supplyAsync(() -> Rx.list(result).stream().map(BeanUtil::parseArea2Vo).collect(Collectors.toMap(AreaSimpleVo::getId, vo -> vo)));
     }
 
     public static CompletableFuture<Map> tripMapFuture(TransportTripsFeign feign, Set<String> tripSet) {
-        return CompletableFuture.supplyAsync(() -> {
+        return AsyncRequestHeaders.supplyAsync(() -> {
             List<TransportTripsDto> transportTripsDtoList = feign.findAll(null, new ArrayList<>(tripSet));
             return Rx.list(transportTripsDtoList).stream().collect(Collectors.toMap(TransportTripsDto::getId, TransportTripsDto::getName));
         });
     }
 
     public static CompletableFuture<Map<Long, TaskTransportDTO>> taskTramsportMapFuture(TransportTaskFeign feign, Set<Long> taskTransportSet) {
-        return CompletableFuture.supplyAsync(() -> {
+        return AsyncRequestHeaders.supplyAsync(() -> {
             List<TaskTransportDTO> taskTransportDTOList = new ArrayList<>();
             for (Long s : taskTransportSet) {
                 TaskTransportDTO taskTransportDto = feign.findById(s);

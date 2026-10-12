@@ -11,6 +11,7 @@ import com.itheima.pinda.feign.CargoFeign;
 import com.itheima.pinda.feign.OrgFeign;
 import com.itheima.pinda.feign.PickupDispatchTaskFeign;
 import com.itheima.pinda.feign.TransportOrderFeign;
+import com.itheima.pinda.common.context.AsyncRequestHeaders;
 import com.itheima.pinda.util.Rx;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.CollectionUtils;
@@ -26,7 +27,7 @@ public class PdCompletableFuture {
     public static final CompletableFuture<Map<Long, AreaDTO>> areaMapFuture(AreaFeign api, Long parentId, Set<Long> areaSet) {
         // Feign 直接返回裸 List（无 R 包装），远程失败可能为 null，统一通过 Rx 安全取值
         List<AreaDTO> result = api.findAll(parentId, new ArrayList<>(areaSet));
-        return CompletableFuture.supplyAsync(() ->
+        return AsyncRequestHeaders.supplyAsync(() ->
                 Rx.list(result).stream().collect(Collectors.toMap(AreaDTO::getId, vo -> vo)));
     }
 
@@ -39,7 +40,7 @@ public class PdCompletableFuture {
      * @return 执行结果
      */
     public static final CompletableFuture<Map<Long, OrgDTO>> agencyMapFuture(OrgFeign api, Integer agencyType, Set<String> ids, Long countyId) {
-        return CompletableFuture.supplyAsync(() -> {
+        return AsyncRequestHeaders.supplyAsync(() -> {
             List<OrgDTO> result = api.list(agencyType, ids.stream().mapToLong(Long::valueOf).boxed().collect(Collectors.toList()), countyId, null, null);
             // 远程调用成功但结果可能为 null，增加判空避免 NPE
             if (result != null) {
@@ -57,7 +58,7 @@ public class PdCompletableFuture {
      * @return
      */
     public static CompletableFuture<Map<String, OrderCargoDto>> cargoMapFuture(CargoFeign api, Set<String> cargoSet) {
-        return CompletableFuture.supplyAsync(() -> {
+        return AsyncRequestHeaders.supplyAsync(() -> {
             if (CollectionUtils.isEmpty(cargoSet)) {
                 return new HashMap<>();
             }
@@ -77,7 +78,7 @@ public class PdCompletableFuture {
      * @return
      */
     public static CompletableFuture<Map<String, TaskPickupDispatchDTO>> taskTranSportMapFuture(PickupDispatchTaskFeign api, Set<String> taskPickupDispatchSet, Integer taskType) {
-        return CompletableFuture.supplyAsync(() -> {
+        return AsyncRequestHeaders.supplyAsync(() -> {
             TaskPickupDispatchDTO queryDTO = new TaskPickupDispatchDTO();
             queryDTO.setTaskType(taskType);
             // TaskPickupDispatchDTO.orderIds 已 Long 化（订单 ID），调用边界转换
@@ -97,7 +98,7 @@ public class PdCompletableFuture {
     }
 
     public static CompletableFuture<Map<String, TransportOrderDTO>> transportOrderMapFuture(TransportOrderFeign api, Set<String> taskPickupDispatchSet) {
-        return CompletableFuture.supplyAsync(() -> {
+        return AsyncRequestHeaders.supplyAsync(() -> {
             if (CollectionUtils.isEmpty(taskPickupDispatchSet)) {
                 return new HashMap<>();
             }
