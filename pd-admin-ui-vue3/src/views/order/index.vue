@@ -270,6 +270,17 @@ import {
   OrderPickupType,
   ORDER_PICKUP_TYPE_LABELS,
 } from "@/enums";
+import { formatNumber, formatAmount } from "@/utils/format";
+
+/** 查询筛选项：订单类型 / 付款方式（文案与表格标签共用枚举出口，禁止另写） */
+const ORDER_TYPE_OPTIONS = [
+  { value: OrderType.INCITY, label: ORDER_TYPE_LABELS[OrderType.INCITY] },
+  { value: OrderType.OUTCITY, label: ORDER_TYPE_LABELS[OrderType.OUTCITY] },
+];
+const PAYMENT_METHOD_OPTIONS = [
+  { value: OrderPaymentMethod.PRE_PAY, label: ORDER_PAYMENT_METHOD_LABELS[OrderPaymentMethod.PRE_PAY] },
+  { value: OrderPaymentMethod.END_PAY, label: ORDER_PAYMENT_METHOD_LABELS[OrderPaymentMethod.END_PAY] },
+];
 
 /** 订单状态选项（搜索下拉 + 标签） */
 const ORDER_STATUS_OPTIONS: { value: OrderStatus; label: string; type: TagType }[] = [
@@ -355,6 +366,12 @@ function handleSearch() {
   loadList();
 }
 
+/** 切换每页条数后必须回第 1 页，否则高页码会请求空页 */
+function handleSizeChange() {
+  query.value.page = 1;
+  loadList();
+}
+
 function handleReset() {
   query.value = { page: 1, pageSize: 10 };
   loadList();
@@ -393,23 +410,30 @@ async function handleCancel(row: OrderRecord) {
     return;
   }
 
-  // 后端校验失败（状态不合法/重复取消等）由请求拦截器统一弹错，不额外处理
-  const res = await OrderAPI.cancel(row.id, reason);
-  loadList();
-  // 若详情抽屉正展示该单，同步刷新取消时间/原因
-  if (detailVisible.value && detail.value?.id === row.id) {
-    openDetail(row);
-  }
+  // 行级防重复提交；后端校验失败（状态不合法/重复取消等）由请求拦截器统一弹错
+  cancellingId.value = row.id;
+  try {
+    const res = await OrderAPI.cancel(row.id, reason);
+    loadList();
+    // 若详情抽屉正展示该单，同步刷新取消时间/原因
+    if (detailVisible.value && detail.value?.id === row.id) {
+      openDetail(row);
+    }
 
-  const warnings = res?.warnings ?? [];
-  if (warnings.length > 0) {
-    ElMessageBox.alert(warnings.map((item) => `· ${item}`).join("\n"), "订单已取消，以下事项需人工处理", {
-      type: "warning",
-      confirmButtonText: "知道了",
-      customStyle: { whiteSpace: "pre-line" },
-    });
-  } else {
-    ElMessage.success("订单已取消");
+    const warnings = res?.warnings ?? [];
+    if (warnings.length > 0) {
+      ElMessageBox.alert(warnings.map((item) => `· ${item}`).join("\n"), "订单已取消，以下事项需人工处理", {
+        type: "warning",
+        confirmButtonText: "知道了",
+        customStyle: { whiteSpace: "pre-line" },
+      });
+    } else {
+      ElMessage.success("订单已取消");
+    }
+  } catch {
+    // 失败已由拦截器统一提示，不刷新列表（按钮 loading 由 finally 解除）
+  } finally {
+    cancellingId.value = undefined;
   }
 }
 
