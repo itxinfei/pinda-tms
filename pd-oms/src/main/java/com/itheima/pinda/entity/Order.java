@@ -1,6 +1,7 @@
 package com.itheima.pinda.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -173,4 +174,12 @@ public class Order implements Serializable {
      */
     @TableLogic
     private Integer deleted;
+
+    /** 下单时间范围起点（仅分页查询条件，非表字段） */
+    @TableField(exist = false)
+    private LocalDateTime startTime;
+
+    /** 下单时间范围终点（仅分页查询条件，非表字段） */
+    @TableField(exist = false)
+    private LocalDateTime endTime;
 }

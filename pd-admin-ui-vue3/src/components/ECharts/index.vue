@@ -53,12 +53,14 @@ echarts.use([
 
 /**
  * ECharts 图表容器：按配置渲染并自适应尺寸
+ * 事件：click（图表点击，params 为 ECharts 点击参数）
  */
 const props = defineProps<{
   options: echarts.EChartsCoreOption;
   width?: string;
   height?: string;
 }>();
+const emit = defineEmits<{ click: [params: unknown] }>();
 
 const chartRef = ref<HTMLDivElement | null>(null);
 let chartInstance: echarts.ECharts | null = null;
@@ -72,6 +74,7 @@ const initChart = () => {
     if (props.options) {
       chartInstance.setOption(props.options);
     }
+    chartInstance.on("click", (params) => emit("click", params));
   }
 };
 

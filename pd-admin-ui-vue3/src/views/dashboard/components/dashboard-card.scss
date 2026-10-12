@@ -1,0 +1,438 @@
+// 仪表盘公共样式（非 scoped，由 index.vue 及各展示组件共享）
+// 布局/卡片/列表/图表容器全部类名在此统一定义，避免组件拆分后样式漂移。
+$gap: 10px;
+$pad: 8px;
+
+%card {
+  overflow: hidden;
+  background: var(--el-bg-color-overlay);
+  border: 1px solid var(--card-border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+}
+
+.dash {
+  display: flex;
+  flex-direction: column;
+  gap: $gap;
+  padding: $pad;
+  background: var(--page-bg);
+}
+
+// 卡片内紧凑错误态：去掉大图标与大留白，只留文案 + 重试
+.dash-result {
+  padding: 4px 0;
+
+  :deep(.el-result__icon) {
+    display: none;
+  }
+
+  :deep(.el-result__title p) {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  :deep(.el-result__subtitle) {
+    padding-top: 2px;
+  }
+
+  :deep(.el-result__extra) {
+    padding-top: 8px;
+  }
+}
+
+// Stat cards
+.dash-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $gap;
+
+  &__skeleton {
+    grid-column: 1 / -1;
+    padding: 14px 4px;
+  }
+}
+
+.stat-card {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-height: 76px;
+  padding: 12px 16px;
+  cursor: pointer;
+  @extend %card;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    border-color: color-mix(in srgb, var(--el-color-primary) 35%, var(--card-border));
+  }
+
+  &__body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  &__top {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__bottom {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+
+  &__label {
+    font-size: 13px;
+    color: var(--el-text-color-secondary);
+    white-space: nowrap;
+  }
+
+  &__num {
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__spark {
+    width: 96px;
+    height: 24px;
+    flex-shrink: 0;
+  }
+
+  &__badge {
+    flex-shrink: 0;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 999px;
+    background: var(--el-fill-color-light);
+    color: var(--el-text-color-secondary);
+
+    &--on {
+      background: color-mix(in srgb, var(--el-color-success) 10%, #fff);
+      color: var(--el-color-success);
+    }
+
+    &--danger {
+      background: color-mix(in srgb, var(--el-color-danger) 10%, #fff);
+      color: var(--el-color-danger);
+    }
+  }
+
+  &__icon {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+
+    &--order {
+      color: var(--el-color-white);
+      background: linear-gradient(135deg, var(--el-color-primary), var(--el-color-primary-light-3));
+      box-shadow: 0 6px 14px color-mix(in srgb, var(--el-color-primary) 30%, transparent);
+    }
+    &--truck {
+      color: var(--el-color-white);
+      background: linear-gradient(135deg, var(--el-color-success), var(--el-color-success-light-3));
+      box-shadow: 0 6px 14px color-mix(in srgb, var(--el-color-success) 30%, transparent);
+    }
+    &--alert {
+      color: var(--el-color-white);
+      background: linear-gradient(135deg, var(--el-color-danger), var(--el-color-danger-light-3));
+      box-shadow: 0 6px 14px color-mix(in srgb, var(--el-color-danger) 30%, transparent);
+    }
+    &--rate {
+      color: var(--el-color-white);
+      background: linear-gradient(135deg, var(--el-color-warning), var(--el-color-warning-light-3));
+      box-shadow: 0 6px 14px color-mix(in srgb, var(--el-color-warning) 30%, transparent);
+    }
+  }
+}
+
+// Generic card
+.card {
+  display: flex;
+  flex-direction: column;
+  @extend %card;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 42px;
+    padding: 9px 16px;
+    border-bottom: 1px solid var(--card-border);
+  }
+
+  // 可点击卡片：hover 主题色描边 + 轻微上浮，提示可下钻
+  &--link {
+    cursor: pointer;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+
+    &:hover {
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+      transform: translateY(-1px);
+      border-color: color-mix(in srgb, var(--el-color-primary) 35%, var(--card-border));
+    }
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+  }
+
+  &__head-right {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  &__body {
+    padding: 12px 16px 14px;
+
+    &--chart {
+      padding: 10px 16px 12px;
+    }
+
+    &--scroll {
+      flex: 1;
+      padding: 0;
+      overflow-y: auto;
+    }
+  }
+}
+
+// Chart & bottom grids
+.dash-chart {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(300px, 1.15fr);
+  gap: $gap;
+
+  // 第二行（三桶 + 排行）等宽，避免进度条被拉得过宽
+  &--half {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  &__skeleton {
+    padding: 6px 2px;
+  }
+}
+
+.dash-list__skeleton {
+  padding: 4px 2px;
+}
+
+.overview-card {
+  display: flex;
+  flex-direction: column;
+  height: 190px;
+}
+
+.overview-bars {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: space-evenly;
+
+  &__item {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  &__meta {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__label,
+  &__value {
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+  }
+
+  &__value {
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__label {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  &__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+
+  &__track {
+    height: 6px;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--el-color-primary) 10%, var(--el-fill-color-light));
+    border-radius: 999px;
+  }
+
+  &__bar {
+    display: block;
+    width: var(--overview-percent);
+    height: 100%;
+    border-radius: inherit;
+    transition: width 0.4s ease;
+  }
+}
+
+.dash-bottom {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $gap;
+}
+
+// Todo rows
+.todo-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 0;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: color-mix(in srgb, var(--el-color-primary) 5%, transparent);
+  }
+
+  & + & {
+    border-top: 1px solid var(--el-border-color-lighter);
+  }
+
+  &__icon--pending {
+    flex-shrink: 0;
+    color: var(--el-color-warning);
+  }
+
+  &__title {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 13px;
+    color: var(--el-text-color-regular);
+    white-space: nowrap;
+  }
+
+  &__tag {
+    flex-shrink: 0;
+  }
+
+  &__wait {
+    flex-shrink: 0;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    color: var(--el-text-color-secondary);
+
+    &.is-over {
+      font-weight: 600;
+      color: var(--el-color-danger);
+    }
+  }
+}
+
+// Alert feed
+.feed {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 18px 12px;
+
+  &__item {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 7px 0;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.2s ease;
+
+    &:hover {
+      background: color-mix(in srgb, var(--el-color-primary) 5%, transparent);
+    }
+
+    & + & {
+      border-top: 1px solid var(--el-border-color-lighter);
+    }
+  }
+
+  &__tag {
+    flex-shrink: 0;
+  }
+
+  &__text {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--el-text-color-regular);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__time {
+    flex-shrink: 0;
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+    font-variant-numeric: tabular-nums;
+
+    &.is-over {
+      font-weight: 600;
+      color: var(--el-color-danger);
+    }
+  }
+}
+
+// Responsive
+@media (max-width: 1200px) {
+  .dash-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 992px) {
+  .dash-chart {
+    grid-template-columns: 1fr;
+  }
+
+  .dash-bottom {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .dash {
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .dash-stats {
+    grid-template-columns: 1fr;
+  }
+}

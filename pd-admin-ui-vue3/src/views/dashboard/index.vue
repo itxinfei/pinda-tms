@@ -1,213 +1,73 @@
 <template>
   <div class="dash">
-    <!-- 工具条：手动刷新全部区块 + 最后成功刷新时间 -->
-    <div class="dash-toolbar">
-      <span class="dash-toolbar__hint">数据来自后端实时聚合接口</span>
-      <div class="dash-toolbar__right">
-        <span v-if="lastRefreshTime" class="dash-toolbar__time">最后更新 {{ lastRefreshTime }}</span>
-        <el-button size="small" :icon="Refresh" :loading="anyLoading" @click="refreshAll">刷新</el-button>
-      </div>
-    </div>
-
     <!-- 4 个核心 KPI（数字均来自后端聚合接口，无环比数据源故不展示假箭头） -->
-    <section v-loading="overviewLoading" class="dash-stats">
-      <el-result
-        v-if="overviewError"
-        icon="error"
-        title="总览数据加载失败"
-        class="dash-result"
-      >
-        <template #extra>
-          <el-button size="small" type="primary" @click="loadOverview">重试</el-button>
-        </template>
-      </el-result>
-      <template v-else>
-        <div v-for="card in statCards" :key="card.label" class="stat-card">
-          <div class="stat-card__icon" :class="`stat-card__icon--${card.tone}`">
-            <el-icon :size="18"><component :is="card.icon" /></el-icon>
-          </div>
-          <div class="stat-card__body">
-            <span class="stat-card__label">{{ card.label }}</span>
-            <span class="stat-card__num">{{ card.value }}</span>
-          </div>
-          <span class="stat-card__badge" :class="card.badgeClass">{{ card.badge }}</span>
-        </div>
-      </template>
-    </section>
+    <StatCards
+      :cards="statCards"
+      :loading="overviewLoading"
+      :error="overviewError"
+      @retry="loadOverview"
+    />
 
     <!-- 图表区 -->
     <section class="dash-chart">
-      <div class="card dash-chart__trend">
-        <div class="card__head">
-          <h3 class="card__title">订单量趋势</h3>
-          <el-radio-group v-model="trendDateRange" size="small">
-            <el-radio-button :value="7">近7天</el-radio-button>
-            <el-radio-button :value="30">近30天</el-radio-button>
-          </el-radio-group>
-        </div>
-        <div v-loading="trendLoading" class="card__body card__body--chart">
-          <el-result v-if="trendError" icon="error" title="趋势数据加载失败" class="dash-result">
-            <template #extra>
-              <el-button size="small" type="primary" @click="loadTrend">重试</el-button>
-            </template>
-          </el-result>
-          <el-empty v-else-if="trendEmpty" description="所选时段暂无订单数据" :image-size="64" />
-          <ECharts v-else :options="trendChartOptions" height="248px" />
-        </div>
-      </div>
+      <ChartTrend
+        :options="trendChartOptions"
+        :loading="trendLoading"
+        :error="trendError"
+        :empty="trendEmpty"
+        :date-range="trendDateRange"
+        @retry="loadTrend"
+        @view-all="goOrders"
+        @update:dateRange="trendDateRange = $event"
+        @click-date="onTrendClick"
+      />
 
-      <div class="dash-chart__side">
-        <div class="card">
-          <div class="card__head">
-            <h3 class="card__title">订单状态概览</h3>
-            <el-tag type="primary" size="small" effect="plain">
-              待处理 {{ overviewError ? "--" : formatNumber(overview.pendingCount) }}
-            </el-tag>
-          </div>
-          <div v-loading="overviewLoading" class="card__body overview-card">
-            <el-result v-if="overviewError" icon="error" title="总览数据加载失败" class="dash-result">
-              <template #extra>
-                <el-button size="small" type="primary" @click="loadOverview">重试</el-button>
-              </template>
-            </el-result>
-            <template v-else>
-              <div class="overview-summary">
-                <div class="overview-summary__item">
-                  <span class="overview-summary__label">待处理</span>
-                  <strong class="overview-summary__value">{{ formatNumber(overview.pendingCount) }}</strong>
-                </div>
-                <div class="overview-summary__item">
-                  <span class="overview-summary__label">运输中</span>
-                  <strong class="overview-summary__value">{{ formatNumber(overview.inTransitCount) }}</strong>
-                </div>
-                <div class="overview-summary__item">
-                  <span class="overview-summary__label">已签收</span>
-                  <strong class="overview-summary__value">{{ formatNumber(overview.completedCount) }}</strong>
-                </div>
-              </div>
-              <div class="overview-bars">
-                <div
-                  v-for="item in statusBars"
-                  :key="item.label"
-                  class="overview-bars__item"
-                  :style="{ '--overview-percent': `${item.percent}%` }"
-                >
-                  <div class="overview-bars__meta">
-                    <span class="overview-bars__label">
-                      <span class="overview-bars__dot" />
-                      {{ item.label }}
-                    </span>
-                    <span class="overview-bars__value">{{ formatNumber(item.value) }} 单</span>
-                  </div>
-                  <span class="overview-bars__track">
-                    <span class="overview-bars__bar" />
-                  </span>
-                </div>
-              </div>
-            </template>
-          </div>
-        </div>
+      <ChartTaskPie
+        :options="taskPieOptions"
+        :loading="overviewLoading"
+        :error="overviewError"
+        :empty="taskPieEmpty"
+        :head-tag="`今日新增 ${overviewError ? '--' : formatNumber(overview.todayTaskCount)}`"
+        @retry="loadOverview"
+        @click="goTrucks"
+      />
+    </section>
 
-        <div class="card">
-          <div class="card__head">
-            <h3 class="card__title">运输任务状态</h3>
-            <el-tag size="small" effect="plain">
-              今日新增 {{ overviewError ? "--" : formatNumber(overview.todayTaskCount) }}
-            </el-tag>
-          </div>
-          <div v-loading="overviewLoading" class="card__body task-card">
-            <el-result v-if="overviewError" icon="error" title="总览数据加载失败" class="dash-result">
-              <template #extra>
-                <el-button size="small" type="primary" @click="loadOverview">重试</el-button>
-              </template>
-            </el-result>
-            <el-empty v-else-if="taskPieEmpty" description="暂无任务状态数据" :image-size="56" />
-            <ECharts v-else :options="taskPieOptions" height="172px" />
-          </div>
-        </div>
-      </div>
+    <!-- 次图区：三桶占比 + 线路运量 Top5（等宽均衡） -->
+    <section class="dash-chart dash-chart--half">
+      <ChartOverview
+        :bars="statusBars"
+        :loading="overviewLoading"
+        :error="overviewError"
+        :head-tag="`待处理 ${overviewError ? '--' : formatNumber(overview.pendingCount)}`"
+        @retry="loadOverview"
+        @click="goOrders"
+      />
+
+      <ChartRank
+        :options="lineRankOptions"
+        :loading="lineVolumeLoading"
+        :error="lineVolumeError"
+        :empty="lineVolumeEmpty"
+        @retry="loadLineVolumes"
+        @click="goLines"
+      />
     </section>
 
     <!-- 底部：待办 + 告警（均为后端真实数据） -->
-    <section class="dash-bottom">
-      <div class="card">
-        <div class="card__head">
-          <h3 class="card__title">待处理订单</h3>
-          <div class="card__head-right">
-            <el-button link type="primary" size="small" @click="goOrders">查看更多</el-button>
-            <el-tag size="small">{{ todoList.length }} 单</el-tag>
-          </div>
-        </div>
-        <div v-loading="todoLoading" class="card__body">
-          <el-result v-if="todoError" icon="error" title="待办加载失败" class="dash-result">
-            <template #extra>
-              <el-button size="small" type="primary" @click="loadTodo">重试</el-button>
-            </template>
-          </el-result>
-          <el-empty v-else-if="todoList.length === 0" :image-size="56" description="暂无待处理订单" />
-          <div
-            v-for="item in todoList"
-            :key="item.id"
-            class="todo-row"
-          >
-            <el-icon :size="16" class="todo-row__icon--pending">
-              <Clock />
-            </el-icon>
-            <el-tooltip
-              :content="`${item.orderNo}${item.senderName ? ` - ${item.senderName}` : ''}`"
-              placement="top"
-              :show-after="300"
-            >
-              <span class="todo-row__title">
-                {{ item.orderNo }}<template v-if="item.senderName"> - {{ item.senderName }}</template>
-              </span>
-            </el-tooltip>
-            <el-tag type="warning" size="small" effect="plain" class="todo-row__tag">
-              {{ item.statusText || "待处理" }}
-            </el-tag>
-            <span class="todo-row__time">{{ formatShortTime(item.createTime) }}</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card__head">
-          <h3 class="card__title">最新告警</h3>
-          <div class="card__head-right">
-            <el-button link type="primary" size="small" @click="goAlarms">查看更多</el-button>
-            <el-tag type="danger" size="small">{{ alarmError ? "--" : formatNumber(alertCount) }} 条未处理</el-tag>
-          </div>
-        </div>
-        <div v-loading="alarmLoading" class="card__body card__body--scroll">
-          <div class="feed">
-            <el-result v-if="alarmError" icon="error" title="告警加载失败" class="dash-result">
-              <template #extra>
-                <el-button size="small" type="primary" @click="loadAlarms">重试</el-button>
-              </template>
-            </el-result>
-            <el-empty v-else-if="alertList.length === 0" :image-size="56" description="暂无未处理告警" />
-            <div v-for="item in alertList" :key="item.id" class="feed__item">
-              <el-tag
-                size="small"
-                :type="alarmTagType(item.alarmType)"
-                effect="light"
-                class="feed__tag"
-              >
-                {{ alarmTypeText(item.alarmType) }}
-              </el-tag>
-              <el-tooltip
-                :content="item.alarmContent || '运输过程异常，请及时关注'"
-                placement="top"
-                :show-after="300"
-              >
-                <span class="feed__text">{{ item.alarmContent || "运输过程异常，请及时关注" }}</span>
-              </el-tooltip>
-              <span class="feed__time">{{ formatShortTime(item.alarmTime || item.createTime) }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+    <BottomLists
+      :todo-list="todoList"
+      :todo-loading="todoLoading"
+      :todo-error="todoError"
+      :alert-list="alertList"
+      :alarm-loading="alarmLoading"
+      :alarm-error="alarmError"
+      :alert-count-text="alarmError ? '--' : `${formatNumber(alertCount)} 条未处理`"
+      @go-orders="goOrders"
+      @go-alarms="goAlarms"
+      @retry-todo="loadTodo"
+      @retry-alarm="loadAlarms"
+    />
   </div>
 </template>
 
@@ -217,32 +77,24 @@ defineOptions({ name: "Dashboard", inheritAttrs: false });
 import { ref, reactive, computed, watch, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import type { EChartsOption } from "echarts";
-import {
-  Document,
-  Van,
-  Warning,
-  CircleCheck,
-  Clock,
-  Refresh,
-} from "@element-plus/icons-vue";
+import { Document, Van, Warning, CircleCheck } from "@element-plus/icons-vue";
 import DashboardAPI, {
   type DashboardOverview,
   type NameValue,
   type OrderTrendPoint,
   type PendingOrder,
 } from "@/api/dashboard";
-import AlarmAPI, {
-  AlarmHandleStatus,
-  AlarmTypeKey,
-  alarmTypeKeyOf,
-  alarmTypeText,
-  type AlarmRecord,
-} from "@/api/alarm";
+import AlarmAPI, { AlarmHandleStatus, type AlarmRecord } from "@/api/alarm";
 import { formatNumber } from "@/utils/format";
+import { ElMessage } from "element-plus";
+import StatCards, { type StatCardItem } from "./components/stat-cards.vue";
+import ChartTrend from "./components/chart-trend.vue";
+import ChartTaskPie from "./components/chart-task-pie.vue";
+import ChartOverview, { type OverviewBar } from "./components/chart-overview.vue";
+import ChartRank from "./components/chart-rank.vue";
+import BottomLists from "./components/bottom-lists.vue";
 
 const router = useRouter();
-
-// 问候语已上移至全局顶栏 LayoutToolbar
 
 // ---- 总览 KPI + 订单三桶（pd-oms 订单统计 + pd-work 任务/车辆聚合） ----
 const overviewLoading = ref(false);
@@ -260,7 +112,8 @@ const overview = reactive<DashboardOverview>({
 });
 
 // 4 张 KPI 卡（第 4 张由原"准时率（无数据源）"替换为真实"今日签收"）；接口失败显 "--"
-const statCards = computed(() => [
+// 每张卡可点击直达对应业务页（action 为路由跳转）；spark 为近 7 日迷你趋势（无数据源卡不显示）
+const statCards = computed<StatCardItem[]>(() => [
   {
     label: "今日新增订单",
     value: overviewError.value ? "--" : formatNumber(overview.todayOrderCount),
@@ -268,6 +121,8 @@ const statCards = computed(() => [
     tone: "order",
     badge: "今日",
     badgeClass: "",
+    action: goOrders,
+    spark: trendPoints.value.map((p) => Number(p.orderCount) || 0),
   },
   {
     label: "在途车辆",
@@ -276,6 +131,8 @@ const statCards = computed(() => [
     tone: "truck",
     badge: "实时",
     badgeClass: "stat-card__badge--on",
+    action: goTrucks,
+    spark: null,
   },
   {
     label: "异常告警",
@@ -284,6 +141,8 @@ const statCards = computed(() => [
     tone: "alert",
     badge: "未处理",
     badgeClass: "stat-card__badge--danger",
+    action: goAlarms,
+    spark: null,
   },
   {
     label: "今日签收",
@@ -292,6 +151,8 @@ const statCards = computed(() => [
     tone: "rate",
     badge: "今日",
     badgeClass: "stat-card__badge--on",
+    action: goOrders,
+    spark: trendPoints.value.map((p) => Number(p.completedCount) || 0),
   },
 ]);
 
@@ -306,23 +167,130 @@ const todoLoading = ref(false);
 const todoError = ref(false);
 const todoList = ref<PendingOrder[]>([]);
 
-// 任一区块在加载，刷新按钮即转圈（首次加载四个并发，完成前按钮保持 loading）
-const anyLoading = computed(
-  () => overviewLoading.value || trendLoading.value || todoLoading.value || alarmLoading.value,
-);
-
-// 三桶进度条（占比按三桶总量，拒收/取消不计入）
-const statusBars = computed(() => {
+// 三桶进度条（占比按三桶总量，拒收/取消不计入；各桶固定色 + 渐变）
+const statusBars = computed<OverviewBar[]>(() => {
   const p = overview.pendingCount;
   const t = overview.inTransitCount;
   const c = overview.completedCount;
   const total = p + t + c;
   const pct = (v: number) => (total > 0 ? Math.round((v / total) * 100) : 0);
   return [
-    { label: "待处理", value: p, percent: pct(p) },
-    { label: "运输中", value: t, percent: pct(t) },
-    { label: "已签收", value: c, percent: pct(c) },
+    {
+      label: "待处理",
+      valueText: `${formatNumber(p)} 单 · ${pct(p)}%`,
+      percent: pct(p),
+      color: getCssVar("--el-color-primary", "#165dff"),
+      gradient: `linear-gradient(90deg, ${getCssVar("--el-color-primary", "#165dff")}, ${getCssVar("--el-color-primary-light-5", "#6ea1ff")})`,
+    },
+    {
+      label: "运输中",
+      valueText: `${formatNumber(t)} 单 · ${pct(t)}%`,
+      percent: pct(t),
+      color: getCssVar("--el-color-warning", "#ff7d00"),
+      gradient: `linear-gradient(90deg, ${getCssVar("--el-color-warning", "#ff7d00")}, ${getCssVar("--el-color-warning-light-5", "#ffc96b")})`,
+    },
+    {
+      label: "已签收",
+      valueText: `${formatNumber(c)} 单 · ${pct(c)}%`,
+      percent: pct(c),
+      color: getCssVar("--el-color-success", "#00b42a"),
+      gradient: `linear-gradient(90deg, ${getCssVar("--el-color-success", "#00b42a")}, ${getCssVar("--el-color-success-light-5", "#7be188")})`,
+    },
   ];
+});
+
+// 近7日线路运量 Top5（数据来自大屏聚合 lineVolumes，取前 5）
+const lineVolumeLoading = ref(false);
+const lineVolumeError = ref(false);
+const lineVolumeEmpty = ref(false);
+const lineVolumes = ref<{ name: string; taskCount: number }[]>([]);
+const lineRankOptions = computed<EChartsOption>(() => {
+  const textSecondary = getCssVar("--el-text-color-secondary", "#909399");
+  const textRegular = getCssVar("--el-text-color-regular", "#4e5969");
+  const primary = getCssVar("--el-color-primary", "#165DFF");
+  const primaryLight = getCssVar("--el-color-primary-light-5", "#a8c4ff");
+  const fillLight = getCssVar("--el-fill-color-light", "#f2f3f5");
+  const rows = lineVolumes.value.map((item) => Number(item.taskCount) || 0);
+  const grad = (from: string, to: string) => ({
+    type: "linear" as const,
+    x: 0,
+    y: 0,
+    x2: 1,
+    y2: 0,
+    colorStops: [
+      { offset: 0, color: from },
+      { offset: 1, color: to },
+    ],
+  });
+  return {
+    tooltip: {
+      trigger: "axis",
+      axisPointer: { type: "shadow" },
+      formatter: (params) => {
+        const list = params as { name: string; value: number }[];
+        const p = list[0];
+        const rank = (lineVolumes.value.findIndex((i) => i.name === p.name) ?? 0) + 1;
+        return `第 ${rank} 名 ${p.name}<br/>运输任务 ${p.value} 个`;
+      },
+    },
+    grid: { left: "2%", right: "10%", bottom: "2%", top: "4%", containLabel: true },
+    xAxis: { type: "value", show: false },
+    yAxis: {
+      type: "category",
+      inverse: true,
+      data: lineVolumes.value.map((item) => item.name),
+      axisLabel: {
+        fontSize: 12,
+        color: textRegular,
+        // 序号徽章：第 1 名主题色实心，其余浅灰
+        formatter: (name: string, idx: number) =>
+          idx === 0 ? `{rankTop|${idx + 1}} {name|${name}}` : `{rank|${idx + 1}} {name|${name}}`,
+        rich: {
+          rankTop: {
+            display: "inline-block",
+            width: 16,
+            height: 16,
+            lineHeight: 16,
+            textAlign: "center",
+            borderRadius: 3,
+            color: "#fff",
+            fontSize: 10,
+            backgroundColor: primary,
+          },
+          rank: {
+            display: "inline-block",
+            width: 16,
+            height: 16,
+            lineHeight: 16,
+            textAlign: "center",
+            borderRadius: 3,
+            color: textSecondary,
+            fontSize: 10,
+            backgroundColor: fillLight,
+          },
+          name: { color: textRegular, fontSize: 12 },
+        },
+      },
+      axisLine: { show: false },
+      axisTick: { show: false },
+    },
+    series: [
+      {
+        type: "bar",
+        barWidth: 12,
+        data: rows,
+        label: { show: true, position: "right", fontSize: 12, color: textSecondary, formatter: "{c}" },
+        itemStyle: {
+          borderRadius: [0, 6, 6, 0],
+          // 第 1 名主题色渐变强调，其余同色系浅渐变（跟随主题）
+          color: (p: { dataIndex: number }) =>
+            p.dataIndex === 0
+              ? grad(primary, primaryLight)
+              : grad(getCssVar("--el-color-primary-light-7", "#c9d7f5"), getCssVar("--el-color-primary-light-9", "#e8f0ff")),
+        },
+      },
+    ],
+  };
 });
 
 // 任务环形图空数据判定：无分类或各分类计数全为 0 时不渲染空 canvas
@@ -331,48 +299,98 @@ const taskPieEmpty = computed(() => {
   return counts.length === 0 || counts.every((item) => !item.value);
 });
 
-// 运输任务五态环形图（中文名后端给出，前端只配颜色，不做状态码映射）
-const TASK_STATUS_COLORS = ["#165DFF", "#00b42a", "#ff7d00", "#0fb5c9", "#86909c"];
-const taskPieOptions = computed<EChartsOption>(() => ({
-  tooltip: { trigger: "item", formatter: "{b}：{c} 个（{d}%）" },
-  legend: {
-    bottom: 0,
-    itemWidth: 8,
-    itemHeight: 8,
-    icon: "circle",
-    // canvas 不认 CSS var()，需取计算值
-    textStyle: { fontSize: 11, color: getCssVar("--el-text-color-regular", "#4e5969") },
-  },
-  color: TASK_STATUS_COLORS,
-  series: [
-    {
-      type: "pie",
-      radius: ["45%", "68%"],
-      center: ["50%", "42%"],
-      avoidLabelOverlap: true,
-      label: { show: false },
-      data: (overview.taskStatusCounts ?? []).map((item: NameValue) => ({
-        name: item.name,
-        value: item.value ?? 0,
-      })),
+// 运输任务五态环形图（中文名后端给出，前端只配颜色；中心显示任务总数 + 今日新增）
+// 配色跟随主题：前 3 色取 primary/success/warning，后 2 色为固定中性色（无对应主题变量）
+const taskPieOptions = computed<EChartsOption>(() => {
+  const textSecondary = getCssVar("--el-text-color-secondary", "#909399");
+  const textPrimary = getCssVar("--el-text-color-primary", "#1d2129");
+  const taskStatusColors = [
+    getCssVar("--el-color-primary", "#165DFF"),
+    getCssVar("--el-color-success", "#00b42a"),
+    getCssVar("--el-color-warning", "#ff7d00"),
+    "#0fb5c9",
+    "#86909c",
+  ];
+  const items = (overview.taskStatusCounts ?? []).map((item: NameValue) => ({
+    name: item.name,
+    value: item.value ?? 0,
+  }));
+  const total = items.reduce((sum, item) => sum + item.value, 0);
+  const pctOf = (v: number) => (total > 0 ? Math.round((v / total) * 100) : 0);
+  return {
+    tooltip: {
+      trigger: "item",
+      formatter: (p) => {
+        const d = p as { name: string; value: number; percent: number };
+        return `${d.name}：${d.value} 个（${d.percent}%）`;
+      },
     },
-  ],
-}));
+    legend: {
+      bottom: 0,
+      left: "center",
+      icon: "circle",
+      itemWidth: 7,
+      itemHeight: 7,
+      itemGap: 4,
+      // canvas 不认 CSS var()，需取计算值；图例带数量 + 占比
+      textStyle: { fontSize: 10, color: textSecondary },
+      formatter: (name: string) => {
+        const item = items.find((i) => i.name === name);
+        if (!item) return name;
+        return `${name}${item.value}·${pctOf(item.value)}%`;
+      },
+    },
+    color: taskStatusColors,
+    graphic: [
+      {
+        type: "text",
+        left: "center",
+        top: "30%",
+        style: { text: "任务总数", fontSize: 12, fill: textSecondary, textAlign: "center" },
+      },
+      {
+        type: "text",
+        left: "center",
+        top: "37%",
+        style: { text: String(total), fontSize: 22, fontWeight: 700, fill: textPrimary, textAlign: "center" },
+      },
+      {
+        type: "text",
+        left: "center",
+        top: "50%",
+        style: {
+          text: `今日新增 ${Number(overview.todayTaskCount) || 0}`,
+          fontSize: 11,
+          fill: textSecondary,
+          textAlign: "center",
+        },
+      },
+    ],
+    series: [
+      {
+        type: "pie",
+        radius: ["52%", "72%"],
+        center: ["50%", "42%"],
+        avoidLabelOverlap: true,
+        emphasis: { scaleSize: 4, itemStyle: { shadowBlur: 12, shadowColor: "rgba(0,0,0,0.15)" } },
+        itemStyle: { borderRadius: 6, borderColor: "#fff", borderWidth: 2 },
+        label: { show: false },
+        data: items,
+      },
+    ],
+  };
+});
 
 // ---- 订单量趋势 ----
 const trendDateRange = ref(7);
 const trendLoading = ref(false);
 const trendError = ref(false);
 const trendEmpty = ref(false);
+// 近 7 日原始数据点：KPI 迷你趋势线复用（仅 7 天口径）
+const trendPoints = ref<OrderTrendPoint[]>([]);
 const trendChartOptions = ref<EChartsOption>({});
 /** 趋势请求序号：7/30 天快速切换时丢弃过期响应，防止旧数据覆盖新数据 */
 let trendRequestSeq = 0;
-
-/** 后端 "yyyy-MM-dd HH:mm:ss" → "MM-dd HH:mm"；无值显示 "-" */
-function formatShortTime(value?: string) {
-  if (!value) return "-";
-  return value.length >= 16 ? value.substring(5, 16) : value;
-}
 
 /** 后端 yyyy-MM-dd → M/d */
 function dayLabel(date: string) {
@@ -384,14 +402,15 @@ function renderTrend(points: OrderTrendPoint[]) {
   const primary = getCssVar("--el-color-primary", "#165DFF");
   const success = getCssVar("--el-color-success", "#00b42a");
   const textSecondary = getCssVar("--el-text-color-secondary", "#909399");
+  const textRegular = getCssVar("--el-text-color-regular", "#4e5969");
   const borderLighter = getCssVar("--el-border-color-lighter", "#ebeef5");
 
   // 30 天口径点数密集：斜排 + 隔点显示，防止标签重叠
   const dense = points.length > 15;
   trendChartOptions.value = {
     tooltip: { trigger: "axis", valueFormatter: (value) => `${value} 单` },
-    legend: { data: ["下单量", "签收量"], bottom: 0 },
-    grid: { left: "0%", right: "3%", bottom: "14%", top: "5%", containLabel: true },
+    legend: { data: ["下单量", "签收量"], right: 4, top: 2, itemWidth: 14, itemHeight: 8, icon: "roundRect", textStyle: { fontSize: 12, color: textRegular } },
+    grid: { left: "0%", right: "3%", bottom: "4%", top: "18%", containLabel: true },
     xAxis: {
       type: "category",
       data: points.map((p) => dayLabel(p.date)),
@@ -401,6 +420,8 @@ function renderTrend(points: OrderTrendPoint[]) {
         interval: dense ? 1 : 0,
         rotate: dense ? 35 : 0,
       },
+      axisLine: { lineStyle: { color: borderLighter } },
+      axisTick: { show: false },
     },
     yAxis: {
       type: "value",
@@ -414,17 +435,69 @@ function renderTrend(points: OrderTrendPoint[]) {
         type: "line",
         smooth: true,
         data: points.map((p) => Number(p.orderCount) || 0),
-        lineStyle: { color: primary, width: 2.2 },
-        itemStyle: { color: primary },
-        areaStyle: { opacity: 0.1 },
+        symbol: "circle",
+        symbolSize: 6,
+        showSymbol: true,
+        // 7 天点数少：直接标注数值，一眼可读
+        label: dense
+          ? { show: false }
+          : { show: true, position: "top", fontSize: 10, color: textSecondary, formatter: "{c}" },
+        lineStyle: { color: primary, width: 2.4 },
+        itemStyle: { color: primary, borderColor: "#fff", borderWidth: 1.5 },
+        areaStyle: {
+          color: {
+            type: "linear",
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [
+              { offset: 0, color: hexToRgba(primary, 0.22) },
+              { offset: 1, color: hexToRgba(primary, 0) },
+            ],
+          },
+        },
+        markLine: {
+          silent: true,
+          symbol: "none",
+          lineStyle: { type: "dashed", color: getCssVar("--el-color-primary-light-5", "#b9c6e6"), width: 1 },
+          label: { formatter: "均值 {c}", fontSize: 11, color: textSecondary },
+          data: [{ type: "average", name: "均值" }],
+        },
+        markPoint: {
+          symbol: "pin",
+          symbolSize: 34,
+          label: { fontSize: 11, color: "#fff", fontWeight: 600 },
+          itemStyle: { color: primary },
+          data: [{ type: "max", name: "峰值" }],
+        },
       },
       {
         name: "签收量",
         type: "line",
         smooth: true,
         data: points.map((p) => Number(p.completedCount) || 0),
-        lineStyle: { color: success, width: 1.8 },
-        itemStyle: { color: success },
+        symbol: "circle",
+        symbolSize: 6,
+        showSymbol: true,
+        label: dense
+          ? { show: false }
+          : { show: true, position: "bottom", fontSize: 10, color: textSecondary, formatter: "{c}" },
+        lineStyle: { color: success, width: 2 },
+        itemStyle: { color: success, borderColor: "#fff", borderWidth: 1.5 },
+        areaStyle: {
+          color: {
+            type: "linear",
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [
+              { offset: 0, color: hexToRgba(success, 0.14) },
+              { offset: 1, color: hexToRgba(success, 0) },
+            ],
+          },
+        },
       },
     ],
   };
@@ -433,6 +506,15 @@ function renderTrend(points: OrderTrendPoint[]) {
 function getCssVar(name: string, fallback: string) {
   if (typeof window === "undefined") return fallback;
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+}
+
+/** #RRGGBB → rgba(r, g, b, a)，用于 ECharts 面积渐变（canvas 不认 CSS var） */
+function hexToRgba(hex: string, alpha: number): string {
+  const h = hex.replace("#", "");
+  const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+  const n = Number.parseInt(full, 16);
+  if (Number.isNaN(n) || full.length !== 6) return hex;
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
 }
 
 async function loadOverview() {
@@ -468,6 +550,8 @@ async function loadTrend() {
     if (seq !== trendRequestSeq) return;
     const list = Array.isArray(points) ? points : [];
     trendEmpty.value = list.length === 0;
+    // 无论 7/30 天都保留近 7 天窗口给 KPI sparkline
+    trendPoints.value = list.slice(-7);
     renderTrend(list);
   } catch {
     if (seq !== trendRequestSeq) return;
@@ -511,474 +595,65 @@ async function loadAlarms() {
   }
 }
 
-/** 当前时间 HH:mm:ss，作为"最后更新"文案 */
-function nowTimeText(): string {
-  const d = new Date();
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+async function loadLineVolumes() {
+  lineVolumeLoading.value = true;
+  lineVolumeError.value = false;
+  try {
+    // 复用大屏聚合接口：近 7 日各线路运量 Top10，工作台取前 5
+    const data = await DashboardAPI.getBigScreenSummary();
+    const list = Array.isArray(data?.lineVolumes) ? data.lineVolumes : [];
+    lineVolumes.value = list.slice(0, 5);
+    lineVolumeEmpty.value = list.length === 0;
+  } catch {
+    // 错误提示由请求拦截器统一弹出；区块切换为错误态 + 重试
+    lineVolumeError.value = true;
+  } finally {
+    lineVolumeLoading.value = false;
+  }
 }
 
-/** 手动刷新：四个区块全部重拉（趋势按当前选中的 7/30 天），完成后记录时间 */
-async function refreshAll() {
-  await Promise.allSettled([loadOverview(), loadTrend(), loadTodo(), loadAlarms()]);
-  lastRefreshTime.value = nowTimeText();
+/**
+ * 带权限的跳转：菜单为动态注册，未开通模块的路由不在路由表中，
+ * 直接 push 会落到 404；先校验再跳，无权限给明确提示。
+ */
+function guardPush(path: string, query?: Record<string, string>) {
+  const exists = router.getRoutes().some((r) => r.path === path);
+  if (!exists) {
+    ElMessage.warning("暂无该模块访问权限，请联系管理员开通");
+    return;
+  }
+  router.push(query ? { path, query } : path);
 }
 
 function goOrders() {
-  router.push("/order");
+  guardPush("/order");
+}
+
+/** 趋势图日期下钻：点击数据点/柱子 → 订单列表并筛选该日 */
+function onTrendClick(date: string) {
+  guardPush("/order", { date });
 }
 
 function goAlarms() {
-  router.push("/alarm");
+  guardPush("/alarm");
 }
 
-/** 告警 tag 配色：超速/离线危险红，停留/偏离警示橙，人工上报类中性蓝 */
-function alarmTagType(code?: number): "danger" | "warning" | "info" {
-  const key = alarmTypeKeyOf(code);
-  if (key === AlarmTypeKey.SPEED_OVER || key === AlarmTypeKey.VEHICLE_OFFLINE) return "danger";
-  if (key === AlarmTypeKey.STAY_TOO_LONG || key === AlarmTypeKey.DEVIATE_ROUTE) return "warning";
-  return "info";
+function goTrucks() {
+  guardPush("/truck");
+}
+
+function goLines() {
+  guardPush("/transport-line");
 }
 
 watch(() => trendDateRange.value, () => loadTrend());
 
-// 各区块独立加载、独立容错，单个接口失败不拖垮整页
-const lastRefreshTime = ref("");
+// 各区块独立加载、独立容错，单个接口失败不拖垮整页；进入页面即并发拉取
 onMounted(() => {
-  refreshAll();
+  Promise.allSettled([loadOverview(), loadTrend(), loadTodo(), loadAlarms(), loadLineVolumes()]);
 });
 </script>
 
-<style lang="scss" scoped>
-$gap: 12px;
-$pad: 10px;
-
-%card {
-  overflow: hidden;
-  background: var(--el-bg-color-overlay);
-  border: 1px solid var(--card-border);
-  border-radius: var(--card-radius);
-  box-shadow: var(--card-shadow);
-}
-
-.dash {
-  display: flex;
-  flex-direction: column;
-  gap: $gap;
-  padding: $pad;
-  background: var(--page-bg);
-}
-
-// 顶部工具条
-.dash-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 32px;
-
-  &__hint {
-    font-size: 12px;
-    color: var(--el-text-color-secondary);
-  }
-
-  &__right {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-  }
-
-  &__time {
-    font-size: 12px;
-    color: var(--el-text-color-secondary);
-  }
-}
-
-// 卡片内紧凑错误态：去掉大图标与大留白，只留文案 + 重试
-.dash-result {
-  padding: 4px 0;
-
-  :deep(.el-result__icon) {
-    display: none;
-  }
-
-  :deep(.el-result__title p) {
-    margin: 0;
-    font-size: 14px;
-    line-height: 1.6;
-  }
-
-  :deep(.el-result__subtitle) {
-    padding-top: 2px;
-  }
-
-  :deep(.el-result__extra) {
-    padding-top: 8px;
-  }
-}
-
-// Stat cards
-.dash-stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: $gap;
-}
-
-.stat-card {
-  display: flex;
-  gap: 14px;
-  align-items: center;
-  min-height: 84px;
-  padding: 18px;
-  cursor: default;
-  @extend %card;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--el-box-shadow-light);
-  }
-
-  &__icon {
-    display: flex;
-    flex-shrink: 0;
-    align-items: center;
-    justify-content: center;
-    width: 46px;
-    height: 46px;
-    border-radius: 12px;
-
-    &--order {
-      color: var(--el-color-white);
-      background: linear-gradient(135deg, var(--el-color-primary), var(--el-color-primary-light-3));
-      box-shadow: 0 6px 14px color-mix(in srgb, var(--el-color-primary) 30%, transparent);
-    }
-    &--truck {
-      color: var(--el-color-white);
-      background: linear-gradient(135deg, var(--el-color-success), var(--el-color-success-light-3));
-      box-shadow: 0 6px 14px color-mix(in srgb, var(--el-color-success) 30%, transparent);
-    }
-    &--alert {
-      color: var(--el-color-white);
-      background: linear-gradient(135deg, var(--el-color-danger), var(--el-color-danger-light-3));
-      box-shadow: 0 6px 14px color-mix(in srgb, var(--el-color-danger) 30%, transparent);
-    }
-    &--rate {
-      color: var(--el-color-white);
-      background: linear-gradient(135deg, var(--el-color-warning), var(--el-color-warning-light-3));
-      box-shadow: 0 6px 14px color-mix(in srgb, var(--el-color-warning) 30%, transparent);
-    }
-  }
-
-  &__body {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    min-width: 0;
-  }
-
-  &__num {
-    font-size: 26px;
-    font-weight: 700;
-    line-height: 1.15;
-    color: var(--el-text-color-primary);
-    font-variant-numeric: tabular-nums;
-  }
-
-  &__label {
-    margin-bottom: 3px;
-    font-size: 13px;
-    color: var(--el-text-color-secondary);
-  }
-
-  &__badge {
-    flex-shrink: 0;
-    font-size: 11px;
-    font-weight: 500;
-
-    &--on {
-      color: var(--el-color-success);
-    }
-
-    &--danger {
-      color: var(--el-color-danger);
-    }
-  }
-}
-
-// Generic card
-.card {
-  display: flex;
-  flex-direction: column;
-  @extend %card;
-
-  &__head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    min-height: 48px;
-    padding: 13px 18px;
-    border-bottom: 1px solid var(--card-border);
-  }
-
-  &__title {
-    margin: 0;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--el-text-color-primary);
-  }
-
-  &__head-right {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
-
-  &__body {
-    padding: 16px 18px 18px;
-
-    &--chart {
-      padding: 14px 18px 16px;
-    }
-
-    &--scroll {
-      flex: 1;
-      padding: 0;
-      overflow-y: auto;
-    }
-  }
-}
-
-// Chart & bottom grids
-.dash-chart {
-  display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(300px, 1.15fr);
-  gap: $gap;
-
-  &__side {
-    display: flex;
-    flex-direction: column;
-    gap: $gap;
-    min-width: 0;
-
-    .card {
-      flex: 1;
-      min-height: 0;
-    }
-  }
-}
-
-.overview-card {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 16px;
-  min-height: 0;
-}
-
-.task-card {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.overview-summary {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-
-  &__item {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    min-height: 60px;
-    padding: 10px 12px;
-    background: color-mix(in srgb, var(--el-color-primary) 4%, var(--el-bg-color-overlay));
-    border: 1px solid color-mix(in srgb, var(--el-color-primary) 10%, var(--el-border-color-lighter));
-    border-radius: 6px;
-  }
-
-  &__label {
-    font-size: 12px;
-    color: var(--el-text-color-secondary);
-  }
-
-  &__value {
-    margin-top: 5px;
-    font-size: 18px;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    color: var(--el-color-primary);
-  }
-}
-
-.overview-bars {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  justify-content: space-evenly;
-  min-height: 120px;
-
-  &__item {
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-  }
-
-  &__meta {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  &__label,
-  &__value {
-    font-size: 12px;
-    color: var(--el-text-color-secondary);
-  }
-
-  &__value {
-    font-variant-numeric: tabular-nums;
-  }
-
-  &__label {
-    display: inline-flex;
-    gap: 6px;
-    align-items: center;
-  }
-
-  &__dot {
-    width: 6px;
-    height: 6px;
-    background: var(--el-color-primary);
-    border-radius: 50%;
-  }
-
-  &__track {
-    height: 5px;
-    overflow: hidden;
-    background: color-mix(in srgb, var(--el-color-primary) 10%, var(--el-fill-color-light));
-    border-radius: 999px;
-  }
-
-  &__bar {
-    display: block;
-    width: var(--overview-percent);
-    height: 100%;
-    background: linear-gradient(90deg, var(--el-color-primary), var(--el-color-primary-light-3));
-    border-radius: inherit;
-    transition: width 0.4s ease;
-  }
-}
-
-.dash-bottom {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: $gap;
-}
-
-// Todo rows
-.todo-row {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  padding: 11px 0;
-
-  & + & {
-    border-top: 1px solid var(--el-border-color-lighter);
-  }
-
-  &__icon--pending {
-    flex-shrink: 0;
-    color: var(--el-color-warning);
-  }
-
-  &__title {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-size: 13px;
-    color: var(--el-text-color-regular);
-    white-space: nowrap;
-  }
-
-  &__tag {
-    flex-shrink: 0;
-  }
-
-  &__time {
-    flex-shrink: 0;
-    font-size: 12px;
-    color: var(--el-text-color-secondary);
-  }
-}
-
-// Alert feed
-.feed {
-  display: flex;
-  flex-direction: column;
-  padding: 8px 18px 12px;
-
-  &__item {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    padding: 9px 0;
-
-    & + & {
-      border-top: 1px solid var(--el-border-color-lighter);
-    }
-  }
-
-  &__tag {
-    flex-shrink: 0;
-  }
-
-  &__text {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    font-size: 13px;
-    line-height: 1.4;
-    color: var(--el-text-color-regular);
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  &__time {
-    flex-shrink: 0;
-    font-size: 12px;
-    color: var(--el-text-color-secondary);
-    font-variant-numeric: tabular-nums;
-  }
-}
-
-// Responsive
-@media (max-width: 1200px) {
-  .dash-stats {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 992px) {
-  .dash-chart {
-    grid-template-columns: 1fr;
-  }
-
-  .dash-bottom {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  .dash {
-    gap: 10px;
-    padding: 10px;
-  }
-
-  .dash-stats {
-    grid-template-columns: 1fr;
-  }
-}
+<style lang="scss">
+@use "./components/dashboard-card.scss";
 </style>

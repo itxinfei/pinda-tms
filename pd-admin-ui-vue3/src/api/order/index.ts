@@ -117,6 +117,10 @@ export interface OrderDetail extends OrderRecord {
 export interface OrderPageQuery extends Partial<OrderRecord> {
   page: number;
   pageSize: number;
+  /** 下单时间范围起点（create_time >= startTime，yyyy-MM-dd HH:mm:ss） */
+  startTime?: string;
+  /** 下单时间范围终点（create_time <= endTime，yyyy-MM-dd HH:mm:ss） */
+  endTime?: string;
 }
 
 const OrderAPI = {

@@ -160,6 +160,24 @@ public class OrderDTO implements Serializable {
     private LocalDateTime cancelTime;
 
     /**
+     * 下单时间范围起点（分页查询用：create_time >= startTime，yyyy-MM-dd HH:mm:ss）
+     */
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @JsonFormat(
+            pattern = "yyyy-MM-dd HH:mm:ss"
+    )
+    private LocalDateTime startTime;
+
+    /**
+     * 下单时间范围终点（分页查询用：create_time <= endTime，yyyy-MM-dd HH:mm:ss）
+     */
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @JsonFormat(
+            pattern = "yyyy-MM-dd HH:mm:ss"
+    )
+    private LocalDateTime endTime;
+
+    /**
      * 页码
      */
     private Integer page;

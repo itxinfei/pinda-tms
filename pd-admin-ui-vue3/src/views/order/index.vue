@@ -3,6 +3,11 @@
     <el-card class="page-content" shadow="never">
       <!-- 查询条件 -->
       <el-form class="page-search" :model="query" inline>
+        <el-form-item v-if="drillDate" label="下单日期">
+          <el-tag closable type="primary" effect="plain" @close="clearDrillDate">
+            {{ drillDate }}（来自仪表盘下钻）
+          </el-tag>
+        </el-form-item>
         <el-form-item label="订单号" prop="id">
           <el-input v-model="query.id" placeholder="请输入订单号" clearable @keyup.enter="handleSearch" />
         </el-form-item>
@@ -263,7 +268,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import OrderAPI from "@/api/order";
 import { OrderStatus, type OrderRecord, type OrderDetail, type OrderPageQuery, type PickupDispatchTask } from "@/api/order";
@@ -345,6 +350,26 @@ const loading = ref(false);
 const list = ref<OrderRecord[]>([]);
 const total = ref(0);
 const query = ref<OrderPageQuery>({ page: 1, pageSize: 10 });
+
+/** 仪表盘日期下钻：/order?date=2026-10-12，自动转为当天 00:00:00 ~ 23:59:59 时间范围 */
+const route = useRoute();
+const drillDate = ref<string>("");
+if (typeof route.query.date === "string" && route.query.date) {
+  const day = route.query.date.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(day)) {
+    drillDate.value = day;
+    query.value.startTime = `${day} 00:00:00`;
+    query.value.endTime = `${day} 23:59:59`;
+  }
+}
+
+/** 移除日期下钻条件并刷新 */
+function clearDrillDate() {
+  drillDate.value = "";
+  delete query.value.startTime;
+  delete query.value.endTime;
+  handleSearch();
+}
 
 /** 组装请求体：剔除空字符串/空值，仅提交有效过滤条件 */
 function buildPayload(): OrderPageQuery {

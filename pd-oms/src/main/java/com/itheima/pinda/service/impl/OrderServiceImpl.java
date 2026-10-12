@@ -168,6 +168,13 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         if (order.getReceiverCountyId() != null) {
             lambdaQueryWrapper.eq(Order::getReceiverCountyId, order.getReceiverCountyId());
         }
+        //下单时间范围（create_time 范围过滤，仪表盘日期下钻用）
+        if (order.getStartTime() != null) {
+            lambdaQueryWrapper.ge(Order::getCreateTime, order.getStartTime());
+        }
+        if (order.getEndTime() != null) {
+            lambdaQueryWrapper.le(Order::getCreateTime, order.getEndTime());
+        }
         lambdaQueryWrapper.orderBy(true, false, Order::getId);
         return page(iPage, lambdaQueryWrapper);
     }
