@@ -49,7 +49,7 @@ export interface PickupDispatchTask {
   status: number;
   signStatus?: number;
   assignedStatus?: number;
-  courier?: { id?: string; name?: string; phone?: string };
+  courier?: { id?: string; name?: string; mobile?: string };
   agency?: { id?: string; name?: string };
   estimatedStartTime?: string;
   actualStartTime?: string;
@@ -63,7 +63,7 @@ export interface PickupDispatchTask {
 /** 运单简要信息（详情页） */
 export interface TransportOrderBrief {
   id: string;
-  /** 运单状态：1新建 2已装车 3到达 4到达终端网点 */
+  /** 运单状态：1新建 2已装车 3到达 4到达终端网点 5已签收 6拒收 */
   status: number;
   schedulingStatus?: number;
   createTime?: string;

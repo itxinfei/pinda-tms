@@ -170,7 +170,7 @@
               <el-descriptions-item label="任务状态">{{ taskStatusLabel(item.task.status) }}</el-descriptions-item>
               <el-descriptions-item label="所属网点">{{ item.task.agency?.name || "-" }}</el-descriptions-item>
               <el-descriptions-item label="快递员">{{ item.task.courier?.name || "-" }}</el-descriptions-item>
-              <el-descriptions-item label="快递员电话">{{ item.task.courier?.phone || "-" }}</el-descriptions-item>
+              <el-descriptions-item label="快递员电话">{{ item.task.courier?.mobile || "-" }}</el-descriptions-item>
               <el-descriptions-item label="分配状态">{{ assignedStatusLabel(item.task.assignedStatus) }}</el-descriptions-item>
               <el-descriptions-item label="预计开始">{{ item.task.estimatedStartTime || "-" }}</el-descriptions-item>
               <el-descriptions-item label="实际开始">{{ item.task.actualStartTime || "-" }}</el-descriptions-item>
@@ -232,7 +232,9 @@ const pickupTypeLabel = (type?: number) => (type === 1 ? "网点自寄" : type =
 const paymentMethodLabel = (type?: number) => (type === 1 ? "预结" : type === 2 ? "到付" : "-");
 const paymentStatusLabel = (type?: number) => (type === 1 ? "未付" : type === 2 ? "已付" : "-");
 const transportStatusLabel = (type?: number) =>
-  ({ 1: "新建", 2: "已装车", 3: "到达", 4: "到达终端网点" } as Record<number, string>)[type ?? -1] ?? "-";
+  ({ 1: "新建", 2: "已装车", 3: "到达", 4: "到达终端网点", 5: "已签收", 6: "拒收" } as Record<number, string>)[
+    type ?? -1
+  ] ?? "-";
 const schedulingStatusLabel = (type?: number) =>
   ({ 1: "待调度", 2: "未匹配线路", 3: "已调度" } as Record<number, string>)[type ?? -1] ?? "-";
 

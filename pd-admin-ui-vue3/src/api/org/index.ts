@@ -21,8 +21,10 @@ export interface OrgNode {
   managerId?: number;
   treePath?: string;
   sortValue?: number;
-  status: boolean;
-  describe?: string;
+  /** 状态：0停用 1启用（对齐后端 CoreOrg Integer，见 CommonStatus） */
+  status: number;
+  /** 简介（后端字段名 description） */
+  description?: string;
   latitude?: number;
   longitude?: number;
   businessHours?: string;

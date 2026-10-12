@@ -207,6 +207,13 @@ export const constantRoutes: RouteRecordRaw[] = [
         component: () => import("@/views/goods-type/index.vue"),
         meta: { title: "货物类型", icon: "el-icon-Goods", keepAlive: true },
       },
+      {
+        // 会员管理（《55》USR-01）：页面/API/BFF 均已就绪，补静态菜单入口
+        path: "/member",
+        name: "Member",
+        component: () => import("@/views/member/index.vue"),
+        meta: { title: "会员管理", icon: "el-icon-UserFilled", keepAlive: true },
+      },
     ],
   },
 

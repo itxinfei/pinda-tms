@@ -17,6 +17,10 @@ export enum TransportOrderStatus {
   ARRIVED = 3,
   /** 到达终端网点 */
   AT_TERMINAL = 4,
+  /** 已签收 */
+  RECEIVED = 5,
+  /** 拒收 */
+  REJECTED = 6,
 }
 
 /** 调度状态 */

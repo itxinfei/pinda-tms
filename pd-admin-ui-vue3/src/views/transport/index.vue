@@ -174,6 +174,8 @@ const ORDER_STATUS_OPTIONS: { value: TransportOrderStatus; label: string; type: 
   { value: TransportOrderStatus.LOADED, label: "已装车", type: "warning" },
   { value: TransportOrderStatus.ARRIVED, label: "到达", type: "primary" },
   { value: TransportOrderStatus.AT_TERMINAL, label: "到达终端网点", type: "primary" },
+  { value: TransportOrderStatus.RECEIVED, label: "已签收", type: "success" },
+  { value: TransportOrderStatus.REJECTED, label: "拒收", type: "danger" },
 ];
 
 const statusLabel = (status?: number) =>

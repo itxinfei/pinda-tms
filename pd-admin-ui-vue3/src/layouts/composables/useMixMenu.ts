@@ -13,10 +13,8 @@ export function useMixMenu() {
   const appStore = useAppStore();
   const permissionStore = usePermissionStore();
 
-  const { activeTopMenuPath, sideMenuRoutes } = useLayout();
-
-  // 顶部菜单
-  const topMenuItems = computed(() => permissionStore.routes.filter((item) => !item.meta?.hidden));
+  // 顶部菜单：统一走 useLayout 已拍平「无标题根壳」的路由列表（《58》§1.3，避免空白顶级项）
+  const { activeTopMenuPath, sideMenuRoutes, routes: topMenuItems } = useLayout();
 
   // 解析当前侧边菜单激活路径
   const activeSideMenuPath = computed(() => {

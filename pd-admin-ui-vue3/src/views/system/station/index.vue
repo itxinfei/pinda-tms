@@ -52,11 +52,11 @@
           </el-table-column>
           <el-table-column prop="status" label="状态" width="100" align="center">
             <template #default="scope">
-              <el-tag v-if="scope.row.status" type="success">正常</el-tag>
+              <el-tag v-if="scope.row.status === CommonStatus.ENABLED" type="success">正常</el-tag>
               <el-tag v-else type="info">停用</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="describe" label="简介" min-width="200" show-overflow-tooltip />
+          <el-table-column prop="description" label="简介" min-width="200" show-overflow-tooltip />
           <el-table-column prop="createTime" label="创建时间" width="180" />
           <el-table-column label="操作" fixed="right" align="left" width="150">
             <template #default="scope">
@@ -103,10 +103,14 @@
           />
         </el-form-item>
         <el-form-item label="状态" prop="status">
-          <el-switch v-model="form.status" />
+          <el-switch
+            v-model="form.status"
+            :active-value="CommonStatus.ENABLED"
+            :inactive-value="CommonStatus.DISABLED"
+          />
         </el-form-item>
-        <el-form-item label="简介" prop="describe">
-          <el-input v-model="form.describe" type="textarea" :rows="2" placeholder="请输入简介" />
+        <el-form-item label="简介" prop="description">
+          <el-input v-model="form.description" type="textarea" :rows="2" placeholder="请输入简介" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -127,6 +131,7 @@ import StationAPI from "@/api/station";
 import type { Station, StationForm } from "@/api/station";
 import OrgAPI from "@/api/org";
 import type { OrgNode } from "@/api/org";
+import { CommonStatus } from "@/enums";
 
 const loading = ref(false);
 const list = ref<Station[]>([]);
@@ -185,7 +190,12 @@ const dialog = ref({ visible: false, title: "" });
 const submitting = ref(false);
 const formRef = ref<FormInstance>();
 
-const emptyForm = (): StationForm => ({ name: "", orgId: undefined as unknown as number, status: true, describe: "" });
+const emptyForm = (): StationForm => ({
+  name: "",
+  orgId: undefined as unknown as number,
+  status: CommonStatus.ENABLED,
+  description: "",
+});
 const form = ref<StationForm>(emptyForm());
 
 const rules: FormRules = {

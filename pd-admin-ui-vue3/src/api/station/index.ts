@@ -8,8 +8,10 @@ export interface Station {
   tenantId?: number;
   name: string;
   orgId: number;
-  status: boolean;
-  describe?: string;
+  /** 状态：0停用 1启用（对齐后端 CoreStation Integer，见 CommonStatus） */
+  status: number;
+  /** 简介（后端字段名 description） */
+  description?: string;
   createTime?: string;
   createUser?: number;
   updateTime?: string;

@@ -45,7 +45,7 @@
           <el-table-column prop="sortValue" label="排序" width="90" align="center" />
           <el-table-column prop="status" label="状态" width="90" align="center">
             <template #default="scope">
-              <el-tag v-if="scope.row.status" type="success">正常</el-tag>
+              <el-tag v-if="scope.row.status === CommonStatus.ENABLED" type="success">正常</el-tag>
               <el-tag v-else type="info">停用</el-tag>
             </template>
           </el-table-column>
@@ -111,10 +111,14 @@
           <el-input-number v-model="form.sortValue" :min="0" :max="9999" />
         </el-form-item>
         <el-form-item label="状态" prop="status">
-          <el-switch v-model="form.status" />
+          <el-switch
+            v-model="form.status"
+            :active-value="CommonStatus.ENABLED"
+            :inactive-value="CommonStatus.DISABLED"
+          />
         </el-form-item>
-        <el-form-item label="简介" prop="describe">
-          <el-input v-model="form.describe" type="textarea" :rows="2" placeholder="请输入简介" />
+        <el-form-item label="简介" prop="description">
+          <el-input v-model="form.description" type="textarea" :rows="2" placeholder="请输入简介" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -133,6 +137,7 @@ import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from "elem
 import { Refresh } from "@element-plus/icons-vue";
 import OrgAPI from "@/api/org";
 import type { OrgNode, OrgForm, OrgType } from "@/api/org";
+import { CommonStatus } from "@/enums";
 
 /** 组织类型枚举（与后端 CoreOrg 注释口径一致） */
 const ORG_TYPE_OPTIONS: { value: OrgType; label: string }[] = [
@@ -175,7 +180,7 @@ function toggleExpandAll() {
 
 /** 上级组织下拉：顶级 + 现有组织树 */
 const parentOptions = computed<OrgNode[]>(() => [
-  { id: 0, name: "顶级组织（根）", parentId: 0, orgType: 1, status: true },
+  { id: 0, name: "顶级组织（根）", parentId: 0, orgType: 1, status: CommonStatus.ENABLED },
   ...tree.value,
 ]);
 
@@ -192,8 +197,8 @@ const emptyForm = (): OrgForm => ({
   contractNumber: "",
   address: "",
   sortValue: 0,
-  status: true,
-  describe: "",
+  status: CommonStatus.ENABLED,
+  description: "",
 });
 const form = ref<OrgForm>(emptyForm());
 

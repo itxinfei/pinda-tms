@@ -25,7 +25,6 @@
 import { useWindowSize } from "@vueuse/core";
 import { useLayout } from "../composables/useLayout";
 import { useAppStore } from "@/stores";
-import { usePermissionStore } from "@/stores";
 import BaseLayout from "../BaseLayout.vue";
 import LayoutLogo from "../components/LayoutLogo.vue";
 import LayoutSidebar from "../components/LayoutSidebar.vue";
@@ -33,15 +32,10 @@ import LayoutToolbar from "../components/LayoutToolbar.vue";
 import LayoutTagsView from "../components/LayoutTagsView.vue";
 import LayoutMain from "../components/LayoutMain.vue";
 
-const { showTagsView, showLogo } = useLayout();
+// 顶部菜单统一走 useLayout 已拍平「无标题根壳」的路由列表（《58》§1.3，避免空白顶级项）
+const { showTagsView, showLogo, routes: topMenuItems } = useLayout();
 const appStore = useAppStore();
 const { width } = useWindowSize();
-
-const permissionStore = usePermissionStore();
-
-const topMenuItems = computed(() => {
-  return permissionStore.routes.filter((item) => !item.meta?.hidden);
-});
 
 const isLogoCollapsed = computed(() => width.value < 768);
 </script>

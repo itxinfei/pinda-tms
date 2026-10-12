@@ -170,6 +170,7 @@ import { ref, computed, onMounted } from "vue";
 import TransportTaskAPI from "@/api/transport-task";
 import {
   TransportTaskStatus,
+  LoadingStatus,
   type TaskTransportRecord,
   type TaskTransportDetail,
   type TaskTransportPageQuery,
@@ -194,7 +195,13 @@ const statusTagType = (status?: number): TagType =>
 const assignedStatusLabel = (status?: number) =>
   ({ 1: "未分配", 2: "已分配", 3: "待人工分配" } as Record<number, string>)[status ?? -1] ?? "-";
 const loadingStatusLabel = (status?: number) =>
-  ({ 1: "半载", 2: "满载", 3: "空载" } as Record<number, string>)[status ?? -1] ?? "-";
+  (
+    {
+      [LoadingStatus.EMPTY]: "空载",
+      [LoadingStatus.HALF]: "半载",
+      [LoadingStatus.FULL]: "满载",
+    } as Record<number, string>
+  )[status ?? -1] ?? "-";
 
 /** 司机姓名拼接（任务可绑定多个司机） */
 const driverNames = (row: TaskTransportRecord) =>

@@ -29,14 +29,14 @@ export enum AssignedStatus {
   MANUAL = 3,
 }
 
-/** 满载状态 */
+/** 满载状态（对齐后端 TransportTaskLoadingStatus：1空载 2半载 3满载） */
 export enum LoadingStatus {
-  /** 半载 */
-  HALF = 1,
-  /** 满载 */
-  FULL = 2,
   /** 空载 */
-  EMPTY = 3,
+  EMPTY = 1,
+  /** 半载 */
+  HALF = 2,
+  /** 满载 */
+  FULL = 3,
 }
 
 /** 机构简要信息 */
