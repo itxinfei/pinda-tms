@@ -92,6 +92,14 @@ spring:
       database: ${REDIS_DATABASE:0}
       password: ${REDIS_PASSWORD:123456}
 
+# Sa-Token：pd-dispatch 无外部登录态，此处仅用于服务间 Same-Token 出站签发（OrgFeign 调 pd-auth
+# /internal/** 会被 Same-Token 强校验）。token-name 必须与 pd-auth/pd-gateway 一致为 token：
+# Same-Token 在未配 secret-key 时走 Redis 共享变量模式，键前缀取 token-name；用默认值 satoken
+# 会使 pd-dispatch 写 satoken:var:same-token、pd-auth 读 token:var:same-token，两值不一致恒 401，
+# 调度线程的机构→租户反查因此 fallback 回落 tenant_id=0，查不到业务租户订单（新订单数 0）。
+sa-token:
+  token-name: token
+
 mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml
   type-aliases-package: com.itheima.pinda.entity
