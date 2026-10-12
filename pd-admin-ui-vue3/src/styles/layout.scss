@@ -29,11 +29,16 @@
     }
   }
 
-  // 子菜单标题：取消背景/主色强调（用户要求去掉 .el-sub-menu__title 特殊样式），
-  // 选中态仅由具体菜单项（.el-menu-item.is-active）表达，标题只保留 hover 反馈
+  // 子菜单标题：取消背景/主色文字强调（用户要求去掉 .el-sub-menu__title 特殊样式），
+  // 选中态仅由具体菜单项（.el-menu-item.is-active）表达；但父组下有激活子项时
+  // 将标题图标染主色，作为"当前处于该分组"的轻量提示（不动背景与文字，避免此前过重的观感）
   .el-sub-menu.has-active-child > .el-sub-menu__title {
     color: var(--menu-text) !important;
     background-color: transparent !important;
+
+    .layout-menu-icon {
+      color: var(--el-color-primary) !important;
+    }
 
     .menu-icon {
       color: currentcolor !important;
@@ -206,8 +211,23 @@
   }
 }
 
-/* 二级菜单（嵌套 el-menu-item）仅靠缩进表达层级，不加重背景/引导线，保持模板原生的干净观感 */
+/* 二级菜单：缩进 + 左侧浅色引导线共同表达层级；选中项仍由主色竖条+高亮表达 */
 .layout-root .layout-sidebar {
+  .el-sub-menu .el-menu {
+    position: relative;
+
+    // 嵌套层级引导线：贯穿整组二级项（el-menu 为嵌套容器）
+    &::before {
+      position: absolute;
+      top: 2px;
+      bottom: 2px;
+      left: 27px;
+      width: 1px;
+      content: "";
+      background-color: var(--el-border-color);
+    }
+  }
+
   .el-sub-menu .el-menu .el-menu-item {
     height: 38px !important;
     padding-left: 40px !important;
@@ -246,8 +266,9 @@ html.sidebar-color-blue .el-menu--popup {
     color: var(--menu-text) !important;
     background-color: transparent !important;
 
+    .layout-menu-icon,
     .menu-icon {
-      color: currentcolor !important;
+      color: var(--el-color-primary) !important;
     }
   }
 }
@@ -269,6 +290,11 @@ html.sidebar-color-blue .layout-root.layout--mix .layout-sidebar .el-menu {
   .el-sub-menu.has-active-child > .el-sub-menu__title {
     color: var(--menu-text) !important;
     background-color: transparent !important;
+
+    .layout-menu-icon,
+    .menu-icon {
+      color: var(--el-color-primary) !important;
+    }
   }
 }
 /* stylelint-enable no-descending-specificity */

@@ -360,8 +360,8 @@ $brand-red: #d7000f; // 品达品牌红：登录按钮、书法标语（参考�
   }
 
   &__logo {
-    width: 46px;
-    height: 46px;
+    width: 36px;
+    height: 36px;
     flex-shrink: 0;
   }
 
