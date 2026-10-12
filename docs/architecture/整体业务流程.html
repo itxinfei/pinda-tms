@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>品达TMS 整体业务流程</title>
+</head>
+<body style="margin:0;padding:0;background:#ffffff;">
+<div style="font-family:'Segoe UI','Microsoft YaHei',system-ui,sans-serif;background:#ffffff;color:#1e293b;padding:28px 32px;box-sizing:border-box;">
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #1d4ed8;padding-bottom:14px;margin-bottom:20px;flex-wrap:wrap;gap:8px;">
+    <div>
+      <div style="font-size:22px;font-weight:700;color:#0f172a;">品达物流 TMS · 整体业务流程</div>
+      <div style="font-size:12px;color:#64748b;margin-top:5px;">2026-10-12 实测版 · 泳道=角色 · 实线=在营系统 · 虚线=规划（《60》P0/P1/P2）</div>
+    </div>
+    <div style="display:flex;gap:16px;font-size:12px;color:#334155;align-items:center;">
+      <span><span style="display:inline-block;width:18px;height:0;border-top:3px solid #2563eb;vertical-align:middle;margin-right:5px;"></span>在营</span>
+      <span><span style="display:inline-block;width:18px;height:0;border-top:3px dashed #ea580c;vertical-align:middle;margin-right:5px;"></span>规划</span>
+      <span><span style="display:inline-block;width:14px;height:14px;background:#eff6ff;border:2px solid #93c5fd;vertical-align:middle;margin-right:5px;"></span>系统节点</span>
+    </div>
+  </div>
+
+  <table style="width:100%;border-collapse:collapse;border:2px solid #93c5fd;border-radius:8px;overflow:hidden;background:#f8fbff;">
+    <thead>
+      <tr style="background:#dbeafe;">
+        <th style="padding:10px 8px;font-size:12px;font-weight:700;color:#1d4ed8;border:2px solid #93c5fd;width:76px;">阶段</th>
+        <th style="padding:10px 8px;font-size:12px;font-weight:700;color:#1d4ed8;border:2px solid #93c5fd;">客户</th>
+        <th style="padding:10px 8px;font-size:12px;font-weight:700;color:#1d4ed8;border:2px solid #93c5fd;">运营 · 调度（管理端）</th>
+        <th style="padding:10px 8px;font-size:12px;font-weight:700;color:#1d4ed8;border:2px solid #93c5fd;">快递员</th>
+        <th style="padding:10px 8px;font-size:12px;font-weight:700;color:#1d4ed8;border:2px solid #93c5fd;">司机</th>
+        <th style="padding:10px 8px;font-size:12px;font-weight:700;color:#1d4ed8;border:2px solid #93c5fd;">财务结算</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="padding:10px 8px;border:2px solid #e2e8f0;text-align:center;font-size:11px;font-weight:700;color:#64748b;background:#f1f5f9;">①<br/>寄件<br/>下单</td>
+        <td style="padding:10px 8px;border:2px solid #e2e8f0;"><div style="border:2px solid #3b82f6;border-radius:6px;padding:8px 10px;background:#eff6ff;"><div style="font-size:12px;font-weight:600;color:#0f172a;">客户端 H5 / 管理端录入寄件订单</div><div style="font-size:10.5px;color:#64748b;margin-top:2px;">客户门户 · 下单入口</div></div></td>
+        <td style="padding:10px 8px;border:2px solid #e2e8f0;"><div style="border:2px solid #93c5fd;border-radius:6px;padding:8px 10px;background:#fff;"><div style="font-size:12px;font-weight:600;color:#0f172a;">pd-oms 订单受理</div><div style="font-size:10.5px;color:#64748b;margin-top:2px;">生成订单号 · 订单状态机启动</div></div></td>
+        <td style="border:2px solid #e2e8f0;"></td>
+        <td style="border:2px solid #e2e8f0;"></td>
+        <td style="border:2px solid #e2e8f0;"></td>
+      </tr>
+      <tr>
+        <td colspan="6" style="text-align:center;padding:2px 0;border:none;"><svg width="16" height="14" viewBox="0 0 16 14" fill="none"><path d="M8 0v9M8 9l-4-4M8 9l4-4" stroke="#2563eb" stroke-width="2"/></svg></td>
+      </tr>
+      <tr>
+        <td style="padding:10px 8px;border:2px solid #e2e8f0;text-align:center;font-size:11px;font-weight:700;color:#64748b;background:#f1f5f9;">②<br/>运费<br/>试算·审核</td>
+        <td style="border:2px solid #e2e8f0;"></td>
+        <td style="padding:10px 8px;border:2px solid #e2e8f0;"><div style="display:flex;gap:8px;flex-wrap:wrap;"><div style="flex:1;min-width:180px;border:2px solid #93c5fd;border-radius:6px;padding:8px 10px;background:#fff;"><div style="font-size:12px;font-weight:600;color:#0f172a;">Drools 规则运费试算</div><div style="font-size:10.5px;color:#64748b;margin-top:2px;">按距离/重量/时效计价</div></div><div style="flex:1;min-width:150px;border:2px solid #93c5fd;border-radius:6px;padding:8px 10px;background:#fff;"><div style="font-size:12px;font-weight:600;color:#0f172a;">管理端订单审核</div><div style="font-size:10.5px;color:#64748b;margin-top:2px;">审核通过 → 进入调度池</div></div></div></td>
+        <td style="border:2px solid #e2e8f0;"></td>
+        <td style="border:2px solid #e2e8f0;"></td>
+        <td style="border:2px solid #e2e8f0;"></td>
+      </tr>
+      <tr>
+        <td colspan="6" style="text-align:center;padding:2px 0;border:none;"><svg width="16" height="14" viewBox="0 0 16 14" fill="none"><path d="M8 0v9M8 9l-4-4M8 9l4-4" stroke="#2563eb" stroke-width="2"/></svg></td>
+      </tr>
+      <tr>
+        <td style="padding:10px 8px;border:2px solid #e2e8f0;text-align:center;font-size:11px;font-weight:700;color:#64748b;background:#f1f5f9;">③<br/>智能<br/>调度</td>
+        <td style="border:2px solid #e2e8f0;"></td>
+        <td style="padding:10px 8px;border:2px solid #e2e8f0;"><div style="border:2px solid #93c5fd;border-radius:6px;padding:8px 10px;background:#fff;"><div style="font-size:12px;font-weight:600;color:#0f172a;">pd-dispatch 智能调度</div><div style="font-size:10.5px;color:#64748b;margin-top:2px;">订单分类 · 配载 · 生成车次/运输任务（XXL-Job 定时）</div></div></td>
+        <td style="border:2px solid #e2e8f0;"></td>
+        <td style="padding:10px 8px;border:2px solid #e2e8f0;"><div style="border:2px solid #93c5fd;border-radius:6px;padding:8px 10px;background:#fff;"><div style="font-size:12px;font-weight:600;color:#0f172a;">司机端接单提醒</div><div style="font-size:10.5px;color:#64748b;margin-top:2px;">运输任务推送</div></div></td>
+        <td style="border:2px solid #e2e8f0;"></td>
+      </tr>
+      <tr>
+        <td colspan="6" style="text-align:center;padding:2px 0;border:none;"><svg width="16" height="14" viewBox="0 0 16 14" fill="none"><path d="M8 0v9M8 9l-4-4M8 9l4-4" stroke="#2563eb" stroke-width="2"/></svg></td>
+      </tr>
+      <tr>
+        <td style="padding:10px 8px;border:2px solid #e2e8f0;text-align:center;font-size:11px;font-weight:700;color:#64748b;background:#f1f5f9;">④<br/>上门<br/>取件</td>
+        <td style="border:2px solid #e2e8f0;"></td>
+        <td style="padding:10px 8px;border:2px solid #e2e8f0;"><div style="border:2px solid #93c5fd;border-radius:6px;padding:8px 10px;background:#fff;"><div style="font-size:12px;font-weight:600;color:#0f172a;">RabbitMQ 派发取件任务</div><div style="font-size:10.5px;color:#64748b;margin-top:2px;">事件解耦 → 快递员端</div></div></td>
+        <td style="padding:10px 8px;border:2px solid #e2e8f0;"><div style="border:2px solid #3b82f6;border-radius:6px;padding:8px 10px;background:#eff6ff;"><div style="font-size:12px;font-weight:600;color:#0f172a;">上门取件 · 称重</div><div style="font-size:10.5px;color:#64748b;margin-top:2px;">快递员端执行 → pd-work 生成运单</div></div></td>
+        <td style="border:2px solid #e2e8f0;"></td>
+        <td style="border:2px solid #e2e8f0;"></td>
+      </tr>
+      <tr>
+        <td colspan="6" style="text-align:center;padding:2px 0;border:none;"><svg width="16" height="14" viewBox="0 0 16 14" fill="none"><path d="M8 0v9M8 9l-4-4M8 9l4-4" stroke="#2563eb" stroke-width="2"/></svg></td>
+      </tr>
+      <tr>
+        <td style="padding:10px 8px;border:2px solid #e2e8f0;text-align:center;font-size:11px;font-weight:700;color:#64748b;background:#f1f5f9;">⑤<br/>干线<br/>运输</td>
+        <td style="border:2px solid #e2e8f0;"></td>
+        <td style="padding:10px 8px;border:2px solid #e2e8f0;"><div style="border:2px solid #93c5fd;border-radius:6px;padding:8px 10px;background:#fff;"><div style="font-size:12px;font-weight:600;color:#0f172a;">在途监控 · 数据大屏</div><div style="font-size:10.5px;color:#64748b;margin-top:2px;">pd-aggregation 聚合展示</div></div></td>
+        <td style="border:2px solid #e2e8f0;"></td>
+        <td style="padding:10px 8px;border:2px solid #e2e8f0;"><div style="border:2px solid #3b82f6;border-radius:6px;padding:8px 10px;background:#eff6ff;"><div style="font-size:12px;font-weight:600;color:#0f172a;">干线运输执行</div><div style="font-size:10.5px;color:#64748b;margin-top:2px;">司机端执行 → GPS 轨迹上报 → pd-netty TCP → 轨迹库</div></div></td>
+        <td style="border:2px solid #e2e8f0;"></td>
+      </tr>
+      <tr>
+        <td colspan="6" style="text-align:center;padding:2px 0;border:none;"><svg width="16" height="14" viewBox="0 0 16 14" fill="none"><path d="M8 0v9M8 9l-4-4M8 9l4-4" stroke="#2563eb" stroke-width="2"/></svg></td>
+      </tr>
+      <tr>
+        <td style="padding:10px 8px;border:2px solid #e2e8f0;text-align:center;font-size:11px;font-weight:700;color:#64748b;background:#f1f5f9;">⑥<br/>派送<br/>·签收</td>
+        <td style="border:2px solid #e2e8f0;"></td>
+        <td style="padding:10px 8px;border:2px solid #e2e8f0;"><div style="border:2px solid #93c5fd;border-radius:6px;padding:8px 10px;background:#fff;"><div style="font-size:12px;font-weight:600;color:#0f172a;">pd-work 生成派送任务</div><div style="font-size:10.5px;color:#64748b;margin-top:2px;">网点出库 → 派送池</div></div></td>
+        <td style="padding:10px 8px;border:2px solid #e2e8f0;"><div style="border:2px solid #3b82f6;border-radius:6px;padding:8px 10px;background:#eff6ff;"><div style="font-size:12px;font-weight:600;color:#0f172a;">末端派送 · 电子签收（POD）</div><div style="font-size:10.5px;color:#64748b;margin-top:2px;">快递员端签收 · 签收时间/照片留证</div></div><div style="font-size:10.5px;color:#b45309;margin-top:6px;font-weight:600;">异常分支：改址 / 拒收 / 滞留 → 退回派送池重派</div></td>
+        <td style="border:2px solid #e2e8f0;"></td>
+        <td style="border:2px solid #e2e8f0;"></td>
+      </tr>
+      <tr>
+        <td colspan="6" style="text-align:center;padding:2px 0;border:none;"><svg width="16" height="14" viewBox="0 0 16 14" fill="none"><path d="M8 0v9M8 9l-4-4M8 9l4-4" stroke="#2563eb" stroke-width="2"/></svg></td>
+      </tr>
+      <tr>
+        <td style="padding:10px 8px;border:2px solid #e2e8f0;text-align:center;font-size:11px;font-weight:700;color:#64748b;background:#f1f5f9;">⑦<br/>回单<br/>·结算</td>
+        <td style="border:2px solid #e2e8f0;"></td>
+        <td style="border:2px solid #e2e8f0;"></td>
+        <td style="border:2px solid #e2e8f0;"></td>
+        <td style="border:2px solid #e2e8f0;"></td>
+        <td style="padding:10px 8px;border:2px solid #e2e8f0;"><div style="border:2px solid #93c5fd;border-radius:6px;padding:8px 10px;background:#fff;margin-bottom:8px;"><div style="font-size:12px;font-weight:600;color:#0f172a;">pd-oms 运费结算</div><div style="font-size:10.5px;color:#64748b;margin-top:2px;">签收完成 → 费用确认</div></div><div style="border:2px dashed #f97316;border-radius:6px;padding:8px 10px;background:#fff7ed;"><div style="font-size:12px;font-weight:600;color:#c2410c;">pd-bms 对账开票（规划 P0）</div><div style="font-size:10.5px;color:#64748b;margin-top:2px;">Drools 计费深化 · 自动对账 · 电子回单归档（MinIO 规划 P0）</div></div></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:16px;font-size:11px;color:#64748b;">
+    <span><b style="color:#1d4ed8;">已落地链路</b>：下单 → 受理 → 调度 → 取件 → 运输 → 派送 → 签收 → 结算，全链路微服务贯通</span>
+    <span><b style="color:#c2410c;">规划增强</b>：WebSocket 实时轨迹推送（P0）· OR-Tools 智能配载（P1）· ETA 时效预测（P1）· LLM 客服/调度建议（P1）</span>
+  </div>
+</div>
+</body>
+</html>
