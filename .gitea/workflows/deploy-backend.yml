@@ -8,7 +8,10 @@
 # 能力：
 #   - inputs.services 选择本次发布的后端服务（逗号分隔，默认 pd-auth,pd-gateway；all=全部 14 个）
 #   - 固定部署顺序：基础/业务服务先上，pd-gateway 始终最后切（见解析步骤 ORDER）
-#   - 一次 mvn -pl <选中模块> -am clean package：共享依赖只构建一遍；clean 杜绝增量陈旧类
+#   - Maven 构建（2026-10-12 提速）：单服务默认只 package 目标模块，上游 SNAPSHOT 取自
+#     build-check 预热的持久 /data/m2；基线之后改过的内部模块先 install 刷新；
+#     无基线 / 命中 pom.xml 变更 / 直接打包失败，三种情况自动回退 -am 全链构建（旧行为，稳妥兜底）。
+#     all（全量发布）维持 -pl 全模块 -am clean package。
 #   - 统一 deploy/apps/Dockerfile（运行时基镜像 pinda/jre21-fontconfig:1），每服务独立上下文 .ctx/<svc>/app.jar
 #   - DB 变更门禁 / PREV 回滚基线 / 逐服务健康检查（最长 4 分钟）/ 失败自动回滚 / 演练开关 / 清悬空镜像
 #
@@ -143,6 +146,13 @@ jobs:
           echo "本次 TAG=$TAG"
           echo "选中服务（部署序）：$SERVICES"
           echo "Maven 模块（-pl）：$MODS"
+          # all=全链构建；其余走 m2 基线增量（Maven 步骤据此分支）
+          if [ "$RAW" = "all" ] || [ "$RAW" = "ALL" ]; then
+            echo "FULL_BUILD=true" >> "$GITHUB_ENV"
+          else
+            echo "FULL_BUILD=false" >> "$GITHUB_ENV"
+          fi
+
           echo "SERVICES=$SERVICES" >> "$GITHUB_ENV"
           echo "MODS=$MODS" >> "$GITHUB_ENV"
           echo "TAG=$TAG" >> "$GITHUB_ENV"
@@ -160,10 +170,92 @@ jobs:
             echo "基线 $s -> ${tag:-（无容器，首次部署）}"
           done
 
-      - name: Maven 打包选中模块（JDK21，clean，跳测试）
-        # 根 reactor -pl 多模块 + -am：自动先构建 pd-common / pd-service-api 等依赖到 /data/m2。
+      - name: Maven 打包选中模块（m2 基线增量优先，异常自动回退 -am）
+        # 提速逻辑（与宿主 deploy-be.sh 同构）：
+        #   1. 全量发布（all）：维持 -pl 全模块 -am clean package；
+        #   2. 单/多服务：读 /data/m2/.pinda-baseline.revision（build-check 每次 push 刷新），
+        #      git diff 基线..HEAD 把变更文件归属到内部模块（向上找最近含 pom.xml 的目录），
+        #      变更的上游模块先 clean install 进 /data/m2，目标模块只 clean package（不带 -am）；
+        #   3. 无基线 / 基线 commit 不在浅克隆历史 / 命中任意 pom.xml / install 或 package 失败，
+        #      一律回退原 -am 全链构建——任何不确定场景退化为旧行为，不会打出缺依赖的包。
         run: |
-          mvn -B -pl "$MODS" -am clean package -Dmaven.test.skip=true -s /ci/maven-settings.xml
+          set -e
+          M2_REPO=/data/m2/repository
+          BASELINE_FILE=/data/m2/.pinda-baseline.revision
+          MVN_COMMON="-B -Dmaven.test.skip=true -Dmaven.repo.local=$M2_REPO -s /ci/maven-settings.xml"
+
+          fallback_build() {
+            echo "::warning::回退 -am 全链构建（目标模块：$MODS）"
+            mvn $MVN_COMMON -pl "$MODS" -am clean package
+          }
+
+          if [ "$FULL_BUILD" = "true" ]; then
+            echo "全量发布（all），走 -am 全链构建"
+            mvn $MVN_COMMON -pl "$MODS" -am clean package
+            exit 0
+          fi
+
+          ls -ld /data/m2 || { echo "::error::/data/m2 未挂载，检查 act_runner valid_volumes"; exit 1; }
+
+          baseline=""
+          [ -f "$BASELINE_FILE" ] && baseline=$(cat "$BASELINE_FILE" 2>/dev/null || true)
+          if [ -z "$baseline" ] || ! git cat-file -e "${baseline}^{commit}" 2>/dev/null; then
+            echo "m2 基线不可用（baseline='${baseline:-空}'，可能新版 build-check 尚未跑过）"
+            fallback_build
+            exit 0
+          fi
+          echo "m2 基线=$baseline  HEAD=$(git rev-parse HEAD)"
+
+          # 变更文件 → 内部模块归属；命中 pom.xml（依赖/父结构可能变）直接保守回退
+          changed_mods=""
+          pom_changed=0
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            case "$f" in
+              pom.xml|*/pom.xml) pom_changed=1; echo "命中 pom 变更：$f"; break ;;
+            esac
+            d=$(dirname "$f")
+            while [ "$d" != "." ] && [ ! -f "$d/pom.xml" ]; do d=$(dirname "$d"); done
+            [ "$d" = "." ] && continue
+            case ",$changed_mods," in *",$d,"*) ;; *) changed_mods="$changed_mods,$d";; esac
+          done < <(git diff --name-only "$baseline" HEAD)
+          changed_mods="${changed_mods#,}"
+
+          if [ "$pom_changed" = "1" ]; then
+            fallback_build
+            exit 0
+          fi
+
+          # 目标模块自身马上会 package，不必先 install
+          install_mods=""
+          if [ -n "$changed_mods" ]; then
+            IFS=',' read -ra arr <<< "$changed_mods"
+            for m in "${arr[@]}"; do
+              [ -z "$m" ] && continue
+              case ",$MODS," in
+                *",$m,"*) echo "跳过目标模块自身：$m" ;;
+                *) install_mods="$install_mods,$m" ;;
+              esac
+            done
+          fi
+          install_mods="${install_mods#,}"
+
+          if [ -n "$install_mods" ]; then
+            echo "基线后变更的上游模块，先 install：$install_mods"
+            if ! mvn $MVN_COMMON -pl "$install_mods" clean install -T 1C; then
+              echo "::warning::变更上游模块 install 失败"
+              fallback_build
+              exit 0
+            fi
+          else
+            echo "基线后无上游模块变更，目标模块直接从 m2 解析打包"
+          fi
+
+          if ! mvn $MVN_COMMON -pl "$MODS" clean package; then
+            echo "::warning::目标模块直接打包失败（m2 上游可能与源码不一致）"
+            fallback_build
+            exit 0
+          fi
         timeout-minutes: 30
 
       - name: 准备镜像构建上下文（硬链接 fat jar，每目录只放一个 app.jar）
