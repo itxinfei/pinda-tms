@@ -38,12 +38,18 @@ spring:
     openfeign:
       circuitbreaker:
         enabled: true
-    # 大屏 dashboard 同步 Feign 经默认 ThreadPoolBulkhead 切到池化线程，
-    # RequestContextHolder 的 tenantId 丢失→下游回落 tenant=0→6 面板空。
-    # 改信号量隔离（对齐 pd-dispatch 939ba4a），不切线程、租户正常透传。
+    # 大屏 dashboard 与车型/车辆/线路等档案异步富化：Feign 真实调用被 Resilience4j 默认
+    # cachedThreadPool 二次 submit 切到池化线程（pool-N），RequestContextHolder 与
+    # AsyncRequestHeaders 异步快照双重丢失→下游回落 tenant=0→面板空、关联名 null。
+    # 字节码结论（spring-cloud-circuitbreaker-resilience4j 3.3.0）：enable-semaphore-default-bulkhead
+    # 只作用于 BulkheadProvider、disable-time-limiter 走 per-id 判断，均拦不住 submit；
+    # 唯一有效手段 disable-thread-pool=true——Factory.create() 走 executorService=null 分支，
+    # run() 改纯信号量同线程执行，租户头不丢；熔断与 FeignFallback 原样保留，超时由 Feign 超时兜底。
     circuitbreaker:
       resilience4j:
+        disable-thread-pool: true
         disable-time-limiter: true
+        # fat jar 补 resilience4j-bulkhead 依赖后此项才生效（信号量隔离，同样不切线程），先保留意向
         enable-semaphore-default-bulkhead: true
   # Redis：BFF 需与网关/pd-auth/pd-netty 接同一个 db0，InternalAuthRequestInterceptor 才能
   # 读到网关签发的 Same-Token（容器内 REDIS_* 由 compose 注入，本地走默认值）
