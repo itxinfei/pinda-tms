@@ -1,24 +1,12 @@
 <template>
   <div class="dash">
-    <!-- 头部：问候语 + 大屏入口/手动刷新 -->
-    <section class="dash-header">
-      <div class="card dash-header__card">
-        <div class="dash-header__start">
-          <div class="dash-avatar">
-            <img v-if="userStore.userInfo.avatar" :src="userStore.userInfo.avatar" alt="" />
-            <el-icon v-else :size="22"><User /></el-icon>
-          </div>
-          <div class="dash-header__text">
-            <h1 class="dash-header__greeting">{{ greetings }}</h1>
-            <p class="dash-header__date">{{ currentDateStr }}</p>
-          </div>
-        </div>
-        <div class="dash-header__actions">
-          <el-button :icon="Refresh" :loading="refreshing" @click="refreshAll">刷新数据</el-button>
-          <el-button type="primary" plain @click="openBigScreen">
-            <el-icon class="dash-header__screen-icon"><Monitor /></el-icon>运营大屏
-          </el-button>
-        </div>
+    <!-- 工具条：手动刷新 / 运营大屏入口（问候语已上移至全局顶栏） -->
+    <section class="dash-toolbar">
+      <div class="dash-toolbar__actions">
+        <el-button :icon="Refresh" :loading="refreshing" @click="refreshAll">刷新数据</el-button>
+        <el-button type="primary" plain @click="openBigScreen">
+          <el-icon class="dash-toolbar__screen-icon"><Monitor /></el-icon>运营大屏
+        </el-button>
       </div>
     </section>
 
@@ -166,9 +154,7 @@ defineOptions({ name: "Dashboard", inheritAttrs: false });
 
 import { ref, reactive, computed, watch, onMounted } from "vue";
 import type { EChartsOption } from "echarts";
-import { useUserStore } from "@/stores/user";
 import {
-  User,
   Document,
   Van,
   Warning,
@@ -186,24 +172,7 @@ import DashboardAPI, {
 import AlarmAPI, { AlarmHandleStatus, alarmTypeText, type AlarmRecord } from "@/api/alarm";
 import { resolveExternalUrl } from "@/utils/route";
 
-const userStore = useUserStore();
-
-// 问候语
-const hours = new Date().getHours();
-const greetings = computed(() => {
-  const n = userStore.userInfo.nickname || "管理员";
-  if (hours >= 6 && hours < 8) return `早安，${n}`;
-  if (hours >= 8 && hours < 12) return `上午好，${n}`;
-  if (hours >= 12 && hours < 18) return `下午好，${n}`;
-  if (hours >= 18 && hours < 24) return `晚上好，${n}`;
-  return `夜深了，${n}`;
-});
-
-const currentDateStr = computed(() => {
-  const d = new Date();
-  const w = ["日", "一", "二", "三", "四", "五", "六"];
-  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 星期${w[d.getDay()]}`;
-});
+// 问候语已上移至全局顶栏 LayoutToolbar
 
 // ---- 总览 KPI + 订单三桶（pd-oms 订单统计 + pd-work 任务/车辆聚合） ----
 const overviewLoading = ref(false);
@@ -481,75 +450,22 @@ $pad: 10px;
   background: var(--page-bg);
 }
 
-// Header
-.dash-header {
-  &__card {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 18px;
-    align-items: center;
-    justify-content: space-between;
-    min-height: 78px;
-    padding: 16px 18px;
-  }
-
-  &__start {
-    display: flex;
-    flex: 1;
-    gap: 12px;
-    align-items: center;
-    min-width: 260px;
-  }
+// 工具条（原头部问候卡拆分：按钮上移至此，问候语上移全局顶栏）
+.dash-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
 
   &__actions {
     display: flex;
-    flex-shrink: 0;
     gap: 10px;
     align-items: center;
   }
 
   &__screen-icon {
     margin-right: 4px;
-  }
-
-  &__text {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-  }
-
-  &__greeting {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 500;
-    line-height: 1.3;
-    color: var(--el-text-color-primary);
-  }
-
-  &__date {
-    margin: 0;
-    font-size: 12px;
-    color: var(--el-text-color-secondary);
-  }
-}
-
-.dash-avatar {
-  display: flex;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  overflow: hidden;
-  color: var(--el-color-primary);
-  background: color-mix(in srgb, var(--el-color-primary) 14%, var(--el-bg-color-overlay));
-  border: 1px solid color-mix(in srgb, var(--el-color-primary) 18%, transparent);
-  border-radius: 50%;
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
   }
 }
 
@@ -912,8 +828,12 @@ $pad: 10px;
     grid-template-columns: 1fr;
   }
 
-  .dash-header__actions {
+  .dash-toolbar__actions {
     width: 100%;
+
+    .el-button {
+      flex: 1;
+    }
   }
 }
 </style>

@@ -35,7 +35,7 @@
             <img v-if="userStore.userInfo.avatar" :src="userStore.userInfo.avatar" class="layout-user__avatar-img" />
             <el-icon v-else :size="20"><User /></el-icon>
           </div>
-          <span class="layout-user__name">{{ userStore.userInfo.nickname }}</span>
+          <span class="layout-user__name">{{ greetings }}</span>
         </div>
         <template #dropdown>
           <el-dropdown-menu>
@@ -76,6 +76,17 @@ const route = useRoute();
 const router = useRouter();
 
 const isDesktop = computed(() => appStore.device === DeviceEnum.DESKTOP);
+
+// 顶栏问候语（原仪表盘头部问候卡拆分上移，全局生效）
+const greetings = computed(() => {
+  const h = new Date().getHours();
+  const n = userStore.userInfo.nickname || "管理员";
+  if (h < 6) return `夜深了，${n}`;
+  if (h < 8) return `早安，${n}`;
+  if (h < 12) return `上午好，${n}`;
+  if (h < 18) return `下午好，${n}`;
+  return `晚上好，${n}`;
+});
 
 const canSwitchTenant = computed(() => userStore.userInfo?.canSwitchTenant === true);
 
