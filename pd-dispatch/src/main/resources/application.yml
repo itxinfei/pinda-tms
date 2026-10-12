@@ -38,6 +38,16 @@ spring:
     circuitbreaker:
       resilience4j:
         disable-time-limiter: true
+        # 默认 Bulkhead 是 ThreadPoolBulkhead：会把 Feign 真实调用 submit 到隔离线程池，
+        # 与 TimeLimiter 一样切断普通 ThreadLocal——即便上面关了 TimeLimiter，系统态调度线程
+        # 写入 TenantContextHolder 的租户仍会在 bulkhead 池化线程丢失，InternalAuthRequestInterceptor
+        # 不带 tenantId 头，下游 pd-oms 回落租户 0（spring-cloud-circuitbreaker-resilience4j 3.3.0
+        # 字节码坐实：Resilience4jBulkheadProvider.decorateCallable 默认走
+        # ThreadPoolBulkhead.decorateCallable(...).get().toCompletableFuture().get()）。
+        # 改为信号量隔离：仅 acquire/release 许可、不切线程，Feign 调用留在调度 JobThread 同线程，
+        # 租户正常透传。信号量 Bulkhead 与 TimeLimiter 不兼容，故与 disable-time-limiter 配套；
+        # 失败率熔断与各 FeignFallback 不受影响，最大并发默认 25（dev 调度足够）。
+        enable-semaphore-default-bulkhead: true
     nacos:
       # 服务注册
       discovery:
