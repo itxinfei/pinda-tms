@@ -87,7 +87,12 @@ public class ConfigurationSupport extends WebMvcConfigurationSupport {
                 .deserializerByType(Enum.class, EnumDeserializer.INSTANCE)
                 .deserializerByType(LocalDateTime.class, FLEXIBLE_LOCAL_DATE_TIME_DESERIALIZER)
                 .deserializerByType(LocalDate.class, new LocalDateDeserializer(DateTimeFormatter.ofPattern(DatePatterns.DATE)))
-                .deserializerByType(LocalTime.class, new LocalTimeDeserializer(DateTimeFormatter.ofPattern(DatePatterns.TIME)));
+                .deserializerByType(LocalTime.class, new LocalTimeDeserializer(DateTimeFormatter.ofPattern(DatePatterns.TIME)))
+                // 序列化侧对齐全局"空格"契约：此前只配反序列化，容器 mapper 对 LocalDateTime
+                // 仍走 Boot 默认 ISO 输出，MQ 事件负载 eventTime 格式随机（5 处消费端补丁的根源）
+                .serializerByType(LocalDateTime.class, new LocalDateTimeSerializer(DateTimeFormatter.ofPattern(DatePatterns.DATE_TIME)))
+                .serializerByType(LocalDate.class, new LocalDateSerializer(DateTimeFormatter.ofPattern(DatePatterns.DATE)))
+                .serializerByType(LocalTime.class, new LocalTimeSerializer(DateTimeFormatter.ofPattern(DatePatterns.TIME)));
 
     }
 
