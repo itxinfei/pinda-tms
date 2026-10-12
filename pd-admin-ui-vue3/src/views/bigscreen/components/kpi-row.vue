@@ -1,9 +1,7 @@
 <template>
   <div class="bs-kpi">
-    <div v-for="(item, idx) in items" :key="item.label" class="bs-kpi__item">
-      <span class="bs-corner bs-corner--tl" />
-      <span class="bs-corner bs-corner--br" />
-      <div class="bs-kpi__icon" :style="{ color: item.color, borderColor: item.color }">
+    <div v-for="(item, idx) in items" :key="item.label" class="bs-kpi__item" :style="{ '--c': item.color }">
+      <div class="bs-kpi__icon">
         <!-- 内联 SVG，避免大屏依赖管理端图标包 -->
         <svg v-if="item.icon === 'order'" viewBox="0 0 1024 1024" fill="none" stroke="currentColor" stroke-width="48">
           <path d="M296 136h308l156 156v596H296z" />
@@ -35,7 +33,7 @@
         </svg>
       </div>
       <div class="bs-kpi__main">
-        <div class="bs-kpi__value" :style="{ color: item.color }">{{ display[idx] }}</div>
+        <div class="bs-kpi__value">{{ display[idx] }}</div>
         <div class="bs-kpi__label">{{ item.label }}</div>
       </div>
     </div>
@@ -118,73 +116,96 @@ onBeforeUnmount(() => cancelAnimationFrame(raf));
 .bs-kpi {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
-  gap: 12px;
-  height: 100%;
+  gap: 10px;
+  align-items: stretch;
 
   &__item {
     position: relative;
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 0 14px;
-    background: linear-gradient(90deg, rgba(0, 120, 255, 0.18), rgba(0, 60, 160, 0.06));
+    gap: 10px;
+    padding: 7px 12px 7px 14px;
+    background: linear-gradient(135deg, rgba(2, 18, 56, 0.6), rgba(2, 10, 34, 0.35));
     border: 1px solid var(--bs-panel-border);
+    border-radius: 5px;
     overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
 
+    /* 左侧主题色光条 */
+    &::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: var(--c);
+      box-shadow: 0 0 10px var(--c);
+    }
+
+    /* 主题色淡染层 */
     &::after {
       content: "";
       position: absolute;
       inset: 0;
-      background: linear-gradient(120deg, transparent 30%, rgba(0, 234, 255, 0.08) 50%, transparent 70%);
-      background-size: 220% 100%;
-      animation: bs-kpi-sheen 6s linear infinite;
+      background: var(--c);
+      opacity: 0.08;
       pointer-events: none;
+    }
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
     }
   }
 
   &__icon {
+    position: relative;
+    z-index: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 46px;
-    height: 46px;
+    width: 32px;
+    height: 32px;
     flex: none;
-    border: 1px solid;
-    border-radius: 50%;
-    background: rgba(2, 16, 54, 0.5);
-    box-shadow: 0 0 16px rgba(0, 234, 255, 0.18), inset 0 0 10px rgba(0, 234, 255, 0.12);
+    border-radius: 8px;
+    color: var(--c);
+    background: rgba(2, 16, 54, 0.55);
+    border: 1px solid var(--c);
+    box-shadow: 0 0 8px var(--c);
 
     svg {
-      width: 26px;
-      height: 26px;
+      width: 19px;
+      height: 19px;
     }
   }
 
   &__main {
+    position: relative;
+    z-index: 1;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+    line-height: 1.05;
   }
 
   &__value {
     font-family: var(--bs-font-title);
-    font-size: 28px;
-    line-height: 1.1;
+    font-size: 23px;
+    font-weight: 700;
+    color: #eaf6ff;
     white-space: nowrap;
-    text-shadow: 0 0 12px currentColor;
+    text-shadow: 0 0 10px var(--c);
   }
 
   &__label {
     margin-top: 2px;
-    font-size: 13px;
-    letter-spacing: 1px;
+    font-size: 11px;
+    letter-spacing: 0.5px;
     color: var(--bs-text-dim);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-}
-
-@keyframes bs-kpi-sheen {
-  0% { background-position: 120% 0; }
-  100% { background-position: -120% 0; }
 }
 </style>
