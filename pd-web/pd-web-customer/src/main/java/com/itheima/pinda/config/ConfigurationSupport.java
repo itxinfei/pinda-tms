@@ -1,7 +1,10 @@
 package com.itheima.pinda.config;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
@@ -9,7 +12,6 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.DateSerializer;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
-import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
@@ -38,6 +40,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -48,8 +51,35 @@ import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKN
 @Slf4j
 @Configuration
 public class ConfigurationSupport extends WebMvcConfigurationSupport {
+
+    /**
+     * LocalDateTime 反序列化兼容两种线上格式：
+     * ① "yyyy-MM-dd HH:mm:ss"（全局 Jackson 输出）；② ISO "yyyy-MM-dd'T'HH:mm:ss"（pd-oms 默认输出）。
+     * 只认①时，pd-oms 订单保存响应（含 estimatedArrivalTime）在 Feign 解码层失败走 fallback，下单被误报失败。
+     * 注意：customizer Bean（Feign SpringDecoder 走容器 ObjectMapper）与下方 MVC 内部类
+     * 是两条 ObjectMapper 构建路径，必须两处同时注册，写法对齐 pd-web-manager。
+     */
+    private static final JsonDeserializer<LocalDateTime> FLEXIBLE_LOCAL_DATE_TIME_DESERIALIZER =
+            new JsonDeserializer<LocalDateTime>() {
+                @Override
+                public LocalDateTime deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+                    String value = p.getValueAsString();
+                    if (value == null || value.isBlank()) {
+                        return null;
+                    }
+                    value = value.trim();
+                    try {
+                        return LocalDateTime.parse(value, DateTimeFormatter.ofPattern(DatePatterns.DATE_TIME));
+                    } catch (DateTimeParseException ignored) {
+                        // 非"空格"格式，按 ISO-8601 兜底解析
+                        return LocalDateTime.parse(value);
+                    }
+                }
+            };
+
     /**
      * deserializerByType 解决string类型入参转为 LocalDateTime 格式问题
+     * 本 Bean 定制容器自动配置的 ObjectMapper，Feign 的 SpringDecoder 解码 pd-oms 响应走的就是这条路径
      *
      * @return
      */
@@ -57,7 +87,7 @@ public class ConfigurationSupport extends WebMvcConfigurationSupport {
     public Jackson2ObjectMapperBuilderCustomizer jackson2ObjectMapperBuilderCustomizer() {
         return builder -> builder
                 .deserializerByType(Enum.class, EnumDeserializer.INSTANCE)
-                .deserializerByType(LocalDateTime.class, new LocalDateTimeDeserializer(DateTimeFormatter.ofPattern(DatePatterns.DATE_TIME)))
+                .deserializerByType(LocalDateTime.class, FLEXIBLE_LOCAL_DATE_TIME_DESERIALIZER)
                 .deserializerByType(LocalDate.class, new LocalDateDeserializer(DateTimeFormatter.ofPattern(DatePatterns.DATE)))
                 .deserializerByType(LocalTime.class, new LocalTimeDeserializer(DateTimeFormatter.ofPattern(DatePatterns.TIME)));
 
@@ -118,7 +148,6 @@ public class ConfigurationSupport extends WebMvcConfigurationSupport {
 
             SimpleModule simpleModule = new SimpleModule()
 //                .addDeserializer(Enum.class, EnumDeserializer.INSTANCE)
-//                .addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer(DateTimeFormatter.ofPattern(DatePatterns.DATE_TIME)))
 //                .addDeserializer(LocalDate.class, new LocalDateDeserializer(DateTimeFormatter.ofPattern(DatePatterns.DATE)))
 //                .addDeserializer(LocalTime.class, new LocalTimeDeserializer(DateTimeFormatter.ofPattern(DatePatterns.TIME)))
 
@@ -127,7 +156,9 @@ public class ConfigurationSupport extends WebMvcConfigurationSupport {
                     .addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(DateTimeFormatter.ofPattern(DatePatterns.DATE_TIME)))
                     .addSerializer(LocalDate.class, new LocalDateSerializer(DateTimeFormatter.ofPattern(DatePatterns.DATE)))
                     .addSerializer(LocalTime.class, new LocalTimeSerializer(DateTimeFormatter.ofPattern(DatePatterns.TIME)))
-                    .addSerializer(Date.class, new DateSerializer(false, new SimpleDateFormat(DatePatterns.DATE_TIME)));
+                    .addSerializer(Date.class, new DateSerializer(false, new SimpleDateFormat(DatePatterns.DATE_TIME)))
+                    // 与 customizer Bean 共用同一双格式反序列化器（MVC 入站路径）
+                    .addDeserializer(LocalDateTime.class, FLEXIBLE_LOCAL_DATE_TIME_DESERIALIZER);
 
             this.registerModule(simpleModule);
             //处理空指针时设置的值
