@@ -145,6 +145,17 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     }
 
     @Override
+    public boolean cancel(Long id, String reason) {
+        // 不单独维护状态矩阵：updateById 会读取当前状态并校验 1~9 → 12 的合法流转
+        Order order = new Order();
+        order.setId(id);
+        order.setStatus(OrderStatus.CANCELLED.getCode());
+        order.setCancelReason(reason);
+        order.setCancelTime(LocalDateTime.now());
+        return updateById(order);
+    }
+
+    @Override
     public Order saveOrder(Order order) {
         // 主键走 MyBatis-Plus ASSIGN_ID（雪花），save 时自动赋值，无需手工生成
         order.setCreateTime(LocalDateTime.now());

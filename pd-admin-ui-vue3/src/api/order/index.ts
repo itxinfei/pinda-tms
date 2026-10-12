@@ -12,7 +12,8 @@ export interface AreaSimple {
 }
 
 /**
- * 订单状态（23000 段，口径见数据字典）
+ * 订单状态（紧凑码 1~12，口径见数据字典）：
+ * 1待取件 2已取件 3网点自寄 4网点入库 5待装车 6运输中 7网点出库 8待派送 9派送中 10已签收 11拒收 12已取消
  */
 export enum OrderStatus {
   /** 待取件 */
@@ -99,6 +100,10 @@ export interface OrderRecord {
   estimatedArrivalTime?: string;
   distance?: number;
   status: number;
+  /** 取消原因（status=12 时有值） */
+  cancelReason?: string;
+  /** 取消时间（status=12 时有值，yyyy-MM-dd HH:mm:ss） */
+  cancelTime?: string;
 }
 
 /** 订单详情：含取件/派件任务与运单 */
@@ -136,6 +141,17 @@ const OrderAPI = {
       url: `${ORDER_BASE_URL}/${id}`,
       method: "post",
       data,
+    });
+  },
+  /**
+   * 取消订单（状态 1~9 可取消）
+   * @returns warnings 非空时表示订单已取消，但存在运单/下游任务需人工处理
+   */
+  cancel(id: string, reason: string) {
+    return request<unknown, { warnings: string[] }>({
+      url: `${ORDER_BASE_URL}/${id}/cancel`,
+      method: "put",
+      data: { reason },
     });
   },
 };

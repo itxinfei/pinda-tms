@@ -73,10 +73,19 @@
             </template>
           </el-table-column>
           <el-table-column prop="createTime" label="下单时间" width="170" />
-          <el-table-column label="操作" fixed="right" width="150" align="center">
+          <el-table-column label="操作" fixed="right" width="190" align="center">
             <template #default="scope">
               <el-button type="primary" link size="small" @click="openDetail(scope.row as OrderRecord)">详情</el-button>
               <el-button type="primary" link size="small" @click="goCargo(scope.row as OrderRecord)">货物</el-button>
+              <el-button
+                v-if="canCancel(scope.row.status)"
+                type="danger"
+                link
+                size="small"
+                @click="handleCancel(scope.row as OrderRecord)"
+              >
+                取消
+              </el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -131,6 +140,10 @@
             <el-descriptions-item label="距离(公里)">{{ detail.distance ?? "-" }}</el-descriptions-item>
             <el-descriptions-item label="预计到达">{{ detail.estimatedArrivalTime || "-" }}</el-descriptions-item>
             <el-descriptions-item label="客户ID">{{ detail.memberId || "-" }}</el-descriptions-item>
+            <template v-if="detail.status === OrderStatus.CANCELLED">
+              <el-descriptions-item label="取消时间" :span="2">{{ detail.cancelTime || "-" }}</el-descriptions-item>
+              <el-descriptions-item label="取消原因" :span="2">{{ detail.cancelReason || "-" }}</el-descriptions-item>
+            </template>
           </el-descriptions>
 
           <div class="order-detail__block">
@@ -201,6 +214,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
+import { ElMessage, ElMessageBox } from "element-plus";
 import OrderAPI from "@/api/order";
 import { OrderStatus, type OrderRecord, type OrderDetail, type OrderPageQuery, type PickupDispatchTask } from "@/api/order";
 
@@ -275,6 +289,59 @@ function handleSearch() {
 function handleReset() {
   query.value = { page: 1, pageSize: 10 };
   loadList();
+}
+
+/** 非终态订单（1~9）可取消；10已签收/11拒收/12已取消 不显示取消入口 */
+const canCancel = (status?: number) => typeof status === "number" && status >= 1 && status <= 9;
+
+/** 取消订单：必填原因（≤200字）；在途单（6~9）提示运单/干线需人工处理；后端 warnings 非空时弹窗列示 */
+async function handleCancel(row: OrderRecord) {
+  const inTransit = typeof row.status === "number" && row.status >= 6 && row.status <= 9;
+  let reason: string;
+  try {
+    const { value } = await ElMessageBox.prompt(
+      inTransit
+        ? "该订单处于在途环节，取消后关联运单及干线运输任务不会自动联动，需人工核实处理。请填写取消原因："
+        : "取消后未完成的取件/派件任务将一并取消。请填写取消原因：",
+      `取消订单 ${row.id}`,
+      {
+        confirmButtonText: "确认取消",
+        cancelButtonText: "再想想",
+        type: inTransit ? "warning" : undefined,
+        inputType: "textarea",
+        inputPlaceholder: "请输入取消原因（必填，不超过200字）",
+        inputValidator: (val: string) => {
+          const text = (val ?? "").trim();
+          if (!text) return "取消原因不能为空";
+          if (text.length > 200) return "取消原因不能超过200字";
+          return true;
+        },
+      }
+    );
+    reason = value.trim();
+  } catch {
+    // 用户点「再想想」或关闭弹窗，放弃取消
+    return;
+  }
+
+  // 后端校验失败（状态不合法/重复取消等）由请求拦截器统一弹错，不额外处理
+  const res = await OrderAPI.cancel(row.id, reason);
+  loadList();
+  // 若详情抽屉正展示该单，同步刷新取消时间/原因
+  if (detailVisible.value && detail.value?.id === row.id) {
+    openDetail(row);
+  }
+
+  const warnings = res?.warnings ?? [];
+  if (warnings.length > 0) {
+    ElMessageBox.alert(warnings.map((item) => `· ${item}`).join("\n"), "订单已取消，以下事项需人工处理", {
+      type: "warning",
+      confirmButtonText: "知道了",
+      customStyle: { whiteSpace: "pre-line" },
+    });
+  } else {
+    ElMessage.success("订单已取消");
+  }
 }
 
 /** 详情 */
@@ -366,7 +433,8 @@ const statusTimeline = computed<TimelineNode[]>(() => {
     nodes.push({
       code: cur,
       label: ORDER_STATUS_OPTIONS.find((item) => item.value === cur)?.label ?? "未知",
-      time: "",
+      // 取消节点时间取服务端落库的 cancelTime；拒收暂无对应时间字段
+      time: cur === OrderStatus.CANCELLED ? (d.cancelTime ?? "") : "",
       type: "danger",
       hollow: false,
     });

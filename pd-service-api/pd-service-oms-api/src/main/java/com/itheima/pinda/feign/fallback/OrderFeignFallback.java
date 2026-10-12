@@ -1,5 +1,6 @@
 package com.itheima.pinda.feign.fallback;
 
+import com.itheima.pinda.DTO.OrderCancelDTO;
 import com.itheima.pinda.DTO.OrderDTO;
 import com.itheima.pinda.DTO.OrderLocationDto;
 import com.itheima.pinda.DTO.OrderSearchDTO;
@@ -46,6 +47,12 @@ public class OrderFeignFallback implements OrderFeign {
     public Result reprice(String id, OrderDTO orderDTO) {
         log.warn("远程调用 pd-oms 失败: reprice({}), 返回error", id);
         return Result.error(500, "改价服务不可用");
+    }
+
+    @Override
+    public Result cancel(String id, OrderCancelDTO cancelDTO) {
+        log.warn("远程调用 pd-oms 失败: cancel({}), 返回error", id);
+        return Result.error(500, "取消订单服务不可用");
     }
 
     @Override

@@ -141,11 +141,20 @@ public class OrderDTO implements Serializable {
     private BigDecimal distance;
 
     /**
-     * 订单状态: 23000为待取件,23001为已取件，23002为网点自寄，23003为网点入库，
-     * 23004为待装车，23005为运输中，23006为网点出库，23007为待派送，23008为派送中，
-     * 23009为已签收，23010为拒收，230011为已取消
+     * 订单状态（紧凑码 1~12，见 OrderStatus）：
+     * 1待取件 2已取件 3网点自寄 4网点入库 5待装车 6运输中 7网点出库 8待派送 9派送中 10已签收 11拒收 12已取消
      */
     private Integer status;
+
+    /**
+     * 取消原因（status=12 时必填）
+     */
+    private String cancelReason;
+
+    /**
+     * 取消时间
+     */
+    private LocalDateTime cancelTime;
 
     /**
      * 页码

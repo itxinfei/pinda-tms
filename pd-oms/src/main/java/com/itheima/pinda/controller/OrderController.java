@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.itheima.pinda.DTO.OrderCargoDto;
+import com.itheima.pinda.DTO.OrderCancelDTO;
 import com.itheima.pinda.DTO.OrderDTO;
 import com.itheima.pinda.DTO.OrderLocationDto;
 import com.itheima.pinda.DTO.OrderSearchDTO;
@@ -19,10 +20,12 @@ import com.itheima.pinda.entity.Order;
 import com.itheima.pinda.entity.OrderCargo;
 import com.itheima.pinda.entity.OrderLocation;
 import com.itheima.pinda.enums.OrderPaymentStatus;
+import com.itheima.pinda.enums.OrderStatus;
 import com.itheima.pinda.service.IOrderCargoService;
 import com.itheima.pinda.service.IOrderLocationService;
 import com.itheima.pinda.service.IOrderService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -230,6 +233,48 @@ public class OrderController {
         }
         log.info("[订单] 改价成功: id={}, amount={}", id, amount);
         return Result.ok().put("amount", amount);
+    }
+
+    /**
+     * 订单取消（专用端点）
+     *
+     * <p>非终态订单（状态 1~9）可取消，状态合法性由 OrderServiceImpl 状态矩阵校验；
+     * 取消原因必填（≤200 字），取消时间由服务端生成。取派件任务、订单位置的联动处理
+     * 由管理端 BFF（pd-web-manager）编排，本端点只负责订单本体落库。</p>
+     *
+     * @param id        订单id
+     * @param cancelDTO 取消入参（reason 必填）
+     * @return 取消结果
+     */
+    @PutMapping("/{id}/cancel")
+    public Result cancel(@PathVariable(name = "id") String id, @RequestBody OrderCancelDTO cancelDTO) {
+        Long orderId = IdConverter.toLong(id);
+        if (orderId == null) {
+            return Result.error(400, "订单ID不能为空");
+        }
+        if (cancelDTO == null || StringUtils.isBlank(cancelDTO.getReason())) {
+            return Result.error(400, "取消原因不能为空");
+        }
+        String reason = cancelDTO.getReason().trim();
+        if (reason.length() > 200) {
+            return Result.error(400, "取消原因不能超过200字");
+        }
+        Order order = orderService.getById(orderId);
+        if (order == null) {
+            return Result.error(400, "订单不存在");
+        }
+        // 幂等保护：已取消订单拒绝重复取消
+        if (OrderStatus.CANCELLED.getCode().equals(order.getStatus())) {
+            log.warn("[订单] 订单已取消，拒绝重复取消: id={}", id);
+            return Result.error(400, "订单已取消，请勿重复操作");
+        }
+        if (!orderService.cancel(orderId, reason)) {
+            log.warn("[订单] 取消失败（当前状态不允许流转到已取消）: id={}, status={}",
+                id, order.getStatus());
+            return Result.error(400, "当前订单状态不允许取消");
+        }
+        log.info("[订单] 取消成功: id={}, reason={}", id, reason);
+        return Result.ok();
     }
 
     /**

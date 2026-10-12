@@ -88,8 +88,17 @@ public class OrderVo implements Serializable {
     @Schema(description = "距离，单位：公里")
     private BigDecimal distance;
 
-    @Schema(description = "订单状态: 23000为待取件,23001为已取件，23002为网点自寄，23003为网点入库，23004为待装车，23005为运输中，23006为网点出库，23007为待派送，23008为派送中，23009为已签收，23010为拒收，230011为已取消")
+    @Schema(description = "订单状态（紧凑码 1~12）：1待取件 2已取件 3网点自寄 4网点入库 5待装车 6运输中 7网点出库 8待派送 9派送中 10已签收 11拒收 12已取消")
     private Integer status;
+
+    @Schema(description = "取消原因（status=12 时有值）")
+    private String cancelReason;
+
+    @Schema(description = "取消时间")
+    @JsonFormat(
+            pattern = "yyyy-MM-dd HH:mm:ss"
+    )
+    private LocalDateTime cancelTime;
 
     @Schema(description = "页码")
     private Integer page;

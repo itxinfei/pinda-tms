@@ -153,6 +153,16 @@ public class Order implements Serializable {
      */
     private LocalDateTime estimatedArrivalTime;
 
+    /**
+     * 取消原因（status=12 已取消时填写）
+     */
+    private String cancelReason;
+
+    /**
+     * 取消时间
+     */
+    private LocalDateTime cancelTime;
+
     private Long createBy;
     private LocalDateTime createTime;
     private Long updateBy;

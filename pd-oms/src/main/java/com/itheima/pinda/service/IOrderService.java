@@ -50,4 +50,14 @@ public interface IOrderService extends IService<Order> {
      * @return
      */
     public Map calculateAmount(OrderDTO orderDTO);
+
+    /**
+     * 取消订单：置为已取消(12)并记录取消原因/时间。
+     * 状态流转合法性复用 {@link #updateById(Order)} 内嵌矩阵校验，不另写状态机。
+     *
+     * @param id     订单id
+     * @param reason 取消原因
+     * @return 是否成功；订单不存在或当前状态不允许取消返回 false
+     */
+    boolean cancel(Long id, String reason);
 }

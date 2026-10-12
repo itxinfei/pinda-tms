@@ -27,6 +27,8 @@ CREATE TABLE `oms_order` (
   `order_type`            TINYINT UNSIGNED NOT NULL DEFAULT 1 COMMENT '订单类型 1同城 2城际',
   `pickup_type`           TINYINT UNSIGNED NOT NULL DEFAULT 2 COMMENT '取件类型 1网点自寄 2上门取件',
   `status`                TINYINT UNSIGNED NOT NULL DEFAULT 1 COMMENT '订单状态（见文件头映射）',
+  `cancel_reason`         VARCHAR(200) DEFAULT NULL COMMENT '取消原因（status=12 时填写）',
+  `cancel_time`           DATETIME DEFAULT NULL COMMENT '取消时间',
   `member_id`             BIGINT UNSIGNED DEFAULT NULL COMMENT '下单会员 member_info.id',
   `sender_name`           VARCHAR(50)  DEFAULT NULL COMMENT '寄件人',
   `sender_phone`          VARCHAR(20)  DEFAULT NULL COMMENT '寄件人电话',

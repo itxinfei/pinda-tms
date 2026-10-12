@@ -1,5 +1,6 @@
 package com.itheima.pinda.feign;
 
+import com.itheima.pinda.DTO.OrderCancelDTO;
 import com.itheima.pinda.DTO.OrderDTO;
 import com.itheima.pinda.DTO.OrderLocationDto;
 import com.itheima.pinda.DTO.OrderSearchDTO;
@@ -57,6 +58,16 @@ public interface OrderFeign {
      */
     @PutMapping("/{id}/reprice")
     Result reprice(@PathVariable(name = "id") String id, @RequestBody OrderDTO orderDTO);
+
+    /**
+     * 订单取消（专用端点，原因必填，状态矩阵由 pd-oms 校验）
+     *
+     * @param id        订单id
+     * @param cancelDTO 取消入参
+     * @return 取消结果（code=0 成功）
+     */
+    @PutMapping("/{id}/cancel")
+    Result cancel(@PathVariable(name = "id") String id, @RequestBody OrderCancelDTO cancelDTO);
 
     /**
      * 获取订单分页数据
