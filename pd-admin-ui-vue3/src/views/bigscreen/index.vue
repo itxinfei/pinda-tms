@@ -268,7 +268,7 @@ const flattenOrgs = (nodes: OrgNode[], parent?: OrgNode): OrgPoint[] => {
 const loadAll = async () => {
   const results = await Promise.allSettled([
     DashboardAPI.getBigScreenSummary(),
-    DashboardAPI.getTrend(7),
+    DashboardAPI.getTrend(30),
     DashboardAPI.getOverview(),
     DashboardAPI.getTodo(8),
     AlarmAPI.page({ page: 1, pageSize: 20 }),
@@ -400,7 +400,7 @@ onBeforeUnmount(() => {
 
 .bs-risk-panel {
   flex: none;
-  height: 156px;
+  height: 250px;
 }
 
 .bs-empty {
