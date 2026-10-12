@@ -11,6 +11,7 @@
             class="profile-avatar__action"
             circle
             :icon="Camera"
+            :loading="avatarUploading"
             size="small"
             title="更换头像"
             @click="triggerFileUpload"
@@ -37,10 +38,6 @@
               <el-icon><Calendar /></el-icon>
               加入 {{ formatValue(userProfile.createTime) }}
             </span>
-            <span class="profile-hero__meta-item">
-              <el-icon><Location /></el-icon>
-              最近登录 {{ recentLoginRecords[0]?.time }}
-            </span>
           </div>
         </div>
       </div>
@@ -50,6 +47,7 @@
         <el-button type="primary" :icon="Lock" @click="handleOpenDialog(DialogType.PASSWORD)">
           修改密码
         </el-button>
+        <el-button :icon="SwitchButton" @click="handleLogout">退出登录</el-button>
       </div>
     </section>
 
@@ -117,9 +115,14 @@
               <h3 class="profile-card__title">安全设置</h3>
               <p class="profile-card__desc">维护账号登录凭证与身份验证方式</p>
             </div>
-            <el-tag :type="securityLevel.type" effect="light">
-              安全等级 {{ securityLevel.label }}
-            </el-tag>
+            <el-tooltip
+              content="按凭证绑定情况评估：基础 60 分，每绑定手机/邮箱各加 20 分"
+              placement="top"
+            >
+              <el-tag :type="securityLevel.type" effect="light">
+                安全等级 {{ securityLevel.label }}
+              </el-tag>
+            </el-tooltip>
           </header>
 
           <div class="profile-security">
@@ -151,60 +154,49 @@
           </div>
         </section>
 
-        <div class="profile-page__grid">
-          <section class="profile-card">
-            <header class="profile-card__header">
-              <h3 class="profile-card__title">近期登录</h3>
-              <span class="profile-card__extra">最近 3 条</span>
-            </header>
-
-            <div class="profile-login">
-              <div
-                v-for="record in recentLoginRecords"
-                :key="record.time"
-                class="profile-login__item"
-              >
-                <span class="profile-icon">
-                  <el-icon><Monitor /></el-icon>
-                </span>
-                <div class="profile-login__body">
-                  <strong class="profile-login__device">{{ record.device }}</strong>
-                  <span class="profile-login__meta">{{ record.location }} / {{ record.ip }}</span>
-                </div>
-                <time class="profile-login__time">{{ record.time }}</time>
-              </div>
-            </div>
-          </section>
-
-          <section class="profile-card">
-            <header class="profile-card__header">
+        <section class="profile-card">
+          <header class="profile-card__header">
+            <div>
               <h3 class="profile-card__title">账号状态</h3>
-              <span class="profile-card__extra">完善度 {{ profileCompletion }}%</span>
-            </header>
+              <p class="profile-card__desc">仅统计本人可维护的资料项</p>
+            </div>
+            <span class="profile-card__extra">完善度 {{ profileCompletion }}%</span>
+          </header>
 
-            <div class="profile-status">
-              <div
-                v-for="item in accountStatusItems"
-                :key="item.label"
-                class="profile-status__item"
-                :class="{ 'is-warning': !item.done }"
-              >
-                <el-icon class="profile-status__icon">
-                  <CircleCheck v-if="item.done" />
-                  <Warning v-else />
-                </el-icon>
-                <div class="profile-status__body">
-                  <strong class="profile-status__title">{{ item.label }}</strong>
-                  <span class="profile-status__desc">{{ item.value }}</span>
-                </div>
+          <div class="profile-status">
+            <div
+              v-for="item in accountStatusItems"
+              :key="item.label"
+              class="profile-status__item"
+              :class="{ 'is-warning': !item.done }"
+            >
+              <el-icon class="profile-status__icon">
+                <CircleCheck v-if="item.done" />
+                <Warning v-else />
+              </el-icon>
+              <div class="profile-status__body">
+                <strong class="profile-status__title">{{ item.label }}</strong>
+                <span class="profile-status__desc">{{ item.value }}</span>
               </div>
             </div>
-          </section>
-        </div>
+          </div>
+
+          <el-progress
+            :percentage="profileCompletion"
+            :stroke-width="8"
+            :status="profileCompletion >= 80 ? 'success' : undefined"
+            class="profile-completion"
+          />
+        </section>
       </main>
     </div>
 
-    <el-dialog v-model="dialogState.visible" :title="dialogState.title" width="520px">
+    <el-dialog
+      v-model="dialogState.visible"
+      :title="dialogState.title"
+      width="min(520px, 92vw)"
+      @closed="handleDialogClosed"
+    >
       <el-form
         v-if="dialogState.type === DialogType.ACCOUNT"
         ref="userProfileFormRef"
@@ -214,7 +206,12 @@
         class="pr-10px"
       >
         <el-form-item label="昵称" prop="nickname">
-          <el-input v-model="userProfileForm.nickname" placeholder="请输入昵称" />
+          <el-input
+            v-model="userProfileForm.nickname"
+            placeholder="请输入昵称"
+            maxlength="20"
+            show-word-limit
+          />
         </el-form-item>
         <el-form-item label="性别">
           <DictSelect v-model="userProfileForm.gender" code="gender" />
@@ -233,7 +230,13 @@
           <el-input v-model="passwordChangeForm.oldPassword" type="password" show-password />
         </el-form-item>
         <el-form-item label="新密码" prop="newPassword">
-          <el-input v-model="passwordChangeForm.newPassword" type="password" show-password />
+          <el-input
+            v-model="passwordChangeForm.newPassword"
+            type="password"
+            show-password
+            placeholder="至少 8 位，需包含字母和数字"
+            @input="revalidateConfirmPassword"
+          />
         </el-form-item>
         <el-form-item label="确认密码" prop="confirmPassword">
           <el-input v-model="passwordChangeForm.confirmPassword" type="password" show-password />
@@ -254,7 +257,11 @@
         <el-form-item label="验证码" prop="code">
           <el-input v-model="mobileUpdateForm.code">
             <template #append>
-              <el-button :disabled="mobileCountdown > 0" @click="handleSendMobileCode">
+              <el-button
+                :loading="sendingMobileCode"
+                :disabled="mobileCountdown > 0"
+                @click="handleSendMobileCode"
+              >
                 {{ mobileCountdown > 0 ? mobileCountdown + "s后重新发送" : "发送验证码" }}
               </el-button>
             </template>
@@ -279,7 +286,11 @@
         <el-form-item label="验证码" prop="code">
           <el-input v-model="emailUpdateForm.code">
             <template #append>
-              <el-button :disabled="emailCountdown > 0" @click="handleSendEmailCode">
+              <el-button
+                :loading="sendingEmailCode"
+                :disabled="emailCountdown > 0"
+                @click="handleSendEmailCode"
+              >
                 {{ emailCountdown > 0 ? emailCountdown + "s后重新发送" : "发送验证码" }}
               </el-button>
             </template>
@@ -292,8 +303,8 @@
 
       <template #footer>
         <span class="inline-flex gap-2">
-          <el-button @click="handleCancel">取消</el-button>
-          <el-button type="primary" @click="handleSubmit">确定</el-button>
+          <el-button :disabled="submitting" @click="handleCancel">取消</el-button>
+          <el-button type="primary" :loading="submitting" @click="handleSubmit">确定</el-button>
         </span>
       </template>
     </el-dialog>
@@ -312,6 +323,8 @@ import type {
 
 import type { Component } from "vue";
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from "vue";
+import { useRouter } from "vue-router";
+import type { FormInstance } from "element-plus";
 import FileAPI from "@/api/file";
 import { useUserStoreHook } from "@/stores";
 import { UserGender } from "@/enums";
@@ -325,12 +338,11 @@ import {
   Female,
   Iphone,
   Key,
-  Location,
   Lock,
   Male,
   Message,
-  Monitor,
   OfficeBuilding,
+  SwitchButton,
   Timer,
   User,
   UserFilled,
@@ -362,6 +374,7 @@ interface SecurityItem {
 }
 
 const userStore = useUserStoreHook();
+const router = useRouter();
 
 const userProfile = ref<UserProfileDetail>({});
 
@@ -378,10 +391,18 @@ const dialogState = reactive({
   type: "" as DialogType,
 });
 
-const userProfileFormRef = ref();
-const passwordChangeFormRef = ref();
-const mobileBindingFormRef = ref();
-const emailBindingFormRef = ref();
+const userProfileFormRef = ref<FormInstance>();
+const passwordChangeFormRef = ref<FormInstance>();
+const mobileBindingFormRef = ref<FormInstance>();
+const emailBindingFormRef = ref<FormInstance>();
+
+/** 弹窗提交中：确定按钮 loading + 防重复提交 */
+const submitting = ref(false);
+/** 头像上传中：头像角标 loading */
+const avatarUploading = ref(false);
+/** 验证码发送中：发送按钮 loading，防重复点击 */
+const sendingMobileCode = ref(false);
+const sendingEmailCode = ref(false);
 
 const userProfileForm = reactive<UserProfileForm>({});
 const passwordChangeForm = reactive<PasswordChangeForm>({});
@@ -389,39 +410,48 @@ const mobileUpdateForm = reactive<MobileUpdateForm>({});
 const emailUpdateForm = reactive<EmailUpdateForm>({});
 
 const mobileCountdown = ref(0);
-const mobileTimer = ref();
+const mobileTimer = ref<ReturnType<typeof setInterval>>();
 
 const emailCountdown = ref(0);
-const emailTimer = ref();
+const emailTimer = ref<ReturnType<typeof setInterval>>();
 
-const recentLoginRecords = [
-  {
-    device: "Chrome / Windows",
-    location: "上海",
-    ip: "192.168.1.26",
-    time: "2026-06-20 09:32",
-  },
-  {
-    device: "Edge / Windows",
-    location: "杭州",
-    ip: "192.168.1.18",
-    time: "2026-06-19 18:46",
-  },
-  {
-    device: "Safari / iOS",
-    location: "深圳",
-    ip: "192.168.1.12",
-    time: "2026-06-18 14:08",
-  },
-];
+/** 手机号（1[3-9] 号段，11 位） */
+const MOBILE_PATTERN = /^1[3-9]\d{9}$/;
+/** 邮箱 */
+const EMAIL_PATTERN = /\w[-\w.+]*@([A-Za-z0-9][-A-Za-z0-9]+\.)+[A-Za-z]{2,14}/;
+/** 新密码强度：至少 8 位，必须同时包含字母和数字 */
+const PASSWORD_PATTERN = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
 
 const userProfileRules = {
-  nickname: [{ required: true, message: "请输入昵称", trigger: "blur" }],
+  nickname: [
+    { required: true, whitespace: true, message: "请输入昵称", trigger: "blur" },
+    { min: 2, max: 20, message: "昵称长度为 2-20 个字符", trigger: "blur" },
+  ],
 };
 
 const passwordChangeRules = {
   oldPassword: [{ required: true, message: "请输入原密码", trigger: "blur" }],
-  newPassword: [{ required: true, message: "请输入新密码", trigger: "blur" }],
+  newPassword: [
+    { required: true, message: "请输入新密码", trigger: "blur" },
+    {
+      validator: (_rule: unknown, value: string, callback: (error?: Error) => void) => {
+        if (!value) {
+          callback();
+          return;
+        }
+        if (value === passwordChangeForm.oldPassword) {
+          callback(new Error("新密码不能与原密码相同"));
+          return;
+        }
+        if (!PASSWORD_PATTERN.test(value)) {
+          callback(new Error("至少 8 位，且需同时包含字母和数字"));
+          return;
+        }
+        callback();
+      },
+      trigger: "blur",
+    },
+  ],
   confirmPassword: [
     { required: true, message: "请再次输入新密码", trigger: "blur" },
     {
@@ -442,7 +472,7 @@ const mobileBindingRules = {
   mobile: [
     { required: true, message: "请输入手机号", trigger: "blur" },
     {
-      pattern: /^1[3|4|5|6|7|8|9][0-9]\d{8}$/,
+      pattern: MOBILE_PATTERN,
       message: "请输入正确的手机号码",
       trigger: "blur",
     },
@@ -456,7 +486,7 @@ const emailBindingRules = {
   email: [
     { required: true, message: "请输入邮箱", trigger: "blur" },
     {
-      pattern: /\w[-\w.+]*@([A-Za-z0-9][-A-Za-z0-9]+\.)+[A-Za-z]{2,14}/,
+      pattern: EMAIL_PATTERN,
       message: "请输入正确的邮箱地址",
       trigger: "blur",
     },
@@ -499,17 +529,15 @@ const boundCount = computed(() => {
 });
 
 const profileCompletion = computed(() => {
+  // 只统计本人可在"编辑资料"/安全设置里维护的项；账号、部门、角色、创建时间不可自助维护，不计入
   const fields = [
-    userProfile.value.username,
     userProfile.value.nickname,
     displayAvatar.value,
+    userProfile.value.gender,
     userProfile.value.mobile,
     userProfile.value.email,
-    userProfile.value.deptName,
-    userProfile.value.roleNames,
-    userProfile.value.createTime,
   ];
-  return Math.round((fields.filter(Boolean).length / fields.length) * 100);
+  return Math.round((fields.filter((value) => value !== undefined && value !== null && value !== "").length / fields.length) * 100);
 });
 
 const securityLevel = computed(() => {
@@ -569,7 +597,7 @@ const profileStats = computed(() => [
     tone: "primary",
   },
   {
-    label: "绑定项目",
+    label: "安全绑定",
     value: boundCount.value,
     suffix: "/2",
     icon: CircleCheck,
@@ -692,10 +720,18 @@ const securityItems = computed<SecurityItem[]>(() => [
 ]);
 
 /**
- * 空值统一显示占位符
+ * 空值统一显示占位符；Date 实例格式化为 yyyy-MM-dd HH:mm:ss，
+ * 字符串直接展示（兼容后端 ISO 带 T 形态）
  */
 function formatValue(value?: Date | string) {
-  return value ? String(value) : "-";
+  if (!value) return "-";
+  if (value instanceof Date) {
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())} ${pad(
+      value.getHours(),
+    )}:${pad(value.getMinutes())}:${pad(value.getSeconds())}`;
+  }
+  return String(value).replace("T", " ").slice(0, 19);
 }
 
 /**
@@ -816,63 +852,101 @@ async function handleUnbindEmail() {
   }
 }
 
+/** 启动/停止手机验证码倒计时 */
+function startMobileCountdown() {
+  stopMobileCountdown();
+  mobileCountdown.value = 60;
+  mobileTimer.value = setInterval(() => {
+    if (mobileCountdown.value > 0) {
+      mobileCountdown.value -= 1;
+    } else {
+      stopMobileCountdown();
+    }
+  }, 1000);
+}
+
+function stopMobileCountdown() {
+  if (mobileTimer.value) {
+    clearInterval(mobileTimer.value);
+    mobileTimer.value = undefined;
+  }
+  mobileCountdown.value = 0;
+}
+
+/** 启动/停止邮箱验证码倒计时 */
+function startEmailCountdown() {
+  stopEmailCountdown();
+  emailCountdown.value = 60;
+  emailTimer.value = setInterval(() => {
+    if (emailCountdown.value > 0) {
+      emailCountdown.value -= 1;
+    } else {
+      stopEmailCountdown();
+    }
+  }, 1000);
+}
+
+function stopEmailCountdown() {
+  if (emailTimer.value) {
+    clearInterval(emailTimer.value);
+    emailTimer.value = undefined;
+  }
+  emailCountdown.value = 0;
+}
+
 /**
  * 发送手机验证码
  */
-function handleSendMobileCode() {
+async function handleSendMobileCode() {
   if (!mobileUpdateForm.mobile) {
     ElMessage.error("请输入手机号");
     return;
   }
-  const reg = /^1[3-9]\d{9}$/;
-  if (!reg.test(mobileUpdateForm.mobile)) {
+  if (!MOBILE_PATTERN.test(mobileUpdateForm.mobile)) {
     ElMessage.error("手机号格式不正确");
     return;
   }
-  UserAPI.sendMobileCode(mobileUpdateForm.mobile).then(() => {
+  sendingMobileCode.value = true;
+  try {
+    await UserAPI.sendMobileCode(mobileUpdateForm.mobile);
     ElMessage.success("验证码发送成功");
-    mobileCountdown.value = 60;
-    mobileTimer.value = setInterval(() => {
-      if (mobileCountdown.value > 0) {
-        mobileCountdown.value -= 1;
-      } else {
-        clearInterval(mobileTimer.value!);
-      }
-    }, 1000);
-  });
+    startMobileCountdown();
+  } catch {
+    // 错误提示由请求拦截器统一弹出
+  } finally {
+    sendingMobileCode.value = false;
+  }
 }
 
 /**
  * 发送邮箱验证码
  */
-function handleSendEmailCode() {
+async function handleSendEmailCode() {
   if (!emailUpdateForm.email) {
     ElMessage.error("请输入邮箱");
     return;
   }
-  const reg = /\w[-\w.+]*@([A-Za-z0-9][-A-Za-z0-9]+\.)+[A-Za-z]{2,14}/;
-  if (!reg.test(emailUpdateForm.email)) {
+  if (!EMAIL_PATTERN.test(emailUpdateForm.email)) {
     ElMessage.error("邮箱格式不正确");
     return;
   }
-
-  UserAPI.sendEmailCode(emailUpdateForm.email).then(() => {
+  sendingEmailCode.value = true;
+  try {
+    await UserAPI.sendEmailCode(emailUpdateForm.email);
     ElMessage.success("验证码发送成功");
-    emailCountdown.value = 60;
-    emailTimer.value = setInterval(() => {
-      if (emailCountdown.value > 0) {
-        emailCountdown.value -= 1;
-      } else {
-        clearInterval(emailTimer.value!);
-      }
-    }, 1000);
-  });
+    startEmailCountdown();
+  } catch {
+    // 错误提示由请求拦截器统一弹出
+  } finally {
+    sendingEmailCode.value = false;
+  }
 }
 
 /**
  * 提交弹窗表单
  */
 const handleSubmit = async () => {
+  submitting.value = true;
   try {
     if (dialogState.type === DialogType.ACCOUNT) {
       const valid = await userProfileFormRef.value?.validate();
@@ -910,23 +984,64 @@ const handleSubmit = async () => {
       await loadUserProfile();
     }
   } catch {
-    // ignore
+    // 错误提示由请求拦截器统一弹出，这里只复位提交状态
+  } finally {
+    submitting.value = false;
   }
 };
 
 /**
- * 关闭弹窗并重置表单
+ * 关闭弹窗；表单重置、红态与验证码倒计时统一在 @closed 里处理
  */
 const handleCancel = () => {
   dialogState.visible = false;
+};
+
+/**
+ * 弹窗关闭动画结束后：重置对应表单的校验红态与输入值，
+ * 并清掉验证码倒计时，避免下次打开仍显示"N s 后重发"
+ */
+const handleDialogClosed = () => {
   if (dialogState.type === DialogType.ACCOUNT) {
     userProfileFormRef.value?.resetFields();
   } else if (dialogState.type === DialogType.PASSWORD) {
     passwordChangeFormRef.value?.resetFields();
   } else if (dialogState.type === DialogType.MOBILE) {
     mobileBindingFormRef.value?.resetFields();
+    stopMobileCountdown();
   } else if (dialogState.type === DialogType.EMAIL) {
     emailBindingFormRef.value?.resetFields();
+    stopEmailCountdown();
+  }
+};
+
+/**
+ * 新密码变化后，若确认密码已填写则重新校验一致性
+ */
+const revalidateConfirmPassword = () => {
+  if (passwordChangeForm.confirmPassword) {
+    passwordChangeFormRef.value?.validateField("confirmPassword");
+  }
+};
+
+/**
+ * 退出登录（与工具栏退出入口行为一致：确认后清登录态并跳登录页）
+ */
+const handleLogout = async () => {
+  try {
+    await ElMessageBox.confirm("确定注销并退出系统吗？", "提示", {
+      type: "warning",
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+    });
+  } catch {
+    return;
+  }
+  try {
+    await userStore.logout();
+    router.push("/login");
+  } catch {
+    // 错误提示由请求拦截器统一弹出
   }
 };
 
@@ -939,22 +1054,42 @@ const triggerFileUpload = () => {
   fileInput.value?.click();
 };
 
+/** 头像大小上限 2MB */
+const AVATAR_MAX_SIZE = 2 * 1024 * 1024;
+
 /**
  * 选择头像后上传
  */
 const handleFileChange = async (event: Event) => {
   const target = event.target as HTMLInputElement;
   const file = target.files ? target.files[0] : null;
-  if (file) {
+  // 先清空 input 的值，保证连续选择同一个文件也能再次触发 change
+  target.value = "";
+  if (!file) return;
+  if (!file.type.startsWith("image/")) {
+    ElMessage.error("仅支持上传图片文件");
+    return;
+  }
+  if (file.size > AVATAR_MAX_SIZE) {
+    ElMessage.error("头像图片不能超过 2MB");
+    return;
+  }
+  avatarUploading.value = true;
+  try {
     const data = await FileAPI.uploadFile(file);
-    await UserAPI.updateProfile({
-      avatar: data.url,
-    });
+    if (!data?.url) {
+      ElMessage.error("头像上传失败：响应缺少图片地址");
+      return;
+    }
+    await UserAPI.updateProfile({ avatar: data.url });
     userProfile.value.avatar = data.url;
     userStore.userInfo.avatar = data.url;
     ElMessage.success("头像更新成功");
+  } catch {
+    // 错误提示由请求拦截器统一弹出
+  } finally {
+    avatarUploading.value = false;
   }
-  target.value = "";
 };
 
 /**
@@ -965,14 +1100,10 @@ const loadUserProfile = async () => {
   userProfile.value = data;
 };
 
-onMounted(async () => {
-  if (mobileTimer.value) {
-    clearInterval(mobileTimer.value);
-  }
-  if (emailTimer.value) {
-    clearInterval(emailTimer.value);
-  }
-  await loadUserProfile();
+onMounted(() => {
+  loadUserProfile().catch(() => {
+    // 错误提示由请求拦截器统一弹出
+  });
 });
 
 onBeforeUnmount(() => {
@@ -1092,12 +1223,6 @@ onBeforeUnmount(() => {
   display: grid;
   gap: 16px;
   min-width: 0;
-}
-
-.profile-page__grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 340px);
-  gap: 16px;
 }
 
 .profile-card {
@@ -1254,10 +1379,13 @@ onBeforeUnmount(() => {
 }
 
 .profile-security,
-.profile-login,
 .profile-status {
   display: grid;
   gap: 12px;
+}
+
+.profile-completion {
+  margin-top: 14px;
 }
 
 .profile-tags {
@@ -1277,7 +1405,6 @@ onBeforeUnmount(() => {
 }
 
 .profile-security__body,
-.profile-login__body,
 .profile-status__body {
   min-width: 0;
 }
@@ -1311,17 +1438,6 @@ onBeforeUnmount(() => {
   margin-left: 0;
 }
 
-.profile-login__item {
-  display: grid;
-  grid-template-columns: 36px minmax(0, 1fr) auto;
-  gap: 10px;
-  align-items: center;
-  min-height: 44px;
-}
-
-.profile-login__device,
-.profile-login__meta,
-.profile-login__time,
 .profile-status__title,
 .profile-status__desc {
   display: block;
@@ -1330,14 +1446,11 @@ onBeforeUnmount(() => {
   white-space: nowrap;
 }
 
-.profile-login__device,
 .profile-status__title {
   font-size: 13px;
   color: var(--el-text-color-primary);
 }
 
-.profile-login__meta,
-.profile-login__time,
 .profile-status__desc {
   font-size: 12px;
   color: var(--el-text-color-secondary);
@@ -1365,8 +1478,7 @@ onBeforeUnmount(() => {
 }
 
 @media (width <= 1200px) {
-  .profile-page__layout,
-  .profile-page__grid {
+  .profile-page__layout {
     grid-template-columns: 1fr;
   }
 }
@@ -1396,13 +1508,11 @@ onBeforeUnmount(() => {
     margin-left: 0;
   }
 
-  .profile-security__item,
-  .profile-login__item {
+  .profile-security__item {
     grid-template-columns: 40px minmax(0, 1fr);
   }
 
-  .profile-security__actions,
-  .profile-login__time {
+  .profile-security__actions {
     grid-column: 2;
     justify-self: start;
   }
