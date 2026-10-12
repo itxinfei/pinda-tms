@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>品达TMS 微服务架构</title>
+</head>
+<body style="margin:0;padding:0;background:#f8fafc;">
+<div style="font-family:'Microsoft YaHei',Arial,sans-serif;background:#f8fafc;color:#0f172a;padding:22px;box-sizing:border-box;">
+  <h1 style="font-size:20px;margin:0 0 2px;">品达物流 TMS · 微服务架构（含职责与规划）</h1>
+  <div style="font-size:12px;color:#64748b;margin-bottom:16px;">2026-10-12 实测版 · 实线在营 / 虚线规划（《60》P0/P1/P2）</div>
+
+  <div style="display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;">
+    <div style="flex:0.9;min-width:130px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:10px;padding:10px;">
+      <div style="font-size:13px;font-weight:bold;color:#3730a3;text-align:center;margin-bottom:8px;">客户端</div>
+      <div style="background:#fff;border:1px solid #6366f1;border-radius:6px;padding:5px;text-align:center;margin-bottom:5px;font-size:12px;">管理端 :8081</div>
+      <div style="background:#fff;border:1px solid #6366f1;border-radius:6px;padding:5px;text-align:center;margin-bottom:5px;font-size:12px;">客户端 H5 :8084</div>
+      <div style="background:#fff;border:1px solid #6366f1;border-radius:6px;padding:5px;text-align:center;margin-bottom:5px;font-size:12px;">快递员 H5 :8083</div>
+      <div style="background:#fff;border:1px solid #6366f1;border-radius:6px;padding:5px;text-align:center;font-size:12px;">司机 H5 :8082</div>
+    </div>
+    <div style="align-self:center;font-size:16px;color:#6366f1;">→</div>
+    <div style="flex:0.9;min-width:130px;background:#ecfeff;border:1px solid #a5f3fc;border-radius:10px;padding:10px;">
+      <div style="font-size:13px;font-weight:bold;color:#0e7490;text-align:center;margin-bottom:8px;">网关</div>
+      <div style="background:#fff;border:1px solid #06b6d4;border-radius:6px;padding:8px;text-align:center;font-size:12px;"><b>pd-gateway :8760</b><br/><span style="font-size:11px;color:#64748b;">路由 · Sa-Token 鉴权 · 防直连</span></div>
+    </div>
+    <div style="align-self:center;font-size:16px;color:#06b6d4;">→</div>
+    <div style="flex:1.2;min-width:170px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px;">
+      <div style="font-size:13px;font-weight:bold;color:#166534;text-align:center;margin-bottom:8px;">BFF 接入层</div>
+      <div style="background:#fff;border:1px solid #22c55e;border-radius:6px;padding:4px;text-align:center;margin-bottom:4px;font-size:11px;"><b>pd-web-manager :8161</b><br/>管理端聚合出口</div>
+      <div style="background:#fff;border:1px solid #22c55e;border-radius:6px;padding:4px;text-align:center;margin-bottom:4px;font-size:11px;"><b>pd-web-customer :8164</b><br/>客户端聚合出口</div>
+      <div style="background:#fff;border:1px solid #22c55e;border-radius:6px;padding:4px;text-align:center;margin-bottom:4px;font-size:11px;"><b>pd-web-courier :8163</b><br/>快递员聚合出口</div>
+      <div style="background:#fff;border:1px solid #22c55e;border-radius:6px;padding:4px;text-align:center;font-size:11px;"><b>pd-web-driver :8162</b><br/>司机端聚合出口</div>
+    </div>
+    <div style="align-self:center;font-size:16px;color:#16a34a;">→</div>
+    <div style="flex:1.7;min-width:280px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:10px;">
+      <div style="font-size:13px;font-weight:bold;color:#9a3412;text-align:center;margin-bottom:8px;">业务服务（OpenFeign 互调）</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px;">
+        <div style="background:#fff;border:1px solid #f97316;border-radius:6px;padding:4px;flex:1;min-width:125px;text-align:center;font-size:11px;"><b>pd-auth :9000</b><br/>认证/多租户/菜单权限</div>
+        <div style="background:#fff;border:1px solid #f97316;border-radius:6px;padding:4px;flex:1;min-width:125px;text-align:center;font-size:11px;"><b>pd-base :8185</b><br/>基础档案/车辆司机线路</div>
+        <div style="background:#fff;border:1px solid #f97316;border-radius:6px;padding:4px;flex:1;min-width:125px;text-align:center;font-size:11px;"><b>pd-oms :8186</b><br/>订单/运费试算/结算</div>
+        <div style="background:#fff;border:1px solid #f97316;border-radius:6px;padding:4px;flex:1;min-width:125px;text-align:center;font-size:11px;"><b>pd-dispatch :8190</b><br/>智能调度/配载/车次</div>
+        <div style="background:#fff;border:1px solid #f97316;border-radius:6px;padding:4px;flex:1;min-width:125px;text-align:center;font-size:11px;"><b>pd-work :8187</b><br/>作业/运单/取派/签收</div>
+        <div style="background:#fff;border:1px solid #f97316;border-radius:6px;padding:4px;flex:1;min-width:125px;text-align:center;font-size:11px;"><b>pd-user :8189</b><br/>用户/角色/组织</div>
+        <div style="background:#fff;border:1px solid #f97316;border-radius:6px;padding:4px;flex:1;min-width:125px;text-align:center;font-size:11px;"><b>pd-aggregation :8191</b><br/>数据聚合/看板统计</div>
+        <div style="background:#fff;border:1px solid #f97316;border-radius:6px;padding:4px;flex:1;min-width:125px;text-align:center;font-size:11px;"><b>pd-netty :8192</b><br/>GPS 轨迹 TCP 接入</div>
+      </div>
+      <div style="font-size:12px;color:#c2410c;margin-bottom:4px;">规划服务（虚线）：</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;">
+        <div style="background:#fff8f0;border:1px dashed #f97316;border-radius:6px;padding:4px;flex:1;min-width:125px;text-align:center;font-size:11px;color:#c2410c;"><b>pd-bms</b><br/>计费结算闭环 P0</div>
+        <div style="background:#fff8f0;border:1px dashed #f97316;border-radius:6px;padding:4px;flex:1;min-width:125px;text-align:center;font-size:11px;color:#c2410c;"><b>pd-track</b><br/>轨迹流处理 P0</div>
+        <div style="background:#fff8f0;border:1px dashed #f97316;border-radius:6px;padding:4px;flex:1;min-width:125px;text-align:center;font-size:11px;color:#c2410c;"><b>pd-eta</b><br/>时效预测 P1</div>
+        <div style="background:#fff8f0;border:1px dashed #f97316;border-radius:6px;padding:4px;flex:1;min-width:125px;text-align:center;font-size:11px;color:#c2410c;"><b>pd-ai</b><br/>LLM 智能辅助 P1</div>
+        <div style="background:#fff8f0;border:1px dashed #f97316;border-radius:6px;padding:4px;flex:1;min-width:125px;text-align:center;font-size:11px;color:#c2410c;"><b>pd-analysis</b><br/>经营分析 P2</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center;color:#475569;font-size:13px;margin:12px 0 6px;">▼ 服务注册 / 数据 / 消息（实线在营 · 虚线规划）▼</div>
+  <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:10px;">
+    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+      <div style="background:#fff;border:1px solid #8b5cf6;border-radius:8px;padding:6px 10px;flex:1;min-width:95px;text-align:center;font-size:12px;"><b>Nacos</b><br/>注册/配置 :8848</div>
+      <div style="background:#fff;border:1px solid #8b5cf6;border-radius:8px;padding:6px 10px;flex:1;min-width:95px;text-align:center;font-size:12px;"><b>MySQL 8.0</b><br/>单库 54 表</div>
+      <div style="background:#fff;border:1px solid #8b5cf6;border-radius:8px;padding:6px 10px;flex:1;min-width:95px;text-align:center;font-size:12px;"><b>Redis 7</b><br/>会话/缓存</div>
+      <div style="background:#fff;border:1px solid #8b5cf6;border-radius:8px;padding:6px 10px;flex:1;min-width:95px;text-align:center;font-size:12px;"><b>RabbitMQ</b><br/>消息 :5672</div>
+      <div style="background:#fff;border:1px solid #8b5cf6;border-radius:8px;padding:6px 10px;flex:1;min-width:95px;text-align:center;font-size:12px;"><b>XXL-Job</b><br/>调度 :8090</div>
+      <div style="background:#fff;border:1px solid #8b5cf6;border-radius:8px;padding:6px 10px;flex:1;min-width:95px;text-align:center;font-size:12px;"><b>GPS 设备</b><br/>→ pd-netty TCP</div>
+      <div style="background:#fff8f0;border:1px dashed #8b5cf6;border-radius:8px;padding:6px 10px;flex:1;min-width:95px;text-align:center;font-size:12px;color:#c2410c;"><b>Kafka</b> 轨迹流 P0</div>
+      <div style="background:#fff8f0;border:1px dashed #8b5cf6;border-radius:8px;padding:6px 10px;flex:1;min-width:95px;text-align:center;font-size:12px;color:#c2410c;"><b>TDengine/CH</b> 时序 P0</div>
+      <div style="background:#fff8f0;border:1px dashed #8b5cf6;border-radius:8px;padding:6px 10px;flex:1;min-width:95px;text-align:center;font-size:12px;color:#c2410c;"><b>MinIO</b> 回单 P0</div>
+      <div style="background:#fff8f0;border:1px dashed #8b5cf6;border-radius:8px;padding:6px 10px;flex:1;min-width:95px;text-align:center;font-size:12px;color:#c2410c;"><b>ES</b> 检索 P1</div>
+      <div style="background:#fff8f0;border:1px dashed #8b5cf6;border-radius:8px;padding:6px 10px;flex:1;min-width:95px;text-align:center;font-size:12px;color:#c2410c;"><b>Zipkin</b> 链路 P1</div>
+      <div style="background:#fff8f0;border:1px dashed #8b5cf6;border-radius:8px;padding:6px 10px;flex:1;min-width:95px;text-align:center;font-size:12px;color:#c2410c;"><b>Doris</b> 分析 P2</div>
+    </div>
+  </div>
+  <div style="font-size:11px;color:#94a3b8;margin-top:8px;">注：BFF 直连被网关 401 拦截；业务服务仅经 Feign 互调，外部一律走网关 :8760/api；未来服务遵循同一架构纪律</div>
+</div>
+</body>
+</html>
