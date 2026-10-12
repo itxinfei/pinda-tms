@@ -43,6 +43,14 @@ spring:
     openfeign:
       circuitbreaker:
         enabled: true
+    # BFF 在 CompletableFuture 异步线程富化关联档案（车型货型/车辆/线路等关联名），Feign 真实调用
+    # 又被默认 ThreadPoolBulkhead 切到池化线程，RequestContextHolder 与异步线程快照双重丢失→
+    # 下游回落 tenant=0，富化关联名恒为 null。改信号量隔离（对齐 pd-dispatch 939ba4a、manager b287ce2），
+    # 不切线程、租户正常透传；熔断与 FeignFallback 不受影响，超时由 Feign 连接/读超时兜底。
+    circuitbreaker:
+      resilience4j:
+        disable-time-limiter: true
+        enable-semaphore-default-bulkhead: true
   # Redis：BFF 需与网关/pd-auth/pd-netty 接同一个 db0，InternalAuthRequestInterceptor 才能
   # 读到网关签发的 Same-Token（容器内 REDIS_* 由 compose 注入，本地走默认值）
   data:

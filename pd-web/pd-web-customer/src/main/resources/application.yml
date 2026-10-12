@@ -43,6 +43,14 @@ spring:
     openfeign:
       circuitbreaker:
         enabled: true
+    # BFF 在 CompletableFuture 异步线程富化关联档案（车型货型/车辆/线路等关联名），Feign 真实调用
+    # 又被默认 ThreadPoolBulkhead 切到池化线程，RequestContextHolder 与异步线程快照双重丢失→
+    # 下游回落 tenant=0，富化关联名恒为 null。改信号量隔离（对齐 pd-dispatch 939ba4a、manager b287ce2），
+    # 不切线程、租户正常透传；熔断与 FeignFallback 不受影响，超时由 Feign 连接/读超时兜底。
+    circuitbreaker:
+      resilience4j:
+        disable-time-limiter: true
+        enable-semaphore-default-bulkhead: true
   # RabbitMQ：MailingController 下单后经 pd-common EventPublisher 发布 OrderConfirmedEvent，
   # 供 pd-dispatch 消费驱动调度。此前缺本配置，Spring AMQP 默认连 localhost:5672 → Connection refused。
   # 容器与 pinda-apps 网络隔离、无法用服务名，走宿主机 IP（同 MySQL/Redis），账号密码环境变量注入
