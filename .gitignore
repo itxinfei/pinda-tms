@@ -125,6 +125,7 @@ deploy/ci/docker-compose.ci.yml
 .creative-design/
 # Playwright MCP 工具的日志/页面快照输出（工具私域，非项目代码）
 .playwright-mcp/
+.playwright-cli/
 # 根目录临时验证截图与一次性数据补丁（本地调试产物，不入库）
 *-after-fix.png
 _tc*_patch.sql
