@@ -8,6 +8,7 @@
 </p>
 
 <p>
+  <img src="docs/badges/license.svg" alt="License"/>
   <img src="docs/badges/spring-cloud.svg" alt="Spring Cloud"/>
   <img src="docs/badges/jdk.svg" alt="JDK 21"/>
   <img src="docs/badges/gateway.svg" alt="Spring Cloud Gateway"/>
@@ -133,13 +134,19 @@
 
 ![系统架构](docs/系统架构.png)
 
+> 系统分四层：**展示层**（管理端 Vue3 + 移动三端 uni-app）→ **网关层**（Spring Cloud Gateway，Sa-Token 鉴权 + Same-Token 防直连）→ **服务层**（13 个业务微服务，Nacos 注册/配置中心）→ **数据层**（MySQL 单库分域 + Redis + RabbitMQ）。
+
 ### 6.2 微服务架构
 
 ![微服务架构](docs/微服务架构.png)
 
+> 微服务按业务域拆分：`pd-auth`（认证）、`pd-gateway`（网关）、`pd-base`（基础数据）、`pd-oms`（订单）、`pd-dispatch`（调度）、`pd-work`（作业）、`pd-netty`（轨迹接入）、`pd-aggregation`（聚合）等，通过 OpenFeign 互调，Nacos 统一注册发现。
+
 ### 6.3 技术架构
 
 ![技术架构](docs/技术架构.png)
+
+> 后端 JDK 21 + Spring Boot 3.5.7 + Spring Cloud 2025.0.0 + MyBatis-Plus + Drools + XXL-Job；前端 Vue 3 + Vite + Element Plus + Pinia + ECharts；移动端 uni-app Vue3 + uview-plus；中间件 MySQL 8 + Redis 7 + RabbitMQ + Nacos + Docker Compose。
 
 ### 6.4 技术亮点
 
@@ -281,25 +288,42 @@
   <br/><sub><b>XXL-Job 任务调度中心</b> · 定时任务与调度报表</sub>
 </td>
 </tr>
+<tr>
+<td align="center" width="50%">
+  <img src="docs/screenshots/ops-gitea-workflow.png" alt="Gitea CI/CD 工作流"/>
+  <br/><sub><b>Gitea CI/CD 工作流</b> · deploy-backend 按序部署 + 逐服务健康检查（网关最后切）</sub>
+</td>
+<td align="center" width="50%">
+  <div style="border:2px dashed #d0d7de;border-radius:8px;padding:52px 12px;color:#8b949e;background:#fafbfc;">
+    📷 待补充<br/><sub>MySQL / Redis / Docker 容器总览<br/>（真实环境截图后替换）</sub>
+  </div>
+</td>
+</tr>
 </table>
 
 ---
 
 ## 9. 📚 相关资料
 
-以下文档均为仓库内本地文件，可直接跳转阅读：
+以下文档均为仓库内本地文件，可直接跳转阅读。**根目录 `docs/` 与 `docs/需求文档/` 为两套独立编号体系，序号互不相关**：
+
+**① 根目录文档**（`docs/`，部署 / 架构 / 技术栈 / 环境）：
 
 | 文档 | 说明 |
 | --- | --- |
-| [docs/02-架构设计.md](docs/02-架构设计.md) | 系统架构、服务划分、调用关系与部署拓扑 |
 | [docs/01-技术栈说明.md](docs/01-技术栈说明.md) | 技术栈说明与核对 |
+| [docs/02-架构设计.md](docs/02-架构设计.md) | 系统架构、服务划分、调用关系与部署拓扑 |
 | [docs/03-功能规划与需求说明.md](docs/03-功能规划与需求说明.md) | 功能清单与需求说明 |
 | [docs/04-部署与二次开发指南.md](docs/04-部署与二次开发指南.md) | 部署、初始化与二次开发指引 |
 | [docs/05-部署文档.md](docs/05-部署文档.md) | 中间件部署手册 |
 | [docs/06-品达TMS-开发测试环境手册.md](docs/06-品达TMS-开发测试环境手册.md) | 开发 / 测试环境说明 |
+
+**② 需求文档体系**（`docs/需求文档/`，编号独立，权威入口见 00-索引）：
+
+| 文档 | 说明 |
+| --- | --- |
 | [docs/需求文档/00-索引.md](docs/需求文档/00-索引.md) | 需求文档总索引 |
 | [docs/需求文档/01-业务需求全景.md](docs/需求文档/01-业务需求全景.md) | 业务需求全景 |
-| [docs/需求文档/物流项目功能需求分析.md](docs/需求文档/物流项目功能需求分析.md) | 功能需求分析 |
 
 **设计图**（位于 `docs/`）：`系统架构.png`、`技术架构.png`、`整体业务流程.png`、`微服务架构.png`、`软件架构体系.png`、`服务列表.png`。
 
@@ -355,6 +379,27 @@
 ### 11.3 ⭐ 如果这个项目对你有帮助，欢迎点个 Star 支持，这是对我最大的鼓励！
 
 </div>
+
+---
+
+## 12. 🤝 参与贡献
+
+<div align="center">
+
+<img src="https://gitee.com/itxinfei/pinda-tms/badge/star.svg" alt="Gitee Stars"/>
+<img src="https://gitee.com/itxinfei/pinda-tms/badge/fork.svg" alt="Gitee Forks"/>
+
+</div>
+
+欢迎提交 Pull Request！提交前请遵守以下约定：
+
+- **代码规范**：后端遵循《阿里巴巴 Java 开发手册》，前端遵循 ESLint + Prettier + Stylelint 约束
+- **提交格式**：`type(scope): description`（如 `feat(oms): 新增拆单接口` / `fix(dispatch): 修复路线规划空指针`）
+- **不过度设计**：只做直接需要的事，不加未来"可能用到"的功能
+- **禁止硬编码**：cron / 阈值 / 地图 Key / 状态数字一律外部化配置
+- **所有请求走网关**：`http://<host>:8760/api` + 端前缀，禁止直连微服务
+
+> 提交 PR 前建议先在 Issue 中发起讨论，确认方向一致后再动手。
 
 ---
 
