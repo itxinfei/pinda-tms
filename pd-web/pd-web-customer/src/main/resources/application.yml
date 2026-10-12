@@ -43,6 +43,15 @@ spring:
     openfeign:
       circuitbreaker:
         enabled: true
+  # RabbitMQ：MailingController 下单后经 pd-common EventPublisher 发布 OrderConfirmedEvent，
+  # 供 pd-dispatch 消费驱动调度。此前缺本配置，Spring AMQP 默认连 localhost:5672 → Connection refused。
+  # 容器与 pinda-apps 网络隔离、无法用服务名，走宿主机 IP（同 MySQL/Redis），账号密码环境变量注入
+  rabbitmq:
+    host: ${RABBITMQ_HOST:192.168.20.130}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:pinda}
+    password: ${RABBITMQ_PASSWORD:123456}
+    virtual-host: ${RABBITMQ_VHOST:/}
   # Redis：BFF 需与网关/pd-auth/pd-netty 接同一个 db0，InternalAuthRequestInterceptor 才能
   # 读到网关签发的 Same-Token（容器内 REDIS_* 由 compose 注入，本地走默认值）
   data:
