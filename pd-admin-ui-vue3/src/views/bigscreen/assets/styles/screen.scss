@@ -59,3 +59,38 @@
   0% { transform: translateY(0); }
   100% { transform: translateY(-50%); }
 }
+
+/** 大屏背景科技网格（覆盖在 bg.webp 之上，提升纵深感） */
+.bs-screen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(0, 150, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 150, 255, 0.05) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse at center, #000 35%, transparent 85%);
+}
+
+/** 面板顶部扫描光带（叠加在 PanelFrame 上，需在使用处加 .bs-panel--scan） */
+.bs-panel--scan {
+  overflow: hidden;
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -60%;
+    width: 60%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--bs-cyan), transparent);
+    box-shadow: 0 0 10px rgba(0, 234, 255, 0.8);
+    animation: bs-panel-scan 4.5s linear infinite;
+  }
+}
+
+@keyframes bs-panel-scan {
+  0% { left: -60%; }
+  100% { left: 100%; }
+}

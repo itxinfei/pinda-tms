@@ -6,15 +6,27 @@
       <KpiRow
         :today-order-count="summary?.todayOrderCount ?? 0"
         :today-transport-order-count="summary?.todayTransportOrderCount ?? 0"
+        :today-task-count="summary?.todayTaskCount ?? 0"
         :active-truck-count="summary?.activeTruckCount ?? 0"
+        :pending-truck-count="summary?.pendingTruckCount ?? 0"
+        :idle-truck-count="summary?.idleTruckCount ?? 0"
         :pending-alarm-count="pendingAlarmCount"
+        :on-time-rate="null"
       />
 
       <main class="bs-main">
+        <!-- 左列：趋势 / 订单状态 / 线路运量 -->
         <div class="bs-col">
-          <PanelFrame title="近 7 日订单趋势">
+          <PanelFrame title="订单下单 / 签收趋势">
             <OrderTrendChart v-if="trend.length" :points="trend" />
             <div v-else class="bs-empty">暂无数据</div>
+          </PanelFrame>
+          <PanelFrame title="订单状态构成" class="bs-panel--scan">
+            <OrderStatusPie
+              :pending="overview?.pendingCount ?? 0"
+              :in-transit="overview?.inTransitCount ?? 0"
+              :completed="overview?.completedCount ?? 0"
+            />
           </PanelFrame>
           <PanelFrame title="近 7 日各线路运量 TOP10">
             <LineVolumeChart v-if="lineVolumes.length" :items="lineVolumes" />
@@ -22,20 +34,31 @@
           </PanelFrame>
         </div>
 
-        <PanelFrame class="bs-map-panel" title="全国车辆实时分布">
-          <VehicleMap :locations="locations" />
-        </PanelFrame>
+        <!-- 中列：全国地图（车辆+网点+流向）/ 运输任务五态 -->
+        <div class="bs-center">
+          <PanelFrame class="bs-map-panel" title="全国车辆与机构实时分布">
+            <VehicleMap :locations="locations" :orgs="orgPoints" />
+          </PanelFrame>
+          <PanelFrame class="bs-task-panel" title="运输任务五态">
+            <TaskStatusBar v-if="taskStatusCounts.length" :items="taskStatusCounts" />
+            <div v-else class="bs-empty">暂无数据</div>
+          </PanelFrame>
+        </div>
 
+        <!-- 右列：实时告警 / 待处理订单 / 车辆状态 -->
         <div class="bs-col">
+          <PanelFrame title="实时告警" class="bs-panel--scan">
+            <AlertScroll :alarms="alarms" />
+          </PanelFrame>
+          <PanelFrame title="待处理订单">
+            <TodoList :items="todoList" />
+          </PanelFrame>
           <PanelFrame title="车辆状态构成">
             <TruckStatusPie
               :active="summary?.activeTruckCount ?? 0"
               :pending="summary?.pendingTruckCount ?? 0"
               :idle="summary?.idleTruckCount ?? 0"
             />
-          </PanelFrame>
-          <PanelFrame title="实时告警">
-            <AlertScroll :alarms="alarms" />
           </PanelFrame>
         </div>
       </main>
@@ -47,20 +70,28 @@
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import DashboardAPI, {
   type BigScreenSummary,
+  type DashboardOverview,
   type LineVolume,
   type OrderTrendPoint,
+  type PendingOrder,
+  type NameValue,
 } from "@/api/dashboard";
 import AlarmAPI, { type AlarmRecord } from "@/api/alarm";
 import TraceAPI, { type LocationRecordItem } from "@/api/trace";
+import OrgAPI, { type OrgNode } from "@/api/org";
 import { useKeepTicking } from "./composables/useKeepTicking";
+import type { OrgPoint } from "./components/vehicle-map.vue";
 import ScreenHeader from "./components/screen-header.vue";
 import KpiRow from "./components/kpi-row.vue";
 import PanelFrame from "./components/panel-frame.vue";
 import OrderTrendChart from "./components/order-trend-chart.vue";
+import OrderStatusPie from "./components/order-status-pie.vue";
 import LineVolumeChart from "./components/line-volume-chart.vue";
-import TruckStatusPie from "./components/truck-status-pie.vue";
-import AlertScroll from "./components/alert-scroll.vue";
 import VehicleMap from "./components/vehicle-map.vue";
+import TaskStatusBar from "./components/task-status-bar.vue";
+import AlertScroll from "./components/alert-scroll.vue";
+import TodoList from "./components/todo-list.vue";
+import TruckStatusPie from "./components/truck-status-pie.vue";
 
 defineOptions({ name: "BigScreen" });
 
@@ -78,10 +109,14 @@ const stageStyle = computed(() => ({
 }));
 
 const summary = ref<BigScreenSummary | null>(null);
+const overview = ref<DashboardOverview | null>(null);
 const trend = ref<OrderTrendPoint[]>([]);
 const lineVolumes = ref<LineVolume[]>([]);
+const taskStatusCounts = ref<NameValue[]>([]);
 const alarms = ref<AlarmRecord[]>([]);
+const todoList = ref<PendingOrder[]>([]);
 const locations = ref<LocationRecordItem[]>([]);
+const orgPoints = ref<OrgPoint[]>([]);
 const pendingAlarmCount = ref(0);
 
 const updateScale = () => {
@@ -91,31 +126,67 @@ const updateScale = () => {
   );
 };
 
+/** 组织树扁平化为带父坐标的点（供地图机构网络线使用） */
+const flattenOrgs = (nodes: OrgNode[], parent?: OrgNode): OrgPoint[] => {
+  const out: OrgPoint[] = [];
+  for (const n of nodes) {
+    const hasCoord = Number.isFinite(n.longitude) && Number.isFinite(n.latitude);
+    if (hasCoord) {
+      out.push({
+        name: n.name,
+        value: [n.longitude as number, n.latitude as number],
+        orgType: n.orgType,
+        parent:
+          parent && Number.isFinite(parent.longitude) && Number.isFinite(parent.latitude)
+            ? [parent.longitude as number, parent.latitude as number]
+            : undefined,
+      });
+    }
+    if (n.children?.length) {
+      out.push(...flattenOrgs(n.children, n));
+    }
+  }
+  return out;
+};
+
 /** 单项失败不影响其他面板：各自 settle，保留上一次成功数据 */
 const loadAll = async () => {
   const results = await Promise.allSettled([
     DashboardAPI.getBigScreenSummary(),
     DashboardAPI.getTrend(7),
+    DashboardAPI.getOverview(),
+    DashboardAPI.getTodo(8),
     AlarmAPI.page({ page: 1, pageSize: 20 }),
     AlarmAPI.page({ page: 1, pageSize: 1, status: 0 }),
     TraceAPI.page({ page: 1, pageSize: 200, type: "truck" }),
+    OrgAPI.getTree(),
   ]);
 
   if (results[0].status === "fulfilled" && results[0].value) {
     summary.value = results[0].value;
     lineVolumes.value = results[0].value.lineVolumes ?? [];
+    taskStatusCounts.value = results[0].value.taskStatusCounts ?? [];
   }
   if (results[1].status === "fulfilled" && results[1].value) {
     trend.value = results[1].value;
   }
   if (results[2].status === "fulfilled" && results[2].value) {
-    alarms.value = results[2].value.items ?? [];
+    overview.value = results[2].value;
   }
   if (results[3].status === "fulfilled" && results[3].value) {
-    pendingAlarmCount.value = results[3].value.total ?? 0;
+    todoList.value = results[3].value ?? [];
   }
   if (results[4].status === "fulfilled" && results[4].value) {
-    locations.value = results[4].value.items ?? [];
+    alarms.value = results[4].value.items ?? [];
+  }
+  if (results[5].status === "fulfilled" && results[5].value) {
+    pendingAlarmCount.value = results[5].value.total ?? 0;
+  }
+  if (results[6].status === "fulfilled" && results[6].value) {
+    locations.value = results[6].value.items ?? [];
+  }
+  if (results[7].status === "fulfilled" && results[7].value) {
+    orgPoints.value = flattenOrgs(results[7].value ?? []);
   }
 };
 
@@ -151,8 +222,8 @@ onBeforeUnmount(() => {
   left: 50%;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 0 20px 18px;
+  gap: 12px;
+  padding: 12px 20px 16px;
   transform-origin: center center;
   /* 居中由 translate 配合 scale 完成（-50% 基于自身尺寸，缩放后仍居中） */
   margin-left: -960px;
@@ -163,25 +234,47 @@ onBeforeUnmount(() => {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: 450px 1fr 450px;
-  gap: 14px;
+  grid-template-columns: 460px 1fr 460px;
+  gap: 12px;
 }
 
 .bs-col {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
   min-height: 0;
 
-  > :first-child,
+  > :first-child {
+    flex: 1.1;
+    min-height: 0;
+  }
+
+  > :nth-child(2) {
+    flex: 1;
+    min-height: 0;
+  }
+
   > :last-child {
     flex: 1;
     min-height: 0;
   }
 }
 
-.bs-map-panel {
+.bs-center {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   min-height: 0;
+}
+
+.bs-map-panel {
+  flex: 1;
+  min-height: 0;
+}
+
+.bs-task-panel {
+  flex: none;
+  height: 200px;
 }
 
 .bs-empty {

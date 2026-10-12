@@ -4,11 +4,12 @@
       <div class="bs-header__date">{{ dateText }}</div>
       <div class="bs-header__week">星期{{ weekText }}</div>
     </div>
-    <h1 class="bs-header__title">品达物流 TMS 运营监控大屏</h1>
+    <h1 class="bs-header__title">品达物流 TMS 运营监控中心</h1>
     <div class="bs-header__side bs-header__side--right">
       <div class="bs-header__time">{{ timeText }}</div>
       <router-link class="bs-header__exit" to="/dashboard">退出大屏</router-link>
     </div>
+    <span class="bs-header__scan" />
   </header>
 </template>
 
@@ -93,6 +94,18 @@ onBeforeUnmount(() => {
     letter-spacing: 10px;
     color: #fff;
     text-shadow: 0 0 18px rgba(0, 234, 255, 0.65), 0 2px 4px rgba(0, 0, 0, 0.6);
+    animation: bs-title-glow 3.6s ease-in-out infinite;
+  }
+
+  &__scan {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--bs-cyan), transparent);
+    box-shadow: 0 0 12px rgba(0, 234, 255, 0.8);
+    animation: bs-scan-x 5s linear infinite;
   }
 
   &__exit {
@@ -109,5 +122,17 @@ onBeforeUnmount(() => {
       border-color: var(--bs-cyan);
     }
   }
+}
+
+@keyframes bs-title-glow {
+  0%, 100% { text-shadow: 0 0 18px rgba(0, 234, 255, 0.55), 0 2px 4px rgba(0, 0, 0, 0.6); }
+  50% { text-shadow: 0 0 28px rgba(0, 234, 255, 0.95), 0 0 8px rgba(0, 234, 255, 0.6), 0 2px 4px rgba(0, 0, 0, 0.6); }
+}
+
+@keyframes bs-scan-x {
+  0% { transform: translateX(-30%); opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { transform: translateX(30%); opacity: 0; }
 }
 </style>

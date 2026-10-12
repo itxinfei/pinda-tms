@@ -1,7 +1,7 @@
 <template>
   <div class="bs-map">
     <ECharts :options="option" width="100%" height="100%" />
-    <div v-if="!points.length" class="bs-map__empty">暂无车辆定位数据</div>
+    <div v-if="!hasAnyData" class="bs-map__empty">暂无车辆与网点定位数据</div>
   </div>
 </template>
 
@@ -19,8 +19,19 @@ echarts.registerMap("china", chinaGeoJSON as never);
 
 defineOptions({ name: "VehicleMap" });
 
+export interface OrgPoint {
+  name: string;
+  /** [经度, 纬度] */
+  value: [number, number];
+  /** 组织类型：1分公司 2一级转运 3二级转运 4网点 */
+  orgType: number;
+  /** 上级机构坐标（用于绘制机构网络流向线） */
+  parent?: [number, number];
+}
+
 const props = defineProps<{
   locations: LocationRecordItem[];
+  orgs?: OrgPoint[];
 }>();
 
 interface VehiclePoint {
@@ -31,7 +42,7 @@ interface VehiclePoint {
 }
 
 // 后端按入库时间倒序，同一车辆首次出现即最新一条；坐标为 BD09，城市级展示不做纠偏
-const points = computed<VehiclePoint[]>(() => {
+const vehiclePoints = computed<VehiclePoint[]>(() => {
   const seen = new Set<string>();
   const result: VehiclePoint[] = [];
   for (const item of props.locations) {
@@ -54,6 +65,40 @@ const points = computed<VehiclePoint[]>(() => {
   return result;
 });
 
+const ORG_COLORS: Record<number, string> = {
+  1: "#00eaff",
+  2: "#2f6bff",
+  3: "#00ff7f",
+  4: "#ffc14d",
+};
+const ORG_SIZE: Record<number, number> = { 1: 13, 2: 10, 3: 9, 4: 7 };
+
+const orgPoints = computed(() =>
+  (props.orgs ?? [])
+    .filter((o) => Number.isFinite(o.value[0]) && Number.isFinite(o.value[1]))
+    .map((o) => ({
+      name: o.name,
+      value: o.value,
+      symbolSize: ORG_SIZE[o.orgType] ?? 7,
+      itemStyle: { color: ORG_COLORS[o.orgType] ?? "#9fdfff" },
+    })),
+);
+
+const orgLines = computed(() =>
+  (props.orgs ?? [])
+    .filter(
+      (o) =>
+        o.parent &&
+        Number.isFinite(o.parent[0]) &&
+        Number.isFinite(o.parent[1]) &&
+        Number.isFinite(o.value[0]) &&
+        Number.isFinite(o.value[1]),
+    )
+    .map((o) => ({ coords: [o.parent as [number, number], o.value] })),
+);
+
+const hasAnyData = computed(() => vehiclePoints.value.length > 0 || orgPoints.value.length > 0);
+
 const option = computed<EChartsOption>(() => ({
   tooltip: {
     trigger: "item",
@@ -61,18 +106,24 @@ const option = computed<EChartsOption>(() => ({
     borderColor: "rgba(0,234,255,0.4)",
     textStyle: { color: "#d6ecff", fontSize: 12 },
     formatter: (params: unknown) => {
-      const p = params as { data?: VehiclePoint };
-      const d = p.data;
-      if (!d) {
-        return "";
+      const p = params as { seriesType?: string; data?: { name?: string; value?: unknown; driver?: string; time?: string } };
+      if (p.seriesType === "lines") {
+        return "机构网络流向";
       }
-      const lines = [
-        `<b>${d.name}</b>`,
-        d.driver ? `司机：${d.driver}` : "",
-        d.time ? `上报时间：${d.time}` : "",
-        `坐标：${d.value[0].toFixed(4)}, ${d.value[1].toFixed(4)}`,
-      ];
-      return lines.filter(Boolean).join("<br/>");
+      const d = p.data;
+      if (!d) return "";
+      if (p.seriesType === "effectScatter") {
+        const lines = [
+          `<b>${d.name ?? ""}</b>`,
+          d.driver ? `司机：${d.driver}` : "",
+          d.time ? `上报：${d.time}` : "",
+          d.value && Array.isArray(d.value)
+            ? `坐标：${(d.value as number[])[0].toFixed(4)}, ${(d.value as number[])[1].toFixed(4)}`
+            : "",
+        ];
+        return lines.filter(Boolean).join("<br/>");
+      }
+      return `<b>${d.name ?? ""}</b>`;
     },
   },
   geo: {
@@ -96,9 +147,48 @@ const option = computed<EChartsOption>(() => ({
   },
   series: [
     {
+      name: "机构网络",
+      type: "lines",
+      coordinateSystem: "geo",
+      zlevel: 1,
+      effect: {
+        show: true,
+        period: 5,
+        trailLength: 0.4,
+        symbol: "arrow",
+        symbolSize: 5,
+        color: "#9fe8ff",
+      },
+      lineStyle: {
+        color: "rgba(0,234,255,0.45)",
+        width: 1,
+        opacity: 0.6,
+        curveness: 0.3,
+      },
+      data: orgLines.value,
+    },
+    {
+      name: "机构网点",
+      type: "scatter",
+      coordinateSystem: "geo",
+      zlevel: 2,
+      symbol: "circle",
+      itemStyle: { shadowBlur: 8, shadowColor: "rgba(0,234,255,0.6)" },
+      label: {
+        show: false,
+        position: "right",
+        color: "#cfe8ff",
+        fontSize: 11,
+        formatter: "{b}",
+      },
+      emphasis: { label: { show: true } },
+      data: orgPoints.value,
+    },
+    {
       name: "在途车辆",
       type: "effectScatter",
       coordinateSystem: "geo",
+      zlevel: 3,
       showEffectOn: "render",
       rippleEffect: { brushType: "stroke", scale: 3.2 },
       symbolSize: 9,
@@ -116,7 +206,7 @@ const option = computed<EChartsOption>(() => ({
           formatter: "{b}",
         },
       },
-      data: points.value,
+      data: vehiclePoints.value,
     },
   ],
 }));
