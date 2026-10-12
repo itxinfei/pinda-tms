@@ -55,9 +55,11 @@ const option = computed<EChartsOption>(() => ({
         show: true,
         position: "inside",
         formatter: "{d}%",
-        color: "#04101f",
-        fontSize: 14,
+        color: "#ffffff",
+        fontSize: 15,
         fontWeight: 700,
+        textBorderColor: "rgba(0,0,0,0.55)",
+        textBorderWidth: 2,
       },
       labelLine: { show: false },
       emphasis: {
@@ -92,9 +94,9 @@ const option = computed<EChartsOption>(() => ({
 
   &__total {
     font-family: var(--bs-font-title);
-    font-size: 30px;
+    font-size: 34px;
     color: #fff;
-    text-shadow: 0 0 12px rgba(0, 234, 255, 0.5);
+    text-shadow: 0 0 14px rgba(0, 234, 255, 0.6);
   }
 
   &__hint {

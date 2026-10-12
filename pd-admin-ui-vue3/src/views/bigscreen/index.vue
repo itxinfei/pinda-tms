@@ -382,7 +382,7 @@ onBeforeUnmount(() => {
 
   /* 两个饼图面板加高，使饼图绝对尺寸更大、文字更清晰 */
   > .bs-col__pie-lg {
-    flex: 1.5;
+    flex: 2;
     min-height: 0;
   }
 }
