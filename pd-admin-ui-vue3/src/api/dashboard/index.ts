@@ -8,18 +8,60 @@ import request from "@/utils/request";
  */
 const DASHBOARD_BASE_URL = "/api/manager/dashboard";
 
-/** 工作台总览（KPI + 运单三桶 + 在途车辆） */
+/** 名称-数值统计项（中文名由后端给出，前端不做状态码映射） */
+export interface NameValue {
+  name: string;
+  value: number;
+}
+
+/** 工作台总览（KPI + 订单三桶 + 今日签收 + 在途车辆 + 任务五态） */
 export interface DashboardOverview {
-  /** 今日新增运单数 */
+  /** 今日新增订单数 */
   todayOrderCount: number;
-  /** 在途车辆数（进行中运输任务数） */
+  /** 在途车辆数（有进行中任务的去重车辆数） */
   onTruckCount: number;
-  /** 待处理运单数（订单状态 1-5） */
+  /** 待处理订单数（订单状态 1-5） */
   pendingCount: number;
-  /** 运输中运单数（订单状态 6-9） */
+  /** 运输中订单数（订单状态 6-9） */
   inTransitCount: number;
-  /** 已签收运单数（订单状态 10） */
+  /** 已签收订单数（订单状态 10） */
   completedCount: number;
+  /** 今日签收数（update_time 当日且状态10近似） */
+  todayCompletedCount: number;
+  /** 今日新增运输任务数 */
+  todayTaskCount: number;
+  /** 运输任务五态计数 */
+  taskStatusCounts: NameValue[];
+}
+
+/** 大屏线路运量项 */
+export interface LineVolume {
+  /** 线路名称（补不到线路时用车次名） */
+  name: string;
+  /** 近 7 日运输任务量 */
+  taskCount: number;
+}
+
+/** 运营大屏汇总（告警数/车辆定位由前端直连 netty，不在此对象内） */
+export interface BigScreenSummary {
+  /** 今日订单数 */
+  todayOrderCount: number;
+  /** 今日运单数（去重 order_id） */
+  todayTransportOrderCount: number;
+  /** 今日运输任务数 */
+  todayTaskCount: number;
+  /** 在途车辆数 */
+  activeTruckCount: number;
+  /** 待执行车辆数 */
+  pendingTruckCount: number;
+  /** 空闲车辆数（总数-在途-待执行） */
+  idleTruckCount: number;
+  /** 正常车辆总数 */
+  totalTruckCount: number;
+  /** 运输任务五态计数 */
+  taskStatusCounts: NameValue[];
+  /** 近 7 日各线路运量 Top10 */
+  lineVolumes: LineVolume[];
 }
 
 /** 运输量趋势单点 */
@@ -66,6 +108,14 @@ const DashboardAPI = {
       url: `${DASHBOARD_BASE_URL}/todo`,
       method: "get",
       params: { limit },
+    });
+  },
+
+  /** 运营大屏汇总（订单/运单/车辆/任务五态/线路运量） */
+  getBigScreenSummary() {
+    return request<unknown, BigScreenSummary>({
+      url: `${DASHBOARD_BASE_URL}/bigscreen/summary`,
+      method: "get",
     });
   },
 };
