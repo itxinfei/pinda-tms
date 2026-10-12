@@ -290,13 +290,22 @@
 </tr>
 <tr>
 <td align="center" width="50%">
+  <img src="docs/screenshots/ops-docker.png" alt="Docker 容器总览"/>
+  <br/><sub><b>Docker 容器总览</b> · 微服务与中间件容器健康状态</sub>
+</td>
+<td align="center" width="50%">
   <img src="docs/screenshots/ops-gitea-workflow.png" alt="Gitea CI/CD 工作流"/>
   <br/><sub><b>Gitea CI/CD 工作流</b> · deploy-backend 按序部署 + 逐服务健康检查（网关最后切）</sub>
 </td>
+</tr>
+<tr>
 <td align="center" width="50%">
-  <div style="border:2px dashed #d0d7de;border-radius:8px;padding:52px 12px;color:#8b949e;background:#fafbfc;">
-    📷 待补充<br/><sub>MySQL / Redis / Docker 容器总览<br/>（真实环境截图后替换）</sub>
-  </div>
+  <img src="docs/screenshots/ops-mysql.png" alt="MySQL 数据库"/>
+  <br/><sub><b>MySQL 8.0 数据库</b> · 单库分域表结构（InnoDB）</sub>
+</td>
+<td align="center" width="50%">
+  <img src="docs/screenshots/ops-redis.png" alt="Redis 键管理"/>
+  <br/><sub><b>Redis 7 键管理</b> · Sa-Token 会话缓存与 TTL</sub>
 </td>
 </tr>
 </table>
