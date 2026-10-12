@@ -18,7 +18,7 @@
               </el-select>
             </el-form-item>
             <el-form-item>
-              <el-button type="primary" @click="handleSearch">查询</el-button>
+              <el-button type="primary" :loading="loading" @click="handleSearch">查询</el-button>
               <el-button @click="handleReset">重置</el-button>
             </el-form-item>
           </el-form>
@@ -30,8 +30,11 @@
 
       <div class="page-table-wrapper">
         <el-table v-loading="loading" :data="list" class="page-table" border height="100%">
+          <el-table-column type="index" label="#" width="50" align="center" />
           <el-table-column prop="name" label="名称" min-width="160" show-overflow-tooltip />
-          <el-table-column prop="typeNumber" label="编码" min-width="140" show-overflow-tooltip />
+          <el-table-column label="编码" min-width="140" show-overflow-tooltip>
+            <template #default="scope">{{ scope.row.typeNumber || "-" }}</template>
+          </el-table-column>
           <el-table-column label="起始机构类型" min-width="140">
             <template #default="scope">{{ scope.row.startAgencyTypeName || agencyTypeText(scope.row.startAgencyType) }}</template>
           </el-table-column>
@@ -41,7 +44,9 @@
           <el-table-column label="更新人" min-width="110">
             <template #default="scope">{{ scope.row.updater?.name || "-" }}</template>
           </el-table-column>
-          <el-table-column prop="lastUpdateTime" label="最后更新时间" min-width="170" />
+          <el-table-column label="最后更新时间" min-width="170">
+            <template #default="scope">{{ scope.row.lastUpdateTime || "-" }}</template>
+          </el-table-column>
           <el-table-column label="状态" min-width="90" align="center">
             <template #default="scope">
               <el-tag :type="scope.row.status === CommonStatus.ENABLED ? 'success' : 'info'" size="small">
@@ -74,7 +79,7 @@
           :total="total"
           background
           layout="total, sizes, prev, pager, next, jumper"
-          @size-change="loadList"
+          @size-change="handleSizeChange"
           @current-change="loadList"
         />
       </div>
@@ -82,20 +87,31 @@
 
     <!-- 新增/编辑弹窗 -->
     <el-dialog v-model="formVisible" :title="formTitle" width="520px" @closed="resetForm">
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="120px">
+      <el-form ref="formRef" v-loading="detailLoading" :model="form" :rules="rules" label-width="110px">
         <el-form-item label="名称" prop="name">
           <el-input v-model="form.name" placeholder="请输入线路类型名称" maxlength="32" show-word-limit />
         </el-form-item>
         <el-form-item label="编码" prop="typeNumber">
-          <el-input v-model="form.typeNumber" placeholder="请输入线路类型编码，如 CITY_TRUNK" maxlength="32" />
+          <el-input
+            v-model="form.typeNumber"
+            placeholder="请输入线路类型编码，如 CITY_TRUNK"
+            maxlength="32"
+            show-word-limit
+          />
         </el-form-item>
         <el-form-item label="起始机构类型" prop="startAgencyType">
-          <el-select v-model="form.startAgencyType" placeholder="请选择" clearable style="width: 100%">
+          <el-select
+            v-model="form.startAgencyType"
+            placeholder="请选择起始机构类型"
+            clearable
+            style="width: 100%"
+            @change="handleStartAgencyTypeChange"
+          >
             <el-option v-for="item in AGENCY_TYPE_OPTIONS" :key="item.value" :value="item.value" :label="item.label" />
           </el-select>
         </el-form-item>
         <el-form-item label="目的机构类型" prop="endAgencyType">
-          <el-select v-model="form.endAgencyType" placeholder="请选择" clearable style="width: 100%">
+          <el-select v-model="form.endAgencyType" placeholder="请选择目的机构类型" clearable style="width: 100%">
             <el-option v-for="item in AGENCY_TYPE_OPTIONS" :key="item.value" :value="item.value" :label="item.label" />
           </el-select>
         </el-form-item>
@@ -170,6 +186,12 @@ function handleSearch() {
   loadList();
 }
 
+/** 切换每页条数后必须回第 1 页，否则高页码会请求空页 */
+function handleSizeChange() {
+  query.value.page = 1;
+  loadList();
+}
+
 function handleReset() {
   query.value = { page: 1, pageSize: 10 };
   loadList();
@@ -185,6 +207,8 @@ interface TransportLineTypeForm {
 
 const formVisible = ref(false);
 const saving = ref(false);
+/** 编辑态详情加载：弹窗先打开、列表行先回填，详情接口慢时给 loading 反馈而不是无响应 */
+const detailLoading = ref(false);
 const editingId = ref<string>();
 const formRef = ref<FormInstance>();
 
@@ -197,28 +221,74 @@ const createDefaultForm = (): TransportLineTypeForm => ({
 const form = reactive<TransportLineTypeForm>(createDefaultForm());
 
 const rules: FormRules<TransportLineTypeForm> = {
-  name: [{ required: true, message: "请输入线路类型名称", trigger: "blur" }],
-  typeNumber: [{ required: true, message: "请输入线路类型编码", trigger: "blur" }],
+  // whitespace: true 拦截纯空格（required 只挡空串）
+  name: [{ required: true, whitespace: true, message: "请输入线路类型名称", trigger: "blur" }],
+  typeNumber: [
+    { required: true, whitespace: true, message: "请输入线路类型编码", trigger: "blur" },
+    // 编码是后端枚举式标识，统一大写下划线风格（如 CITY_TRUNK），避免同义多写法
+    { pattern: /^[A-Z][A-Z0-9_]*$/, message: "需以大写字母开头，仅含大写字母、数字、下划线", trigger: "blur" },
+  ],
+  startAgencyType: [{ required: true, message: "请选择起始机构类型", trigger: "change" }],
+  endAgencyType: [
+    { required: true, message: "请选择目的机构类型", trigger: "change" },
+    {
+      // 线路类型描述两类机构之间的流向，起止相同无意义
+      validator: (
+        _rule: unknown,
+        value: number | undefined,
+        callback: (error?: string | Error) => void,
+      ): void => {
+        if (value !== undefined && value === form.startAgencyType) {
+          callback(new Error("目的机构类型不能与起始机构类型相同"));
+        } else {
+          callback();
+        }
+      },
+      trigger: "change",
+    },
+  ],
 };
 
 const formTitle = computed(() => (editingId.value ? "编辑线路类型" : "新增线路类型"));
 
+/** 起始机构类型变更后，目的项的"起止不能相同"校验需重新执行 */
+function handleStartAgencyTypeChange() {
+  if (form.endAgencyType !== undefined) {
+    formRef.value?.validateField("endAgencyType");
+  }
+}
+
 function openCreate() {
   editingId.value = undefined;
+  detailLoading.value = false;
   Object.assign(form, createDefaultForm());
   formVisible.value = true;
 }
 
-async function openEdit(row: TransportLineTypeRecord) {
-  const detail = await TransportLineTypeAPI.getDetail(row.id!);
-  editingId.value = row.id;
+/** 把记录（列表行或详情）映射到表单结构 */
+function applyRecordToForm(record: Partial<TransportLineTypeRecord>) {
   Object.assign(form, createDefaultForm(), {
-    name: detail.name ?? "",
-    typeNumber: detail.typeNumber ?? "",
-    startAgencyType: detail.startAgencyType,
-    endAgencyType: detail.endAgencyType,
+    name: record.name ?? "",
+    typeNumber: record.typeNumber ?? "",
+    startAgencyType: record.startAgencyType,
+    endAgencyType: record.endAgencyType,
   });
+}
+
+async function openEdit(row: TransportLineTypeRecord) {
+  editingId.value = row.id;
+  applyRecordToForm(row);
   formVisible.value = true;
+  detailLoading.value = true;
+  try {
+    const detail = await TransportLineTypeAPI.getDetail(row.id!);
+    applyRecordToForm(detail);
+  } catch {
+    // 错误提示由请求拦截器统一弹出；详情拿不到则关闭弹窗，避免编辑到残缺数据
+    formVisible.value = false;
+  } finally {
+    detailLoading.value = false;
+  }
 }
 
 async function handleSubmit() {
@@ -252,6 +322,17 @@ function resetForm() {
   formRef.value?.resetFields();
   Object.assign(form, createDefaultForm());
   editingId.value = undefined;
+  detailLoading.value = false;
+}
+
+/**
+ * 启停后记录可能因状态筛选离开当前页：末页仅剩这一条时回退一页，避免停在空页。
+ * @param filteredOut 当前查询是否正按"会把该记录过滤掉"的状态筛选
+ */
+function fallbackPageIfNeeded(filteredOut: boolean) {
+  if (filteredOut && list.value.length === 1 && query.value.page > 1) {
+    query.value.page -= 1;
+  }
 }
 
 async function handleDisable(row: TransportLineTypeRecord) {
@@ -267,13 +348,10 @@ async function handleDisable(row: TransportLineTypeRecord) {
   try {
     await TransportLineTypeAPI.disable(row.id!);
     ElMessage.success("已停用");
-    // 筛选"启用"状态时，停用后记录会从结果消失；末页仅剩一条则回退一页，避免停在空页
-    if (query.value.status === CommonStatus.ENABLED && list.value.length === 1 && query.value.page > 1) {
-      query.value.page -= 1;
-    }
+    fallbackPageIfNeeded(query.value.status === CommonStatus.ENABLED);
     loadList();
-  } catch (e) {
-    ElMessage.error(e instanceof Error ? e.message : "停用失败");
+  } catch {
+    // 错误提示由请求拦截器统一弹出，这里只收尾，避免双重 toast
   }
 }
 
@@ -290,9 +368,10 @@ async function handleEnable(row: TransportLineTypeRecord) {
   try {
     await TransportLineTypeAPI.enable(row.id!);
     ElMessage.success("已启用");
+    fallbackPageIfNeeded(query.value.status === CommonStatus.DISABLED);
     loadList();
-  } catch (e) {
-    ElMessage.error(e instanceof Error ? e.message : "启用失败");
+  } catch {
+    // 错误提示由请求拦截器统一弹出，这里只收尾，避免双重 toast
   }
 }
 

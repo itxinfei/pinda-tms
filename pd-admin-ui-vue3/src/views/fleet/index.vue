@@ -37,7 +37,7 @@
               </el-select>
             </el-form-item>
             <el-form-item>
-              <el-button type="primary" @click="handleSearch">查询</el-button>
+              <el-button type="primary" :loading="loading" @click="handleSearch">查询</el-button>
               <el-button @click="handleReset">重置</el-button>
             </el-form-item>
           </el-form>
@@ -49,6 +49,7 @@
 
       <div class="page-table-wrapper">
         <el-table v-loading="loading" :data="list" class="page-table" border height="100%">
+          <el-table-column type="index" label="#" width="50" align="center" />
           <el-table-column prop="name" label="车队名称" min-width="150" show-overflow-tooltip />
           <el-table-column prop="fleetNumber" label="车队编号" min-width="130" show-overflow-tooltip>
             <template #default="scope">{{ scope.row.fleetNumber || "-" }}</template>
@@ -59,8 +60,12 @@
           <el-table-column label="负责人" min-width="110">
             <template #default="scope">{{ scope.row.manager?.name || "-" }}</template>
           </el-table-column>
-          <el-table-column prop="truckCount" label="车辆数" min-width="90" align="right" />
-          <el-table-column prop="driverCount" label="司机数" min-width="90" align="right" />
+          <el-table-column label="车辆数" min-width="90" align="right">
+            <template #default="scope">{{ formatNumber(scope.row.truckCount) }}</template>
+          </el-table-column>
+          <el-table-column label="司机数" min-width="90" align="right">
+            <template #default="scope">{{ formatNumber(scope.row.driverCount) }}</template>
+          </el-table-column>
           <el-table-column label="状态" min-width="90" align="center">
             <template #default="scope">
               <el-tag :type="scope.row.status === CommonStatus.ENABLED ? 'success' : 'info'" size="small">
@@ -93,7 +98,7 @@
           :total="total"
           background
           layout="total, sizes, prev, pager, next, jumper"
-          @size-change="loadList"
+          @size-change="handleSizeChange"
           @current-change="loadList"
         />
       </div>
@@ -101,12 +106,12 @@
 
     <!-- 新增/编辑弹窗 -->
     <el-dialog v-model="formVisible" :title="formTitle" width="520px" @closed="resetForm">
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
+      <el-form ref="formRef" v-loading="detailLoading" :model="form" :rules="rules" label-width="110px">
         <el-form-item label="车队名称" prop="name">
           <el-input v-model="form.name" placeholder="请输入车队名称" maxlength="32" show-word-limit />
         </el-form-item>
         <el-form-item label="车队编号" prop="fleetNumber">
-          <el-input v-model="form.fleetNumber" placeholder="选填，请输入车队编号" maxlength="32" />
+          <el-input v-model="form.fleetNumber" placeholder="选填，请输入车队编号" maxlength="32" show-word-limit />
         </el-form-item>
         <el-form-item label="所属机构" prop="agencyId">
           <el-tree-select
@@ -162,6 +167,7 @@ import type { SysUserSimple } from "@/api/common-simple";
 import OrgAPI from "@/api/org";
 import type { OrgNode } from "@/api/org";
 import { CommonStatus } from "@/enums";
+import { formatNumber } from "@/utils/format";
 
 /** 所属机构树（弹窗选择，节点 id 为 number，提交时转 string） */
 const orgTree = ref<OrgNode[]>([]);
@@ -179,6 +185,8 @@ async function searchUsers(name?: string) {
   userLoading.value = true;
   try {
     userOptions.value = (await CommonSimpleAPI.userOptions(name)) ?? [];
+  } catch {
+    // 错误提示由请求拦截器统一弹出；下拉保留已有选项
   } finally {
     userLoading.value = false;
   }
@@ -225,6 +233,12 @@ function handleSearch() {
   loadList();
 }
 
+/** 切换每页条数后必须回第 1 页，否则高页码会请求空页 */
+function handleSizeChange() {
+  query.value.page = 1;
+  loadList();
+}
+
 function handleReset() {
   query.value = { page: 1, pageSize: 10 };
   loadList();
@@ -241,6 +255,8 @@ interface FleetForm {
 
 const formVisible = ref(false);
 const saving = ref(false);
+/** 编辑态详情加载：弹窗先打开、列表行先回填，详情接口慢时给 loading 反馈而不是无响应 */
+const detailLoading = ref(false);
 const editingId = ref<string>();
 const formRef = ref<FormInstance>();
 
@@ -253,30 +269,53 @@ const createDefaultForm = (): FleetForm => ({
 const form = reactive<FleetForm>(createDefaultForm());
 
 const rules: FormRules<FleetForm> = {
-  name: [{ required: true, message: "请输入车队名称", trigger: "blur" }],
+  // whitespace: true 拦截纯空格名称（required 只挡空串）
+  name: [{ required: true, whitespace: true, message: "请输入车队名称", trigger: "blur" }],
   agencyId: [{ required: true, message: "请选择所属机构", trigger: "change" }],
 };
 
 const formTitle = computed(() => (editingId.value ? "编辑车队" : "新增车队"));
 
+/** 机构 id（string）转树节点 number；非数字内容返回 undefined，避免 NaN 导致树异常高亮 */
+function toAgencyNodeId(id?: string): number | undefined {
+  if (id === undefined || id === null || id === "") return undefined;
+  const num = Number(id);
+  return Number.isFinite(num) ? num : undefined;
+}
+
+/** 把记录（列表行或详情）映射到表单结构 */
+function applyRecordToForm(record: Partial<FleetRecord>) {
+  if (record.manager) mergeUserOption(record.manager);
+  Object.assign(form, createDefaultForm(), {
+    name: record.name ?? "",
+    fleetNumber: record.fleetNumber ?? "",
+    managerId: record.manager?.userId,
+    // 机构 id 详情为 string，树节点 node-key 为 number，回填需转换否则树无法高亮
+    agencyId: toAgencyNodeId(record.agency?.id),
+  });
+}
+
 function openCreate() {
   editingId.value = undefined;
+  detailLoading.value = false;
   Object.assign(form, createDefaultForm());
   formVisible.value = true;
 }
 
 async function openEdit(row: FleetRecord) {
-  const detail = await FleetAPI.getDetail(row.id!);
   editingId.value = row.id;
-  mergeUserOption(detail.manager);
-  Object.assign(form, createDefaultForm(), {
-    name: detail.name ?? "",
-    fleetNumber: detail.fleetNumber ?? "",
-    managerId: detail.manager?.userId,
-    // 机构 id 详情为 string，树节点 node-key 为 number，回填需转换否则树无法高亮
-    agencyId: detail.agency?.id ? Number(detail.agency.id) : undefined,
-  });
+  applyRecordToForm(row);
   formVisible.value = true;
+  detailLoading.value = true;
+  try {
+    const detail = await FleetAPI.getDetail(row.id!);
+    applyRecordToForm(detail);
+  } catch {
+    // 错误提示由请求拦截器统一弹出；详情拿不到则关闭弹窗，避免编辑到残缺数据
+    formVisible.value = false;
+  } finally {
+    detailLoading.value = false;
+  }
 }
 
 async function handleSubmit() {
@@ -311,6 +350,17 @@ function resetForm() {
   formRef.value?.resetFields();
   Object.assign(form, createDefaultForm());
   editingId.value = undefined;
+  detailLoading.value = false;
+}
+
+/**
+ * 启停后记录可能因状态筛选离开当前页：末页仅剩这一条时回退一页，避免停在空页。
+ * @param filteredOut 当前查询是否正按"会把该记录过滤掉"的状态筛选
+ */
+function fallbackPageIfNeeded(filteredOut: boolean) {
+  if (filteredOut && list.value.length === 1 && query.value.page > 1) {
+    query.value.page -= 1;
+  }
 }
 
 async function handleDisable(row: FleetRecord) {
@@ -326,13 +376,10 @@ async function handleDisable(row: FleetRecord) {
   try {
     await FleetAPI.disable(row.id!);
     ElMessage.success("已停用");
-    // 筛选"启用"状态时，停用后记录会从结果消失；末页仅剩一条则回退一页，避免停在空页
-    if (query.value.status === CommonStatus.ENABLED && list.value.length === 1 && query.value.page > 1) {
-      query.value.page -= 1;
-    }
+    fallbackPageIfNeeded(query.value.status === CommonStatus.ENABLED);
     loadList();
-  } catch (e) {
-    ElMessage.error(e instanceof Error ? e.message : "停用失败");
+  } catch {
+    // 错误提示由请求拦截器统一弹出，这里只收尾，避免双重 toast
   }
 }
 
@@ -349,18 +396,23 @@ async function handleEnable(row: FleetRecord) {
   try {
     await FleetAPI.enable(row.id!);
     ElMessage.success("已启用");
+    fallbackPageIfNeeded(query.value.status === CommonStatus.DISABLED);
     loadList();
-  } catch (e) {
-    ElMessage.error(e instanceof Error ? e.message : "启用失败");
+  } catch {
+    // 错误提示由请求拦截器统一弹出，这里只收尾，避免双重 toast
   }
 }
 
 onMounted(() => {
   loadList();
-  // 预载全部用户，下拉直接可选；输入关键字时再走 remote 模糊查询
+  // 预载全部用户，下拉直接可选；输入关键字时再走 remote 模糊查询（失败不阻塞页面）
   searchUsers();
-  OrgAPI.getTree().then((res) => {
-    orgTree.value = res ?? [];
-  });
+  OrgAPI.getTree()
+    .then((res) => {
+      orgTree.value = res ?? [];
+    })
+    .catch(() => {
+      // 错误提示由请求拦截器统一弹出；机构树保持空，新增/编辑时该字段不可选
+    });
 });
 </script>

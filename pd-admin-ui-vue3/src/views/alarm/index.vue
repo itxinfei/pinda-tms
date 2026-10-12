@@ -28,7 +28,7 @@
               </el-select>
             </el-form-item>
             <el-form-item>
-              <el-button type="primary" @click="handleSearch">查询</el-button>
+              <el-button type="primary" :loading="loading" @click="handleSearch">查询</el-button>
               <el-button @click="handleReset">重置</el-button>
             </el-form-item>
           </el-form>
@@ -40,6 +40,10 @@
 
       <div class="page-table-wrapper">
         <el-table v-loading="loading" :data="list" class="page-table" border height="100%">
+          <template #empty>
+            <el-empty description="暂无告警记录" :image-size="56" />
+          </template>
+          <el-table-column type="index" label="#" width="50" align="center" />
           <el-table-column label="告警类型" min-width="120" align="center">
             <template #default="scope">
               <el-tag :type="alarmTagType(scope.row.alarmType)" size="small">
@@ -79,6 +83,8 @@
                 type="primary"
                 link
                 size="small"
+                :loading="handlingId === scope.row.id"
+                :disabled="handlingId !== undefined && handlingId !== scope.row.id"
                 @click="handleMarkHandled(scope.row as AlarmRecord)"
                 >标记已处理</el-button
               >
@@ -96,7 +102,7 @@
           :total="total"
           background
           layout="total, sizes, prev, pager, next, jumper"
-          @size-change="loadList"
+          @size-change="handleSizeChange"
           @current-change="loadList"
         />
       </div>
@@ -162,6 +168,8 @@ const loading = ref(false);
 const list = ref<AlarmRecord[]>([]);
 const total = ref(0);
 const pendingCount = ref(0);
+/** 正在标记处理的记录 id：行按钮 loading + 其他行禁用，防重复提交 */
+const handlingId = ref<string>();
 const query = ref<AlarmPageQuery>({ page: 1, pageSize: 10 });
 
 /** 组装查询参数：剔除空字符串/空值，仅提交有效过滤条件 */
@@ -182,18 +190,30 @@ async function loadList() {
     const res = await AlarmAPI.page(buildParams());
     list.value = res?.items ?? [];
     total.value = res?.total ?? 0;
+  } catch {
+    // 错误提示由请求拦截器统一弹出；列表保留上次数据
   } finally {
     loading.value = false;
   }
 }
 
-/** 未处理总数（独立于列表过滤条件，始终查 status=0） */
+/** 未处理总数（独立于列表过滤条件，始终查 status=0）；失败保留上次数值 */
 async function loadPendingCount() {
-  const res = await AlarmAPI.page({ page: 1, pageSize: 1, status: AlarmHandleStatus.PENDING });
-  pendingCount.value = res?.total ?? 0;
+  try {
+    const res = await AlarmAPI.page({ page: 1, pageSize: 1, status: AlarmHandleStatus.PENDING });
+    pendingCount.value = res?.total ?? 0;
+  } catch {
+    // 错误提示由请求拦截器统一弹出
+  }
 }
 
 function handleSearch() {
+  query.value.page = 1;
+  loadList();
+}
+
+/** 切换每页条数后必须回第 1 页，否则高页码会请求空页 */
+function handleSizeChange() {
   query.value.page = 1;
   loadList();
 }
@@ -213,6 +233,7 @@ async function handleMarkHandled(row: AlarmRecord) {
   } catch {
     return;
   }
+  handlingId.value = row.id;
   try {
     await AlarmAPI.handle(row.id);
     ElMessage.success("已标记为已处理");
@@ -222,8 +243,10 @@ async function handleMarkHandled(row: AlarmRecord) {
     }
     loadList();
     loadPendingCount();
-  } catch (e) {
-    ElMessage.error(e instanceof Error ? e.message : "标记失败");
+  } catch {
+    // 错误提示由请求拦截器统一弹出，这里只收尾，避免双重 toast
+  } finally {
+    handlingId.value = undefined;
   }
 }
 
