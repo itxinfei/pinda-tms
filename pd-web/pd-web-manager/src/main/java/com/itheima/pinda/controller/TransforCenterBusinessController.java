@@ -393,6 +393,18 @@ public class TransforCenterBusinessController {
         if (vo.getAgency() != null) {
             dto.setAgencyId(vo.getAgency().getId());
         }
+        // 所属机构：base_fleet.org_id NOT NULL，前端未传时按当前登录用户反查所属机构，缺省回退为 1
+        if (dto.getAgencyId() == null) {
+            String currentUserId = RequestContext.getUserId();
+            String currentAgencyId = "1";
+            if (currentUserId != null) {
+                UserDTO currentUser = userFeign.get(Long.valueOf(currentUserId));
+                if (currentUser != null && currentUser.getOrgId() != null) {
+                    currentAgencyId = String.valueOf(currentUser.getOrgId());
+                }
+            }
+            dto.setAgencyId(currentAgencyId);
+        }
         FleetDto resultDto = fleetFeign.saveAgencyType(dto);
         BeanUtils.copyProperties(resultDto, vo);
         return vo;
@@ -409,6 +421,18 @@ public class TransforCenterBusinessController {
         }
         if (vo.getAgency() != null) {
             dto.setAgencyId(vo.getAgency().getId());
+        }
+        // 所属机构：base_fleet.org_id NOT NULL，前端未传时不覆盖已有值，为空才按当前登录用户反查（缺省回退 1）
+        if (dto.getAgencyId() == null) {
+            String currentUserId = RequestContext.getUserId();
+            String currentAgencyId = "1";
+            if (currentUserId != null) {
+                UserDTO currentUser = userFeign.get(Long.valueOf(currentUserId));
+                if (currentUser != null && currentUser.getOrgId() != null) {
+                    currentAgencyId = String.valueOf(currentUser.getOrgId());
+                }
+            }
+            dto.setAgencyId(currentAgencyId);
         }
         FleetDto resultDto = fleetFeign.update(id, dto);
         BeanUtils.copyProperties(resultDto, vo);
