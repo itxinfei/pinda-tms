@@ -23,6 +23,10 @@
   <img src="docs/badges/or-tools.svg" alt="OR-Tools"/>
   <img src="docs/badges/spring-ai.svg" alt="Spring AI"/>
   <img src="docs/badges/kuaidi100.svg" alt="快递100"/>
+  <img src="docs/badges/doris.svg" alt="Apache Doris"/>
+  <img src="docs/badges/flowable.svg" alt="Flowable"/>
+  <img src="docs/badges/jimu-report.svg" alt="积木报表"/>
+  <img src="docs/badges/debezium.svg" alt="Debezium"/>
   <img src="docs/badges/resilience4j.svg" alt="Resilience4j"/>
   <img src="docs/badges/mapstruct.svg" alt="MapStruct"/>
   <img src="docs/badges/zipkin.svg" alt="Zipkin"/>
@@ -159,7 +163,16 @@
 | **Google OR-Tools 智能排线**（规划中） | VRP 组合优化求解（CVRP / VRPTW），辅助调度配载 |
 | **Spring AI 2.0 智能应用框架**（规划中） | 大模型对话 / RAG / Agent 编排，支撑智能客服与查件 Agent |
 | **快递100 开放平台**（规划中） | 多承运商轨迹查询与推送、电子面单打印、寄递下单 |
+| **Apache Doris OLAP**（规划中） | 报表与经营分析，湖仓一体，MySQL 协议兼容 |
+| **Flowable 工作流引擎**（规划中） | 异常件审批、赔付改派、对账等人工审批流编排 |
+| **积木报表 JimuReport**（规划中） | 数据可视化报表与大屏仪表盘，在线设计 |
+| **Debezium CDC 数据同步**（规划中） | binlog 变更捕获，MySQL → Kafka → ES/Doris 实时同步 |
 | **Druid 数据库连接池** | 连接管理与 SQL 监控 |
+
+> **后期技术演进路线**（规划中技术按以下优先级分批落地）：
+> - **近期 P1**：MinIO 对象存储、Zipkin 链路追踪、Resilience4j 容错、MapStruct 对象映射
+> - **中期 P2**：Kafka + Debezium CDC 数据管线、Elasticsearch 检索、OR-Tools 智能排线、Apache Doris OLAP
+> - **远期 P3**：Spring AI 2.0 智能应用、快递100 多承运商对接、Flowable 审批流、积木报表
 
 ### 6.5 数据库设计
 
