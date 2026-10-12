@@ -43,9 +43,20 @@ export function setupPermissionGuard() {
       // 用户信息（按钮权限 v-hasPerm 与昵称头像的数据源）
       // 必须独立于动态路由开关：permission store 的 isRouteGenerated 初值即 true（临时走静态路由），
       // 放在它下面会导致 getUserInfo 永不调用、userInfo 恒为空、全站 v-hasPerm 按钮被摘除。
-      // 失败时交给下方 catch 统一重置会话并跳登录。
+      // D-42（菜单/权限下发）未落地前后端无 /api/v1/users/me 端点，请求必然 404：
+      // 失败时降级回临时 mock（afb68fc 之前的定案），绝不能重置会话——否则登录后立即被弹回登录页形成死循环。
       if (!userStore.userInfo?.roles?.length) {
-        await userStore.getUserInfo();
+        try {
+          await userStore.getUserInfo();
+        } catch {
+          console.warn("[guard] 用户信息端点暂不可用（D-42 未落地），降级使用临时 mock 用户身份");
+          userStore.userInfo = {
+            nickname: "pinda",
+            avatar: "",
+            roles: ["ADMIN"],
+            perms: ["*"],
+          } as any;
+        }
       }
 
       // 动态路由生成（定案 D-42 落地后恢复：改为 !isRouteGenerated 时 generateRoutes()）
