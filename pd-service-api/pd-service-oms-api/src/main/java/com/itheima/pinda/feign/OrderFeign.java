@@ -18,6 +18,13 @@ import io.swagger.v3.oas.annotations.Hidden;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 订单 Feign 契约
+ *
+ * <p>⚠️ 过渡契约：订单主键为 String（pd-oms 尚未切库），全部 {@code String id}
+ * 入参/OrderDTO.id 均属遗留口径。String → Long 的统一收敛跟随
+ * 《53-全量重构总体规划》执行，禁止单独改动类型（会造成跨服务反序列化不兼容）。</p>
+ */
 @FeignClient(value = "pd-oms", fallback = OrderFeignFallback.class, path = "/order")
 @Hidden
 public interface OrderFeign {

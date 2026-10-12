@@ -13,6 +13,9 @@ public class OrderDTO implements Serializable {
     private static final long serialVersionUID = 3355577312030835991L;
     /**
      * id
+     *
+     * <p>⚠️ 过渡契约：String 主键（pd-oms 尚未切库）。String → Long 的统一收敛
+     * 跟随《53-全量重构总体规划》执行，禁止单独改动类型。</p>
      */
     private String id;
 

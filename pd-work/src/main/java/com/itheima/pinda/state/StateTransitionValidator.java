@@ -1,6 +1,7 @@
 package com.itheima.pinda.state;
 
 import com.itheima.pinda.enums.OrderStatus;
+import com.itheima.pinda.enums.OrderStatusTransitions;
 import com.itheima.pinda.enums.transportorder.TransportOrderSchedulingStatus;
 import com.itheima.pinda.enums.transportorder.TransportOrderStatus;
 import com.itheima.pinda.enums.transporttask.TransportTaskStatus;
@@ -16,8 +17,8 @@ import java.util.*;
  * 优势：无额外依赖、性能好、易维护
  *
  * 校验规则：
- * 1. 订单状态流转
- * 2. 运单状态流转
+ * 1. 订单状态流转 —— 规则单源化至共享类 {@link OrderStatusTransitions}（pd-oms 同源），本类仅负责校验与日志
+ * 2. 运单状态流转（status / schedulingStatus 双维度）
  * 3. 运输任务状态流转
  *
  * @author Claude Code
@@ -26,13 +27,6 @@ import java.util.*;
 @Slf4j
 @Component
 public class StateTransitionValidator {
-
-    /**
-     * 订单状态流转图
-     * Key: 当前状态
-     * Value: 允许的下一个状态集合
-     */
-    private static final Map<Integer, Set<Integer>> ORDER_STATUS_TRANSITIONS = new HashMap<>();
 
     /**
      * 运单-状态 流转图（维度一：status 字段）
@@ -53,91 +47,12 @@ public class StateTransitionValidator {
     private static final Map<Integer, Set<Integer>> TRANSPORT_TASK_TRANSITIONS = new HashMap<>();
 
     static {
-        // 初始化订单状态流转规则
-        initOrderStatusTransitions();
-
         // 初始化运单状态流转规则（状态维度与调度状态维度分离，避免 code 冲突）
         initTransportOrderStatusTransitions();
         initTransportOrderSchedulingStatusTransitions();
 
         // 初始化运输任务状态流转规则
         initTransportTaskTransitions();
-    }
-
-    /**
-     * 初始化订单状态流转规则
-     *
-     * 待取件(23000) → 已取件(23001)
-     * 已取件(23001) → 网点入库(23003)
-     * 网点入库(23003) → 待装车(23004)
-     * 待装车(23004) → 运输中(23005)
-     * 运输中(23005) → 网点出库(23006)
-     * 网点出库(23006) → 待派送(23007)
-     * 待派送(23007) → 派送中(23008)
-     * 派送中(23008) → 已签收(23009) / 拒收(23010)
-     * 任何状态 → 已取消(23011)（取消操作）
-     */
-    private static void initOrderStatusTransitions() {
-        // 待取件 → 已取件 / 已取消
-        ORDER_STATUS_TRANSITIONS.put(OrderStatus.PENDING.getCode(), new HashSet<>(Arrays.asList(
-            OrderStatus.PICKED_UP.getCode(),
-            OrderStatus.CANCELLED.getCode()
-        )));
-
-        // 已取件 → 网点入库 / 已取消
-        ORDER_STATUS_TRANSITIONS.put(OrderStatus.PICKED_UP.getCode(), new HashSet<>(Arrays.asList(
-            OrderStatus.OUTLETS_WAREHOUSE.getCode(),
-            OrderStatus.CANCELLED.getCode()
-        )));
-
-        // 网点自寄 → 网点入库 / 已取消（自寄订单交件直接入库）
-        ORDER_STATUS_TRANSITIONS.put(OrderStatus.OUTLETS_SINCE_SENT.getCode(), new HashSet<>(Arrays.asList(
-            OrderStatus.OUTLETS_WAREHOUSE.getCode(),
-            OrderStatus.CANCELLED.getCode()
-        )));
-
-        // 网点入库 → 待装车 / 已取消
-        ORDER_STATUS_TRANSITIONS.put(OrderStatus.OUTLETS_WAREHOUSE.getCode(), new HashSet<>(Arrays.asList(
-            OrderStatus.FOR_LOADING.getCode(),
-            OrderStatus.CANCELLED.getCode()
-        )));
-
-        // 待装车 → 运输中 / 已取消
-        ORDER_STATUS_TRANSITIONS.put(OrderStatus.FOR_LOADING.getCode(), new HashSet<>(Arrays.asList(
-            OrderStatus.IN_TRANSIT.getCode(),
-            OrderStatus.CANCELLED.getCode()
-        )));
-
-        // 运输中 → 网点出库 / 已取消
-        ORDER_STATUS_TRANSITIONS.put(OrderStatus.IN_TRANSIT.getCode(), new HashSet<>(Arrays.asList(
-            OrderStatus.OUTLETS_EX_WAREHOUSE.getCode(),
-            OrderStatus.CANCELLED.getCode()
-        )));
-
-        // 网点出库 → 待派送 / 派送中 / 已取消（快递员接件可直接进入派送，兼容跳过待派送）
-        ORDER_STATUS_TRANSITIONS.put(OrderStatus.OUTLETS_EX_WAREHOUSE.getCode(), new HashSet<>(Arrays.asList(
-            OrderStatus.TO_BE_DISPATCHED.getCode(),
-            OrderStatus.DISPATCHING.getCode(),
-            OrderStatus.CANCELLED.getCode()
-        )));
-
-        // 待派送 → 派送中 / 已取消
-        ORDER_STATUS_TRANSITIONS.put(OrderStatus.TO_BE_DISPATCHED.getCode(), new HashSet<>(Arrays.asList(
-            OrderStatus.DISPATCHING.getCode(),
-            OrderStatus.CANCELLED.getCode()
-        )));
-
-        // 派送中 → 已签收 / 拒收 / 已取消
-        ORDER_STATUS_TRANSITIONS.put(OrderStatus.DISPATCHING.getCode(), new HashSet<>(Arrays.asList(
-            OrderStatus.RECEIVED.getCode(),
-            OrderStatus.REJECTION.getCode(),
-            OrderStatus.CANCELLED.getCode()
-        )));
-
-        // 已签收、拒收、已取消 → 终态，不能流转
-        ORDER_STATUS_TRANSITIONS.put(OrderStatus.RECEIVED.getCode(), Collections.emptySet());
-        ORDER_STATUS_TRANSITIONS.put(OrderStatus.REJECTION.getCode(), Collections.emptySet());
-        ORDER_STATUS_TRANSITIONS.put(OrderStatus.CANCELLED.getCode(), Collections.emptySet());
     }
 
     /**
@@ -247,20 +162,19 @@ public class StateTransitionValidator {
             return false;
         }
 
-        Set<Integer> allowedTransitions = ORDER_STATUS_TRANSITIONS.get(currentStatus);
-        if (allowedTransitions == null) {
-            log.warn("订单状态校验失败：当前状态[{}]不存在或为终态", currentStatus);
-            return false;
-        }
-
-        boolean allowed = allowedTransitions.contains(targetStatus);
-        if (!allowed) {
+        if (!OrderStatusTransitions.canTransition(currentStatus, targetStatus)) {
+            // 当前状态不在流转图中（未知状态码）与普通非法流转分别记录，便于定位
+            if (OrderStatus.lookup(currentStatus) == null) {
+                log.warn("订单状态校验失败：当前状态[{}]不存在或为终态", currentStatus);
+                return false;
+            }
             log.warn("订单状态流转非法：当前状态[{}]不能流转到目标状态[{}]",
                 OrderStatus.lookup(currentStatus),
                 OrderStatus.lookup(targetStatus));
+            return false;
         }
 
-        return allowed;
+        return true;
     }
 
     /**
@@ -357,7 +271,7 @@ public class StateTransitionValidator {
      * @return 允许的下一个状态集合
      */
     public Set<Integer> getAllowedNextOrderStatuses(Integer currentStatus) {
-        return ORDER_STATUS_TRANSITIONS.getOrDefault(currentStatus, Collections.emptySet());
+        return OrderStatusTransitions.allowedNextStatuses(currentStatus);
     }
 
     /**
