@@ -575,15 +575,9 @@ docker-compose up -d        # 起中间件：MySQL / Redis / RabbitMQ / Nacos
 
 ### 11.4 ☕ 赞助支持
 
-> 本项目由 **AI 辅助开发**，持续迭代需要投入大量时间与 AI 工具成本。如果品达 TMS 对你的工作或学习有帮助，欢迎赞助一杯咖啡，支持作者持续维护与更新。
+> 本项目由 **AI 辅助开发**，持续迭代需要投入大量时间与 AI 工具成本。如果品达 TMS 对你的工作或学习有帮助，欢迎赞助支持作者持续维护与更新。
 
-<div align="center">
-
-<img src="docs/sponsor-card.png" alt="赞助支持" style="border-radius:12px;max-width:720px;width:100%;"/>
-
-<sub>微信 / 支付宝扫码赞助，支付时请<b>添加备注：你的昵称 / GitHub ID</b>，赞助者名单将更新至本 README</sub>
-
-</div>
+> 📌 赞助入口与赞助者名单准备中，敬请期待。
 
 ---
 
