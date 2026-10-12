@@ -91,6 +91,14 @@ export function alarmTypeText(code?: number): string {
   return ALARM_TYPE_CODE_MAP[code]?.label ?? `未知类型(${code})`;
 }
 
+/** 数字码转语义码，未知码返回 undefined（tag 配色等按语义判断时使用，禁止裸比数字） */
+export function alarmTypeKeyOf(code?: number): AlarmTypeKey | undefined {
+  if (code === null || code === undefined) {
+    return undefined;
+  }
+  return ALARM_TYPE_CODE_MAP[code]?.key;
+}
+
 /** 是否为 GPS 自动告警（1-9 段） */
 export function isGpsAlarm(code?: number): boolean {
   return code !== null && code !== undefined && code >= 1 && code <= 9;

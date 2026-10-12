@@ -45,7 +45,7 @@
           <el-table-column prop="id" label="订单号" min-width="180" show-overflow-tooltip />
           <el-table-column prop="orderType" label="订单类型" width="100" align="center">
             <template #default="scope">
-              <el-tag :type="scope.row.orderType === 1 ? 'primary' : 'warning'">
+              <el-tag :type="scope.row.orderType === OrderType.INCITY ? 'primary' : 'warning'">
                 {{ orderTypeLabel(scope.row.orderType) }}
               </el-tag>
             </template>
@@ -217,6 +217,17 @@ import { useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import OrderAPI from "@/api/order";
 import { OrderStatus, type OrderRecord, type OrderDetail, type OrderPageQuery, type PickupDispatchTask } from "@/api/order";
+import { TransportOrderStatus, SchedulingStatus } from "@/api/transport-order";
+import {
+  OrderType,
+  ORDER_TYPE_LABELS,
+  OrderPaymentMethod,
+  ORDER_PAYMENT_METHOD_LABELS,
+  OrderPaymentStatus,
+  ORDER_PAYMENT_STATUS_LABELS,
+  OrderPickupType,
+  ORDER_PICKUP_TYPE_LABELS,
+} from "@/enums";
 
 /** 订单状态选项（搜索下拉 + 标签） */
 const ORDER_STATUS_OPTIONS: { value: OrderStatus; label: string; type: TagType }[] = [
@@ -241,16 +252,32 @@ const statusLabel = (status?: number) =>
 const statusTagType = (status?: number): TagType =>
   ORDER_STATUS_OPTIONS.find((item) => item.value === status)?.type ?? "info";
 
-const orderTypeLabel = (type?: number) => (type === 1 ? "同城" : type === 2 ? "城际" : "-");
-const pickupTypeLabel = (type?: number) => (type === 1 ? "网点自寄" : type === 2 ? "上门取件" : "-");
-const paymentMethodLabel = (type?: number) => (type === 1 ? "预结" : type === 2 ? "到付" : "-");
-const paymentStatusLabel = (type?: number) => (type === 1 ? "未付" : type === 2 ? "已付" : "-");
+const orderTypeLabel = (type?: number) => (type != null ? ORDER_TYPE_LABELS[type as OrderType] : undefined) ?? "-";
+const pickupTypeLabel = (type?: number) =>
+  (type != null ? ORDER_PICKUP_TYPE_LABELS[type as OrderPickupType] : undefined) ?? "-";
+const paymentMethodLabel = (type?: number) =>
+  (type != null ? ORDER_PAYMENT_METHOD_LABELS[type as OrderPaymentMethod] : undefined) ?? "-";
+const paymentStatusLabel = (type?: number) =>
+  (type != null ? ORDER_PAYMENT_STATUS_LABELS[type as OrderPaymentStatus] : undefined) ?? "-";
 const transportStatusLabel = (type?: number) =>
-  ({ 1: "新建", 2: "已装车", 3: "到达", 4: "到达终端网点", 5: "已签收", 6: "拒收" } as Record<number, string>)[
-    type ?? -1
-  ] ?? "-";
+  (
+    {
+      [TransportOrderStatus.CREATED]: "新建",
+      [TransportOrderStatus.LOADED]: "已装车",
+      [TransportOrderStatus.ARRIVED]: "到达",
+      [TransportOrderStatus.AT_TERMINAL]: "到达终端网点",
+      [TransportOrderStatus.RECEIVED]: "已签收",
+      [TransportOrderStatus.REJECTED]: "拒收",
+    } as Record<number, string>
+  )[type ?? -1] ?? "-";
 const schedulingStatusLabel = (type?: number) =>
-  ({ 1: "待调度", 2: "未匹配线路", 3: "已调度" } as Record<number, string>)[type ?? -1] ?? "-";
+  (
+    {
+      [SchedulingStatus.PENDING]: "待调度",
+      [SchedulingStatus.NO_LINE]: "未匹配线路",
+      [SchedulingStatus.SCHEDULED]: "已调度",
+    } as Record<number, string>
+  )[type ?? -1] ?? "-";
 
 /** 查询与列表状态 */
 const loading = ref(false);

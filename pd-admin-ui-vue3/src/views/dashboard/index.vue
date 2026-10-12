@@ -157,7 +157,13 @@ import DashboardAPI, {
   type OrderTrendPoint,
   type PendingOrder,
 } from "@/api/dashboard";
-import AlarmAPI, { AlarmHandleStatus, alarmTypeText, type AlarmRecord } from "@/api/alarm";
+import AlarmAPI, {
+  AlarmHandleStatus,
+  AlarmTypeKey,
+  alarmTypeKeyOf,
+  alarmTypeText,
+  type AlarmRecord,
+} from "@/api/alarm";
 
 // 问候语已上移至全局顶栏 LayoutToolbar
 
@@ -385,8 +391,9 @@ async function loadAlarms() {
 
 /** 告警 tag 配色：超速/离线危险红，停留/偏离警示橙，人工上报类中性蓝 */
 function alarmTagType(code?: number): "danger" | "warning" | "info" {
-  if (code === 1 || code === 4) return "danger";
-  if (code === 2 || code === 3) return "warning";
+  const key = alarmTypeKeyOf(code);
+  if (key === AlarmTypeKey.SPEED_OVER || key === AlarmTypeKey.VEHICLE_OFFLINE) return "danger";
+  if (key === AlarmTypeKey.STAY_TOO_LONG || key === AlarmTypeKey.DEVIATE_ROUTE) return "warning";
   return "info";
 }
 

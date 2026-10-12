@@ -13,8 +13,8 @@
             </el-form-item>
             <el-form-item label="状态" prop="status">
               <el-select v-model="query.status" placeholder="全部状态" clearable style="width: 120px">
-                <el-option label="启用" :value="1" />
-                <el-option label="停用" :value="0" />
+                <el-option label="启用" :value="CommonStatus.ENABLED" />
+                <el-option label="停用" :value="CommonStatus.DISABLED" />
               </el-select>
             </el-form-item>
             <el-form-item>
@@ -44,8 +44,8 @@
           <el-table-column prop="lastUpdateTime" label="最后更新时间" min-width="170" />
           <el-table-column label="状态" min-width="90" align="center">
             <template #default="scope">
-              <el-tag :type="scope.row.status === 1 ? 'success' : 'info'" size="small">
-                {{ scope.row.status === 1 ? "启用" : "停用" }}
+              <el-tag :type="scope.row.status === CommonStatus.ENABLED ? 'success' : 'info'" size="small">
+                {{ scope.row.status === CommonStatus.ENABLED ? "启用" : "停用" }}
               </el-tag>
             </template>
           </el-table-column>
@@ -53,7 +53,7 @@
             <template #default="scope">
               <el-button type="primary" link size="small" @click="openEdit(scope.row as TransportLineTypeRecord)">编辑</el-button>
               <el-button
-                v-if="scope.row.status === 1"
+                v-if="scope.row.status === CommonStatus.ENABLED"
                 type="danger"
                 link
                 size="small"
@@ -116,6 +116,7 @@ import { Plus } from "@element-plus/icons-vue";
 import type { FormInstance, FormRules } from "element-plus";
 import TransportLineTypeAPI from "@/api/transport-line-type";
 import type { TransportLineTypeRecord, TransportLineTypePageQuery } from "@/api/transport-line-type";
+import { CommonStatus } from "@/enums";
 
 /**
  * 机构类型枚举，与后端 com.itheima.pinda.enums.org.OrgType 保持一致
@@ -267,7 +268,7 @@ async function handleDisable(row: TransportLineTypeRecord) {
     await TransportLineTypeAPI.disable(row.id!);
     ElMessage.success("已停用");
     // 筛选"启用"状态时，停用后记录会从结果消失；末页仅剩一条则回退一页，避免停在空页
-    if (query.value.status === 1 && list.value.length === 1 && query.value.page > 1) {
+    if (query.value.status === CommonStatus.ENABLED && list.value.length === 1 && query.value.page > 1) {
       query.value.page -= 1;
     }
     loadList();

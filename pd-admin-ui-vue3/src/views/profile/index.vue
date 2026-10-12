@@ -314,6 +314,7 @@ import type { Component } from "vue";
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from "vue";
 import FileAPI from "@/api/file";
 import { useUserStoreHook } from "@/stores";
+import { UserGender } from "@/enums";
 
 import {
   Calendar,
@@ -488,8 +489,8 @@ const primaryRole = computed(() => roleList.value[0] || "普通用户");
 const permissionCount = computed(() => userStore.userInfo.perms?.length || 0);
 
 const genderText = computed(() => {
-  if (userProfile.value.gender === 1) return "男";
-  if (userProfile.value.gender === 2) return "女";
+  if (userProfile.value.gender === UserGender.MALE) return "男";
+  if (userProfile.value.gender === UserGender.FEMALE) return "女";
   return "未设置";
 });
 
@@ -526,7 +527,12 @@ const profileInfoItems = computed<ProfileInfoItem[]>(() => [
   {
     label: "用户名",
     value: userProfile.value.username || "-",
-    icon: userProfile.value.gender === 2 ? Female : userProfile.value.gender === 1 ? Male : User,
+    icon:
+      userProfile.value.gender === UserGender.FEMALE
+        ? Female
+        : userProfile.value.gender === UserGender.MALE
+          ? Male
+          : User,
   },
   {
     label: "手机号码",

@@ -10,8 +10,8 @@
             </el-form-item>
             <el-form-item label="状态" prop="status">
               <el-select v-model="query.status" placeholder="全部状态" clearable style="width: 120px">
-                <el-option label="启用" :value="1" />
-                <el-option label="停用" :value="0" />
+                <el-option label="启用" :value="CommonStatus.ENABLED" />
+                <el-option label="停用" :value="CommonStatus.DISABLED" />
               </el-select>
             </el-form-item>
             <el-form-item>
@@ -35,8 +35,8 @@
           </el-table-column>
           <el-table-column label="状态" min-width="90" align="center">
             <template #default="scope">
-              <el-tag :type="scope.row.status === 1 ? 'success' : 'info'" size="small">
-                {{ scope.row.status === 1 ? "启用" : "停用" }}
+              <el-tag :type="scope.row.status === CommonStatus.ENABLED ? 'success' : 'info'" size="small">
+                {{ scope.row.status === CommonStatus.ENABLED ? "启用" : "停用" }}
               </el-tag>
             </template>
           </el-table-column>
@@ -44,7 +44,7 @@
             <template #default="scope">
               <el-button type="primary" link size="small" @click="openEdit(scope.row as GoodsTypeRecord)">编辑</el-button>
               <el-button
-                v-if="scope.row.status === 1"
+                v-if="scope.row.status === CommonStatus.ENABLED"
                 type="danger"
                 link
                 size="small"
@@ -119,6 +119,7 @@ import { Plus } from "@element-plus/icons-vue";
 import type { FormInstance, FormRules } from "element-plus";
 import GoodsTypeAPI from "@/api/goods-type";
 import type { GoodsTypeRecord, GoodsTypePageQuery } from "@/api/goods-type";
+import { CommonStatus } from "@/enums";
 
 /** 查询与列表状态 */
 const loading = ref(false);
@@ -243,7 +244,7 @@ async function handleDisable(row: GoodsTypeRecord) {
     await GoodsTypeAPI.disable(row.id!);
     ElMessage.success("已停用");
     // 筛选"启用"状态时，停用后记录会从结果消失；末页仅剩一条则回退一页，避免停在空页
-    if (query.value.status === 1 && list.value.length === 1 && query.value.page > 1) {
+    if (query.value.status === CommonStatus.ENABLED && list.value.length === 1 && query.value.page > 1) {
       query.value.page -= 1;
     }
     loadList();

@@ -109,8 +109,10 @@ import { ref, onMounted } from "vue";
 import AlarmAPI from "@/api/alarm";
 import {
   AlarmHandleStatus,
+  AlarmTypeKey,
   GPS_ALARM_TYPES,
   MANUAL_ALARM_TYPES,
+  alarmTypeKeyOf,
   alarmTypeText,
   isGpsAlarm,
   type AlarmRecord,
@@ -125,7 +127,7 @@ const ALARM_TYPE_GROUPS = [
 
 /** 超速用 danger 突出，其余 GPS 用 warning，人工上报用 info */
 function alarmTagType(code: number): "danger" | "warning" | "info" {
-  if (code === 1) {
+  if (alarmTypeKeyOf(code) === AlarmTypeKey.SPEED_OVER) {
     return "danger";
   }
   return isGpsAlarm(code) ? "warning" : "info";
