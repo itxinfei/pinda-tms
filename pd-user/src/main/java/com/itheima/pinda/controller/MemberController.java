@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -49,9 +50,15 @@ public class MemberController {
         Member member = memberConverter.toEntity(entity);
         // 建档统一为正常状态；启停只允许走 disable/enable 端点
         member.setStatus(Constant.DATA_DEFAULT_STATUS);
-        boolean result = memberService.save(member);
-        if (result) {
-            return Result.ok();
+        try {
+            boolean result = memberService.save(member);
+            if (result) {
+                return Result.ok();
+            }
+        } catch (DuplicateKeyException e) {
+            // 预检查查不到但唯一键仍冲突：手机号会员此前被逻辑删除，deleted 行仍占用 uk_tenant_phone
+            log.warn("会员建档撞唯一键（含逻辑删除行占用）: phone={}", entity.getPhone());
+            return Result.error(400, "该手机号已注册会员");
         }
         return Result.error();
     }

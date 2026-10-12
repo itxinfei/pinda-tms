@@ -81,6 +81,8 @@ public class GoodsTypeController {
         GoodsTypeDto goodsTypeDto = new GoodsTypeDto();
         if (pdGoodsType != null) {
             BeanUtils.copyProperties(pdGoodsType,goodsTypeDto);
+            // 实体 id 为 Long、DTO id 为 String，copyProperties 类型不匹配会静默跳过，显式回填
+            goodsTypeDto.setId(IdConverter.toStr(pdGoodsType.getId()));
         }
 
         //还需要查询当前货物类型关联的车辆类型的id
