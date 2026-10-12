@@ -99,6 +99,23 @@
     <el-drawer v-model="detailVisible" title="订单详情" size="620px">
       <div v-loading="detailLoading" class="order-detail">
         <template v-if="detail">
+          <!-- 订单进度：12 级状态机时间轴（T-044） -->
+          <div class="order-detail__block">
+            <div class="order-detail__title">订单进度</div>
+            <el-timeline class="order-timeline">
+              <el-timeline-item
+                v-for="node in statusTimeline"
+                :key="node.code"
+                :type="node.type"
+                :hollow="node.hollow"
+                :timestamp="node.time"
+                placement="top"
+              >
+                {{ node.label }}
+              </el-timeline-item>
+            </el-timeline>
+          </div>
+
           <el-descriptions title="基本信息" :column="2" border>
             <el-descriptions-item label="订单号" :span="2">{{ detail.id }}</el-descriptions-item>
             <el-descriptions-item label="订单类型">{{ orderTypeLabel(detail.orderType) }}</el-descriptions-item>
@@ -275,6 +292,61 @@ const taskStatusLabel = (status?: number) =>
 const assignedStatusLabel = (status?: number) =>
   ({ 1: "未分配", 2: "已分配", 3: "待人工分配" } as Record<number, string>)[status ?? -1] ?? "-";
 
+/** 订单进度时间轴（T-044）：正常链路 1~10 顺序推进；11 拒收 / 12 已取消为终态分支 */
+type TimelineNode = { code: OrderStatus; label: string; time: string; type: "success" | "primary" | "danger" | "info"; hollow: boolean };
+
+const STATUS_FLOW: { code: OrderStatus; label: string }[] = [
+  { code: OrderStatus.PENDING_PICKUP, label: "待取件" },
+  { code: OrderStatus.PICKED_UP, label: "已取件" },
+  { code: OrderStatus.SELF_SHIPPED, label: "网点自寄" },
+  { code: OrderStatus.INBOUND, label: "网点入库" },
+  { code: OrderStatus.PENDING_LOADING, label: "待装车" },
+  { code: OrderStatus.TRANSPORTING, label: "运输中" },
+  { code: OrderStatus.OUTBOUND, label: "网点出库" },
+  { code: OrderStatus.PENDING_DELIVERY, label: "待派送" },
+  { code: OrderStatus.DELIVERING, label: "派送中" },
+  { code: OrderStatus.SIGNED, label: "已签收" },
+];
+
+/** 从订单/取派件任务/运单既有时间字段推断各节点时间（无状态流水表，尽力展示） */
+const statusTimeMap = computed<Partial<Record<number, string>>>(() => {
+  const d = detail.value;
+  if (!d) return {};
+  const map: Partial<Record<number, string>> = {};
+  if (d.createTime) map[OrderStatus.PENDING_PICKUP] = d.createTime;
+  if (d.taskPickup?.actualStartTime) map[OrderStatus.PICKED_UP] = d.taskPickup.actualStartTime;
+  if (d.transportOrder?.createTime) map[OrderStatus.TRANSPORTING] = d.transportOrder.createTime;
+  if (d.taskDispatch?.actualStartTime) map[OrderStatus.DELIVERING] = d.taskDispatch.actualStartTime;
+  if (d.taskDispatch?.actualEndTime) map[OrderStatus.SIGNED] = d.taskDispatch.actualEndTime;
+  return map;
+});
+
+const statusTimeline = computed<TimelineNode[]>(() => {
+  const d = detail.value;
+  if (!d) return [];
+  const cur = d.status;
+  const terminal = cur === OrderStatus.REJECTED || cur === OrderStatus.CANCELLED;
+  const nodes: TimelineNode[] = STATUS_FLOW.map(({ code, label }) => {
+    const time = statusTimeMap.value[code] ?? "";
+    // 有时间戳、或已越过该节点（终态分支视作链路中断前全部已完成）→ 完成；当前节点 → 主色
+    const done = Boolean(time) || (typeof cur === "number" && code < cur);
+    if (code === cur && !terminal) {
+      return { code, label, time, type: "primary", hollow: false };
+    }
+    return { code, label, time, type: done ? "success" : "info", hollow: !done };
+  });
+  if (terminal && typeof cur === "number") {
+    nodes.push({
+      code: cur,
+      label: ORDER_STATUS_OPTIONS.find((item) => item.value === cur)?.label ?? "未知",
+      time: "",
+      type: "danger",
+      hollow: false,
+    });
+  }
+  return nodes;
+});
+
 /** 详情中的取件/派件任务块 */
 const pickupDispatchBlocks = computed(() => {
   const blocks: { title: string; task: PickupDispatchTask }[] = [];
@@ -306,5 +378,18 @@ onMounted(loadList);
   font-size: 14px;
   font-weight: 600;
   color: var(--el-text-color-primary);
+}
+
+/* 订单进度时间轴：收紧节点纵向间距，与描述区块视觉密度一致 */
+.order-timeline {
+  padding-left: 4px;
+
+  :deep(.el-timeline-item) {
+    padding-bottom: 6px;
+  }
+
+  :deep(.el-timeline-item__content) {
+    font-size: 14px;
+  }
 }
 </style>

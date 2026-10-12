@@ -16,29 +16,29 @@ export interface AreaSimple {
  */
 export enum OrderStatus {
   /** 待取件 */
-  PENDING_PICKUP = 23000,
+  PENDING_PICKUP = 1,
   /** 已取件 */
-  PICKED_UP = 23001,
+  PICKED_UP = 2,
   /** 网点自寄 */
-  SELF_SHIPPED = 23002,
+  SELF_SHIPPED = 3,
   /** 网点入库 */
-  INBOUND = 23003,
+  INBOUND = 4,
   /** 待装车 */
-  PENDING_LOADING = 23004,
+  PENDING_LOADING = 5,
   /** 运输中 */
-  TRANSPORTING = 23005,
+  TRANSPORTING = 6,
   /** 网点出库 */
-  OUTBOUND = 23006,
+  OUTBOUND = 7,
   /** 待派送 */
-  PENDING_DELIVERY = 23007,
+  PENDING_DELIVERY = 8,
   /** 派送中 */
-  DELIVERING = 23008,
+  DELIVERING = 9,
   /** 已签收 */
-  SIGNED = 23009,
+  SIGNED = 10,
   /** 拒收 */
-  REJECTED = 23010,
+  REJECTED = 11,
   /** 已取消 */
-  CANCELLED = 23011,
+  CANCELLED = 12,
 }
 
 /** 取派件任务简要信息（详情页） */
