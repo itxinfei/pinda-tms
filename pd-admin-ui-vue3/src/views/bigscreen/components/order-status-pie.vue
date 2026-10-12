@@ -44,14 +44,22 @@ const option = computed<EChartsOption>(() => ({
   series: [
     {
       type: "pie",
-      radius: ["52%", "70%"],
-      center: ["50%", "44%"],
+      radius: ["46%", "74%"],
+      center: ["50%", "46%"],
       avoidLabelOverlap: true,
-      label: { show: false },
+      label: {
+        show: true,
+        position: "inside",
+        formatter: "{d}%",
+        color: "#04101f",
+        fontSize: 12,
+        fontWeight: 600,
+      },
+      labelLine: { show: false },
       emphasis: {
         scale: true,
         scaleSize: 6,
-        label: { show: false },
+        label: { show: true },
       },
       data: [
         { value: props.pending, name: "待处理", itemStyle: { color: "#ffc14d" } },
@@ -71,7 +79,7 @@ const option = computed<EChartsOption>(() => ({
 
   &__center {
     position: absolute;
-    top: 44%;
+    top: 46%;
     left: 50%;
     transform: translate(-50%, -50%);
     text-align: center;

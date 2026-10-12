@@ -366,12 +366,12 @@ onBeforeUnmount(() => {
   }
 
   > :nth-child(2) {
-    flex: 0.9;
+    flex: 1.15;
     min-height: 0;
   }
 
   > :nth-child(3) {
-    flex: 0.9;
+    flex: 0.85;
     min-height: 0;
   }
 
