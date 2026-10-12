@@ -2,9 +2,22 @@
   <div class="bs-track">
     <div class="bs-track__bar">
       <span class="bs-track__name">{{ vehicleName || "未选择车辆" }}</span>
+      <div class="bs-track__speeds">
+        <button
+          v-for="s in [1, 2, 4]"
+          :key="s"
+          class="bs-track__speed"
+          :class="{ 'is-active': speed === s }"
+          :disabled="!trail.length"
+          @click="speed = s"
+        >
+          {{ s }}x
+        </button>
+      </div>
       <button class="bs-track__play" :disabled="!trail.length" @click="toggle">
         {{ playing ? "暂停" : "回放" }}
       </button>
+      <button class="bs-track__reset" :disabled="!trail.length" @click="reset">重置</button>
     </div>
 
     <div class="bs-track__map">
@@ -56,6 +69,9 @@ const props = defineProps<{
 const maxIndex = computed(() => Math.max(0, props.trail.length - 1));
 const currentIndex = ref(0);
 const playing = ref(false);
+/** 播放倍速：1x / 2x / 4x，基础步进 600ms 除以倍速 */
+const speed = ref(1);
+const STEP_BASE = 600;
 let timer: ReturnType<typeof setInterval> | null = null;
 
 // 轨迹更新时，若当前索引越界则夹紧到末尾
@@ -88,7 +104,8 @@ const option = computed<EChartsOption>(() => ({
     aspectScale: 0.85,
     layoutCenter: ["50%", "50%"],
     layoutSize: "96%",
-    roam: false,
+    roam: true,
+    scaleLimit: { min: 1, max: 8 },
     label: { show: false },
     itemStyle: {
       areaColor: "rgba(7,21,55,0.8)",
@@ -138,13 +155,8 @@ const stop = () => {
   }
 };
 
-const toggle = () => {
-  if (!props.trail.length) return;
-  if (playing.value) {
-    stop();
-    return;
-  }
-  if (currentIndex.value >= maxIndex.value) currentIndex.value = 0;
+const startTimer = () => {
+  stop();
   playing.value = true;
   timer = setInterval(() => {
     if (currentIndex.value >= maxIndex.value) {
@@ -152,8 +164,28 @@ const toggle = () => {
       return;
     }
     currentIndex.value += 1;
-  }, 600);
+  }, STEP_BASE / speed.value);
 };
+
+const toggle = () => {
+  if (!props.trail.length) return;
+  if (playing.value) {
+    stop();
+    return;
+  }
+  if (currentIndex.value >= maxIndex.value) currentIndex.value = 0;
+  startTimer();
+};
+
+const reset = () => {
+  stop();
+  currentIndex.value = 0;
+};
+
+// 播放中切换倍速：以新速率重启计时器（保持当前进度）
+watch(speed, () => {
+  if (playing.value) startTimer();
+});
 
 const onSeek = (e: Event) => {
   stop();
@@ -201,6 +233,62 @@ onBeforeUnmount(stop);
 
     &:hover:not(:disabled) {
       background: rgba(0, 234, 255, 0.22);
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+  }
+
+  &__speeds {
+    display: flex;
+    gap: 2px;
+  }
+
+  &__speed {
+    flex: none;
+    padding: 2px 6px;
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--bs-text-dim);
+    background: transparent;
+    border: 1px solid var(--bs-panel-border);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover:not(:disabled) {
+      color: var(--bs-cyan);
+    }
+
+    &.is-active {
+      color: #04101f;
+      background: var(--bs-cyan);
+      border-color: var(--bs-cyan);
+      font-weight: 600;
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+  }
+
+  &__reset {
+    flex: none;
+    padding: 2px 10px;
+    font-size: 12px;
+    color: var(--bs-text-dim);
+    background: transparent;
+    border: 1px solid var(--bs-panel-border);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover:not(:disabled) {
+      color: var(--bs-cyan);
+      border-color: var(--bs-cyan);
     }
 
     &:disabled {

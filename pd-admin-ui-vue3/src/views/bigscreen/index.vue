@@ -149,7 +149,7 @@ const vehicleMeta = ref<Record<string, { name?: string; licensePlate?: string }>
 const selectedVehicle = ref("");
 
 /** 单辆车轨迹最多保留点数，防止长时间运行内存膨胀 */
-const TRAIL_MAX_POINTS = 80;
+const TRAIL_MAX_POINTS = 120;
 
 /** 把本轮定位点累积进历史轨迹（同一车辆跨轮询连成路径） */
 const accumulateTrails = (items: LocationRecordItem[]) => {
