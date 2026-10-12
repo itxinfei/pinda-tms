@@ -38,6 +38,13 @@ spring:
     openfeign:
       circuitbreaker:
         enabled: true
+    # 大屏 dashboard 同步 Feign 经默认 ThreadPoolBulkhead 切到池化线程，
+    # RequestContextHolder 的 tenantId 丢失→下游回落 tenant=0→6 面板空。
+    # 改信号量隔离（对齐 pd-dispatch 939ba4a），不切线程、租户正常透传。
+    circuitbreaker:
+      resilience4j:
+        disable-time-limiter: true
+        enable-semaphore-default-bulkhead: true
   # Redis：BFF 需与网关/pd-auth/pd-netty 接同一个 db0，InternalAuthRequestInterceptor 才能
   # 读到网关签发的 Same-Token（容器内 REDIS_* 由 compose 注入，本地走默认值）
   data:
