@@ -40,12 +40,14 @@
 
 </div>
 
+<p align="center"><b>简体中文</b> · <a href="README.en.md">English</a></p>
+
 > *Pinda TMS — Open-source Transportation Management System with 4-end synergy, powered by JDK 21 + Spring Boot 3.5 + Vue 3.5.*
 
 > **品达 TMS** 是一款**四端协同**（管理端 + 客户端 + 快递员端 + 司机端）的开源运输管理系统，基于 **JDK 21 + Spring Boot 3.5.7 + Vue 3.5** 构建，覆盖寄件 → 订单 → 智能调度 → 作业 → 轨迹 → 回单全链路。Drools 规则引擎驱动智能调度，Netty 自建轨迹接入，Sa-Token 多租户 SaaS 就绪——覆盖订单管理、配载作业、调度分配、行车管理、GPS 车辆定位、数据报表全流程，让运输运作效率与成本管控一步到位。
 
 <p align="center">
-<b><code>13</code></b> 个微服务 · <b><code>4</code></b> 端协同 · <b><code>101</code></b> 条功能需求 · <b><code>54</code></b> 张数据表 · <b><code>27</code></b> 项技术栈 · 全链路业务闭环
+<b><a href="#sec-tech"><code>13</code></a></b> 个微服务 · <b><code>4</code></b> 端协同 · <b><a href="docs/需求文档/01-业务需求全景.md"><code>101</code></a></b> 条功能需求 · <b><a href="docs/sql"><code>54</code></a></b> 张数据表 · <b><a href="docs/01-技术栈说明.md"><code>27</code></a></b> 项技术栈 · 全链路业务闭环
 </p>
 
 <p align="center">
@@ -53,6 +55,27 @@
 </p>
 
 ---
+
+## 📑 目录
+
+- [一、项目是什么 · 解决什么问题](#sec-intro)
+- [二、核心优势](#sec-advantages)
+- [三、解决的核心痛点](#sec-pain)
+- [四、四端协同](#sec-ends)
+- [五、功能全景](#sec-features)
+- [六、技术方案](#sec-tech)
+- [七、快速了解](#sec-quickstart)
+- [八、系统截图](#sec-screens)
+- [九、相关资料](#sec-docs)
+- [十、配套虚拟机（环境镜像）](#sec-vm)
+- [十一、商业服务与联系](#sec-contact)
+- [十二、里程碑](#sec-milestones)
+- [十三、常见问题（FAQ）](#sec-faq)
+- [十四、参与贡献](#sec-contrib)
+
+---
+
+<a id="sec-intro"></a>
 
 ## 一、项目是什么 · 解决什么问题
 
@@ -63,6 +86,8 @@
 > 💡 **为什么做这个项目？** 市面上的 TMS 要么**太贵**（商业年费 3-30 万），要么**太旧**（JDK 8 + Vue 2 停留在上个时代），要么**太重**（实施周期 6 个月起步）。品达 TMS 想做**第三个选择**：开源免费、全链路闭环、技术前沿、四端协同——开箱即用，二次开发友好。
 
 ---
+
+<a id="sec-advantages"></a>
 
 ## 二、✨ 核心优势
 
@@ -127,6 +152,8 @@
 
 ---
 
+<a id="sec-pain"></a>
+
 ## 三、🎯 解决的核心痛点
 
 | 行业痛点 | 品达 TMS 的解法 |
@@ -140,6 +167,8 @@
 
 ---
 
+<a id="sec-ends"></a>
+
 ## 四、📱 四端协同
 
 | 端 | 名称 | 使用对象 | 核心能力 |
@@ -150,6 +179,8 @@
 | 司机端 App | **品达司机宝** | 公司内部司机 | 接收运输任务、上报位置信息 |
 
 ---
+
+<a id="sec-features"></a>
 
 ## 五、🔍 功能全景
 
@@ -192,27 +223,40 @@
 
 ---
 
+<a id="sec-tech"></a>
+
 ## 六、🏗 技术方案
 
 ### 6.0 项目结构
 
 ```
 pinda-tms/
-├── pd-auth/              # 认证中心（Sa-Token + 多租户）
-├── pd-gateway/           # 统一网关（Spring Cloud Gateway）
-├── pd-base/              # 基础数据
-├── pd-oms/               # 订单管理
-├── pd-dispatch/          # 智能调度（Drools + XXL-Job）
-├── pd-work/              # 作业管理
-├── pd-netty/             # 轨迹接入（Netty）
-├── pd-aggregation/       # 数据聚合
-├── pd-service-api/       # 服务间 API 契约
-├── pd-admin-ui-vue3/     # 管理端（Vue3 + Element Plus）
-├── pd-mobile/            # 移动三端（uni-app Vue3）
-│   ├── customer/         #   客户端 · 品达速运
-│   ├── courier/          #   快递员端 · 品达快递员
-│   └── driver/           #   司机端 · 品达司机宝
-└── docs/                 # 文档 + 截图 + 徽章
+├── 微服务（13 个）
+│   ├── pd-gateway/           # 统一网关（Spring Cloud Gateway）
+│   ├── pd-auth/              # 认证中心（Sa-Token + 多租户）
+│   ├── pd-base/              # 基础数据（机构 / 车辆 / 线路 / 货物）
+│   ├── pd-oms/               # 订单管理（OMS）
+│   ├── pd-dispatch/          # 智能调度（Drools + XXL-Job）
+│   ├── pd-work/              # 作业管理（取派件 / 运输任务）
+│   ├── pd-user/              # 用户与会员
+│   ├── pd-netty/             # 轨迹接入（Netty TCP）
+│   ├── pd-aggregation/       # 数据聚合
+│   └── pd-web/               # BFF 聚合层（四端接口）
+│       ├── pd-web-manager/   #   管理端 BFF
+│       ├── pd-web-courier/   #   快递员端 BFF
+│       ├── pd-web-customer/  #   客户端 BFF
+│       └── pd-web-driver/    #   司机端 BFF
+├── 支撑库（2 个 jar）
+│   ├── pd-common/            # 公共组件（工具 / 上下文 / 拦截器）
+│   └── pd-service-api/       # 服务间 API 契约（Feign 接口）
+├── 前端（4 端）
+│   ├── pd-admin-ui-vue3/     # 管理端（Vue3 + Element Plus）
+│   └── pd-mobile/            # 移动三端（uni-app Vue3）
+│       ├── customer/         #   客户端 · 品达速运
+│       ├── courier/          #   快递员端 · 品达快递员
+│       └── driver/           #   司机端 · 品达司机宝
+├── deploy/                   # Docker Compose 编排与部署脚本
+└── docs/                     # 文档 + 截图 + 徽章
 ```
 
 ### 6.1 系统架构
@@ -320,6 +364,8 @@ public class LocationServerHandler extends SimpleChannelInboundHandler<ByteBuf> 
 
 ---
 
+<a id="sec-quickstart"></a>
+
 ## 七、🚀 快速了解
 
 ### 7.1 环境与技术栈
@@ -343,6 +389,8 @@ docker-compose up -d        # 起中间件：MySQL / Redis / RabbitMQ / Nacos
 > 预计 5-10 分钟。详细的部署、配置与二次开发说明见下方「9. 相关资料」；配套虚拟机镜像（中间件全预置）见文末「10. 配套虚拟机」，可向作者索取省去环境搭建。
 
 ---
+
+<a id="sec-screens"></a>
 
 ## 八、📸 系统截图
 
@@ -440,6 +488,8 @@ docker-compose up -d        # 起中间件：MySQL / Redis / RabbitMQ / Nacos
 
 ---
 
+<a id="sec-docs"></a>
+
 ## 九、📚 相关资料
 
 以下文档均为仓库内本地文件，可直接跳转阅读。**根目录 `docs/` 与 `docs/需求文档/` 为两套独立编号体系，序号互不相关**：
@@ -466,12 +516,16 @@ docker-compose up -d        # 起中间件：MySQL / Redis / RabbitMQ / Nacos
 
 ---
 
+<a id="sec-vm"></a>
+
 ## 十、📦 配套虚拟机（环境镜像）
 
 > 本项目的学习与部署**依赖配套的虚拟机镜像**——镜像中已预置好运行所需的中间件、数据库与基础环境，省去自行搭建的繁琐。
 > 该镜像通过**百度网盘**分发，**链接不公开**，需要请直接向作者索取最新网盘地址。
 
 ---
+
+<a id="sec-contact"></a>
 
 ## 十一、🤝 商业服务与联系
 
@@ -519,6 +573,8 @@ docker-compose up -d        # 起中间件：MySQL / Redis / RabbitMQ / Nacos
 
 ---
 
+<a id="sec-milestones"></a>
+
 ## 十二、🗓️ 里程碑
 
 | 时间 | 进展 |
@@ -530,6 +586,8 @@ docker-compose up -d        # 起中间件：MySQL / Redis / RabbitMQ / Nacos
 | 2027-H2 | 🔲 Spring AI 智能客服 + 回单 OCR + 动态 ETA |
 
 ---
+
+<a id="sec-faq"></a>
 
 ## 十三、❓ 常见问题（FAQ）
 
@@ -546,6 +604,8 @@ A: 有，见「9. 相关资料」——架构 / 技术栈 / 功能规划 / 部�
 A: uni-app 三端架构（App / H5 / 小程序），当前以 H5 为主，小程序发布前需配置真实 appid。
 
 ---
+
+<a id="sec-contrib"></a>
 
 ## 十四、🤝 参与贡献
 
