@@ -85,7 +85,9 @@
               <el-tag :type="statusTagType(scope.row.status)">{{ statusLabel(scope.row.status) }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="createTime" label="下单时间" width="170" />
+          <el-table-column label="下单时间" width="170">
+            <template #default="scope">{{ scope.row.createTime || "-" }}</template>
+          </el-table-column>
           <el-table-column label="操作" fixed="right" width="190" align="center">
             <template #default="scope">
               <el-button type="primary" link size="small" @click="openDetail(scope.row as OrderRecord)">详情</el-button>
@@ -161,7 +163,13 @@
             <el-descriptions-item label="金额(元)">{{ formatAmount(detail.amount) }}</el-descriptions-item>
             <el-descriptions-item label="距离(公里)">{{ formatNumber(detail.distance) }}</el-descriptions-item>
             <el-descriptions-item label="预计到达">{{ detail.estimatedArrivalTime || "-" }}</el-descriptions-item>
-            <el-descriptions-item label="客户ID">{{ detail.memberId || "-" }}</el-descriptions-item>
+            <el-descriptions-item label="客户ID">
+              <template v-if="detail.memberId">
+                {{ detail.memberId }}
+                <CopyButton :text="detail.memberId" class="order-detail__copy" />
+              </template>
+              <template v-else>-</template>
+            </el-descriptions-item>
             <template v-if="detail.status === OrderStatus.CANCELLED">
               <el-descriptions-item label="取消时间" :span="2">{{ detail.cancelTime || "-" }}</el-descriptions-item>
               <el-descriptions-item label="取消原因" :span="2">{{ detail.cancelReason || "-" }}</el-descriptions-item>
@@ -437,19 +445,36 @@ async function handleCancel(row: OrderRecord) {
   }
 }
 
+/** 取消中订单 id：列表行与抽屉底部按钮共用防重 */
+const cancellingId = ref<string>();
+
 /** 详情 */
 const detailVisible = ref(false);
 const detailLoading = ref(false);
+const detailError = ref(false);
 const detail = ref<OrderDetail>();
+/** 当前查看的行：详情失败时供"重新加载"复用 */
+const detailRow = ref<OrderRecord>();
 
 async function openDetail(row: OrderRecord) {
+  detailRow.value = row;
   detailVisible.value = true;
   detailLoading.value = true;
   detail.value = undefined;
+  detailError.value = false;
   try {
     detail.value = await OrderAPI.getDetail(row.id);
+  } catch {
+    // 抽屉内展示错误态与重试入口，错误 toast 由拦截器统一处理
+    detailError.value = true;
   } finally {
     detailLoading.value = false;
+  }
+}
+
+function reloadDetail() {
+  if (detailRow.value) {
+    openDetail(detailRow.value);
   }
 }
 
@@ -502,6 +527,7 @@ const statusTimeMap = computed<Partial<Record<number, string>>>(() => {
   const map: Partial<Record<number, string>> = {};
   if (d.createTime) map[OrderStatus.PENDING_PICKUP] = d.createTime;
   if (d.taskPickup?.actualStartTime) map[OrderStatus.PICKED_UP] = d.taskPickup.actualStartTime;
+  // 运单创建发生在出库发运环节，早于实际运输开始；无运输起始时间字段，暂借其锚定运输中节点（尽力推断）
   if (d.transportOrder?.createTime) map[OrderStatus.TRANSPORTING] = d.transportOrder.createTime;
   if (d.taskDispatch?.actualStartTime) map[OrderStatus.DELIVERING] = d.taskDispatch.actualStartTime;
   if (d.taskDispatch?.actualEndTime) map[OrderStatus.SIGNED] = d.taskDispatch.actualEndTime;
@@ -513,15 +539,41 @@ const statusTimeline = computed<TimelineNode[]>(() => {
   if (!d) return [];
   const cur = d.status;
   const terminal = cur === OrderStatus.REJECTED || cur === OrderStatus.CANCELLED;
-  const nodes: TimelineNode[] = STATUS_FLOW.map(({ code, label }) => {
-    const time = statusTimeMap.value[code] ?? "";
-    // 有时间戳、或已越过该节点（终态分支视作链路中断前全部已完成）→ 完成；当前节点 → 主色
-    const done = Boolean(time) || (typeof cur === "number" && code < cur);
-    if (code === cur && !terminal) {
-      return { code, label, time, type: "primary", hollow: false };
-    }
-    return { code, label, time, type: done ? "success" : "info", hollow: !done };
+
+  // 2 已取件（上门取件链）与 3 网点自寄（自寄链）是互斥入口，按取件方式只保留实际链路，避免两节点同时点亮
+  const flow = STATUS_FLOW.filter(({ code }) => {
+    if (code === OrderStatus.PICKED_UP) return d.pickupType !== OrderPickupType.NO_PICKUP;
+    if (code === OrderStatus.SELF_SHIPPED) return d.pickupType !== OrderPickupType.PICKUP;
+    return true;
   });
+  const timeMap = statusTimeMap.value;
+
+  // 链路中断位置：非终态 = 当前状态节点；终态(11/12)不在正常链内，
+  // 以最后一个有真实时间戳的锚点为界——无状态流水表，不能按状态码大小比较，
+  // 否则待取件阶段就取消的单会把"已签收"也标绿
+  let breakIndex = -1;
+  if (!terminal) {
+    breakIndex = flow.findIndex(({ code }) => code === cur);
+  } else {
+    flow.forEach(({ code }, index) => {
+      if (timeMap[code]) breakIndex = index;
+    });
+  }
+
+  const nodes: TimelineNode[] = flow.map(({ code, label }, index) => {
+    const time = timeMap[code] ?? "";
+    if (index < breakIndex) {
+      // 已越过节点：即使无时间字段，链路顺序也保证其已发生
+      return { code, label, time, type: "success", hollow: false };
+    }
+    if (index === breakIndex) {
+      // 非终态：当前节点主色进行中；终态：最后真实发生的节点绿色收尾
+      return { code, label, time, type: terminal ? "success" : "primary", hollow: false };
+    }
+    // 中断点之后：未发生，全部置灰空心
+    return { code, label, time, type: "info", hollow: true };
+  });
+
   if (terminal && typeof cur === "number") {
     nodes.push({
       code: cur,
@@ -566,6 +618,28 @@ onMounted(loadList);
   font-size: 14px;
   font-weight: 600;
   color: var(--el-text-color-primary);
+}
+
+/* 复制按钮贴在编号/ID 文本之后，去除按钮自身的高度与左右内边距 */
+.order-detail__copy {
+  margin-left: 4px;
+  padding: 0;
+  height: auto;
+}
+
+/* 取件 / 派件两个任务子块 */
+.order-detail__task-block {
+  margin-top: 12px;
+
+  &:first-child {
+    margin-top: 0;
+  }
+}
+
+.order-detail__subtitle {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
 }
 
 /* 订单进度时间轴：收紧节点纵向间距，与描述区块视觉密度一致 */

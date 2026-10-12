@@ -4,7 +4,7 @@
 export { isExternal, isValidURL } from "./validate";
 
 // 数据格式化
-export { formatGrowthRate } from "./format";
+export { formatNumber, formatAmount } from "./format";
 
 // 文件下载
 export { downloadFile } from "./download";
