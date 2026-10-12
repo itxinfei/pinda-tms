@@ -1,7 +1,10 @@
 package com.itheima.pinda.config;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
@@ -36,6 +39,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -53,13 +57,39 @@ public class ConfigurationSupport extends WebMvcConfigurationSupport {
      */
     @Bean
     public Jackson2ObjectMapperBuilderCustomizer jackson2ObjectMapperBuilderCustomizer() {
+        // MQ 消费（OrderEventMQListener）用容器 ObjectMapper 反序列化事件；
+        // 生产端（各服务 EventPublisher）eventTime 输出可能是 ISO 带 T+纳秒
+        // （如 "2026-10-12T18:51:02.509947852"），只认空格格式会解析失败进死信队列，
+        // 故与 pd-web-manager/pd-web-customer 同款：兼容"空格"与 ISO 两种格式。
         return builder -> builder
                 .deserializerByType(Enum.class, EnumDeserializer.INSTANCE)
-                .deserializerByType(LocalDateTime.class, new LocalDateTimeDeserializer(DateTimeFormatter.ofPattern(DatePatterns.DATE_TIME)))
+                .deserializerByType(LocalDateTime.class, FLEXIBLE_LOCAL_DATE_TIME_DESERIALIZER)
                 .deserializerByType(LocalDate.class, new LocalDateDeserializer(DateTimeFormatter.ofPattern(DatePatterns.DATE)))
                 .deserializerByType(LocalTime.class, new LocalTimeDeserializer(DateTimeFormatter.ofPattern(DatePatterns.TIME)));
 
     }
+
+    /**
+     * LocalDateTime 反序列化兼容两种线上格式：
+     * ① "yyyy-MM-dd HH:mm:ss"（全局 Jackson 契约输出）；② ISO "yyyy-MM-dd'T'HH:mm:ss[.纳秒]"（JavaTimeModule 默认输出）。
+     */
+    private static final JsonDeserializer<LocalDateTime> FLEXIBLE_LOCAL_DATE_TIME_DESERIALIZER =
+            new JsonDeserializer<LocalDateTime>() {
+                @Override
+                public LocalDateTime deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+                    String value = p.getValueAsString();
+                    if (value == null || value.isBlank()) {
+                        return null;
+                    }
+                    value = value.trim();
+                    try {
+                        return LocalDateTime.parse(value, DateTimeFormatter.ofPattern(DatePatterns.DATE_TIME));
+                    } catch (DateTimeParseException ignored) {
+                        // 非"空格"格式，按 ISO-8601 兜底解析（含纳秒）
+                        return LocalDateTime.parse(value);
+                    }
+                }
+            };
 
     /**
      * 防止@EnableMvc把默认的静态资源路径覆盖了，手动设置的方式
