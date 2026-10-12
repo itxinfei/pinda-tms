@@ -29,9 +29,11 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -65,7 +67,11 @@ public class BusinessOperationServiceImpl implements IBusinessOperationService {
             CacheLineDetailEntity cacheLineDetail = orderLineSimpleDTO.getCacheLineDetailEntity();
             List<OrderClassifyGroupDTO> orderClassifys = orderLineSimpleDTO.getOrderClassifyGroupDTOS();
             log.info("当前线路：{} ,分组订单：{}", cacheLineDetail, orderClassifys);
-            List<Long> transportOrderIds = new ArrayList<>();
+            // 用 Set 去重：新订单分类在下面 isNew() 分支内经 findByOrderId 收集一次，
+            // 循环外又经 findByOrderIds 批量收集一次，同一运单会出现两次；不去重则
+            // pd-work 批量插入 work_transport_order_task 产生两行相同关联，撞
+            // uk_order_task(tenant_id, transport_order_id, task_id) 唯一键，整批事务回滚。
+            Set<Long> transportOrderIds = new LinkedHashSet<>();
             orderClassifys.forEach(orderClassify -> {
                 if (orderClassify.isNew()) {
                     // 新订单 更新运单信息
@@ -106,7 +112,7 @@ public class BusinessOperationServiceImpl implements IBusinessOperationService {
             taskTranSportDto.setStatus(TransportTaskStatus.PENDING.getCode());
             taskTranSportDto.setAssignedStatus(TransportTaskAssignedStatus.TO_BE_DISTRIBUTED.getCode());
             taskTranSportDto.setLoadingStatus(TransportTaskLoadingStatus.HALF.getCode());
-            taskTranSportDto.setTransportOrderIds(transportOrderIds);
+            taskTranSportDto.setTransportOrderIds(new ArrayList<>(transportOrderIds));
             taskTranSportDto = transportTaskFeign.save(taskTranSportDto);
             if (taskTranSportDto == null || taskTranSportDto.getId() == null) {
                 log.error("运输任务创建失败: line={}, start={}, end={}",
@@ -118,7 +124,7 @@ public class BusinessOperationServiceImpl implements IBusinessOperationService {
             log.info("创建运输任务: {}", taskTranSportDto);
 
             // 调度成功：回写关联运单为"已调度"（此前主链路不回写，运单永远停在待调度）
-            markTransportOrdersScheduled(transportOrderIds);
+            markTransportOrdersScheduled(new ArrayList<>(transportOrderIds));
 
             // 线路管理运输任务 并返回（transportLineId 为 pd-base String 边界，作为 Map key 保持 String）
             result.put(IdConvert.toStr(cacheLineDetail.getTransportLineId()), taskTranSportDto);
