@@ -75,6 +75,28 @@
     <el-drawer v-model="detailVisible" title="运输任务详情" size="640px">
       <div v-loading="detailLoading" class="task-detail">
         <template v-if="detail">
+          <!-- 任务闭环：5 级状态步骤条（T-046） -->
+          <div class="task-detail__block">
+            <div class="task-detail__title">任务进度</div>
+            <el-alert
+              v-if="detail.status === TransportTaskStatus.CANCELLED"
+              class="task-detail__cancel-alert"
+              type="error"
+              :closable="false"
+              show-icon
+              title="该任务已取消，流程终止"
+            />
+            <el-steps class="task-detail__steps" :active="taskStepActive" align-center finish-status="success">
+              <el-step
+                v-for="step in TASK_STEPS"
+                :key="step.label"
+                :title="step.label"
+                :description="step.time"
+                :status="step.status"
+              />
+            </el-steps>
+          </div>
+
           <el-descriptions title="基本信息" :column="2" border>
             <el-descriptions-item label="任务号" :span="2">{{ detail.id }}</el-descriptions-item>
             <el-descriptions-item label="任务状态">
@@ -144,7 +166,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import TransportTaskAPI from "@/api/transport-task";
 import {
   TransportTaskStatus,
@@ -229,6 +251,34 @@ const detailVisible = ref(false);
 const detailLoading = ref(false);
 const detail = ref<TaskTransportDetail>();
 
+/** 任务进度步骤条（T-046）：4 个主节点按实际时间推进；已取消时流程终止（顶部 alert 提示，步骤停驻） */
+type TaskStep = { label: string; time: string; status: "success" | "process" | "wait" | "error" };
+
+const TASK_STEPS = computed<TaskStep[]>(() => {
+  const d = detail.value;
+  const cancelled = d?.status === TransportTaskStatus.CANCELLED;
+  const steps: { label: string; time: string }[] = [
+    { label: "待执行", time: d?.createTime ?? "" },
+    { label: "提货发车", time: d?.actualPickUpGoodsTime || d?.actualDepartureTime || "" },
+    { label: "到达待确认", time: d?.actualArrivalTime ?? "" },
+    { label: "交付完成", time: d?.actualDeliveryTime ?? "" },
+  ];
+  return steps.map(({ label, time }) => ({
+    label,
+    time,
+    status: cancelled ? "wait" : time ? "success" : "wait",
+  }));
+});
+
+/** 当前推进到的步骤下标：待执行 0 / 进行中 1 / 待确认 2 / 已完成 3；已取消停在 0（由 alert 承载语义） */
+const taskStepActive = computed(() => {
+  const s = detail.value?.status;
+  if (s === TransportTaskStatus.PROCESSING) return 1;
+  if (s === TransportTaskStatus.TO_CONFIRM) return 2;
+  if (s === TransportTaskStatus.FINISHED) return 4;
+  return 0;
+});
+
 async function openDetail(row: TaskTransportRecord) {
   detailVisible.value = true;
   detailLoading.value = true;
@@ -269,5 +319,14 @@ onMounted(loadList);
 
 .task-detail__order-tag {
   margin: 0;
+}
+
+/* 任务进度步骤条（T-046）：与描述区块视觉密度一致；已取消提示条与步骤条留白 */
+.task-detail__steps {
+  margin: 8px 0 4px;
+}
+
+.task-detail__cancel-alert {
+  margin-bottom: 8px;
 }
 </style>
