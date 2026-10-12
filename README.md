@@ -13,18 +13,11 @@
   <img src="docs/badges/mysql.svg" alt="MySQL"/>
   <img src="docs/badges/redis.svg" alt="Redis"/>
   <img src="docs/badges/drools.svg" alt="Drools"/>
-  <img src="docs/badges/quartz.svg" alt="Quartz"/>
-  <img src="docs/badges/j2cache.svg" alt="J2Cache"/>
   <img src="docs/badges/redisson.svg" alt="Redisson"/>
-  <img src="docs/badges/seata.svg" alt="Seata"/>
-  <img src="docs/badges/zipkin.svg" alt="Zipkin"/>
-  <img src="docs/badges/canal.svg" alt="Canal"/>
-  <img src="docs/badges/druid.svg" alt="Apache Druid"/>
   <img src="docs/badges/baidu-map.svg" alt="百度地图"/>
   <img src="docs/badges/netty.svg" alt="Netty"/>
   <img src="docs/badges/vue.svg" alt="Vue"/>
   <img src="docs/badges/uniapp.svg" alt="uni-app"/>
-  <img src="docs/badges/shiro-jwt.svg" alt="Shiro/JWT"/>
 </p>
 
 </div>
@@ -136,32 +129,10 @@
 | 技术 | 在系统中的作用 |
 | --- | --- |
 | **Drools 动态规则引擎** | 运费计算与业务规则配置，规则可热更新 |
-| **Quartz 定时调度** | 周期性触发智能调度任务，编排调度流程 |
-| **J2Cache 两级缓存** | 本地 + 远程两级缓存，提升高频数据访问性能 |
 | **Redisson 分布式锁** | 分布式环境下的并发控制与资源互斥 |
-| **Seata 分布式事务** | 跨服务数据一致性保障 |
-| **Zipkin 链路追踪** | 微服务调用链监控与问题定位 |
-| **Canal / Otter 数据同步** | 业务数据变动捕获与多库同步，支撑聚合查询 |
-| **Apache Druid 实时分析** | 海量业务数据的实时分析与报表 |
 | **百度地图 API** | 地址解析、距离计算、轨迹与地图展示 |
 | **Netty** | 高并发 TCP / HTTP 通道，支撑轨迹与设备接入 |
 | **通用权限平台** | 统一用户、角色、菜单、认证与鉴权 |
-| **Shiro / JWT** | 请求认证与无状态鉴权 |
-
-### 6.5 数据库设计
-
-系统按业务域分库，共使用以下数据库：
-
-| 数据库 | 说明 |
-| --- | --- |
-| `pd_base` | 基础数据：货物类型、车辆类型、车队、线路、车次等 |
-| `pd_users` | C 端用户：用户信息、地址簿等 |
-| `pd_oms` | 订单：货物信息、订单信息、订单位置信息等 |
-| `pd_work` | 物流作业：取派件任务、运输任务、司机作业单、运单等 |
-| `pd_aggregation` | 聚合数据：多库数据统一聚合，便于查询 |
-| `pd_dispatch` | 智能调度：订单分类、缓存路线等调度相关数据 |
-| `pd_auth` | 通用权限：资源、菜单、权限、岗位、组织、角色等 |
-| `customer_auth` | C 端用户认证：登录认证信息、登录记录等 |
 
 ---
 
@@ -181,7 +152,7 @@
 3. **导入并构建工程**：导入 Maven 工程与各微服务，完成编译。
 4. **启动微服务与前端**：依次启动后端微服务与管理端 / 移动端，即可访问。
 
-> 详细的部署、配置与二次开发说明见下方「9. 相关资料」。运行本项目需配套虚拟机镜像，请见文末「10. 配套虚拟机」向作者索取。
+> 详细的部署、配置与二次开发说明见下方「9. 相关资料」。
 
 ---
 
@@ -268,57 +239,5 @@
 
 ---
 
-## 10. 📦 配套虚拟机（环境镜像）
-
-> 本项目的学习与部署**依赖配套的虚拟机镜像**——镜像中已预置好运行所需的中间件、数据库与基础环境，省去自行搭建的繁琐。
-> 该镜像通过**百度网盘**分发，**链接不公开**，需要请直接向作者索取最新网盘地址。
-
----
-
-## 11. 🤝 商业服务与联系
-
-<div align="center">
-
-<table>
-<tr>
-<td align="center" width="50%">
-
-### 11.1 🛠️ 付费技术服务
-
-本项目 **Apache-2.0 完全开源免费**。同时作者提供商业支持，助你少走弯路：
-
-- 🔧 **二次开发 / 功能定制**（对接平台、新增业务、UI 调整）
-- 🚀 **私有化部署交付**（服务器、域名、环境一条龙，含配套虚拟机镜像）
-- 🎓 **项目讲解 / 毕设答疑**（架构、源码、面试考点）
-- 📦 **全量建库脚本 + 演示数据**
-- 💬 日常技术答疑与长期维护支持
-
-<b>👉 商务联系 QQ：<code>747011882</code></b>
-
-</td>
-<td align="center" width="50%">
-
-### 11.2 💬 加入社区
-
-<img src="docs/心飞为你飞.jpg" width="170" alt="微信公众号二维码" style="border-radius:8px;border:1px solid #e5e7eb;">
-
-<sub>扫码关注微信公众号「心飞为你飞」</sub>
-
-<br>
-
-🔗 仓库：[gitee.com/itxinfei/pinda-tms](https://gitee.com/itxinfei/pinda-tms)
-🏠 作者主页：[gitee.com/itxinfei](https://gitee.com/itxinfei)
-
-</td>
-</tr>
-</table>
-
-<br>
-
-### 11.3 ⭐ 如果这个项目对你有帮助，欢迎点个 Star 支持，这是对我最大的鼓励！
-
-</div>
-
----
 
 <p align="center"><sub>品达物流 TMS · 开源运输管理系统 · 全流程 · 四端协同 · 微服务架构</sub></p>
