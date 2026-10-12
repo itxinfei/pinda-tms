@@ -811,10 +811,16 @@ public class MailingController {
                 log.warn("[订单] 越权取消被拒绝: id={}, memberId={}, existing.getMemberId={}", id, memberId, existing.getMemberId());
                 return Result.error(403, "无权操作他人订单");
             }
-            // 获取地址详细信息
-            OrderDTO orderDTO = new OrderDTO();
-            orderDTO.setStatus(OrderStatus.CANCELLED.getCode());
-            orderFeign.updateById(id, orderDTO);
+            // 调 pd-oms 专用取消端点：cancel_reason/cancel_time 持久化，状态合法性由订单状态矩阵统一校验
+            // 客户 App 无取消原因输入框，固定记"客户取消"（与下方取件任务 mark 文案一致）
+            OrderCancelDTO orderCancelDTO = new OrderCancelDTO();
+            orderCancelDTO.setReason("客户取消");
+            Result cancelResult = orderFeign.cancel(id, orderCancelDTO);
+            if (cancelResult == null || !"0".equals(String.valueOf(cancelResult.get("code")))) {
+                // 订单本体取消失败（不存在/已取消/状态不允许/服务不可用），不再联动删除位置与任务
+                log.warn("[订单] 客户取消被 oms 拒绝: id={}, result={}", id, cancelResult);
+                return cancelResult != null ? cancelResult : Result.error("订单取消失败");
+            }
 
             //删除位置信息
             OrderLocationDto orderLocationDto = new OrderLocationDto();
