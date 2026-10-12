@@ -21,6 +21,8 @@
   <img src="docs/badges/kafka.svg" alt="Kafka"/>
   <img src="docs/badges/drools.svg" alt="Drools"/>
   <img src="docs/badges/or-tools.svg" alt="OR-Tools"/>
+  <img src="docs/badges/spring-ai.svg" alt="Spring AI"/>
+  <img src="docs/badges/kuaidi100.svg" alt="快递100"/>
   <img src="docs/badges/resilience4j.svg" alt="Resilience4j"/>
   <img src="docs/badges/mapstruct.svg" alt="MapStruct"/>
   <img src="docs/badges/zipkin.svg" alt="Zipkin"/>
@@ -155,6 +157,8 @@
 | **Elasticsearch 检索**（规划中） | 运单多条件与地址模糊查询、运营聚合统计 |
 | **Kafka 消息流**（规划中） | 轨迹流管线（Netty → Kafka → 时序存储），高吞吐解耦 |
 | **Google OR-Tools 智能排线**（规划中） | VRP 组合优化求解（CVRP / VRPTW），辅助调度配载 |
+| **Spring AI 2.0 智能应用框架**（规划中） | 大模型对话 / RAG / Agent 编排，支撑智能客服与查件 Agent |
+| **快递100 开放平台**（规划中） | 多承运商轨迹查询与推送、电子面单打印、寄递下单 |
 | **Druid 数据库连接池** | 连接管理与 SQL 监控 |
 
 ### 6.5 数据库设计
@@ -194,7 +198,7 @@
 
 ## 8. 📸 系统截图
 
-> 以下截图来自真实运行环境（2026-10-12 更新，`192.168.20.130`）。**后台管理端核心业务页面已补充**；三端 App 界面截图将在移动端项目运行后陆续补充，届时直接替换占位框即可。
+> 以下截图来自真实运行环境（2026-10-12 更新，`192.168.20.130`）。管理端核心业务页与移动三端均已补充截图。
 
 ### 8.1 后台管理端
 
@@ -227,13 +231,16 @@
 <table>
 <tr>
 <td align="center" width="33%"><b>客户端 · 品达速运</b><br/><br/>
-  <div style="border:2px dashed #d0d7de;border-radius:8px;padding:40px 8px;color:#8b949e;background:#fafbfc;">📷 待补充<br/><sub>寄件 / 查物流</sub></div>
+  <img src="docs/screenshots/mobile-customer.png" alt="客户端 H5" style="max-width:180px;border-radius:8px;border:1px solid #e5e7eb;"/>
+  <br/><sub>寄件 / 查物流 · H5（:8084）</sub>
 </td>
 <td align="center" width="33%"><b>快递员端 · 品达快递员</b><br/><br/>
-  <div style="border:2px dashed #d0d7de;border-radius:8px;padding:40px 8px;color:#8b949e;background:#fafbfc;">📷 待补充<br/><sub>取派件任务</sub></div>
+  <img src="docs/screenshots/mobile-courier.png" alt="快递员端 H5" style="max-width:180px;border-radius:8px;border:1px solid #e5e7eb;"/>
+  <br/><sub>取派件任务 · H5（:8083）</sub>
 </td>
 <td align="center" width="33%"><b>司机端 · 品达司机宝</b><br/><br/>
-  <div style="border:2px dashed #d0d7de;border-radius:8px;padding:40px 8px;color:#8b949e;background:#fafbfc;">📷 待补充<br/><sub>运输任务 / 位置上报</sub></div>
+  <img src="docs/screenshots/mobile-driver.png" alt="司机端 H5" style="max-width:180px;border-radius:8px;border:1px solid #e5e7eb;"/>
+  <br/><sub>运输任务 / 位置上报 · H5（:8082）</sub>
 </td>
 </tr>
 </table>
