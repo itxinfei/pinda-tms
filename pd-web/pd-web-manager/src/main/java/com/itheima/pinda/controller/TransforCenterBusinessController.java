@@ -465,7 +465,13 @@ public class TransforCenterBusinessController {
             BeanUtils.copyProperties(fleetDto, vo);
             try {
                 if (fleetDto.getAgencyId() != null) {
-                    vo.setAgency((AgencySimpleVo) agencyFuture.get().get(fleetDto.getAgencyId()));
+                    // agencyMapFuture 产出的是 AgencyVo（与 AgencySimpleVo 平级，不能强转），按同名字段拷贝
+                    Object agencyObj = agencyFuture.get().get(fleetDto.getAgencyId());
+                    if (agencyObj instanceof AgencyVo agencyVo) {
+                        AgencySimpleVo simpleVo = new AgencySimpleVo();
+                        BeanUtils.copyProperties(agencyVo, simpleVo);
+                        vo.setAgency(simpleVo);
+                    }
                 }
                 if (fleetDto.getManager() != null) {
                     vo.setManager((SysUserVo) userFuture.get().get(fleetDto.getManager()));

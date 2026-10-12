@@ -64,7 +64,8 @@ public class PdCompletableFuture {
             }
             List<OrderCargoDto> result = api.list(cargoSet.stream().collect(Collectors.toList()));
             if (!CollectionUtils.isEmpty(result)) {
-                return result.stream().collect(Collectors.toMap(OrderCargoDto::getOrderId, cargoDto -> cargoDto));
+                // 同一订单历史上可能存在重复货物明细（旧"重复保存"缺陷遗留），toMap 必须给合并策略，否则 Duplicate key 500
+                return result.stream().collect(Collectors.toMap(OrderCargoDto::getOrderId, cargoDto -> cargoDto, (v1, v2) -> v1));
             }
             return new HashMap<>();
         });
