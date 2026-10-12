@@ -64,18 +64,17 @@ export const constantRoutes: RouteRecordRaw[] = [
   // 大屏演示页（独立成页，不经后台框架）
   ...screenRoutes,
 
-  // ↓↓↓ 业务菜单：按「工作台 / 订单中心 / 调度中心 / 运输在途 / 基础档案 / 系统管理」分组。
+  // ↓↓↓ 业务菜单：按「仪表盘(首页) / 订单中心 / 调度中心 / 运输在途 / 基础档案 / 系统管理」分组。
   // 子路由 path 一律写成绝对路径，菜单层级变了但 URL 不变，旧书签与深链照旧可用。
   // 定案 D-42 落地（后端 sys_menu + getRouter 下发）后，本表随静态菜单一并下线。
+  // 仪表盘（首页）：原"工作台"分组取消，仪表盘一级直挂，登录后打开即是首页。
+  // 无标题父壳经 useLayout.flattenSidebarRoutes 拍平，菜单中仅呈现"仪表盘"一项。
   {
-    path: "/workbench",
-    name: "Workbench",
+    path: "/dashboard",
     component: Layout,
-    redirect: "/dashboard",
-    meta: { title: "工作台", icon: "el-icon-HomeFilled" },
     children: [
       {
-        path: "/dashboard",
+        path: "",
         name: "Dashboard",
         component: () => import("@/views/dashboard/index.vue"),
         meta: { title: "仪表盘", icon: "el-icon-HomeFilled", affix: true, keepAlive: true },
@@ -145,12 +144,17 @@ export const constantRoutes: RouteRecordRaw[] = [
     path: "/transit",
     name: "TransitCenter",
     component: Layout,
-    redirect: "/monitor",
-    // 子页全部未开发：整组不入菜单，避免出现"点开只有一个建设中"的空分组；页面上线后去掉 hidden
-    meta: { title: "运输在途", icon: "el-icon-Monitor", hidden: true },
+    redirect: "/alarm",
+    // 告警中心页面已建（TRK-02）入菜单；在途监控未开发仍 hidden，页面上线后去掉
+    meta: { title: "运输在途", icon: "el-icon-Monitor" },
     children: [
       pendingRoute("/monitor", "Monitor", "在途监控", "el-icon-Location"),
-      pendingRoute("/alarm", "Alarm", "告警中心", "el-icon-Warning"),
+      {
+        path: "/alarm",
+        name: "Alarm",
+        component: () => import("@/views/alarm/index.vue"),
+        meta: { title: "告警中心", icon: "el-icon-Warning", keepAlive: true },
+      },
     ],
   },
 

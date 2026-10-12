@@ -1,6 +1,6 @@
 <template>
   <div class="dash">
-    <!-- 头部：问候语 -->
+    <!-- 头部：问候语 + 大屏入口/手动刷新 -->
     <section class="dash-header">
       <div class="card dash-header__card">
         <div class="dash-header__start">
@@ -13,53 +13,26 @@
             <p class="dash-header__date">{{ currentDateStr }}</p>
           </div>
         </div>
+        <div class="dash-header__actions">
+          <el-button :icon="Refresh" :loading="refreshing" @click="refreshAll">刷新数据</el-button>
+          <el-button type="primary" plain @click="openBigScreen">
+            <el-icon class="dash-header__screen-icon"><Monitor /></el-icon>运营大屏
+          </el-button>
+        </div>
       </div>
     </section>
 
     <!-- 4 个核心 KPI（数字均来自后端聚合接口，无环比数据源故不展示假箭头） -->
     <section v-loading="overviewLoading" class="dash-stats">
-      <div class="stat-card">
-        <div class="stat-card__icon stat-card__icon--order">
-          <el-icon :size="18"><Document /></el-icon>
+      <div v-for="card in statCards" :key="card.label" class="stat-card">
+        <div class="stat-card__icon" :class="`stat-card__icon--${card.tone}`">
+          <el-icon :size="18"><component :is="card.icon" /></el-icon>
         </div>
         <div class="stat-card__body">
-          <span class="stat-card__label">今日新增运单</span>
-          <span class="stat-card__num">{{ overview.todayOrderCount }}</span>
+          <span class="stat-card__label">{{ card.label }}</span>
+          <span class="stat-card__num">{{ card.value }}</span>
         </div>
-        <span class="stat-card__badge">今日</span>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-card__icon stat-card__icon--truck">
-          <el-icon :size="18"><Van /></el-icon>
-        </div>
-        <div class="stat-card__body">
-          <span class="stat-card__label">在途车辆</span>
-          <span class="stat-card__num">{{ overview.onTruckCount }}</span>
-        </div>
-        <span class="stat-card__badge stat-card__badge--on">实时</span>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-card__icon stat-card__icon--alert">
-          <el-icon :size="18"><Warning /></el-icon>
-        </div>
-        <div class="stat-card__body">
-          <span class="stat-card__label">异常告警</span>
-          <span class="stat-card__num">{{ alertCount }}</span>
-        </div>
-        <span class="stat-card__badge stat-card__badge--danger">未处理</span>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-card__icon stat-card__icon--rate">
-          <el-icon :size="18"><CircleCheck /></el-icon>
-        </div>
-        <div class="stat-card__body">
-          <span class="stat-card__label">准时率</span>
-          <span class="stat-card__num">--</span>
-        </div>
-        <span class="stat-card__badge">暂无数据</span>
+        <span class="stat-card__badge" :class="card.badgeClass">{{ card.badge }}</span>
       </div>
     </section>
 
@@ -67,55 +40,67 @@
     <section class="dash-chart">
       <div class="card dash-chart__trend">
         <div class="card__head">
-          <h3 class="card__title">运输量趋势</h3>
+          <h3 class="card__title">订单量趋势</h3>
           <el-radio-group v-model="trendDateRange" size="small">
-            <el-radio-button label="近7天" :value="7" />
-            <el-radio-button label="近30天" :value="30" />
+            <el-radio-button :value="7">近7天</el-radio-button>
+            <el-radio-button :value="30">近30天</el-radio-button>
           </el-radio-group>
         </div>
         <div v-loading="trendLoading" class="card__body card__body--chart">
-          <ECharts :options="trendChartOptions" height="260px" />
+          <ECharts :options="trendChartOptions" height="248px" />
         </div>
       </div>
 
-      <div class="card dash-chart__overview">
-        <div class="card__head">
-          <h3 class="card__title">运单状态概览</h3>
-          <el-tag type="primary" size="small" effect="plain">待处理 {{ overview.pendingCount }}</el-tag>
-        </div>
-        <div v-loading="overviewLoading" class="card__body overview-card">
-          <div class="overview-summary">
-            <div class="overview-summary__item">
-              <span class="overview-summary__label">待处理</span>
-              <strong class="overview-summary__value">{{ overview.pendingCount }}</strong>
+      <div class="dash-chart__side">
+        <div class="card">
+          <div class="card__head">
+            <h3 class="card__title">订单状态概览</h3>
+            <el-tag type="primary" size="small" effect="plain">待处理 {{ overview.pendingCount }}</el-tag>
+          </div>
+          <div v-loading="overviewLoading" class="card__body overview-card">
+            <div class="overview-summary">
+              <div class="overview-summary__item">
+                <span class="overview-summary__label">待处理</span>
+                <strong class="overview-summary__value">{{ overview.pendingCount }}</strong>
+              </div>
+              <div class="overview-summary__item">
+                <span class="overview-summary__label">运输中</span>
+                <strong class="overview-summary__value">{{ overview.inTransitCount }}</strong>
+              </div>
+              <div class="overview-summary__item">
+                <span class="overview-summary__label">已签收</span>
+                <strong class="overview-summary__value">{{ overview.completedCount }}</strong>
+              </div>
             </div>
-            <div class="overview-summary__item">
-              <span class="overview-summary__label">运输中</span>
-              <strong class="overview-summary__value">{{ overview.inTransitCount }}</strong>
-            </div>
-            <div class="overview-summary__item">
-              <span class="overview-summary__label">已签收</span>
-              <strong class="overview-summary__value">{{ overview.completedCount }}</strong>
+            <div class="overview-bars">
+              <div
+                v-for="item in statusBars"
+                :key="item.label"
+                class="overview-bars__item"
+                :style="{ '--overview-percent': `${item.percent}%` }"
+              >
+                <div class="overview-bars__meta">
+                  <span class="overview-bars__label">
+                    <span class="overview-bars__dot" />
+                    {{ item.label }}
+                  </span>
+                  <span class="overview-bars__value">{{ item.value }} 单</span>
+                </div>
+                <span class="overview-bars__track">
+                  <span class="overview-bars__bar" />
+                </span>
+              </div>
             </div>
           </div>
-          <div class="overview-bars">
-            <div
-              v-for="item in statusBars"
-              :key="item.label"
-              class="overview-bars__item"
-              :style="{ '--overview-percent': `${item.percent}%` }"
-            >
-              <div class="overview-bars__meta">
-                <span class="overview-bars__label">
-                  <span class="overview-bars__dot" />
-                  {{ item.label }}
-                </span>
-                <span class="overview-bars__value">{{ item.value }} 单</span>
-              </div>
-              <span class="overview-bars__track">
-                <span class="overview-bars__bar" />
-              </span>
-            </div>
+        </div>
+
+        <div class="card">
+          <div class="card__head">
+            <h3 class="card__title">运输任务状态</h3>
+            <el-tag size="small" effect="plain">今日新增 {{ overview.todayTaskCount ?? 0 }}</el-tag>
+          </div>
+          <div v-loading="overviewLoading" class="card__body task-card">
+            <ECharts :options="taskPieOptions" height="172px" />
           </div>
         </div>
       </div>
@@ -125,11 +110,11 @@
     <section class="dash-bottom">
       <div class="card">
         <div class="card__head">
-          <h3 class="card__title">待处理运单</h3>
+          <h3 class="card__title">待处理订单</h3>
           <el-tag size="small">{{ todoList.length }} 单</el-tag>
         </div>
         <div v-loading="todoLoading" class="card__body">
-          <el-empty v-if="todoList.length === 0" :image-size="56" description="暂无待处理运单" />
+          <el-empty v-if="todoList.length === 0" :image-size="56" description="暂无待处理订单" />
           <div
             v-for="item in todoList"
             :key="item.id"
@@ -152,14 +137,21 @@
       <div class="card">
         <div class="card__head">
           <h3 class="card__title">最新告警</h3>
-          <el-tag type="danger" size="small">{{ alertList.length }} 条</el-tag>
+          <el-tag type="danger" size="small">{{ alertCount }} 条未处理</el-tag>
         </div>
         <div v-loading="alarmLoading" class="card__body card__body--scroll">
           <el-empty v-if="alertList.length === 0" :image-size="56" description="暂无未处理告警" />
           <div class="feed">
             <div v-for="item in alertList" :key="item.id" class="feed__item">
-              <span class="feed__dot feed__dot--danger" />
-              <span class="feed__text">{{ item.alarmContent || "未命名告警" }}</span>
+              <el-tag
+                size="small"
+                :type="alarmTagType(item.alarmType)"
+                effect="light"
+                class="feed__tag"
+              >
+                {{ alarmTypeText(item.alarmType) }}
+              </el-tag>
+              <span class="feed__text">{{ item.alarmContent || "运输过程异常，请及时关注" }}</span>
               <span class="feed__time">{{ formatShortTime(item.alarmTime || item.createTime) }}</span>
             </div>
           </div>
@@ -173,6 +165,7 @@
 defineOptions({ name: "Dashboard", inheritAttrs: false });
 
 import { ref, reactive, computed, watch, onMounted } from "vue";
+import type { EChartsOption } from "echarts";
 import { useUserStore } from "@/stores/user";
 import {
   User,
@@ -181,13 +174,17 @@ import {
   Warning,
   CircleCheck,
   Clock,
+  Refresh,
+  Monitor,
 } from "@element-plus/icons-vue";
 import DashboardAPI, {
   type DashboardOverview,
+  type NameValue,
   type OrderTrendPoint,
   type PendingOrder,
 } from "@/api/dashboard";
-import AlarmAPI, { AlarmHandleStatus, type AlarmRecord } from "@/api/alarm";
+import AlarmAPI, { AlarmHandleStatus, alarmTypeText, type AlarmRecord } from "@/api/alarm";
+import { resolveExternalUrl } from "@/utils/route";
 
 const userStore = useUserStore();
 
@@ -208,7 +205,7 @@ const currentDateStr = computed(() => {
   return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 星期${w[d.getDay()]}`;
 });
 
-// ---- 总览 KPI + 运单三桶（pd-oms 订单统计 + pd-work 在途任务聚合） ----
+// ---- 总览 KPI + 订单三桶（pd-oms 订单统计 + pd-work 任务/车辆聚合） ----
 const overviewLoading = ref(false);
 const overview = reactive<DashboardOverview>({
   todayOrderCount: 0,
@@ -216,14 +213,53 @@ const overview = reactive<DashboardOverview>({
   pendingCount: 0,
   inTransitCount: 0,
   completedCount: 0,
+  todayCompletedCount: 0,
+  todayTaskCount: 0,
+  taskStatusCounts: [],
 });
+
+// 4 张 KPI 卡（第 4 张由原"准时率（无数据源）"替换为真实"今日签收"）
+const statCards = computed(() => [
+  {
+    label: "今日新增订单",
+    value: overview.todayOrderCount,
+    icon: Document,
+    tone: "order",
+    badge: "今日",
+    badgeClass: "",
+  },
+  {
+    label: "在途车辆",
+    value: overview.onTruckCount,
+    icon: Van,
+    tone: "truck",
+    badge: "实时",
+    badgeClass: "stat-card__badge--on",
+  },
+  {
+    label: "异常告警",
+    value: alertCount.value,
+    icon: Warning,
+    tone: "alert",
+    badge: "未处理",
+    badgeClass: "stat-card__badge--danger",
+  },
+  {
+    label: "今日签收",
+    value: overview.todayCompletedCount,
+    icon: CircleCheck,
+    tone: "rate",
+    badge: "今日",
+    badgeClass: "stat-card__badge--on",
+  },
+]);
 
 // 未处理告警：与"最新告警"列表共用一次 netty 请求，total 即未处理总数
 const alertCount = ref(0);
 const alarmLoading = ref(false);
 const alertList = ref<AlarmRecord[]>([]);
 
-// 待处理运单
+// 待处理订单
 const todoLoading = ref(false);
 const todoList = ref<PendingOrder[]>([]);
 
@@ -241,10 +277,38 @@ const statusBars = computed(() => {
   ];
 });
 
-// ---- 运输量趋势 ----
+// 运输任务五态环形图（中文名后端给出，前端只配颜色，不做状态码映射）
+const TASK_STATUS_COLORS = ["#165DFF", "#00b42a", "#ff7d00", "#0fb5c9", "#86909c"];
+const taskPieOptions = computed<EChartsOption>(() => ({
+  tooltip: { trigger: "item", formatter: "{b}：{c} 个（{d}%）" },
+  legend: {
+    bottom: 0,
+    itemWidth: 8,
+    itemHeight: 8,
+    icon: "circle",
+    // canvas 不认 CSS var()，需取计算值
+    textStyle: { fontSize: 11, color: getCssVar("--el-text-color-regular", "#4e5969") },
+  },
+  color: TASK_STATUS_COLORS,
+  series: [
+    {
+      type: "pie",
+      radius: ["45%", "68%"],
+      center: ["50%", "42%"],
+      avoidLabelOverlap: true,
+      label: { show: false },
+      data: (overview.taskStatusCounts ?? []).map((item: NameValue) => ({
+        name: item.name,
+        value: item.value ?? 0,
+      })),
+    },
+  ],
+}));
+
+// ---- 订单量趋势 ----
 const trendDateRange = ref(7);
 const trendLoading = ref(false);
-const trendChartOptions = ref({});
+const trendChartOptions = ref<EChartsOption>({});
 
 /** 后端 "yyyy-MM-dd HH:mm:ss" → "MM-dd HH:mm"；无值返回空串 */
 function formatShortTime(value?: string) {
@@ -259,14 +323,14 @@ function dayLabel(date: string) {
 }
 
 function renderTrend(points: OrderTrendPoint[]) {
-  const primary = getCssVar("--el-color-primary", "#409eff");
-  const success = getCssVar("--el-color-success", "#67c23a");
+  const primary = getCssVar("--el-color-primary", "#165DFF");
+  const success = getCssVar("--el-color-success", "#00b42a");
   const textSecondary = getCssVar("--el-text-color-secondary", "#909399");
   const borderLighter = getCssVar("--el-border-color-lighter", "#ebeef5");
 
   trendChartOptions.value = {
     tooltip: { trigger: "axis" },
-    legend: { data: ["运单量", "完成量"], bottom: 0 },
+    legend: { data: ["下单量", "签收量"], bottom: 0 },
     grid: { left: "0%", right: "3%", bottom: "14%", top: "5%", containLabel: true },
     xAxis: {
       type: "category",
@@ -281,7 +345,7 @@ function renderTrend(points: OrderTrendPoint[]) {
     },
     series: [
       {
-        name: "运单量",
+        name: "下单量",
         type: "line",
         smooth: true,
         data: points.map((p) => Number(p.orderCount) || 0),
@@ -290,7 +354,7 @@ function renderTrend(points: OrderTrendPoint[]) {
         areaStyle: { opacity: 0.1 },
       },
       {
-        name: "完成量",
+        name: "签收量",
         type: "line",
         smooth: true,
         data: points.map((p) => Number(p.completedCount) || 0),
@@ -316,6 +380,9 @@ async function loadOverview() {
       overview.pendingCount = Number(data.pendingCount) || 0;
       overview.inTransitCount = Number(data.inTransitCount) || 0;
       overview.completedCount = Number(data.completedCount) || 0;
+      overview.todayCompletedCount = Number(data.todayCompletedCount) || 0;
+      overview.todayTaskCount = Number(data.todayTaskCount) || 0;
+      overview.taskStatusCounts = Array.isArray(data.taskStatusCounts) ? data.taskStatusCounts : [];
     }
   } finally {
     overviewLoading.value = false;
@@ -358,6 +425,29 @@ async function loadAlarms() {
   } finally {
     alarmLoading.value = false;
   }
+}
+
+/** 手动刷新：四个区块并行重新拉取 */
+const refreshing = ref(false);
+async function refreshAll() {
+  refreshing.value = true;
+  try {
+    await Promise.allSettled([loadOverview(), loadTrend(), loadTodo(), loadAlarms()]);
+  } finally {
+    refreshing.value = false;
+  }
+}
+
+/** 运营大屏：独立全屏路由，新标签页打开 */
+function openBigScreen() {
+  window.open(resolveExternalUrl("/dashboard/bigscreen"), "_blank");
+}
+
+/** 告警 tag 配色：超速/离线危险红，停留/偏离警示橙，人工上报类中性蓝 */
+function alarmTagType(code?: number): "danger" | "warning" | "info" {
+  if (code === 1 || code === 4) return "danger";
+  if (code === 2 || code === 3) return "warning";
+  return "info";
 }
 
 watch(() => trendDateRange.value, () => loadTrend());
@@ -409,6 +499,17 @@ $pad: 10px;
     gap: 12px;
     align-items: center;
     min-width: 260px;
+  }
+
+  &__actions {
+    display: flex;
+    flex-shrink: 0;
+    gap: 10px;
+    align-items: center;
+  }
+
+  &__screen-icon {
+    margin-right: 4px;
   }
 
   &__text {
@@ -465,32 +566,43 @@ $pad: 10px;
   align-items: center;
   min-height: 84px;
   padding: 18px;
+  cursor: default;
   @extend %card;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--el-box-shadow-light);
+  }
 
   &__icon {
     display: flex;
     flex-shrink: 0;
     align-items: center;
     justify-content: center;
-    width: 44px;
-    height: 44px;
-    border-radius: 10px;
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
 
     &--order {
-      color: var(--el-color-primary);
-      background: color-mix(in srgb, var(--el-color-primary) 10%, var(--el-bg-color-overlay));
+      color: #fff;
+      background: linear-gradient(135deg, var(--el-color-primary), var(--el-color-primary-light-3));
+      box-shadow: 0 6px 14px color-mix(in srgb, var(--el-color-primary) 30%, transparent);
     }
     &--truck {
-      color: var(--el-color-success);
-      background: color-mix(in srgb, var(--el-color-success) 10%, var(--el-bg-color-overlay));
+      color: #fff;
+      background: linear-gradient(135deg, var(--el-color-success), var(--el-color-success-light-3));
+      box-shadow: 0 6px 14px color-mix(in srgb, var(--el-color-success) 30%, transparent);
     }
     &--alert {
-      color: var(--el-color-danger);
-      background: color-mix(in srgb, var(--el-color-danger) 10%, var(--el-bg-color-overlay));
+      color: #fff;
+      background: linear-gradient(135deg, var(--el-color-danger), var(--el-color-danger-light-3));
+      box-shadow: 0 6px 14px color-mix(in srgb, var(--el-color-danger) 30%, transparent);
     }
     &--rate {
-      color: var(--el-color-warning);
-      background: color-mix(in srgb, var(--el-color-warning) 10%, var(--el-bg-color-overlay));
+      color: #fff;
+      background: linear-gradient(135deg, var(--el-color-warning), var(--el-color-warning-light-3));
+      box-shadow: 0 6px 14px color-mix(in srgb, var(--el-color-warning) 30%, transparent);
     }
   }
 
@@ -502,10 +614,11 @@ $pad: 10px;
   }
 
   &__num {
-    font-size: 24px;
-    font-weight: 600;
+    font-size: 26px;
+    font-weight: 700;
     line-height: 1.15;
     color: var(--el-text-color-primary);
+    font-variant-numeric: tabular-nums;
   }
 
   &__label {
@@ -523,23 +636,6 @@ $pad: 10px;
       color: var(--el-color-success);
     }
 
-    &--danger {
-      color: var(--el-color-danger);
-    }
-  }
-
-  &__trend {
-    display: inline-flex;
-    flex-shrink: 0;
-    gap: 3px;
-    align-items: center;
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--el-text-color-secondary);
-
-    &--success {
-      color: var(--el-color-success);
-    }
     &--danger {
       color: var(--el-color-danger);
     }
@@ -586,16 +682,34 @@ $pad: 10px;
 // Chart & bottom grids
 .dash-chart {
   display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(280px, 1fr);
+  grid-template-columns: minmax(0, 3fr) minmax(300px, 1.15fr);
   gap: $gap;
+
+  &__side {
+    display: flex;
+    flex-direction: column;
+    gap: $gap;
+    min-width: 0;
+
+    .card {
+      flex: 1;
+      min-height: 0;
+    }
+  }
 }
 
 .overview-card {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
   min-height: 0;
+}
+
+.task-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .overview-summary {
@@ -607,8 +721,8 @@ $pad: 10px;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    min-height: 64px;
-    padding: 12px;
+    min-height: 60px;
+    padding: 10px 12px;
     background: color-mix(in srgb, var(--el-color-primary) 4%, var(--el-bg-color-overlay));
     border: 1px solid color-mix(in srgb, var(--el-color-primary) 10%, var(--el-border-color-lighter));
     border-radius: 6px;
@@ -623,6 +737,7 @@ $pad: 10px;
     margin-top: 5px;
     font-size: 18px;
     font-weight: 600;
+    font-variant-numeric: tabular-nums;
     color: var(--el-color-primary);
   }
 }
@@ -631,8 +746,8 @@ $pad: 10px;
   display: flex;
   flex: 1;
   flex-direction: column;
-  justify-content: space-between;
-  min-height: 142px;
+  justify-content: space-evenly;
+  min-height: 120px;
 
   &__item {
     display: flex;
@@ -651,6 +766,10 @@ $pad: 10px;
   &__value {
     font-size: 12px;
     color: var(--el-text-color-secondary);
+  }
+
+  &__value {
+    font-variant-numeric: tabular-nums;
   }
 
   &__label {
@@ -679,6 +798,7 @@ $pad: 10px;
     height: 100%;
     background: linear-gradient(90deg, var(--el-color-primary), var(--el-color-primary-light-3));
     border-radius: inherit;
+    transition: width 0.4s ease;
   }
 }
 
@@ -729,57 +849,39 @@ $pad: 10px;
 .feed {
   display: flex;
   flex-direction: column;
-  padding: 10px 20px 16px;
+  padding: 8px 18px 12px;
 
   &__item {
-    position: relative;
     display: flex;
-    flex-wrap: wrap;
     gap: 8px;
-    align-items: baseline;
-    padding: 10px 0 10px 16px;
+    align-items: center;
+    padding: 9px 0;
 
-    &::before {
-      position: absolute;
-      top: 22px;
-      bottom: -4px;
-      left: 3px;
-      width: 1px;
-      content: "";
-      background: var(--el-border-color-lighter);
-    }
-
-    &:last-child::before {
-      display: none;
+    & + & {
+      border-top: 1px solid var(--el-border-color-lighter);
     }
   }
 
-  &__dot {
-    position: absolute;
-    top: 12px;
-    left: 0;
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-
-    &--danger {
-      background: var(--el-color-danger);
-      border: 2px solid var(--el-color-danger-light-8);
-    }
+  &__tag {
+    flex-shrink: 0;
   }
 
   &__text {
     flex: 1;
     min-width: 0;
+    overflow: hidden;
     font-size: 13px;
     line-height: 1.4;
     color: var(--el-text-color-regular);
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   &__time {
     flex-shrink: 0;
     font-size: 12px;
     color: var(--el-text-color-secondary);
+    font-variant-numeric: tabular-nums;
   }
 }
 
@@ -808,6 +910,10 @@ $pad: 10px;
 
   .dash-stats {
     grid-template-columns: 1fr;
+  }
+
+  .dash-header__actions {
+    width: 100%;
   }
 }
 </style>
