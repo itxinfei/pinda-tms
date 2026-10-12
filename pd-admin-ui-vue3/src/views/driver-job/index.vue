@@ -186,3 +186,10 @@ function openDetail(row: DriverJobRecord) {
 
 onMounted(loadList);
 </script>
+
+<style lang="scss" scoped>
+/* 司机作业单详情抽屉：各描述区块之间留白（首个"基本信息"无此类，后续区块均带此类） */
+.driver-job-detail__block {
+  margin-top: 16px;
+}
+</style>

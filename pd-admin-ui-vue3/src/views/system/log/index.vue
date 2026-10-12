@@ -90,7 +90,7 @@
         </el-table>
       </div>
 
-      <pagination
+      <pagination class="page-pagination"
         v-if="total > 0"
         v-model:total="total"
         v-model:page="params.pageNum"

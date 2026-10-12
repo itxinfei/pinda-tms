@@ -165,3 +165,15 @@ onMounted(() => {
   });
 });
 </script>
+
+<style lang="scss" scoped>
+/* 线路详情抽屉：容器作为 loading 遮罩定位上下文；区块留白 */
+.transport-line-detail {
+  position: relative;
+  min-height: 100%;
+}
+
+.transport-line-detail__block {
+  margin-top: 16px;
+}
+</style>

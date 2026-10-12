@@ -242,3 +242,32 @@ async function openDetail(row: TaskTransportRecord) {
 
 onMounted(loadList);
 </script>
+
+<style lang="scss" scoped>
+/* 运输任务详情抽屉：容器作为 loading 遮罩定位上下文；区块留白；自定义标题；关联运单标签 flex 换行 */
+.task-detail {
+  position: relative;
+  min-height: 100%;
+}
+
+.task-detail__block {
+  margin-top: 16px;
+}
+
+.task-detail__title {
+  margin: 16px 0 12px;
+  font-size:14px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.task-detail__orders {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.task-detail__order-tag {
+  margin: 0;
+}
+</style>

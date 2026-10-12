@@ -118,8 +118,10 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialog.visible = false">取消</el-button>
-        <el-button type="primary" :loading="submitting" @click="submitForm">确定</el-button>
+        <div class="dialog-footer">
+          <el-button @click="dialog.visible = false">取消</el-button>
+          <el-button type="primary" :loading="submitting" @click="submitForm">确定</el-button>
+        </div>
       </template>
     </el-dialog>
   </div>

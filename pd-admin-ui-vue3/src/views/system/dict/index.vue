@@ -341,6 +341,7 @@ onMounted(() => {
 }
 
 .dict-page__empty {
+  display: flex;
   align-items: center;
   justify-content: center;
 }

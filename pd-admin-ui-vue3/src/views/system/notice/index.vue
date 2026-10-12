@@ -179,7 +179,7 @@
         </el-table>
       </div>
 
-      <pagination
+      <pagination class="page-pagination"
         v-if="total > 0"
         v-model:total="total"
         v-model:page="params.pageNum"
@@ -194,7 +194,7 @@
       :fullscreen="dialogState.fullscreen"
       top="6vh"
       width="70%"
-      custom-class="notice-dialog"
+      class="notice-dialog"
       @close="closeDialog"
     >
       <template #header>
@@ -604,3 +604,28 @@ onMounted(() => {
   handleQuery();
 });
 </script>
+
+<style lang="scss" scoped>
+/* 对话框头部工具行：圆形按钮横向排列 */
+.dialog-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 公告富文本正文：基础排版，图片自适应 */
+.notice-content {
+  line-height: 1.7;
+  word-break: break-word;
+  color: var(--el-text-color-regular);
+
+  :deep(p) {
+    margin: 0 0 8px;
+  }
+
+  :deep(img) {
+    max-width: 100%;
+    border-radius: var(--card-radius);
+  }
+}
+</style>

@@ -190,3 +190,30 @@ onMounted(() => {
   });
 });
 </script>
+
+<style lang="scss" scoped>
+/* 车辆详情抽屉：容器作为 loading 遮罩定位上下文；区块留白；自定义标题；证件图片尺寸约束 */
+.truck-detail {
+  position: relative;
+  min-height: 100%;
+}
+
+.truck-detail__block {
+  margin-top: 16px;
+}
+
+.truck-detail__title {
+  margin: 16px 0 12px;
+  font-size:14px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.truck-detail__image {
+  display: block;
+  max-width: 100%;
+  max-height: 280px;
+  border-radius: var(--card-radius);
+  border: 1px solid var(--card-border);
+}
+</style>

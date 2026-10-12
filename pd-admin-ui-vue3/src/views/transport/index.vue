@@ -293,3 +293,22 @@ const pickupDispatchBlocks = computed(() => {
 
 onMounted(loadList);
 </script>
+
+<style lang="scss" scoped>
+/* 运单详情抽屉：容器作为 loading 遮罩的定位上下文；各描述区块之间留白；自定义区块标题与 el-descriptions 默认标题视觉对齐 */
+.transport-detail {
+  position: relative;
+  min-height: 100%;
+}
+
+.transport-detail__block {
+  margin-top: 16px;
+}
+
+.transport-detail__title {
+  margin: 16px 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+</style>

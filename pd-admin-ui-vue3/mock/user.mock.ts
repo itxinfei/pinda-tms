@@ -11,7 +11,9 @@ export default defineMock([
         username: "admin",
         nickname: "系统管理员",
         avatar: "https://foruda.gitee.com/images/1723603502796844527/03cdca2a_716974.gif",
-        roles: ["ADMIN"],
+        // ROOT 触发 hasPerm 超管放行：mock 模式下 perms 只列了 user/role/dept/menu/dict/notice/config，
+        // 租户/日志/应用等页的按钮需要它才可见。接真实后端后由 sys_role 决定，勿照搬。
+        roles: ["ADMIN", "ROOT"],
         perms: [
           "sys:user:list",
           "sys:user:create",

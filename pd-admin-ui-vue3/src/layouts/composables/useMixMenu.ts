@@ -26,18 +26,29 @@ export function useMixMenu() {
 
   /**
    * 解析混合布局侧边菜单路径
+   *
+   * 静态路由的子路由使用绝对路径（如 /order，2026-10-11 定案：菜单层级变了 URL 不变），
+   * 动态后端菜单的子路由是相对路径。两类都要正确：
+   * - 绝对路径原样返回（它本身就是注册路径，拼前缀反而 404）；
+   * - 相对路径拼在当前激活的顶部分组下。
    */
   function resolvePath(routePath: string): string {
     if (isExternal(routePath)) return routePath;
-    if (routePath.startsWith("/")) return activeTopMenuPath.value + routePath;
+    if (!routePath) return activeTopMenuPath.value;
+    if (routePath.startsWith("/")) return routePath;
     return `${activeTopMenuPath.value}/${routePath}`;
   }
 
   /**
    * 从当前路由提取顶部菜单路径
+   *
+   * 优先取路由匹配链的第一段（顶层记录的真实 path，如 /order-center）；
+   * 静态路由子路由是绝对路径（/order），按字符串首段切会错切出 /order。
    */
-  function extractTopMenuPath(path: string): string {
-    return path.split("/").filter(Boolean).length > 1 ? path.match(/^\/[^/]+/)?.[0] || "/" : "/";
+  function extractTopMenuPath(currentRoute: { matched: Array<{ path: string }>; path: string }): string {
+    const topRecord = currentRoute.matched[0];
+    if (topRecord?.path && topRecord.path !== "/") return topRecord.path;
+    return "/" + (currentRoute.path.split("/").filter(Boolean)[0] ?? "");
   }
 
   /**
@@ -74,8 +85,8 @@ export function useMixMenu() {
   // 路由变化时保持顶部菜单和侧边菜单同步
   watch(
     () => route.path,
-    (newPath) => {
-      const topMenuPath = extractTopMenuPath(newPath);
+    () => {
+      const topMenuPath = extractTopMenuPath(route);
       const isTopMenuChanged = topMenuPath !== activeTopMenuPath.value;
 
       if (isTopMenuChanged) {

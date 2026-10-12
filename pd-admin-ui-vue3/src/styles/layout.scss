@@ -134,8 +134,8 @@
 
   // 菜单项包裹的 div 零边距
   > div {
-    margin: 0 !important;
     padding: 0 !important;
+    margin: 0 !important;
   }
 
   // scrollbar 内容区零边距
@@ -152,27 +152,40 @@
     margin: 0 !important;
   }
 
-  // 菜单项紧凑高度，图标和文字不放大
+  // 一级目录标题与二级菜单项统一骨架：高度、内边距由层级样式再分别覆盖
   .el-menu-item,
   .el-sub-menu__title {
     height: 40px !important;
-    line-height: 40px !important;
     padding: 0 16px !important;
     margin: 0 !important;
+    line-height: 40px !important;
   }
 
   // 菜单图标大小统一
   .layout-menu-icon {
     width: 18px !important;
     height: 18px !important;
-    font-size: 18px !important;
     margin-right: 8px !important;
+    font-size: 18px !important;
   }
 
-  // 菜单文字大小统一
-  .el-menu-item span,
-  .el-sub-menu__title span {
+  // 二级叶子项：14px 常规字重（默认主题下比一级标题小且轻，形成层级）
+  .el-menu-item span {
     font-size: 14px !important;
+  }
+
+  // 一级目录标题：15px 加粗 + 更深文字色，与二级项一眼可分
+  > .el-sub-menu > .el-sub-menu__title span {
+    font-size: 15px !important;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+  }
+
+  // 顶级直挂叶子（拍平后无分组的单页）沿用二级字号，与目录标题区隔
+  // 分组条目之间留 4px 呼吸间距（组内 0），用空间而非线条承载分组
+  > .el-menu-item,
+  > .el-sub-menu {
+    margin-bottom: 4px !important;
   }
 
   // 选中菜单项：左侧 3px 主色竖条（仅侧边栏，对齐联云 TMS 的选中强调）
@@ -191,6 +204,29 @@
       transform: translateY(-50%);
     }
   }
+}
+
+/* 二级菜单（嵌套 el-menu-item）仅靠缩进表达层级，不加重背景/引导线，保持模板原生的干净观感 */
+.layout-root .layout-sidebar {
+  .el-sub-menu .el-menu .el-menu-item {
+    height: 38px !important;
+    padding-left: 40px !important;
+    line-height: 38px !important;
+
+    .layout-menu-icon {
+      width: 16px !important;
+      min-width: 16px !important;
+      height: 16px !important;
+      margin-right: 6px !important;
+      font-size: 16px !important;
+    }
+  }
+}
+
+/* 深色/经典蓝侧边栏：一级标题不套用浅色主题的深字规则，维持主题文字色 */
+html.sidebar-color-blue .layout-root .layout-sidebar > .el-sub-menu > .el-sub-menu__title span,
+html.dark .layout-root .layout-sidebar > .el-sub-menu > .el-sub-menu__title span {
+  color: var(--menu-text);
 }
 
 /* 隐藏侧边栏 el-scrollbar 的水平滚动条（el-scrollbar 的 wrap 宽度因滚动条 gutter 比内容少 1px，导致 .el-menu--collapse 始终溢出） */

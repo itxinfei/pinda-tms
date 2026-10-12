@@ -253,3 +253,10 @@ const receiverArea = computed(() =>
 
 onMounted(loadList);
 </script>
+
+<style lang="scss" scoped>
+/* 取派件任务详情抽屉：各描述区块之间留白 */
+.pickup-dispatch-detail__block {
+  margin-top: 16px;
+}
+</style>

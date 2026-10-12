@@ -40,19 +40,16 @@ export function setupPermissionGuard() {
       const permissionStore = usePermissionStore();
       const userStore = useUserStore();
 
-      // 动态路由生成
-      if (!permissionStore.isRouteGenerated) {
-        // 临时方案：先 mock 用户信息和动态路由，后面再对接品达接口
-        if (!userStore.userInfo?.roles?.length) {
-          userStore.userInfo = {
-            nickname: "pinda",
-            avatar: "",
-            roles: ["ADMIN"],
-            perms: ["*"],
-          } as any;
-        }
+      // 用户信息（按钮权限 v-hasPerm 与昵称头像的数据源）
+      // 必须独立于动态路由开关：permission store 的 isRouteGenerated 初值即 true（临时走静态路由），
+      // 放在它下面会导致 getUserInfo 永不调用、userInfo 恒为空、全站 v-hasPerm 按钮被摘除。
+      // 失败时交给下方 catch 统一重置会话并跳登录。
+      if (!userStore.userInfo?.roles?.length) {
+        await userStore.getUserInfo();
+      }
 
-        // 临时方案：先不生成动态路由，用静态路由
+      // 动态路由生成（定案 D-42 落地后恢复：改为 !isRouteGenerated 时 generateRoutes()）
+      if (!permissionStore.isRouteGenerated) {
         permissionStore.isRouteGenerated = true;
 
         return { ...to, replace: true };

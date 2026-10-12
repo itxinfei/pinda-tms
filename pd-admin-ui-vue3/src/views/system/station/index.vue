@@ -71,18 +71,13 @@
         </el-table>
       </div>
 
-      <div class="page-pagination">
-        <el-pagination
-          v-model:current-page="queryParams.pageNo"
-          v-model:page-size="queryParams.size"
-          :total="total"
-          :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper"
-          background
-          @size-change="loadPage"
-          @current-change="loadPage"
-        />
-      </div>
+      <pagination
+        class="page-pagination"
+        v-model:total="total"
+        v-model:page="queryParams.pageNo"
+        v-model:limit="queryParams.size"
+        @pagination="loadPage"
+      />
     </el-card>
 
     <el-dialog
@@ -115,8 +110,10 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialog.visible = false">取消</el-button>
-        <el-button type="primary" :loading="submitting" @click="submitForm">确定</el-button>
+        <div class="dialog-footer">
+          <el-button @click="dialog.visible = false">取消</el-button>
+          <el-button type="primary" :loading="submitting" @click="submitForm">确定</el-button>
+        </div>
       </template>
     </el-dialog>
   </div>
