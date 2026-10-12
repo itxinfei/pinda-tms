@@ -1,15 +1,5 @@
 <template>
   <div class="dash">
-    <!-- 工具条：手动刷新 / 运营大屏入口（问候语已上移至全局顶栏） -->
-    <section class="dash-toolbar">
-      <div class="dash-toolbar__actions">
-        <el-button :icon="Refresh" :loading="refreshing" @click="refreshAll">刷新数据</el-button>
-        <el-button type="primary" plain @click="openBigScreen">
-          <el-icon class="dash-toolbar__screen-icon"><Monitor /></el-icon>运营大屏
-        </el-button>
-      </div>
-    </section>
-
     <!-- 4 个核心 KPI（数字均来自后端聚合接口，无环比数据源故不展示假箭头） -->
     <section v-loading="overviewLoading" class="dash-stats">
       <div v-for="card in statCards" :key="card.label" class="stat-card">
@@ -160,8 +150,6 @@ import {
   Warning,
   CircleCheck,
   Clock,
-  Refresh,
-  Monitor,
 } from "@element-plus/icons-vue";
 import DashboardAPI, {
   type DashboardOverview,
@@ -170,7 +158,6 @@ import DashboardAPI, {
   type PendingOrder,
 } from "@/api/dashboard";
 import AlarmAPI, { AlarmHandleStatus, alarmTypeText, type AlarmRecord } from "@/api/alarm";
-import { resolveExternalUrl } from "@/utils/route";
 
 // 问候语已上移至全局顶栏 LayoutToolbar
 
@@ -396,22 +383,6 @@ async function loadAlarms() {
   }
 }
 
-/** 手动刷新：四个区块并行重新拉取 */
-const refreshing = ref(false);
-async function refreshAll() {
-  refreshing.value = true;
-  try {
-    await Promise.allSettled([loadOverview(), loadTrend(), loadTodo(), loadAlarms()]);
-  } finally {
-    refreshing.value = false;
-  }
-}
-
-/** 运营大屏：独立全屏路由，新标签页打开 */
-function openBigScreen() {
-  window.open(resolveExternalUrl("/dashboard/bigscreen"), "_blank");
-}
-
 /** 告警 tag 配色：超速/离线危险红，停留/偏离警示橙，人工上报类中性蓝 */
 function alarmTagType(code?: number): "danger" | "warning" | "info" {
   if (code === 1 || code === 4) return "danger";
@@ -448,25 +419,6 @@ $pad: 10px;
   gap: $gap;
   padding: $pad;
   background: var(--page-bg);
-}
-
-// 工具条（原头部问候卡拆分：按钮上移至此，问候语上移全局顶栏）
-.dash-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
-  flex-wrap: wrap;
-
-  &__actions {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-  }
-
-  &__screen-icon {
-    margin-right: 4px;
-  }
 }
 
 // Stat cards
@@ -826,14 +778,6 @@ $pad: 10px;
 
   .dash-stats {
     grid-template-columns: 1fr;
-  }
-
-  .dash-toolbar__actions {
-    width: 100%;
-
-    .el-button {
-      flex: 1;
-    }
   }
 }
 </style>

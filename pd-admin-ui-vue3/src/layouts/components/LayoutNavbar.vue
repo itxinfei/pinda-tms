@@ -6,6 +6,7 @@
     </div>
 
     <div class="layout-navbar__actions">
+      <el-button :icon="Monitor" plain type="primary" @click="openBigScreen">运营大屏</el-button>
       <LayoutToolbar />
     </div>
   </div>
@@ -13,6 +14,8 @@
 
 <script setup lang="ts">
 import { useAppStore } from "@/stores";
+import { Monitor } from "@element-plus/icons-vue";
+import { resolveExternalUrl } from "@/utils/route";
 
 const props = withDefaults(
   defineProps<{
@@ -33,6 +36,11 @@ const sidebarState = computed(() =>
       }
     : { opened: appStore.sidebar.opened, toggle: () => appStore.toggleSidebar() }
 );
+
+// 运营大屏：独立全屏路由，新标签页打开
+function openBigScreen() {
+  window.open(resolveExternalUrl("/dashboard/bigscreen"), "_blank");
+}
 </script>
 
 <style lang="scss" scoped>
@@ -48,6 +56,7 @@ const sidebarState = computed(() =>
 
   &__actions {
     display: flex;
+    gap: 10px;
     align-items: center;
     height: 100%;
   }
