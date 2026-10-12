@@ -1,6 +1,9 @@
 package com.itheima.pinda.feign.fallback;
 
 import com.itheima.pinda.DTO.TaskTransportDTO;
+import com.itheima.pinda.DTO.dashboard.NameValueDTO;
+import com.itheima.pinda.DTO.dashboard.TaskDashboardSummaryDTO;
+import com.itheima.pinda.DTO.dashboard.TripsVolumeDTO;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.feign.TransportTaskFeign;
 import lombok.extern.slf4j.Slf4j;
@@ -55,6 +58,30 @@ public class TransportTaskFeignFallback implements TransportTaskFeign {
     @Override
     public List<TaskTransportDTO> findAllByOrderIdOrTaskId(Long transportOrderId, Long taskTransportId) {
         log.warn("远程调用 pd-work 失败: findAllByOrderIdOrTaskId(transportOrderId={}, taskTransportId={}), 返回空列表", transportOrderId, taskTransportId);
+        return Collections.emptyList();
+    }
+
+    @Override
+    public TaskDashboardSummaryDTO dashboardSummary() {
+        log.warn("远程调用 pd-work 失败: dashboardSummary(), 返回全 0 汇总");
+        TaskDashboardSummaryDTO summary = new TaskDashboardSummaryDTO();
+        summary.setTodayTransportOrderCount(0L);
+        summary.setTodayTaskCount(0L);
+        summary.setInTransitTruckCount(0L);
+        summary.setPendingTruckCount(0L);
+        // 五态固定顺序补零，前端环形图不缺扇区
+        summary.setTaskStatusCounts(java.util.Arrays.asList(
+                new NameValueDTO("待执行", 0L),
+                new NameValueDTO("进行中", 0L),
+                new NameValueDTO("待确认", 0L),
+                new NameValueDTO("已完成", 0L),
+                new NameValueDTO("已取消", 0L)));
+        return summary;
+    }
+
+    @Override
+    public List<TripsVolumeDTO> dashboardTripsVolume(Integer days) {
+        log.warn("远程调用 pd-work 失败: dashboardTripsVolume(days={}), 返回空列表", days);
         return Collections.emptyList();
     }
 }

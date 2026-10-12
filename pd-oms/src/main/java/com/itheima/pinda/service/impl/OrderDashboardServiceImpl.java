@@ -83,12 +83,17 @@ public class OrderDashboardServiceImpl extends ServiceImpl<OrderMapper, Order> i
                 .in(Order::getStatus, codes(IN_TRANSIT_BUCKET)));
         long completedCount = this.count(new LambdaQueryWrapper<Order>()
                 .eq(Order::getStatus, OrderStatus.RECEIVED.getCode()));
+        // 今日签收：oms_order 无签收完成时间列，按 update_time 当日 + 已签收近似（与 trend 签收曲线同口径）
+        long todayCompletedCount = this.count(new LambdaQueryWrapper<Order>()
+                .eq(Order::getStatus, OrderStatus.RECEIVED.getCode())
+                .ge(Order::getUpdateTime, todayStart));
 
         OrderOverviewDTO dto = new OrderOverviewDTO();
         dto.setTodayCount(todayCount);
         dto.setPendingCount(pendingCount);
         dto.setInTransitCount(inTransitCount);
         dto.setCompletedCount(completedCount);
+        dto.setTodayCompletedCount(todayCompletedCount);
         return dto;
     }
 

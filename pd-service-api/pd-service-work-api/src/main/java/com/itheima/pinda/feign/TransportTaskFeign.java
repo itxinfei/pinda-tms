@@ -1,6 +1,8 @@
 package com.itheima.pinda.feign;
 
 import com.itheima.pinda.DTO.TaskTransportDTO;
+import com.itheima.pinda.DTO.dashboard.TaskDashboardSummaryDTO;
+import com.itheima.pinda.DTO.dashboard.TripsVolumeDTO;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.feign.fallback.TransportTaskFeignFallback;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -68,4 +70,21 @@ public interface TransportTaskFeign {
     @GetMapping("/transport-task/listByOrderIdOrTaskId")
     List<TaskTransportDTO> findAllByOrderIdOrTaskId(@RequestParam(name = "transportOrderId", required = false) Long transportOrderId,
                                                     @RequestParam(name = "taskTransportId", required = false) Long taskTransportId);
+
+    /**
+     * 大屏/仪表盘运输域汇总：今日运单、今日任务、在途/待执行车辆、任务五态计数。
+     *
+     * @return 运输域汇总统计
+     */
+    @GetMapping("/transport-task/dashboard/summary")
+    TaskDashboardSummaryDTO dashboardSummary();
+
+    /**
+     * 近 N 日各车次运输任务量（大屏「各线路运量」柱状图中间数据，线路名由 BFF 补全）。
+     *
+     * @param days 统计天数（服务端夹紧到 1~30，默认 7）
+     * @return 车次任务量列表，按任务量倒序
+     */
+    @GetMapping("/transport-task/dashboard/trips-volume")
+    List<TripsVolumeDTO> dashboardTripsVolume(@RequestParam(name = "days", defaultValue = "7") Integer days);
 }

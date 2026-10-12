@@ -19,7 +19,7 @@ export function joinRoutePath(basePath: string, path?: string): string {
 /**
  * 解析外链地址：http(s)/mailto/tel 原样返回，站内路径补全为当前站点地址
  *
- * 站内路径拼成 hash 地址（如 /data-screen → https://host/#/data-screen），供新标签页直接打开
+ * 站内路径拼成 hash 地址（如 /dashboard/bigscreen → https://host/#/dashboard/bigscreen），供新标签页直接打开
  *
  * @param url 菜单配置的外链地址
  */

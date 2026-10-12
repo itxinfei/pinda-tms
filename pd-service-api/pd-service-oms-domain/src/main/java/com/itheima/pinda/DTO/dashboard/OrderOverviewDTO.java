@@ -34,4 +34,7 @@ public class OrderOverviewDTO implements Serializable {
 
     @Schema(description = "已签收运单数（状态10）")
     private Long completedCount;
+
+    @Schema(description = "今日签收数（按 update_time 当日且状态10近似，oms_order 无签收完成时间列）")
+    private Long todayCompletedCount;
 }

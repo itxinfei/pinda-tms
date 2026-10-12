@@ -272,7 +272,7 @@
           <el-form-item label="外链地址" prop="externalUrl">
             <el-input
               v-model="formData.externalUrl"
-              placeholder="https://example.com 或站内路径 /data-screen"
+              placeholder="https://example.com 或站内路径 /dashboard/bigscreen"
               clearable
             />
           </el-form-item>
@@ -835,7 +835,7 @@ const validateExternalUrl = (_: unknown, value: string, callback: (error?: Error
     return;
   }
 
-  // 站内路径（如 /data-screen）由前端补全当前站点域名
+  // 站内路径（如 /dashboard/bigscreen）由前端补全当前站点域名
   if (value.startsWith("/")) {
     callback();
     return;
