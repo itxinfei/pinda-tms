@@ -9,6 +9,7 @@
 // echarts/core 是模块单例：此处 registerMap 与全局 ECharts 组件共享同一份注册表，
 // 必须在组件模块求值阶段（早于子组件 mounted）完成注册。
 import * as echarts from "echarts/core";
+import { HeatmapChart } from "echarts/charts";
 import chinaGeoJSON from "../assets/chinaGeoJSON.json";
 import { computed } from "vue";
 import type { EChartsOption } from "echarts";
@@ -16,6 +17,8 @@ import ECharts from "@/components/ECharts/index.vue";
 import type { LocationRecordItem } from "@/api/trace";
 
 echarts.registerMap("china", chinaGeoJSON as never);
+// 热力图（在途车辆密度）需按需注册，复用 echarts/core 单例
+echarts.use(HeatmapChart);
 
 defineOptions({ name: "VehicleMap" });
 
@@ -64,6 +67,22 @@ const vehiclePoints = computed<VehiclePoint[]>(() => {
   }
   return result;
 });
+
+// 在途车辆密度热力：按 1° 网格分桶计数，形成真实热区（而非孤立点）
+const heatPoints = computed<[number, number, number][]>(() => {
+  const buckets = new Map<string, { lng: number; lat: number; count: number }>();
+  for (const p of vehiclePoints.value) {
+    const lng = Math.round(p.value[0]);
+    const lat = Math.round(p.value[1]);
+    const key = `${lng},${lat}`;
+    const bucket = buckets.get(key) ?? { lng, lat, count: 0 };
+    bucket.count += 1;
+    buckets.set(key, bucket);
+  }
+  return [...buckets.values()].map((b) => [b.lng, b.lat, b.count]);
+});
+
+const heatMax = computed(() => Math.max(1, ...heatPoints.value.map((p) => p[2])));
 
 const ORG_COLORS: Record<number, string> = {
   1: "#00eaff",
@@ -126,6 +145,16 @@ const option = computed<EChartsOption>(() => ({
       return `<b>${d.name ?? ""}</b>`;
     },
   },
+  visualMap: {
+    show: false,
+    min: 0,
+    max: heatMax.value,
+    seriesIndex: 0,
+    inRange: {
+      color: ["rgba(0,90,200,0.12)", "rgba(0,234,255,0.55)", "rgba(255,138,61,0.9)"],
+    },
+    calculable: false,
+  },
   geo: {
     map: "china",
     aspectScale: 0.85,
@@ -146,6 +175,15 @@ const option = computed<EChartsOption>(() => ({
     },
   },
   series: [
+    {
+      name: "在途密度",
+      type: "heatmap",
+      coordinateSystem: "geo",
+      zlevel: 0,
+      pointSize: 22,
+      blurSize: 30,
+      data: heatPoints.value,
+    },
     {
       name: "机构网络",
       type: "lines",

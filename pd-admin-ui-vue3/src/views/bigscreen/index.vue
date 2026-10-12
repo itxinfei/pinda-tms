@@ -34,10 +34,13 @@
           </PanelFrame>
         </div>
 
-        <!-- 中列：全国地图（车辆+网点+流向）/ 运输任务五态 -->
+        <!-- 中列：全国地图（车辆+网点+流向）/ 在险预警 / 运输任务五态 -->
         <div class="bs-center">
           <PanelFrame class="bs-map-panel" title="全国车辆与机构实时分布">
             <VehicleMap :locations="locations" :orgs="orgPoints" />
+          </PanelFrame>
+          <PanelFrame class="bs-risk-panel" title="在险事件预警">
+            <RiskWarning :items="riskItems" />
           </PanelFrame>
           <PanelFrame class="bs-task-panel" title="运输任务五态">
             <TaskStatusBar v-if="taskStatusCounts.length" :items="taskStatusCounts" />
@@ -76,7 +79,7 @@ import DashboardAPI, {
   type PendingOrder,
   type NameValue,
 } from "@/api/dashboard";
-import AlarmAPI, { type AlarmRecord } from "@/api/alarm";
+import AlarmAPI, { alarmTypeText, type AlarmRecord } from "@/api/alarm";
 import TraceAPI, { type LocationRecordItem } from "@/api/trace";
 import OrgAPI, { type OrgNode } from "@/api/org";
 import { useKeepTicking } from "./composables/useKeepTicking";
@@ -90,6 +93,7 @@ import LineVolumeChart from "./components/line-volume-chart.vue";
 import VehicleMap from "./components/vehicle-map.vue";
 import TaskStatusBar from "./components/task-status-bar.vue";
 import AlertScroll from "./components/alert-scroll.vue";
+import RiskWarning, { type RiskItem } from "./components/risk-warning.vue";
 import TodoList from "./components/todo-list.vue";
 import TruckStatusPie from "./components/truck-status-pie.vue";
 
@@ -118,6 +122,32 @@ const todoList = ref<PendingOrder[]>([]);
 const locations = ref<LocationRecordItem[]>([]);
 const orgPoints = ref<OrgPoint[]>([]);
 const pendingAlarmCount = ref(0);
+
+/**
+ * 风险预警卡数据源（吸收 Shipsy At-Risk 控制塔范式）。
+ * 当前由 netty 实时告警派生：GPS 类（超速/偏离=高危，停留/离线=中危）映射为风险项。
+ * 后续「时效超时预警」后端端点就绪后，把超时运单也转成 RiskItem 追加进来即可。
+ */
+const riskItems = computed<RiskItem[]>(() =>
+  (alarms.value ?? []).map((a: AlarmRecord) => {
+    const gps = a.alarmType !== undefined && a.alarmType >= 1 && a.alarmType <= 9;
+    const level: RiskItem["level"] =
+      gps ? (a.alarmType === 1 || a.alarmType === 3 ? "high" : "mid") : "low";
+    const title = a.truckId
+      ? `车辆 ${a.truckId}`
+      : a.transportTaskId
+        ? `任务 ${a.transportTaskId}`
+        : "运输过程";
+    return {
+      id: String(a.id),
+      level,
+      category: alarmTypeText(a.alarmType),
+      title,
+      detail: a.alarmContent || "运输过程异常，请及时关注",
+      time: a.alarmTime || a.createTime,
+    };
+  }),
+);
 
 const updateScale = () => {
   scale.value = Math.min(
@@ -275,6 +305,11 @@ onBeforeUnmount(() => {
 .bs-task-panel {
   flex: none;
   height: 200px;
+}
+
+.bs-risk-panel {
+  flex: none;
+  height: 156px;
 }
 
 .bs-empty {
