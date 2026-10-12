@@ -82,7 +82,7 @@ spring:
     host: ${RABBITMQ_HOST:192.168.20.130}
     port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USERNAME:pinda}
-    password: ${RABBITMQ_PASSWORD:}
+    password: ${RABBITMQ_PASSWORD:123456}
     virtual-host: ${RABBITMQ_VHOST:/}
     listener:
       simple:
