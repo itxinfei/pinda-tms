@@ -181,6 +181,147 @@ public class UserService {
         }
     }
 
+    // ============ 个人中心（当前登录用户，SYS#5）============
+
+    /** dev 固定验证码（不接真实短信/邮件通道，仅日志输出）；上线前替换为短信/邮件服务 */
+    public static final String DEV_VERIFY_CODE = "1234";
+
+    /** 当前登录用户资料（对齐前端 UserProfileDetail） */
+    public UserVO profile(Long userId) {
+        AuthUser u = mustGet(userId);
+        List<UserVO> one = enrich(List.of(u));
+        return one.isEmpty() ? null : one.get(0);
+    }
+
+    /** 仅允许本人修改昵称/头像/性别等非敏感资料 */
+    public void updateProfile(Long userId, String nickname, String avatar, Integer gender) {
+        AuthUser u = mustGet(userId);
+        if (StringUtils.hasText(nickname)) {
+            u.setName(nickname.trim());
+        }
+        u.setAvatar(avatar);
+        if (gender != null) {
+            u.setSex(gender);
+        }
+        userMapper.updateById(u);
+    }
+
+    /** 修改自己的密码：校验旧密码 */
+    public void changePassword(Long userId, String oldPassword, String newPassword) {
+        if (!StringUtils.hasText(oldPassword) || !StringUtils.hasText(newPassword)) {
+            throw BizException.validFail("原密码与新密码不能为空");
+        }
+        if (newPassword.length() < 6) {
+            throw BizException.validFail("新密码长度不能少于6位");
+        }
+        AuthUser u = mustGet(userId);
+        if (!passwordEncoder.matches(oldPassword, u.getPassword())) {
+            throw BizException.validFail("原密码不正确");
+        }
+        if (passwordEncoder.matches(newPassword, u.getPassword())) {
+            throw BizException.validFail("新密码不能与原密码相同");
+        }
+        AuthUser up = new AuthUser();
+        up.setId(userId);
+        up.setPassword(passwordEncoder.encode(newPassword));
+        userMapper.updateById(up);
+    }
+
+    /** 发送手机验证码（dev 固定码 + 日志） */
+    public String sendMobileCode(String mobile) {
+        if (!StringUtils.hasText(mobile)) {
+            throw BizException.validFail("手机号不能为空");
+        }
+        // 唯一占用校验：不能绑定到其他账号
+        Long count = userMapper.selectCount(Wrappers.<AuthUser>lambdaQuery()
+                .eq(AuthUser::getMobile, mobile));
+        if (count != null && count > 0) {
+            throw BizException.validFail("该手机号已被其他账号绑定");
+        }
+        logCode("手机", mobile);
+        return DEV_VERIFY_CODE;
+    }
+
+    /** 发送邮箱验证码（dev 固定码 + 日志） */
+    public String sendEmailCode(String email) {
+        if (!StringUtils.hasText(email)) {
+            throw BizException.validFail("邮箱不能为空");
+        }
+        Long count = userMapper.selectCount(Wrappers.<AuthUser>lambdaQuery()
+                .eq(AuthUser::getEmail, email));
+        if (count != null && count > 0) {
+            throw BizException.validFail("该邮箱已被其他账号绑定");
+        }
+        logCode("邮箱", email);
+        return DEV_VERIFY_CODE;
+    }
+
+    /** 绑定/更换手机：校验验证码（dev 固定码） */
+    public void bindMobile(Long userId, String mobile, String code) {
+        verifyCode(code);
+        if (!StringUtils.hasText(mobile)) {
+            throw BizException.validFail("手机号不能为空");
+        }
+        Long other = userMapper.selectCount(Wrappers.<AuthUser>lambdaQuery()
+                .eq(AuthUser::getMobile, mobile).ne(AuthUser::getId, userId));
+        if (other != null && other > 0) {
+            throw BizException.validFail("该手机号已被其他账号绑定");
+        }
+        AuthUser up = new AuthUser();
+        up.setId(userId);
+        up.setMobile(mobile);
+        userMapper.updateById(up);
+    }
+
+    /** 绑定/更换邮箱 */
+    public void bindEmail(Long userId, String email, String code) {
+        verifyCode(code);
+        if (!StringUtils.hasText(email)) {
+            throw BizException.validFail("邮箱不能为空");
+        }
+        Long other = userMapper.selectCount(Wrappers.<AuthUser>lambdaQuery()
+                .eq(AuthUser::getEmail, email).ne(AuthUser::getId, userId));
+        if (other != null && other > 0) {
+            throw BizException.validFail("该邮箱已被其他账号绑定");
+        }
+        AuthUser up = new AuthUser();
+        up.setId(userId);
+        up.setEmail(email);
+        userMapper.updateById(up);
+    }
+
+    /** 解绑（手机/邮箱）：需验证当前密码 */
+    public void unbindContact(Long userId, String password, boolean mobile) {
+        AuthUser u = mustGet(userId);
+        if (!StringUtils.hasText(password) || !passwordEncoder.matches(password, u.getPassword())) {
+            throw BizException.validFail("密码验证失败，无法解绑");
+        }
+        AuthUser up = new AuthUser();
+        up.setId(userId);
+        if (mobile) {
+            up.setMobile(null);
+        } else {
+            up.setEmail(null);
+        }
+        // updateById 对 null 字段默认不更新，改用显式 set
+        userMapper.update(null, Wrappers.<AuthUser>lambdaUpdate()
+                .eq(AuthUser::getId, userId)
+                .set(mobile, AuthUser::getMobile, null)
+                .set(!mobile, AuthUser::getEmail, null));
+    }
+
+    private void verifyCode(String code) {
+        if (!DEV_VERIFY_CODE.equals(StringUtils.trimWhitespace(code))) {
+            throw BizException.validFail("验证码不正确（dev 环境固定为 " + DEV_VERIFY_CODE + "）");
+        }
+    }
+
+    private void logCode(String channel, String target) {
+        // dev：不接真实通道，仅记录；验证码固定 DEV_VERIFY_CODE
+        org.slf4j.LoggerFactory.getLogger(UserService.class)
+                .info("[DEV验证码] {} 绑定目标={} 验证码={}", channel, target, DEV_VERIFY_CODE);
+    }
+
     // ============ 内部辅助 ============
 
     private AuthUser mustGet(Long id) {

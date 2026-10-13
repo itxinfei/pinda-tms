@@ -126,4 +126,79 @@ public class UserController {
     public ApiResult<List<OptionVO>> options() {
         return ApiResult.success(List.of());
     }
+
+    // ============ 个人中心（仅登录，不要求 sys:user 权限）============
+
+    @GetMapping("/profile")
+    public ApiResult<UserVO> profile() {
+        return ApiResult.success(userService.profile(StpUtil.getLoginIdAsLong()));
+    }
+
+    @PutMapping("/profile")
+    public ApiResult<Void> updateProfile(@RequestBody Map<String, Object> body) {
+        Long uid = StpUtil.getLoginIdAsLong();
+        userService.updateProfile(uid,
+                str(body.get("nickname")),
+                str(body.get("avatar")),
+                intOrNull(body.get("gender")));
+        return ApiResult.success();
+    }
+
+    @PutMapping("/password")
+    public ApiResult<Void> changePassword(@RequestBody Map<String, String> body) {
+        userService.changePassword(StpUtil.getLoginIdAsLong(),
+                body.get("oldPassword"), body.get("newPassword"));
+        return ApiResult.success();
+    }
+
+    @PostMapping("/mobile/code")
+    public ApiResult<Void> sendMobileCode(@RequestParam String mobile) {
+        userService.sendMobileCode(mobile);
+        return ApiResult.success();
+    }
+
+    @PutMapping("/mobile")
+    public ApiResult<Void> bindMobile(@RequestBody Map<String, String> body) {
+        userService.bindMobile(StpUtil.getLoginIdAsLong(), body.get("mobile"), body.get("code"));
+        return ApiResult.success();
+    }
+
+    @DeleteMapping("/mobile")
+    public ApiResult<Void> unbindMobile(@RequestBody Map<String, String> body) {
+        userService.unbindContact(StpUtil.getLoginIdAsLong(), body.get("password"), true);
+        return ApiResult.success();
+    }
+
+    @PostMapping("/email/code")
+    public ApiResult<Void> sendEmailCode(@RequestParam String email) {
+        userService.sendEmailCode(email);
+        return ApiResult.success();
+    }
+
+    @PutMapping("/email")
+    public ApiResult<Void> bindEmail(@RequestBody Map<String, String> body) {
+        userService.bindEmail(StpUtil.getLoginIdAsLong(), body.get("email"), body.get("code"));
+        return ApiResult.success();
+    }
+
+    @DeleteMapping("/email")
+    public ApiResult<Void> unbindEmail(@RequestBody Map<String, String> body) {
+        userService.unbindContact(StpUtil.getLoginIdAsLong(), body.get("password"), false);
+        return ApiResult.success();
+    }
+
+    private String str(Object o) {
+        return o == null ? null : String.valueOf(o);
+    }
+
+    private Integer intOrNull(Object o) {
+        if (o == null) {
+            return null;
+        }
+        try {
+            return Integer.valueOf(String.valueOf(o));
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
 }
