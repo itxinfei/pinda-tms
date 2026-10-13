@@ -9,8 +9,10 @@ import com.itheima.auth.dto.LoginDTO;
 import com.itheima.auth.dto.LoginParamDTO;
 import com.itheima.auth.entity.AuthTenant;
 import com.itheima.auth.entity.AuthUser;
+import com.itheima.auth.entity.CoreOrg;
 import com.itheima.auth.mapper.AuthTenantMapper;
 import com.itheima.auth.mapper.AuthUserMapper;
+import com.itheima.auth.mapper.CoreOrgMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,6 +38,7 @@ public class AuthLoginService {
     private final CaptchaService captchaService;
     private final AuthTenantMapper tenantMapper;
     private final AuthUserMapper userMapper;
+    private final CoreOrgMapper orgMapper;
     private final StringRedisTemplate redisTemplate;
     private final Environment environment;
 
@@ -100,6 +103,14 @@ public class AuthLoginService {
         // 6. 用户状态与密码有效期
         if (!Integer.valueOf(1).equals(user.getStatus())) {
             throw BizException.validFail("账号已被禁用，请联系企业管理员");
+        }
+        // SYS-05：归属机构被停用（含上级机构停用）时账号禁止登录。
+        // 历史业务单据保留机构快照不迁移；员工调岗改挂启用机构后恢复。
+        if (user.getOrgId() != null) {
+            CoreOrg org = orgMapper.selectById(user.getOrgId());
+            if (org != null && !Integer.valueOf(1).equals(org.getStatus())) {
+                throw BizException.validFail("所属机构已停用，账号暂不可登录，请联系管理员");
+            }
         }
         if (user.getPasswordExpireTime() != null && LocalDateTime.now().isAfter(user.getPasswordExpireTime())) {
             throw new BizException("密码已过期，请修改密码或联系管理员重置");

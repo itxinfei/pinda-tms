@@ -4,6 +4,8 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.itheima.auth.common.BizException;
 import com.itheima.auth.entity.CoreOrg;
+import com.itheima.auth.entity.AuthUser;
+import com.itheima.auth.mapper.AuthUserMapper;
 import com.itheima.auth.mapper.CoreOrgMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,6 +24,7 @@ import java.util.stream.Collectors;
 public class OrgService {
 
     private final CoreOrgMapper orgMapper;
+    private final AuthUserMapper userMapper;
 
     /**
      * 当前租户的组织树
@@ -72,6 +75,13 @@ public class OrgService {
         if (exist == null) {
             throw new BizException("组织不存在");
         }
+        // SYS-05：把机构从启用改为停用时做占用校验（有下级机构或启用账号则拒绝，
+        // 提示先调岗/迁移；历史单据保留机构快照不迁移）。在途业务校验在业务域，此处不跨库。
+        boolean disabling = org.getStatus() != null && org.getStatus() == 0
+                && Integer.valueOf(1).equals(exist.getStatus());
+        if (disabling) {
+            guardBeforeDisable(org.getId());
+        }
         Long newParentId = org.getParentId() == null ? 0L : org.getParentId();
         String newTreePath = exist.getTreePath();
         if (!newParentId.equals(exist.getParentId())) {
@@ -94,6 +104,26 @@ public class OrgService {
             throw new BizException("存在下级组织，请先删除下级组织");
         }
         orgMapper.deleteById(id);
+    }
+
+    /**
+     * SYS-05 停用前占用校验：本机构子树内仍有启用账号时拒绝停用。
+     * 子树判定用 tree_path 前缀（,id, 出现在后代 tree_path 中）+ 本机构直接挂载。
+     */
+    private void guardBeforeDisable(Long orgId) {
+        String token = "," + orgId + ",";
+        // 本机构 + tree_path 中含 ,orgId, 的全部后代
+        List<CoreOrg> subtree = orgMapper.selectList(Wrappers.<CoreOrg>lambdaQuery()
+                .eq(CoreOrg::getId, orgId)
+                .or().like(CoreOrg::getTreePath, token));
+        List<Long> orgIds = subtree.stream().map(CoreOrg::getId).toList();
+        Long activeUsers = userMapper.selectCount(Wrappers.<AuthUser>lambdaQuery()
+                .in(AuthUser::getOrgId, orgIds)
+                .eq(AuthUser::getStatus, 1));
+        if (activeUsers != null && activeUsers > 0) {
+            throw new BizException("该机构（或其下级）下仍有 " + activeUsers
+                    + " 个启用账号，请先调岗或停用账号后再停用机构");
+        }
     }
 
     /**
