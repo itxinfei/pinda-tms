@@ -1,5 +1,6 @@
 package com.itheima.pinda.controller;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.itheima.pinda.DTO.OrderCancelDTO;
 import com.itheima.pinda.DTO.OrderDTO;
 import com.itheima.pinda.DTO.OrderLocationDto;
@@ -61,6 +62,7 @@ public class OrderController {
 
     @Operation(summary = "获取订单分页数据")
     @PostMapping("/page")
+    @SaCheckPermission("order:list")
     public PageResponse<OrderVo> findByPage(@RequestBody OrderVo vo) {
         PageResponse<OrderDTO> orderPage = orderFeign.findByPage(BeanUtil.parseOrderVo2DTO(vo));
         //加工数据
@@ -72,6 +74,7 @@ public class OrderController {
 
     @Operation(summary = "获取订单详情")
     @GetMapping("/{id}")
+    @SaCheckPermission("order:detail")
     public OrderVo findOrderById(@PathVariable(name = "id") String id) {
         // 远程查询可能返回 null，避免后续 NPE
         OrderDTO orderDTO = orderFeign.findById(id);
@@ -107,6 +110,7 @@ public class OrderController {
 
     @Operation(summary = "更新订单")
     @PostMapping("/{id}")
+    @SaCheckPermission("order:edit")
     public OrderVo updateOrder(@PathVariable(name = "id") String id, @RequestBody OrderVo vo) {
         OrderDTO dto = BeanUtil.parseOrderVo2DTO(vo);
         // 金额/支付状态已由通用更新端点屏蔽，改由专用端点管理（/{id}/pay 支付确认、/{id}/reprice 重算运费）。
@@ -141,6 +145,7 @@ public class OrderController {
      */
     @Operation(summary = "取消订单（原因持久化+取派件任务联动）")
     @PutMapping("/{id}/cancel")
+    @SaCheckPermission("order:cancel")
     public Map<String, Object> cancelOrder(@PathVariable(name = "id") String id, @RequestBody OrderCancelDTO cancelDTO) {
         // 主动作：订单本体取消。Result 是含 "code" 的 Map，GlobalResponseAdvice 会原样透传
         Result cancelResult = orderFeign.cancel(id, cancelDTO);
