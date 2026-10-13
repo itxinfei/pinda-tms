@@ -42,6 +42,8 @@
         <mybatis-plus.version>3.5.17</mybatis-plus.version>
         <!-- 算术/图形验证码（登录） -->
         <easy-captcha.version>1.6.2</easy-captcha.version>
+        <!-- Excel 导入导出（用户等管理端，SYS#4） -->
+        <easyexcel.version>3.3.4</easyexcel.version>
 
         <!-- ↓↓↓ 新栈第三方版本（Boot3 / jakarta） ↓↓↓ -->
         <!-- FastJSON2（替换 fastjson 1.2.x） -->
@@ -110,6 +112,13 @@
                 <groupId>cn.dev33</groupId>
                 <artifactId>sa-token-core</artifactId>
                 <version>${sa-token.version}</version>
+            </dependency>
+
+            <!-- EasyExcel：管理端 Excel 导入导出（SYS#4） -->
+            <dependency>
+                <groupId>com.alibaba</groupId>
+                <artifactId>easyexcel</artifactId>
+                <version>${easyexcel.version}</version>
             </dependency>
 
             <!-- MyBatis-Plus（Spring Boot 3 专用 starter） -->

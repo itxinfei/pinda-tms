@@ -2,15 +2,19 @@ package com.itheima.auth.controller.v1;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.stp.StpUtil;
+import com.alibaba.excel.EasyExcel;
 import com.itheima.auth.common.v1.ApiResult;
+import com.itheima.auth.common.v1.ExcelResult;
 import com.itheima.auth.common.v1.OptionVO;
 import com.itheima.auth.common.v1.PageResult;
+import com.itheima.auth.common.v1.UserExcelRow;
 import com.itheima.auth.common.v1.UserForm;
 import com.itheima.auth.common.v1.UserVO;
 import com.itheima.auth.config.StpInterfaceImpl;
 import com.itheima.auth.entity.AuthUser;
 import com.itheima.auth.mapper.AuthUserMapper;
 import com.itheima.auth.service.v1.UserService;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,7 +25,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -125,6 +133,39 @@ public class UserController {
     @SaCheckPermission("sys:user:list")
     public ApiResult<List<OptionVO>> options() {
         return ApiResult.success(List.of());
+    }
+
+    // ============ Excel 导入导出/模板（SYS#4）============
+
+    @GetMapping("/template")
+    @SaCheckPermission("sys:user:import")
+    public void template(HttpServletResponse response) throws IOException {
+        writeExcel(response, "用户导入模板", List.of());
+    }
+
+    @GetMapping("/export")
+    @SaCheckPermission("sys:user:export")
+    public void export(HttpServletResponse response,
+                       @RequestParam(value = "keywords", required = false) String keywords,
+                       @RequestParam(value = "status", required = false) Integer status,
+                       @RequestParam(value = "deptId", required = false) Long deptId) throws IOException {
+        writeExcel(response, "用户列表", userService.exportRows(keywords, status, deptId));
+    }
+
+    @PostMapping("/import")
+    @SaCheckPermission("sys:user:import")
+    public ApiResult<ExcelResult> importUsers(@RequestParam("file") MultipartFile file) throws IOException {
+        List<UserExcelRow> rows = EasyExcel.read(file.getInputStream())
+                .head(UserExcelRow.class).sheet().doReadSync();
+        return ApiResult.success(userService.importRows(rows));
+    }
+
+    private void writeExcel(HttpServletResponse response, String fileName, List<UserExcelRow> rows) throws IOException {
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setCharacterEncoding("utf-8");
+        String name = URLEncoder.encode(fileName, StandardCharsets.UTF_8).replaceAll("\\+", "%20");
+        response.setHeader("Content-disposition", "attachment;filename*=utf-8''" + name + ".xlsx");
+        EasyExcel.write(response.getOutputStream(), UserExcelRow.class).sheet("用户").doWrite(rows);
     }
 
     // ============ 个人中心（仅登录，不要求 sys:user 权限）============

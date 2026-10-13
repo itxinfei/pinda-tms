@@ -33,6 +33,13 @@ public class V1ExceptionHandler {
         return ApiResult.fail(e.getMessage());
     }
 
+    /** 用户导入存在无效行：返回结构化 ExcelResult（HTTP 200，前端按 invalidCount 提示） */
+    @ExceptionHandler(com.itheima.auth.service.v1.UserService.ImportRowsException.class)
+    public ApiResult<com.itheima.auth.common.v1.ExcelResult> handleImportRows(
+            com.itheima.auth.service.v1.UserService.ImportRowsException e) {
+        return ApiResult.success(e.getResult());
+    }
+
     /** @RequestBody @Valid 校验失败 */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ApiResult<Void> handleValid(MethodArgumentNotValidException e) {
