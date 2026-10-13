@@ -368,8 +368,20 @@ jobs:
           echo "::error::部署失败，已回滚：$rolled（复检 ok=$ok）——run 保持失败状态，发布未成功"
           exit 1
 
-      - name: 清理悬空镜像
+      - name: 清理旧镜像与构建缓存
+        # 构建产物不保留（代码在 git，可随时重构建）：
+        #   1. 悬空层直接清；
+        #   2. pinda/pd-* 应用镜像删除所有未被运行容器引用的 tag（当前版本、回滚基线自动受 docker ps 检查保护；
+        #      基础镜像 pinda/jre21-fontconfig 不匹配 pinda/pd-* 前缀，天然不受影响）；
+        #   3. 构建缓存全清——Maven 依赖缓存在 /data/m2 持久共享，不受影响，仅 docker 层重建略慢。
         if: always()
         run: |
-          # 只删无 tag 的悬空层（不带 -a），不影响在用镜像
           docker image prune -f
+          for img in $(docker images --format '{{.Repository}}:{{.Tag}}' \
+              --filter=reference='pinda/pd-*' | grep -v ":$TAG$" || true); do
+            if ! docker ps --format '{{.Image}}' | grep -qxF "$img"; then
+              echo ">> 清理未使用镜像 $img"
+              docker rmi "$img" 2>/dev/null || true
+            fi
+          done
+          docker builder prune -a -f

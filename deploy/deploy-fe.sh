@@ -57,8 +57,8 @@ deploy_one() {
     sleep 5
   done
   echo ">> [$sub] 健康状态: $(docker inspect -f '{{.State.Health.Status}}' "$img" 2>/dev/null)"
-  # 清理旧镜像：保留当前 tag + 上一个，更旧的删掉
-  OLD=$(docker images "pinda/$img" --format '{{.Tag}}' | grep -v "^$TAG$" | tail -n +3)
+  # 清理旧镜像：只保留当前 tag（代码在 git，旧构建产物无保留价值）
+  OLD=$(docker images "pinda/$img" --format '{{.Tag}}' | grep -v "^$TAG$")
   if [ -n "$OLD" ]; then
     echo "$OLD" | xargs -r -I{} docker rmi "pinda/$img:{}" 2>/dev/null || true
   fi
