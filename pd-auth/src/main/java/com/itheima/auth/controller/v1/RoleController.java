@@ -66,7 +66,7 @@ public class RoleController {
     }
 
     @PutMapping("/{id}/menus")
-    @SaCheckPermission("sys:role:edit")
+    @SaCheckPermission("sys:role:assign")
     public ApiResult<Void> updateMenus(@PathVariable Long id, @RequestBody List<Long> menuIds) {
         roleService.updateMenus(id, menuIds);
         return ApiResult.success();
@@ -80,13 +80,13 @@ public class RoleController {
     }
 
     @PostMapping
-    @SaCheckPermission("sys:role:add")
+    @SaCheckPermission("sys:role:create")
     public ApiResult<Long> create(@RequestBody RoleForm form) {
         return ApiResult.success(roleService.create(form));
     }
 
     @PutMapping("/{id}")
-    @SaCheckPermission("sys:role:edit")
+    @SaCheckPermission("sys:role:update")
     public ApiResult<Void> update(@PathVariable Long id, @RequestBody RoleForm form) {
         roleService.update(id, form);
         return ApiResult.success();

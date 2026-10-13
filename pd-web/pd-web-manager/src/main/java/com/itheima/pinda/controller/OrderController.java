@@ -110,7 +110,7 @@ public class OrderController {
 
     @Operation(summary = "更新订单")
     @PostMapping("/{id}")
-    @SaCheckPermission("order:edit")
+    @SaCheckPermission("order:update")
     public OrderVo updateOrder(@PathVariable(name = "id") String id, @RequestBody OrderVo vo) {
         OrderDTO dto = BeanUtil.parseOrderVo2DTO(vo);
         // 金额/支付状态已由通用更新端点屏蔽，改由专用端点管理（/{id}/pay 支付确认、/{id}/reprice 重算运费）。

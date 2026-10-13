@@ -85,13 +85,13 @@ public class MenuController {
     }
 
     @PostMapping
-    @SaCheckPermission("sys:menu:add")
+    @SaCheckPermission("sys:menu:create")
     public ApiResult<Long> create(@RequestBody MenuForm form) {
         return ApiResult.success(menuService.saveForm(form));
     }
 
     @PutMapping("/{id}")
-    @SaCheckPermission("sys:menu:edit")
+    @SaCheckPermission("sys:menu:update")
     public ApiResult<Void> update(@PathVariable Long id, @RequestBody MenuForm form) {
         form.setId(String.valueOf(id));
         menuService.updateForm(form);

@@ -88,13 +88,13 @@ public class UserController {
     }
 
     @PostMapping
-    @SaCheckPermission("sys:user:add")
+    @SaCheckPermission("sys:user:create")
     public ApiResult<Long> create(@RequestBody UserForm form) {
         return ApiResult.success(userService.create(form));
     }
 
     @PutMapping("/{id}")
-    @SaCheckPermission("sys:user:edit")
+    @SaCheckPermission("sys:user:update")
     public ApiResult<Void> update(@PathVariable Long id, @RequestBody UserForm form) {
         userService.update(id, form);
         return ApiResult.success();
@@ -102,7 +102,7 @@ public class UserController {
 
     /** 重置密码（body: {password}；空则默认 123456） */
     @PutMapping("/{id}/password/reset")
-    @SaCheckPermission("sys:user:resetPwd")
+    @SaCheckPermission("sys:user:reset")
     public ApiResult<Void> resetPassword(@PathVariable Long id, @RequestBody(required = false) Map<String, String> body) {
         String pwd = body == null ? null : body.get("password");
         userService.resetPassword(id, pwd);
@@ -111,7 +111,7 @@ public class UserController {
 
     /** 启停（前端开关） */
     @PutMapping("/{id}/status")
-    @SaCheckPermission("sys:user:edit")
+    @SaCheckPermission("sys:user:update")
     public ApiResult<Void> changeStatus(@PathVariable Long id, @RequestParam Integer status) {
         userService.changeStatus(id, status);
         return ApiResult.success();
