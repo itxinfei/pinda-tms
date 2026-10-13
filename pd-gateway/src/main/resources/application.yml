@@ -42,6 +42,15 @@ spring:
             - Path=/api/auth/**
           filters:
             - StripPrefix=2
+        # 系统管理（youlai 契约）：/api/v1/** -> pd-auth，去掉 /api/v1 两段前缀
+        # （/api/v1/users -> /users；/api/v1/menus/routes -> /menus/routes）。
+        # 同样过网关登录态校验并由网关注入 Same-Token；pd-auth 侧放 controller.v1 包。
+        - id: pd-auth-v1
+          uri: lb://pd-auth
+          predicates:
+            - Path=/api/v1/**
+          filters:
+            - StripPrefix=2
         # 管理端 BFF：/api/manager/** -> pd-web-manager，去掉 /api/manager 两段前缀
         - id: pd-web-manager
           uri: lb://pd-web-manager

@@ -1,6 +1,8 @@
 package com.itheima.auth.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -57,9 +59,13 @@ public class AuthUser {
     /** 最后登录时间 */
     private LocalDateTime lastLoginTime;
 
+    @TableField(fill = FieldFill.INSERT)
     private Long createBy;
+    @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
+    @TableField(fill = FieldFill.INSERT_UPDATE)
     private Long updateBy;
+    @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
 
     /** 逻辑删除：0 未删 1 已删 */
