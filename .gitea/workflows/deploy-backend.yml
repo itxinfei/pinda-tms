@@ -28,7 +28,7 @@
 #   pd-web-manager(8161) pd-web-driver(8162) pd-web-courier(8163) pd-web-customer(8164)
 #   pd-gateway(8760)
 # ============================================
-name: deploy-backend
+name: "部署-后端微服务（手动·下拉选服务或全部）"
 
 on:
   workflow_dispatch:

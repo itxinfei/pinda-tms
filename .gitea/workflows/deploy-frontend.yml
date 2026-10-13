@@ -10,7 +10,7 @@
 #   - 构建上下文 = 本 job 的 clone（gitea master），非服务器 checkout
 #   - TAG=act-<短sha>-<时间戳>；compose 需 TAG 全文件可插值（${TAG:?}）
 # ============================================
-name: deploy-frontend
+name: "部署-前端H5（手动·下拉选端或全部）"
 
 on:
   workflow_dispatch:

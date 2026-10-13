@@ -15,7 +15,7 @@
 #        成功后把 HEAD 写入 /root/.m2/.pinda-baseline.revision（=宿主 /data/m2/ 同名文件）。
 # - concurrency：连续 push 只保留最新一轮，旧 run 自动取消，配合 runner capacity=1 不排队空转。
 # ============================================
-name: build-check
+name: "CI-后端编译与测试门禁（push自动）"
 
 on:
   push:

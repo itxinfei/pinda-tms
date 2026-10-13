@@ -15,7 +15,7 @@
 #   ① pd-admin-ui-vue3：pnpm build（= vue-tsc --noEmit && vite build，含类型检查）
 #   ② pd-mobile 三端：pnpm build:driver / build:courier / build:customer（= uni build，H5）
 # ============================================
-name: build-check-fe
+name: "CI-前端编译门禁（改动前端时push自动）"
 
 on:
   push:
