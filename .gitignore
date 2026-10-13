@@ -136,3 +136,6 @@ _tc*_patch.sql
 # 本地构建日志
 mvn_build*
 
+
+# SQL 脚本统一放仓库根 /sql/，本人维护、不进 git（避免 DB 门禁反复触发）
+/sql/

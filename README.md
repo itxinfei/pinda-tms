@@ -47,7 +47,7 @@
 > **品达 TMS** 是一款**四端协同**（管理端 + 客户端 + 快递员端 + 司机端）的开源运输管理系统，基于 **JDK 21 + Spring Boot 3.5.7 + Vue 3.5** 构建，覆盖寄件 → 订单 → 智能调度 → 作业 → 轨迹 → 回单全链路。Drools 规则引擎驱动智能调度，Netty 自建轨迹接入，Sa-Token 多租户 SaaS 就绪——覆盖订单管理、配载作业、调度分配、行车管理、GPS 车辆定位、数据报表全流程，让运输运作效率与成本管控一步到位。
 
 <p align="center">
-<b><a href="#sec-tech"><code>13</code></a></b> 个微服务 · <b><code>4</code></b> 端协同 · <b><a href="docs/需求文档/01-业务需求全景.md"><code>101</code></a></b> 条功能需求 · <b><a href="docs/sql"><code>54</code></a></b> 张数据表 · <b><a href="docs/01-技术栈说明.md"><code>27</code></a></b> 项技术栈 · 全链路业务闭环
+<b><a href="#sec-tech"><code>13</code></a></b> 个微服务 · <b><code>4</code></b> 端协同 · <b><a href="docs/需求文档/01-业务需求全景.md"><code>101</code></a></b> 条功能需求 · <b><a href="sql/README.md"><code>54</code></a></b> 张数据表 · <b><a href="docs/01-技术栈说明.md"><code>27</code></a></b> 项技术栈 · 全链路业务闭环
 </p>
 
 <p align="center">
@@ -55,6 +55,8 @@
 </p>
 
 ---
+
+> 🗄️ **SQL 脚本位置约定（2026-10-13）**：所有建库 / 迁移 / 种子 / 补丁 SQL **统一放在仓库根 `sql/` 目录**，并按业务域分 `auth/ base/ oms/ dispatch/ work/ member/ iot/ settlement/ seed/ infra/ patch/` 子目录；**该目录不进 git（已写入 `.gitignore`，由本人手动维护）**。禁止在 `docs/`、`codeback/` 或仓库其它位置新增被 git 跟踪的 `.sql` 文件——否则会触发 CI 的 **DB 门禁**（diff 含 `*.sql` 须 `db_approved=true` 人工放行）。新增上线迁移请走 `.claude/skills/create-migration` 工作流，产出落到 `sql/<对应业务域>/`。详见 `sql/README.md`。
 
 ## 📑 目录
 
@@ -383,7 +385,8 @@ public class LocationServerHandler extends SimpleChannelInboundHandler<ByteBuf> 
 git clone https://gitee.com/itxinfei/pinda-tms.git
 cd pinda-tms
 docker-compose up -d        # 起中间件：MySQL / Redis / RabbitMQ / Nacos
-# ① 执行 docs/sql 建库脚本（pinda_tms 单库 + 种子数据）
+# ① 执行 sql/ 下的建库与种子脚本：权威 DDL = sql/infra/00_create_database.sql → 01_sys … 08_iot → 09_seed.sql，
+#    其余按业务域分目录；sql/ 不进 git，由本人手动维护（详见 sql/README.md）
 # ② 启动 pd-auth → pd-gateway → 业务微服务（mvn spring-boot:run 或部署脚本）
 # ③ 启动管理端（pnpm i && pnpm dev）与移动端（HBuilderX 运行 uni-app）
 ```

@@ -47,11 +47,13 @@
 > **Pinda TMS** is a **4-end synergistic** (Admin + Customer + Courier + Driver) open-source Transportation Management System built on **JDK 21 + Spring Boot 3.5.7 + Vue 3.5**, covering the full chain: booking → order → intelligent dispatch → operations → tracking → proof of delivery. Drools rule engine drives intelligent dispatch, Netty powers self-built GPS tracking ingestion, Sa-Token provides multi-tenant SaaS readiness — order management, load planning, dispatch, driving management, GPS vehicle tracking and data reporting, all in one system for operational efficiency and cost control.
 
 <p align="center">
-<b><a href="#sec-tech"><code>13</code></a></b> microservices · <b><code>4</code></b> apps · <b><a href="docs/需求文档/01-业务需求全景.md"><code>101</code></a></b> functional requirements · <b><a href="docs/sql"><code>54</code></a></b> database tables · <b><a href="docs/01-技术栈说明.md"><code>27</code></a></b> technologies · full business closed loop
+<b><a href="#sec-tech"><code>13</code></a></b> microservices · <b><code>4</code></b> apps · <b><a href="docs/需求文档/01-业务需求全景.md"><code>101</code></a></b> functional requirements · <b><a href="sql/README.md"><code>54</code></a></b> database tables · <b><a href="docs/01-技术栈说明.md"><code>27</code></a></b> technologies · full business closed loop
 </p>
 
 <p align="center">
 🔗 <b>Live demo</b>: <code>http://&lt;server-ip&gt;</code> (replace after deployment; public demo planned) ｜ Account <code>admin / 123456</code>
+
+> 🗄️ **SQL script location convention (2026-10-13)**: all DDL / migration / seed / patch SQL live in the repo-root **`sql/`** directory, organized by domain into `auth/ base/ oms/ dispatch/ work/ member/ iot/ settlement/ seed/ infra/ patch/`. **This directory is NOT tracked by git** (listed in `.gitignore`; maintained manually). Do not add git-tracked `.sql` files under `docs/`, `codeback/`, or elsewhere — doing so trips the CI **DB gate** (any `*.sql` diff requires `db_approved=true`). New online migrations go through `.claude/skills/create-migration`, output to `sql/<domain>/`. See `sql/README.md`.
 </p>
 
 ---
@@ -368,7 +370,8 @@ After the full refactor the system converges to a **single MySQL database** (`pi
 git clone https://gitee.com/itxinfei/pinda-tms.git
 cd pinda-tms
 docker-compose up -d        # start middleware: MySQL / Redis / RabbitMQ / Nacos
-# ① run docs/sql init scripts (pinda_tms single DB + seed data)
+# ① run the SQL under sql/: authoritative DDL = sql/infra/00_create_database.sql → 01_sys … 08_iot → 09_seed.sql,
+#    the rest organized by domain; sql/ is not tracked by git (maintained manually, see sql/README.md)
 # ② start pd-auth → pd-gateway → business microservices (mvn spring-boot:run or deploy scripts)
 # ③ start admin (pnpm i && pnpm dev) and mobile (run uni-app in HBuilderX)
 ```
