@@ -76,6 +76,7 @@
 - 禁止硬编码（cron/阈值/地图 Key/状态数字）；前端所有请求过 `src/utils/request` 拦截器。
 - **严禁跨模块写业务**：订单→pd-oms、调度→pd-dispatch、作业→pd-work、基础→pd-base、轨迹→pd-netty。
 - 仅 Vue3 专项内可改 `pd-admin-ui`；第三方库替换须经专项规范 §6 决策，禁"顺手"引第二个同类库 / 新中间件。
+- **🔴 SQL 一律放仓库根 `sql/<业务域>/`、不进 git（2026-10-13 定）**：建库/迁移/种子/补丁 `.sql` 都放 `sql/`（按 `auth/base/oms/dispatch/work/member/iot/settlement/seed/infra/patch` 分域，见 `sql/README.md`），已在 `.gitignore`、由本人手动维护。**禁止**在 `docs/`、`codeback/` 等处新增会被 git 跟踪的 `.sql`——会触发 CI **DB 门禁**（`deploy-backend.yml` 仅手动触发，diff 含 `*.sql` 须 `db_approved=true` 放行；把文件移出 git 会以"删除"形式**一次性触发**，须放行+部署成功后基线越过才永久干净）。新增上线迁移走 `.claude/skills/create-migration`（产出落 `sql/<域>/`）。
 
 ---
 
