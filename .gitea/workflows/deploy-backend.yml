@@ -62,7 +62,14 @@ jobs:
         run: |
           BEFORE="${{ github.event.before }}"
           if [ -z "$BEFORE" ] || echo "$BEFORE" | grep -qE '^0{40}$'; then
-            BEFORE=$(git rev-parse HEAD~1 2>/dev/null || true)
+            # 手动触发无 before：优先用「上次成功部署」基线，覆盖跨多提交累积的 SQL 变更
+            if [ -f /root/.m2/.pinda-deploy.revision ]; then
+              BEFORE=$(cat /root/.m2/.pinda-deploy.revision 2>/dev/null || true)
+            fi
+            # 基线缺失 / 不在浅克隆历史内，退回 HEAD~1（仅覆盖最近一次提交）
+            if [ -z "$BEFORE" ] || ! git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
+              BEFORE=$(git rev-parse HEAD~1 2>/dev/null || true)
+            fi
           fi
           SQL_CHANGES=""
           if [ -n "$BEFORE" ] && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
@@ -314,6 +321,12 @@ jobs:
           done
         timeout-minutes: 25
 
+      - name: 记录本次部署基线（供下次手动触发的 SQL 门禁跨提交 diff）
+        # 仅在全部服务健康后执行：失败/回滚时不刷新，保证基线始终指向"最后一次成功部署"
+        run: |
+          git rev-parse HEAD > /root/.m2/.pinda-deploy.revision
+          echo "部署基线已刷新: $(cat /root/.m2/.pinda-deploy.revision)"
+
       - name: 失败自动回滚到上一版本
         # 逆序回滚（先网关后业务），仅回滚有 PREV 基线的服务；首次部署无基线则跳过。
         if: failure()
@@ -335,8 +348,8 @@ jobs:
             done < <(tac /tmp/prev-tags)
           fi
           if [ -z "$rolled" ]; then
-            echo "::warning::无可回滚基线（首次部署），保持失败"
-            exit 0
+            echo "::error::部署失败且无可回滚基线（首次部署），需人工处理"
+            exit 1
           fi
           ok=0
           for i in $(seq 1 48); do
@@ -348,8 +361,8 @@ jobs:
             [ "$ok" = "1" ] && break
             sleep 5
           done
-          echo "::error::部署失败，已回滚：$rolled（复检 ok=$ok）"
-          exit 0
+          echo "::error::部署失败，已回滚：$rolled（复检 ok=$ok）——run 保持失败状态，发布未成功"
+          exit 1
 
       - name: 清理悬空镜像
         if: always()

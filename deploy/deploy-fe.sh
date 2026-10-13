@@ -23,7 +23,8 @@ else
 fi
 cd "$REPO"
 
-TAG="manual-$(date +%Y%m%d%H%M%S)"
+# TAG 绑定 commit SHA（可回溯构建来源），附时间戳区分同 commit 重复部署
+TAG="manual-$(git rev-parse --short HEAD)-$(date +%Y%m%d%H%M)"
 echo ">> 本次构建 TAG=$TAG"
 
 deploy_one() {
