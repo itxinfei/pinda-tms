@@ -8,30 +8,11 @@
 -- 幂等: 表不存在才建；菜单种子按固定 id 幂等 upsert（INSERT ... ON DUPLICATE KEY UPDATE）。
 -- 作者: Claude Code  日期: 2026-10-13
 
--- 1) 旧 sys_menu 若为旧结构（缺 type 列）先改名留底，再按新结构建表（不 DROP，保数据安全）。
---    用存储过程包裹条件 DDL（裸 PREPARE 在部分 mysql 客户端批处理下会中断后续语句）。
-DROP PROCEDURE IF EXISTS `p_sys_menu_legacy_rename`;
-DELIMITER $$
-CREATE PROCEDURE `p_sys_menu_legacy_rename`()
-BEGIN
-  DECLARE has_type INT DEFAULT 0;
-  DECLARE old_exists INT DEFAULT 0;
-  DECLARE legacy_exists INT DEFAULT 0;
-  SELECT COUNT(*) INTO has_type FROM information_schema.COLUMNS
-    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'sys_menu' AND COLUMN_NAME = 'type';
-  SELECT COUNT(*) INTO old_exists FROM information_schema.TABLES
-    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'sys_menu';
-  SELECT COUNT(*) INTO legacy_exists FROM information_schema.TABLES
-    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'sys_menu_legacy_20261013';
-  IF old_exists = 1 AND has_type = 0 AND legacy_exists = 0 THEN
-    SET @sql := 'RENAME TABLE `sys_menu` TO `sys_menu_legacy_20261013`';
-    PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
-  END IF;
-END$$
-DELIMITER ;
-CALL `p_sys_menu_legacy_rename`();
-DROP PROCEDURE IF EXISTS `p_sys_menu_legacy_rename`;
-
+-- 1) 建表（幂等）。
+--    注意：若库中存在【旧版 sys_menu】(pd_auth_menu 结构，无 type 列)，需先手工改名留底再执行本迁移：
+--      RENAME TABLE `sys_menu` TO `sys_menu_legacy_20261013`;
+--    本 dev 库已于 2026-10-13 完成该 rename（旧表为空、无代码引用）；全新部署无旧表可直接执行。
+--    不在迁移脚本里做条件 RENAME——存储过程/DELIMITER 在部分 CI 的 mysql < file 链路不稳定。
 CREATE TABLE IF NOT EXISTS `sys_menu` (
   `id`           BIGINT UNSIGNED NOT NULL COMMENT 'ID（种子用固定短ID；新增走雪花）',
   `parent_id`    BIGINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '父菜单ID，根为0',
