@@ -67,6 +67,11 @@ public class PayServiceImplTest {
         ReflectionTestUtils.setField(payService, "idGenerator", idGenerator);
         ReflectionTestUtils.setField(payService, "payChannels", channels);
         ReflectionTestUtils.setField(payService, "defaultChannel", PaymentOrder.CHANNEL_MOCK);
+        // 支付回调租户桥（tenant-bridge 改动引入）：无租户上下文的外部渠道回调按 pay_no 反查租户，
+        // 走 paymentOrderMapper.selectTenantIdByPayNo；此处补 mock，否则回调用例 NPE。
+        com.itheima.pinda.mapper.PaymentOrderMapper paymentOrderMapper = mock(com.itheima.pinda.mapper.PaymentOrderMapper.class);
+        when(paymentOrderMapper.selectTenantIdByPayNo(any())).thenReturn(1L);
+        ReflectionTestUtils.setField(payService, "paymentOrderMapper", paymentOrderMapper);
     }
 
     private PaymentOrder pendingOrder() {

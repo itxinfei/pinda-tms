@@ -44,3 +44,12 @@ jobs:
           git rev-parse HEAD > /root/.m2/.pinda-baseline.revision
           echo "m2 基线已刷新: $(cat /root/.m2/.pinda-baseline.revision)"
         timeout-minutes: 25
+
+      - name: Maven 测试门禁（ArchUnit 架构红线 + 各模块单测）
+        # 曾经的盲区：push 只编译零测试。此步把《12》§8 横切红线（ArchUnit，如 pd-dispatch
+        # ModuleArchitectureTest）与各模块单测接入 CI；install 已装好内部 SNAPSHOT，test 复用、无需 -am。
+        run: |
+          set -e
+          ls -ld /root/.m2 || { echo "::error::/root/.m2 未挂载，检查 act_runner container.options"; exit 1; }
+          mvn -B test -s /ci/maven-settings.xml
+        timeout-minutes: 15
