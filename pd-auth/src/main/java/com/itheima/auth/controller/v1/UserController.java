@@ -1,11 +1,15 @@
 package com.itheima.auth.controller.v1;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
+import cn.dev33.satoken.stp.StpUtil;
 import com.itheima.auth.common.v1.ApiResult;
 import com.itheima.auth.common.v1.OptionVO;
 import com.itheima.auth.common.v1.PageResult;
 import com.itheima.auth.common.v1.UserForm;
 import com.itheima.auth.common.v1.UserVO;
+import com.itheima.auth.config.StpInterfaceImpl;
+import com.itheima.auth.entity.AuthUser;
+import com.itheima.auth.mapper.AuthUserMapper;
 import com.itheima.auth.service.v1.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -19,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,6 +37,29 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
+    private final StpInterfaceImpl stpInterface;
+    private final AuthUserMapper userMapper;
+
+    /**
+     * 当前登录用户信息（前端守卫/按钮权限数据源）。仅需登录，不要求 sys:user 权限。
+     * 返回 {userId,username,nickname,avatar,canSwitchTenant,roles,perms}。
+     */
+    @GetMapping("/me")
+    public ApiResult<Map<String, Object>> me() {
+        Long userId = StpUtil.getLoginIdAsLong();
+        AuthUser u = userMapper.selectById(userId);
+        Map<String, Object> data = new HashMap<>();
+        data.put("userId", String.valueOf(userId));
+        if (u != null) {
+            data.put("username", u.getAccount());
+            data.put("nickname", u.getName());
+            data.put("avatar", u.getAvatar());
+        }
+        data.put("canSwitchTenant", false);
+        data.put("roles", stpInterface.getRoleList(userId, null));
+        data.put("perms", stpInterface.getPermissionList(userId, null));
+        return ApiResult.success(data);
+    }
 
     /** 分页（pageNum/pageSize/keywords/status/deptId），返回 {list,total} */
     @GetMapping
