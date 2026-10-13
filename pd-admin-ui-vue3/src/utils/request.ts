@@ -2,6 +2,7 @@ import axios, { type InternalAxiosRequestConfig, type AxiosResponse } from "axio
 import qs from "qs";
 
 import { ApiCodeEnum } from "@/enums/api";
+import { appConfig } from "@/settings";
 import { usePermissionStoreHook } from "@/stores/permission";
 import { AuthStorage } from "@/utils/auth";
 import type { ApiResult } from "@/api/common";
@@ -74,10 +75,12 @@ http.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // 权限不足：刷新权限后再提示
+    // 权限不足：D-42 权限下发未落地前无真实用户信息端点可刷新，跳过（避免再发必 404 请求）
     if (code === ApiCodeEnum.PERMISSION_DENIED) {
-      const permissionStore = usePermissionStoreHook();
-      await permissionStore.refreshPermissions();
+      if (appConfig.userInfoEndpointEnabled) {
+        const permissionStore = usePermissionStoreHook();
+        await permissionStore.refreshPermissions();
+      }
       ElMessage.error(msg || "权限不足");
       return Promise.reject(new Error(msg || "权限不足"));
     }

@@ -85,6 +85,12 @@ export const appConfig = {
   // 功能开关（缺省均关闭，需要时在 .env 中显式开启）
   tenantEnabled: envBool(env.VITE_TENANT_ENABLED, false),
   aiEnabled: envBool(env.VITE_AI_ENABLED, false),
+
+  // D-42 用户信息端点（/api/v1/users/me）是否已落地。
+  // 后端尚无该端点时保持 false：守卫不再发"必 404"的请求，直接用临时 mock 身份
+  // （roles=[ADMIN]/perms=[*]），消除每次刷新控制台的 404 红字。
+  // 待 pd-auth 提供真实用户信息端点后置 true（通常与 D-42 动态菜单一起放开）。
+  userInfoEndpointEnabled: false,
 } as const;
 
 export const defaults = {

@@ -1,9 +1,21 @@
 import type { RouteRecordRaw } from "vue-router";
 import NProgress from "@/plugins/nprogress";
 import router from "@/router";
+import { appConfig } from "@/settings";
 import { usePermissionStore, useUserStore } from "@/stores";
 import { useTenantStoreHook } from "@/stores/tenant";
 import { isTenantEnabled } from "@/utils/tenant";
+
+/**
+ * D-42 落地前的临时登录身份（管理员全权限）。
+ * 后端真实用户信息端点上线（appConfig.userInfoEndpointEnabled=true）后不再使用。
+ */
+const FALLBACK_USER_INFO = {
+  nickname: "pinda",
+  avatar: "",
+  roles: ["ADMIN"],
+  perms: ["*"],
+};
 
 /**
  * 路由守卫
@@ -43,19 +55,20 @@ export function setupPermissionGuard() {
       // 用户信息（按钮权限 v-hasPerm 与昵称头像的数据源）
       // 必须独立于动态路由开关：permission store 的 isRouteGenerated 初值即 true（临时走静态路由），
       // 放在它下面会导致 getUserInfo 永不调用、userInfo 恒为空、全站 v-hasPerm 按钮被摘除。
-      // D-42（菜单/权限下发）未落地前后端无 /api/v1/users/me 端点，请求必然 404：
-      // 失败时降级回临时 mock（afb68fc 之前的定案），绝不能重置会话——否则登录后立即被弹回登录页形成死循环。
+      // D-42（用户信息/菜单权限下发）未落地前后端无 /api/v1/users/me 端点：
+      // 开关关闭时直接使用临时身份，不发"必 404"的请求（消除每次刷新的 404 红字）；
+      // 绝不能因此重置会话——否则登录后立即被弹回登录页形成死循环。
       if (!userStore.userInfo?.roles?.length) {
-        try {
-          await userStore.getUserInfo();
-        } catch {
-          console.warn("[guard] 用户信息端点暂不可用（D-42 未落地），降级使用临时 mock 用户身份");
-          userStore.userInfo = {
-            nickname: "pinda",
-            avatar: "",
-            roles: ["ADMIN"],
-            perms: ["*"],
-          } as any;
+        if (appConfig.userInfoEndpointEnabled) {
+          try {
+            await userStore.getUserInfo();
+          } catch {
+            console.warn("[guard] 用户信息端点不可用，降级使用临时 mock 用户身份");
+            userStore.userInfo = { ...FALLBACK_USER_INFO } as any;
+          }
+        } else {
+          // D-42 未落地：直接用临时管理员身份，无网络请求
+          userStore.userInfo = { ...FALLBACK_USER_INFO } as any;
         }
       }
 
