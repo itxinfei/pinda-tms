@@ -62,6 +62,8 @@ deploy_one() {
   if [ -n "$OLD" ]; then
     echo "$OLD" | xargs -r -I{} docker rmi "pinda/$img:{}" 2>/dev/null || true
   fi
+  # 控制前端构建缓存累积（保留 5g 近期缓存兼顾构建速度；后端流水线尾部另有全量清理）
+  docker builder prune -f --keep-storage 5g >/dev/null 2>&1 || true
 }
 
 case "$APP" in
