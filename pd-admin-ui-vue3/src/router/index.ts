@@ -221,32 +221,35 @@ export const constantRoutes: RouteRecordRaw[] = [
     path: "/system",
     name: "System",
     component: Layout,
-    redirect: "/user",
+    // 首个可见子页是组织架构（用户/角色等 RBAC 页后端未就绪，已 hidden）
+    redirect: "/org",
     meta: { title: "系统管理", icon: "el-icon-Setting" },
     children: [
+      // —— 以下 RBAC/系统页后端尚未提供（新 pd-auth 无对应 CRUD，/api/v1 为模板残留 404）。
+      // 路由与页面文件保留（《59》预置技术栈不删），暂 hidden 不入菜单，待后端落地后放开。 ——
       {
         path: "/user",
         name: "User",
         component: () => import("@/views/system/user/index.vue"),
-        meta: { title: "用户管理", icon: "el-icon-User", keepAlive: true },
+        meta: { title: "用户管理", icon: "el-icon-User", keepAlive: true, hidden: true },
       },
       {
         path: "/role",
         name: "Role",
         component: () => import("@/views/system/role/index.vue"),
-        meta: { title: "角色管理", icon: "el-icon-Stamp", keepAlive: true },
+        meta: { title: "角色管理", icon: "el-icon-Stamp", keepAlive: true, hidden: true },
       },
       {
         path: "/menu",
         name: "Menu",
         component: () => import("@/views/system/menu/index.vue"),
-        meta: { title: "菜单管理", icon: "el-icon-Menu", keepAlive: true },
+        meta: { title: "菜单管理", icon: "el-icon-Menu", keepAlive: true, hidden: true },
       },
       {
         path: "/dept",
         name: "Dept",
         component: () => import("@/views/system/dept/index.vue"),
-        meta: { title: "部门管理", icon: "el-icon-Grid", keepAlive: true },
+        meta: { title: "部门管理", icon: "el-icon-Grid", keepAlive: true, hidden: true },
       },
       {
         path: "/org",
@@ -264,7 +267,7 @@ export const constantRoutes: RouteRecordRaw[] = [
         path: "/dict",
         name: "Dict",
         component: () => import("@/views/system/dict/index.vue"),
-        meta: { title: "字典管理", icon: "el-icon-Notebook", keepAlive: true },
+        meta: { title: "字典管理", icon: "el-icon-Notebook", keepAlive: true, hidden: true },
       },
       {
         path: "/config",
@@ -276,19 +279,19 @@ export const constantRoutes: RouteRecordRaw[] = [
         path: "/notice",
         name: "Notice",
         component: () => import("@/views/system/notice/index.vue"),
-        meta: { title: "消息通知", icon: "el-icon-Bell", keepAlive: true },
+        meta: { title: "消息通知", icon: "el-icon-Bell", keepAlive: true, hidden: true },
       },
       {
         path: "/log",
         name: "Log",
         component: () => import("@/views/system/log/index.vue"),
-        meta: { title: "操作日志", icon: "el-icon-DocumentCopy", keepAlive: true },
+        meta: { title: "操作日志", icon: "el-icon-DocumentCopy", keepAlive: true, hidden: true },
       },
       {
         path: "/tenant",
         name: "Tenant",
         component: () => import("@/views/system/tenant/index.vue"),
-        meta: { title: "租户管理", icon: "el-icon-Briefcase", keepAlive: true },
+        meta: { title: "租户管理", icon: "el-icon-Briefcase", keepAlive: true, hidden: true },
       },
       {
         path: "/area",
