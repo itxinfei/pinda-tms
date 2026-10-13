@@ -1,0 +1,63 @@
+# ============================================================
+# 品达TMS 前端 push 编译门禁（Gitea Actions）
+#
+# 触发：push 到 master 且改动触及前端目录（pd-admin-ui-vue3 / pd-mobile），
+#       或手动 Run workflow。
+# 目的：补上"前端无 CI"短板——push 即校验管理端 + 移动三端能否 type-check/build，
+#       不再只靠手动 deploy-fe.sh 才发现构建坏。
+# 与 build-check.yml（后端 mvn 编译门禁）并行、互不依赖。
+#
+# 运行环境：node:20-bookworm 容器（admin engines 要求 node ^20.19.0 || >=22.12.0）。
+#   - git clone 内网 Gitea：依赖 act_runner 的 container.options（与后端 job 同款网络/挂载）。
+#   - 依赖源用阿里 npmmirror（与 maven-settings 的 aliyun 源一致）；若内网有专属 npm 镜像，改下一处 registry。
+#
+# 校验内容：
+#   ① pd-admin-ui-vue3：pnpm build（= vue-tsc --noEmit && vite build，含类型检查）
+#   ② pd-mobile 三端：pnpm build:driver / build:courier / build:customer（= uni build，H5）
+# ============================================
+name: build-check-fe
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'pd-admin-ui-vue3/**'
+      - 'pd-mobile/**'
+      - '.gitea/workflows/build-check-fe.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: build-check-fe-master
+  cancel-in-progress: true
+
+jobs:
+  fe-compile:
+    runs-on: ubuntu-latest
+    container: node:20-bookworm
+    steps:
+      - name: 检出代码（内网 Gitea，不用 actions/checkout 以避免外网）
+        run: |
+          rm -rf ./* ./.??*
+          git clone --depth 50 -b "${GITHUB_REF_NAME:-master}" \
+            "http://192.168.20.130:3000/pinda/pinda-tms.git" .
+
+      - name: 安装 pnpm 并配置依赖源（阿里 npmmirror）
+        run: |
+          npm i -g pnpm@9
+          pnpm config set registry https://registry.npmmirror.com
+          node -v && pnpm -v
+
+      - name: 管理端 pd-admin-ui-vue3 type-check + build
+        run: |
+          cd pd-admin-ui-vue3
+          pnpm install
+          pnpm run type-check
+          pnpm run build
+
+      - name: 移动三端 pd-mobile build:h5
+        run: |
+          cd pd-mobile
+          pnpm install
+          pnpm run build:driver
+          pnpm run build:courier
+          pnpm run build:customer

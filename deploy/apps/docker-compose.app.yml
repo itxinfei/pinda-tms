@@ -240,7 +240,7 @@ services:
   # ---------- 网关与鉴权（profile=test） ----------
   pd-gateway:
     <<: *app-edge
-    image: pinda/pd-gateway:${PD_GATEWAY_TAG:-${TAG:-latest}}
+    image: pinda/pd-gateway:${PD_GATEWAY_TAG:-${TAG:?TAG_not_set}}
     container_name: pd-gateway
     restart: unless-stopped
     ports: ["8760:8760"]
@@ -266,7 +266,7 @@ services:
 
   pd-auth:
     <<: *app-edge
-    image: pinda/pd-auth:${PD_AUTH_TAG:-${TAG:-latest}}
+    image: pinda/pd-auth:${PD_AUTH_TAG:-${TAG:?TAG_not_set}}
     container_name: pd-auth
     restart: unless-stopped
     ports: ["9000:9000"]
@@ -294,7 +294,7 @@ services:
   # ---------- 基础微服务 ----------
   pd-base:
     <<: *app-core
-    image: pinda/pd-base:${PD_BASE_TAG:-${TAG:-latest}}
+    image: pinda/pd-base:${PD_BASE_TAG:-${TAG:?TAG_not_set}}
     container_name: pd-base
     restart: unless-stopped
     ports: ["8185:8185"]
@@ -306,7 +306,7 @@ services:
 
   pd-oms:
     <<: *app-core
-    image: pinda/pd-oms:${PD_OMS_TAG:-${TAG:-latest}}
+    image: pinda/pd-oms:${PD_OMS_TAG:-${TAG:?TAG_not_set}}
     container_name: pd-oms
     restart: unless-stopped
     ports: ["8186:8186"]
@@ -322,7 +322,7 @@ services:
 
   pd-work:
     <<: *app-core
-    image: pinda/pd-work:${PD_WORK_TAG:-${TAG:-latest}}
+    image: pinda/pd-work:${PD_WORK_TAG:-${TAG:?TAG_not_set}}
     container_name: pd-work
     restart: unless-stopped
     ports: ["8187:8187"]
@@ -334,7 +334,7 @@ services:
 
   pd-user:
     <<: *app-core
-    image: pinda/pd-user:${PD_USER_TAG:-${TAG:-latest}}
+    image: pinda/pd-user:${PD_USER_TAG:-${TAG:?TAG_not_set}}
     container_name: pd-user
     restart: unless-stopped
     ports: ["8189:8189"]
@@ -346,7 +346,7 @@ services:
 
   pd-dispatch:
     <<: *app-core
-    image: pinda/pd-dispatch:${PD_DISPATCH_TAG:-${TAG:-latest}}
+    image: pinda/pd-dispatch:${PD_DISPATCH_TAG:-${TAG:?TAG_not_set}}
     container_name: pd-dispatch
     restart: unless-stopped
     # 9999 = XXL-Job 执行器回调端口：xxl-job-admin 位于默认 bridge 网（172.17.x），
@@ -368,7 +368,7 @@ services:
 
   pd-aggregation:
     <<: *app-core
-    image: pinda/pd-aggregation:${PD_AGGREGATION_TAG:-${TAG:-latest}}
+    image: pinda/pd-aggregation:${PD_AGGREGATION_TAG:-${TAG:?TAG_not_set}}
     container_name: pd-aggregation
     restart: unless-stopped
     ports: ["8191:8191"]
@@ -383,7 +383,7 @@ services:
   # netty 承载长连接与直接内存，按 core 档给足堆外额度
   pd-netty:
     <<: *app-edge
-    image: pinda/pd-netty:${PD_NETTY_TAG:-${TAG:-latest}}
+    image: pinda/pd-netty:${PD_NETTY_TAG:-${TAG:?TAG_not_set}}
     container_name: pd-netty
     restart: unless-stopped
     ports: ["8192:8192"]
@@ -399,7 +399,7 @@ services:
   # ---------- Web 聚合层 ----------
   pd-web-manager:
     <<: *app-small
-    image: pinda/pd-web-manager:${PD_WEB_MANAGER_TAG:-${TAG:-latest}}
+    image: pinda/pd-web-manager:${PD_WEB_MANAGER_TAG:-${TAG:?TAG_not_set}}
     container_name: pd-web-manager
     restart: unless-stopped
     ports: ["8161:8161"]
@@ -411,7 +411,7 @@ services:
 
   pd-web-driver:
     <<: *app-small
-    image: pinda/pd-web-driver:${PD_WEB_DRIVER_TAG:-${TAG:-latest}}
+    image: pinda/pd-web-driver:${PD_WEB_DRIVER_TAG:-${TAG:?TAG_not_set}}
     container_name: pd-web-driver
     restart: unless-stopped
     ports: ["8162:8162"]
@@ -423,7 +423,7 @@ services:
 
   pd-web-courier:
     <<: *app-small
-    image: pinda/pd-web-courier:${PD_WEB_COURIER_TAG:-${TAG:-latest}}
+    image: pinda/pd-web-courier:${PD_WEB_COURIER_TAG:-${TAG:?TAG_not_set}}
     container_name: pd-web-courier
     restart: unless-stopped
     ports: ["8163:8163"]
@@ -435,7 +435,7 @@ services:
 
   pd-web-customer:
     <<: *app-small
-    image: pinda/pd-web-customer:${PD_WEB_CUSTOMER_TAG:-${TAG:-latest}}
+    image: pinda/pd-web-customer:${PD_WEB_CUSTOMER_TAG:-${TAG:?TAG_not_set}}
     container_name: pd-web-customer
     restart: unless-stopped
     ports: ["8164:8164"]
@@ -466,7 +466,7 @@ services:
   # 端口 8081：老后台曾占用 8080，下线后不沿用，避免与历史书签/监控混淆。
   pd-admin-h5:
     <<: *app-static
-    image: pinda/pd-admin-h5:${PD_ADMIN_H5_TAG:-${TAG:-latest}}
+    image: pinda/pd-admin-h5:${PD_ADMIN_H5_TAG:-${TAG:?TAG_not_set}}
     container_name: pd-admin-h5
     restart: unless-stopped
     ports: ["8081:80"]
@@ -486,7 +486,7 @@ services:
   # 只有 H5 产物走 nginx 托管；微信小程序与 App 打包产物不走这里。
   pd-driver-h5:
     <<: *app-static
-    image: pinda/pd-driver-h5:${PD_DRIVER_H5_TAG:-${TAG:-latest}}
+    image: pinda/pd-driver-h5:${PD_DRIVER_H5_TAG:-${TAG:?TAG_not_set}}
     container_name: pd-driver-h5
     restart: unless-stopped
     ports: ["8082:80"]
@@ -504,7 +504,7 @@ services:
   #     --build-arg APP_NAME=pd-mobile-courier -t pinda/pd-courier-h5:<tag> .
   pd-courier-h5:
     <<: *app-static
-    image: pinda/pd-courier-h5:${PD_COURIER_H5_TAG:-${TAG:-latest}}
+    image: pinda/pd-courier-h5:${PD_COURIER_H5_TAG:-${TAG:?TAG_not_set}}
     container_name: pd-courier-h5
     restart: unless-stopped
     ports: ["8083:80"]
@@ -522,7 +522,7 @@ services:
   #     --build-arg APP_NAME=pd-mobile-customer -t pinda/pd-customer-h5:<tag> .
   pd-customer-h5:
     <<: *app-static
-    image: pinda/pd-customer-h5:${PD_CUSTOMER_H5_TAG:-${TAG:-latest}}
+    image: pinda/pd-customer-h5:${PD_CUSTOMER_H5_TAG:-${TAG:?TAG_not_set}}
     container_name: pd-customer-h5
     restart: unless-stopped
     ports: ["8084:80"]

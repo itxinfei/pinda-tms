@@ -41,6 +41,10 @@ on:
         description: "DB 变更门禁放行（diff 含 *.sql 时须人工审核后置 true）"
         type: boolean
         default: false
+      check_only:
+        description: "仅过 DB 门禁并刷新部署基线，不构建/部署任何服务（用于 SQL 迁移/文档/gitignore 等纯仓库变更清门禁）"
+        type: boolean
+        default: false
       simulate_failure:
         description: "演练：首个服务健康后人为失败，验证失败自动回滚"
         type: boolean
@@ -114,6 +118,14 @@ jobs:
           } > /tmp/pinda-svc.sh
           source /tmp/pinda-svc.sh
 
+          # check_only：仅过 DB 门禁 + 刷部署基线，不构建/部署（纯仓库变更清门禁用）
+          if [ "${{ github.event.inputs.check_only }}" = "true" ]; then
+            echo "CHECK_ONLY=true：跳过服务解析/构建/部署，仅保留 DB 门禁与部署基线刷新"
+            echo "SERVICES=" >> "$GITHUB_ENV"
+            echo 'SERVICES=""' >> /tmp/pinda-svc.sh
+            exit 0
+          fi
+
           RAW="${{ github.event.inputs.services }}"
           # 必填：空值直接失败，杜绝"页面不填参数直接 Run 就误部署 auth/网关"
           if [ -z "$(echo "$RAW" | tr -d '[:space:]')" ]; then
@@ -170,6 +182,7 @@ jobs:
           echo "SERVICES=\"$SERVICES\"" >> /tmp/pinda-svc.sh
 
       - name: 记录回滚基线（各服务部署前镜像 TAG）
+        if: ${{ github.event.inputs.check_only != 'true' }}
         # 每行 "<服务> <旧tag>"；容器不存在则旧 tag 为空（首次部署，失败时跳过该服务回滚）
         run: |
           source /tmp/pinda-svc.sh
@@ -182,6 +195,7 @@ jobs:
           done
 
       - name: Maven 打包选中模块（m2 基线增量优先，异常自动回退 -am）
+        if: ${{ github.event.inputs.check_only != 'true' }}
         # 提速逻辑（与宿主 deploy-be.sh 同构）：
         #   1. 全量发布（all）：维持 -pl 全模块 -am clean package；
         #   2. 单/多服务：读 /root/.m2/.pinda-baseline.revision（build-check 每次 push 刷新；
@@ -270,6 +284,7 @@ jobs:
         timeout-minutes: 30
 
       - name: 准备镜像构建上下文（硬链接 fat jar，每目录只放一个 app.jar）
+        if: ${{ github.event.inputs.check_only != 'true' }}
         run: |
           set -e
           source /tmp/pinda-svc.sh
@@ -287,6 +302,7 @@ jobs:
           done
 
       - name: 构建服务镜像
+        if: ${{ github.event.inputs.check_only != 'true' }}
         run: |
           set -e
           for s in $SERVICES; do
@@ -296,6 +312,7 @@ jobs:
         timeout-minutes: 20
 
       - name: 按序部署并逐服务健康检查（网关最后切）
+        if: ${{ github.event.inputs.check_only != 'true' }}
         # PD_<SVC>_TAG 逐服务覆盖 compose 的 ${PD_<SVC>_TAG:-${TAG:-latest}}。
         # 健康检查走 docker.sock 的 docker inspect（job 容器独立网络，curl 宿主不可靠）。
         run: |
@@ -326,14 +343,15 @@ jobs:
         timeout-minutes: 25
 
       - name: 记录本次部署基线（供下次手动触发的 SQL 门禁跨提交 diff）
-        # 仅在全部服务健康后执行：失败/回滚时不刷新，保证基线始终指向"最后一次成功部署"
+        # 仅在全部服务健康后执行：失败/回滚时不刷新，保证基线始终指向"最后一次成功部署"。
+        # check_only 模式无部署，此处刷新 = 标记"SQL/仓库变更已人工审核、无需部署"，使门禁基线越过该提交。
         run: |
           git rev-parse HEAD > /root/.m2/.pinda-deploy.revision
           echo "部署基线已刷新: $(cat /root/.m2/.pinda-deploy.revision)"
 
       - name: 失败自动回滚到上一版本
         # 逆序回滚（先网关后业务），仅回滚有 PREV 基线的服务；首次部署无基线则跳过。
-        if: failure()
+        if: ${{ failure() && github.event.inputs.check_only != 'true' }}
         run: |
           rolled=""
           if [ -f /tmp/prev-tags ]; then
@@ -385,3 +403,17 @@ jobs:
             fi
           done
           docker builder prune -a -f
+
+      # ============================================================
+      # 【预留·暂未启用】部署结果通知（企业微信 / 邮件 / 通用 webhook）
+      #   用户暂无企微/邮件，先留坑。以后接入：取消下方注释，
+      #   并把 DEPLOY_NOTIFY_WEBHOOK 配到 /data/ci/apps.env（0600）或仓库 secret。
+      # - name: 部署结果通知（预留）
+      #   if: always()
+      #   run: |
+      #     WEBHOOK="${DEPLOY_NOTIFY_WEBHOOK:-}"
+      #     if [ -z "$WEBHOOK" ]; then echo "未配置 DEPLOY_NOTIFY_WEBHOOK，跳过通知"; exit 0; fi
+      #     ST="${{ job.status }}"
+      #     curl -sS -X POST "$WEBHOOK" -H 'Content-Type: application/json' \
+      #       -d "{\"msgtype\":\"text\",\"text\":{\"content\":\"[pinda-tms] deploy-backend $ST TAG=${TAG:-check_only} HEAD=$(git rev-parse --short HEAD)\"}}" || true
+      # ============================================================
