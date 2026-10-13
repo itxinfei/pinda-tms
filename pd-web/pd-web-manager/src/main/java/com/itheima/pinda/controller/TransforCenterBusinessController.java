@@ -1,5 +1,6 @@
 package com.itheima.pinda.controller;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.itheima.pinda.DTO.OrgDTO;
 import com.itheima.pinda.DTO.UserDTO;
 import com.itheima.pinda.DTO.transportline.TransportLineDto;
@@ -91,6 +92,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "添加车辆类型")
     @PostMapping("/truckType")
+    @SaCheckPermission("truckType:create")
     public TruckTypeVo saveTruckType(@RequestBody TruckTypeVo vo) {
         TruckTypeDto dto = new TruckTypeDto();
         BeanUtils.copyProperties(vo, dto);
@@ -104,6 +106,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "更新车辆类型")
     @PutMapping("/truckType/{id}")
+    @SaCheckPermission("truckType:update")
     public TruckTypeVo updateTruckType(@PathVariable(name = "id") String id, @RequestBody TruckTypeVo vo) {
         vo.setId(id);
         TruckTypeDto dto = new TruckTypeDto();
@@ -118,6 +121,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "获取车辆类型分页数据")
     @GetMapping("/truckType/page")
+    @SaCheckPermission("truckType:list")
     public PageResponse<TruckTypeVo> findTruckTypeByPage(@RequestParam(name = "page") Integer page, @RequestParam(name = "pageSize") Integer pageSize, @RequestParam(name = "name", required = false) String name, @RequestParam(name = "allowableLoad", required = false) BigDecimal allowableLoad, @RequestParam(name = "allowableVolume", required = false) BigDecimal allowableVolume, @RequestParam(name = "status", required = false) Integer status) {
         // 说明：当前按载重/体积精确匹配查询；如需上下区间浮动查询可在 service 层扩展 between 条件
         // status 不传时下游查全部（含停用），供档案页状态筛选
@@ -162,6 +166,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "获取车辆类型详情")
     @GetMapping("/truckType/{id}")
+    @SaCheckPermission("truckType:detail")
     public TruckTypeVo findTruckTypeById(@PathVariable(name = "id") String id) {
         TruckTypeDto dto = truckTypeFeign.fineById(id);
         TruckTypeVo vo = new TruckTypeVo();
@@ -186,6 +191,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "删除车辆类型")
     @DeleteMapping("/truckType/{id}")
+    @SaCheckPermission("truckType:delete")
     public Result deleteTruckType(@PathVariable(name = "id") String id) {
         // 说明：车辆类型关联校验（存在关联车辆/货物类型时禁止删除）已在 pd-base disable 侧实现
         truckTypeFeign.disable(id);
@@ -194,6 +200,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "启用车辆类型")
     @PutMapping("/truckType/{id}/enable")
+    @SaCheckPermission("truckType:update")
     public Result enableTruckType(@PathVariable(name = "id") String id) {
         // 停用为可逆软删，启用恢复其在档案与下拉中的可见性
         return truckTypeFeign.enable(id);
@@ -201,6 +208,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "添加货物类型")
     @PostMapping("/goodsType")
+    @SaCheckPermission("goodsType:create")
     public GoodsTypeVo saveGoodsType(@RequestBody GoodsTypeVo vo) {
         GoodsTypeDto dto = new GoodsTypeDto();
         BeanUtils.copyProperties(vo, dto);
@@ -212,6 +220,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "更新货物类型")
     @PutMapping("/goodsType/{id}")
+    @SaCheckPermission("goodsType:update")
     public GoodsTypeVo updateGoodsType(@PathVariable(name = "id") String id, @RequestBody GoodsTypeVo vo) {
         vo.setId(id);
         GoodsTypeDto dto = new GoodsTypeDto();
@@ -224,6 +233,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "获取货物类型分页数据")
     @GetMapping("/goodsType/page")
+    @SaCheckPermission("goodsType:list")
     public PageResponse<GoodsTypeVo> findGoodsTypeByPage(@RequestParam(name = "page") Integer page,
                                                          @RequestParam(name = "pageSize") Integer pageSize,
                                                          @RequestParam(name = "name", required = false) String name,
@@ -245,6 +255,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "获取货物类型详情")
     @GetMapping("/goodsType/{id}")
+    @SaCheckPermission("goodsType:detail")
     public GoodsTypeVo findGoodsTypeById(@PathVariable(name = "id") String id) {
         GoodsTypeDto dto = goodsTypeFeign.fineById(id);
         if (dto == null) {
@@ -257,6 +268,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "删除货物类型")
     @DeleteMapping("/goodsType/{id}")
+    @SaCheckPermission("goodsType:delete")
     public Result deleteGoodsType(@PathVariable(name = "id") String id) {
         // 下游 disable 带关联校验：已被车辆类型关联时返回 400，Result 直接透传给前端提示
         return goodsTypeFeign.disable(id);
@@ -264,6 +276,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "启用货物类型")
     @PutMapping("/goodsType/{id}/enable")
+    @SaCheckPermission("goodsType:update")
     public Result enableGoodsType(@PathVariable(name = "id") String id) {
         // 停用为可逆软删，启用恢复其在档案与下拉中的可见性
         return goodsTypeFeign.enable(id);
@@ -271,6 +284,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "添加线路类型")
     @PostMapping("/transportLineType")
+    @SaCheckPermission("transportLineType:create")
     public TransportLineTypeVo saveTransportLineType(@RequestBody TransportLineTypeVo vo) {
         TransportLineTypeDto dto = new TransportLineTypeDto();
         BeanUtils.copyProperties(vo, dto);
@@ -284,6 +298,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "更新线路类型")
     @PutMapping("/transportLineType/{id}")
+    @SaCheckPermission("transportLineType:update")
     public TransportLineTypeVo updateTransportLineType(@PathVariable(name = "id") String id, @RequestBody TransportLineTypeVo vo) {
         vo.setId(id);
         TransportLineTypeDto dto = new TransportLineTypeDto();
@@ -295,6 +310,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "获取线路类型分页数据")
     @GetMapping("/transportLineType/page")
+    @SaCheckPermission("transportLineType:list")
     public PageResponse<TransportLineTypeVo> findTransportLineTypeByPage(@RequestParam(name = "page") Integer page, @RequestParam(name = "pageSize") Integer pageSize, @RequestParam(name = "typeNumber", required = false) String typeNumber, @RequestParam(name = "name", required = false) String name, @RequestParam(name = "agencyType", required = false) Integer agencyType, @RequestParam(name = "status", required = false) Integer status) {
         // status 不传时下游查全部（含停用），供档案页状态筛选
         PageResponse<TransportLineTypeDto> transportLineTypeDtoPage = transportLineTypeFeign.findByPage(page, pageSize, typeNumber, name, agencyType, status);
@@ -342,6 +358,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "获取线路类型详情")
     @GetMapping("/transportLineType/{id}")
+    @SaCheckPermission("transportLineType:detail")
     public TransportLineTypeVo findTransportLineTypeById(@PathVariable(name = "id") String id) {
         TransportLineTypeDto dto = transportLineTypeFeign.fineById(id);
         TransportLineTypeVo vo = new TransportLineTypeVo();
@@ -369,6 +386,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "删除线路类型")
     @DeleteMapping("/transportLineType/{id}")
+    @SaCheckPermission("transportLineType:delete")
     public Result deleteTransportLineType(@PathVariable(name = "id") String id) {
         // 说明：线路类型关联校验（存在关联线路时禁止删除）已在 pd-base disable 侧实现
         transportLineTypeFeign.disable(id);
@@ -377,6 +395,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "启用线路类型")
     @PutMapping("/transportLineType/{id}/enable")
+    @SaCheckPermission("transportLineType:update")
     public Result enableTransportLineType(@PathVariable(name = "id") String id) {
         // 停用为可逆软删，启用恢复其在档案与下拉中的可见性
         return transportLineTypeFeign.enable(id);
@@ -384,6 +403,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "添加车队")
     @PostMapping("/fleet")
+    @SaCheckPermission("fleet:create")
     public FleetVo saveFleet(@RequestBody FleetVo vo) {
         FleetDto dto = new FleetDto();
         BeanUtils.copyProperties(vo, dto);
@@ -412,6 +432,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "更新车队信息")
     @PutMapping("/fleet/{id}")
+    @SaCheckPermission("fleet:update")
     public FleetVo updateFleet(@PathVariable(name = "id") String id, @RequestBody FleetVo vo) {
         vo.setId(id);
         FleetDto dto = new FleetDto();
@@ -441,6 +462,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "获取车队分页数据")
     @GetMapping("/fleet/page")
+    @SaCheckPermission("fleet:list")
     public PageResponse<FleetVo> findFleetByPage(@RequestParam(name = "page") Integer page, @RequestParam(name = "pageSize") Integer pageSize, @RequestParam(name = "name", required = false) String name, @RequestParam(name = "manager", required = false) String manager, @RequestParam(name = "fleetNumber", required = false) String fleetNumber, @RequestParam(name = "status", required = false) Integer status) {
         // status 不传时下游查全部（含停用），供档案页状态筛选
         PageResponse<FleetDto> fleetDtoPage = fleetFeign.findByPage(page, pageSize, name, fleetNumber, manager, status);
@@ -491,6 +513,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "获取车队详情")
     @GetMapping("/fleet/{id}")
+    @SaCheckPermission("fleet:detail")
     public FleetVo findFleetById(@PathVariable(name = "id") String id) {
         FleetDto dto = fleetFeign.fineById(id);
         FleetVo vo = new FleetVo();
@@ -518,6 +541,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "删除车队")
     @DeleteMapping("/fleet/{id}")
+    @SaCheckPermission("fleet:delete")
     public Result deleteFleet(@PathVariable(name = "id") String id) {
         fleetFeign.disable(id);
         return Result.ok();
@@ -525,6 +549,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "启用车队")
     @PutMapping("/fleet/{id}/enable")
+    @SaCheckPermission("fleet:update")
     public Result enableFleet(@PathVariable(name = "id") String id) {
         // 停用为可逆软删，启用恢复其在档案与下拉中的可见性
         return fleetFeign.enable(id);
@@ -532,6 +557,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "添加车辆")
     @PostMapping("/truck")
+    @SaCheckPermission("truck:create")
     public TruckVo saveTruck(@RequestBody TruckVo vo) {
         TruckDto dto = new TruckDto();
         BeanUtils.copyProperties(vo, dto);
@@ -549,6 +575,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "更新车辆信息")
     @PutMapping("/truck/{id}")
+    @SaCheckPermission("truck:update")
     public TruckVo updateTruck(@PathVariable(name = "id") String id, @RequestBody TruckVo vo) {
         vo.setId(id);
         TruckDto dto = new TruckDto();
@@ -567,6 +594,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "获取车辆分页数据")
     @GetMapping("/truck/page")
+    @SaCheckPermission("truck:list")
     public PageResponse<TruckVo> findTruckByPage(@RequestParam(name = "page") Integer page, @RequestParam(name = "pageSize") Integer pageSize, @RequestParam(name = "truckTypeId", required = false) String truckTypeId, @RequestParam(name = "licensePlate", required = false) String licensePlate, @RequestParam(name = "fleetId", required = false) String fleetId) {
         PageResponse<TruckDto> truckDtoPage = truckFeign.findByPage(page, pageSize, truckTypeId, licensePlate, fleetId);
         //加工数据
@@ -608,6 +636,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "获取车辆详情")
     @GetMapping("/truck/{id}")
+    @SaCheckPermission("truck:detail")
     public TruckVo findTruckById(@PathVariable(name = "id") String id) {
         TruckDto dto = truckFeign.fineById(id);
         TruckVo vo = new TruckVo();
@@ -651,6 +680,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "删除车辆")
     @DeleteMapping("/truck/{id}")
+    @SaCheckPermission("truck:delete")
     public Result deleteTruck(@PathVariable(name = "id") String id) {
         // 在途任务校验：车辆存在进行中/待确认的运输任务时禁止删除，防止运力数据不一致
         TaskTransportDTO query = new TaskTransportDTO();
@@ -674,6 +704,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "保存车辆行驶证信息")
     @PostMapping("/truck/{id}/license")
+    @SaCheckPermission("truck:update")
     public TruckLicenseVo saveTruckLicense(@PathVariable(name = "id") String id, @RequestBody TruckLicenseVo vo) {
         TruckLicenseDto dto = new TruckLicenseDto();
         BeanUtils.copyProperties(vo, dto);
@@ -700,6 +731,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "获取车辆行驶证详情")
     @GetMapping("/truck/{id}/license")
+    @SaCheckPermission("truck:detail")
     public TruckLicenseVo findTruckLicenseById(@PathVariable(name = "id") String id) {
         TruckDto dto = truckFeign.fineById(id);
         TruckLicenseDto truckLicenseDto = null;
@@ -727,6 +759,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "获取车辆车次信息")
     @GetMapping("/truck/{id}/transportTrips")
+    @SaCheckPermission("truck:detail")
     public List<TruckDriverVo> findTruckTransportTrips(@PathVariable(name = "id") String id) {
         List<TruckDriverVo> voList = new ArrayList<>();
         List<TransportTripsTruckDriverDto> tripsTruckDriverList = transportTripsFeign.findAllTruckDriverTransportTrips(null, id, null);
@@ -754,6 +787,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "添加线路")
     @PostMapping("/transportLine")
+    @SaCheckPermission("transportLine:create")
     public TransportLineVo saveTransportLine(@RequestBody TransportLineVo vo) {
         TransportLineDto dto = new TransportLineDto();
         BeanUtils.copyProperties(vo, dto);
@@ -788,6 +822,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "更新线路")
     @PutMapping("/transportLine/{id}")
+    @SaCheckPermission("transportLine:update")
     public TransportLineVo updateTransportLine(@PathVariable(name = "id") String id, @RequestBody TransportLineVo vo) {
         vo.setId(id);
         TransportLineDto dto = new TransportLineDto();
@@ -811,6 +846,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "获取线路分页数据")
     @GetMapping("/transportLine/page")
+    @SaCheckPermission("transportLine:list")
     public PageResponse<TransportLineVo> findTransportLineByPage(@RequestParam(name = "page") Integer page, @RequestParam(name = "pageSize") Integer pageSize, @RequestParam(name = "name", required = false) String name, @RequestParam(name = "transportLineTypeId", required = false) String transportLineTypeId, @RequestParam(name = "lineNumber", required = false) String lineNumber) {
         PageResponse<TransportLineDto> transportLineDtoPage = transportLineFeign.findByPage(page, pageSize, lineNumber, name, transportLineTypeId);
         //加工数据
@@ -864,6 +900,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "获取线路详情")
     @GetMapping("/transportLine/{id}")
+    @SaCheckPermission("transportLine:detail")
     public TransportLineVo findTransportLineById(@PathVariable(name = "id") String id) {
         TransportLineDto dto = transportLineFeign.fineById(id);
         TransportLineVo vo = new TransportLineVo();
@@ -913,6 +950,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "删除线路")
     @DeleteMapping("/transportLine/{id}")
+    @SaCheckPermission("transportLine:delete")
     public Result deleteTransportLine(@PathVariable(name = "id") String id) {
         // 关联校验：线路下存在车次时禁止删除；远程校验失败(null)时 fail-closed 拒绝删除
         List<TransportTripsDto> tripsList = transportTripsFeign.findAll(id, null);
@@ -930,6 +968,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "添加车次")
     @PostMapping("/transportLine/trips")
+    @SaCheckPermission("transportTrips:create")
     public TransportTripsVo saveTransportTrips(@RequestBody TransportTripsVo vo) {
         TransportTripsDto dto = new TransportTripsDto();
         BeanUtils.copyProperties(vo, dto);
@@ -944,6 +983,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "更新车次")
     @PutMapping("/transportLine/trips/{id}")
+    @SaCheckPermission("transportTrips:update")
     public TransportTripsVo updateTransportTrips(@PathVariable(name = "id") String id, @RequestBody TransportTripsVo vo) {
         vo.setId(id);
         TransportTripsDto dto = new TransportTripsDto();
@@ -959,6 +999,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "获取车次列表")
     @GetMapping("/transportLine/trips")
+    @SaCheckPermission("transportTrips:list")
     public List<TransportTripsVo> findAllTransportLineTrips(@RequestParam(name = "transportLineId", required = false) String transportLineId) {
         List<TransportTripsDto> transportTripsDtoList = transportTripsFeign.findAll(transportLineId, null);
         if (transportTripsDtoList == null) {
@@ -1033,6 +1074,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "获取车次详情")
     @GetMapping("/transportLine/trips/{id}")
+    @SaCheckPermission("transportTrips:detail")
     public TransportTripsVo findTransportLineTripsById(@PathVariable(name = "id") String id) {
         TransportTripsDto dto = transportTripsFeign.fineById(id);
         TransportTripsVo vo = new TransportTripsVo();
@@ -1095,6 +1137,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "删除车次")
     @DeleteMapping("/transportLine/trips/{id}")
+    @SaCheckPermission("transportTrips:delete")
     public Result deleteTransportLineTrips(@PathVariable(name = "id") String id) {
         // 关联校验：车次已安排车辆/司机时禁止删除；远程校验失败(null)时 fail-closed 拒绝删除
         List<TransportTripsTruckDriverDto> refs = transportTripsFeign.findAllTruckDriverTransportTrips(id, null, null);
@@ -1112,6 +1155,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "车次-安排车辆和司机")
     @PostMapping("/transportLine/trips/{id}/truckDriver")
+    @SaCheckPermission("transportTrips:create")
     public Result saveTransportTripsTruck(@PathVariable(name = "id") String id, @RequestBody List<TruckDriverVo> truckDriverVoList) {
         //保存车辆安排信息
         transportTripsFeign.batchSaveTruckDriver(id, truckDriverVoList.stream().map(truckDriverVo -> {
@@ -1129,6 +1173,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "获取司机分页数据")
     @GetMapping("/driver/page")
+    @SaCheckPermission("driver:list")
     public PageResponse<DriverVo> findDriverByPage(@RequestParam(name = "page") Integer page, @RequestParam(name = "pageSize") Integer pageSize, @RequestParam(name = "name", required = false) String name, @RequestParam(name = "username", required = false) String username, @RequestParam(name = "fleetId", required = false) String fleetId) {
         List<DriverVo> driverVoList = new ArrayList<>();
         Long total = 0L;
@@ -1229,6 +1274,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "获取司机基本信息详情")
     @GetMapping("/driver/{id}")
+    @SaCheckPermission("driver:detail")
     public DriverVo findDriverById(@PathVariable(name = "id") String id) {
         DriverVo vo = new DriverVo();
         // 远程调用直接返回 UserDTO，可能为 null，判空避免 NPE
@@ -1259,6 +1305,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "保存司机信息")
     @PutMapping("/driver/{id}")
+    @SaCheckPermission("driver:update")
     public DriverVo saveDriver(@PathVariable(name = "id") String id, @RequestBody DriverVo vo) {
         TruckDriverDto driverDto = driverFeign.findOneDriver(id);
         if (driverDto == null) {
@@ -1275,6 +1322,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "获取司机车辆安排")
     @GetMapping("/driver/{id}/truck")
+    @SaCheckPermission("driver:detail")
     public List<TruckDriverVo> findDriverTruckById(@PathVariable(name = "id") String id) {
         List<TruckDriverVo> voList = new ArrayList<>();
         List<TransportTripsTruckDriverDto> tripsTruckDriverList = transportTripsFeign.findAllTruckDriverTransportTrips(null, null, id);
@@ -1308,6 +1356,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "保存司机驾驶证信息")
     @PostMapping("/driverLicense")
+    @SaCheckPermission("driverLicense:create")
     public DriverLicenseVo saveDriverLicense(@RequestBody DriverLicenseVo vo) {
         TruckDriverLicenseDto dto = new TruckDriverLicenseDto();
         BeanUtils.copyProperties(vo, dto);
@@ -1321,6 +1370,7 @@ public class TransforCenterBusinessController {
 
     @Operation(summary = "获取司机驾驶证信息")
     @GetMapping("/driverLicense/{id}")
+    @SaCheckPermission("driverLicense:detail")
     public DriverLicenseVo findDriverLicenseById(@PathVariable(name = "id") String id) {
         TruckDriverLicenseDto dto = driverFeign.findOneDriverLicense(id);
         DriverLicenseVo vo = new DriverLicenseVo();
