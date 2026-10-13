@@ -14,6 +14,11 @@
     </parent>
 
     <dependencies>
+        <!-- 健康检查：/actuator/health 供 compose healthcheck HTTP 探活（health 默认即 web 暴露；随 pd-common 传递给各业务服务） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>

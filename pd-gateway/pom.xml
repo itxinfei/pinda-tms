@@ -15,6 +15,11 @@
     <description>系统唯一网关：Spring Cloud Gateway + Sa-Token 统一鉴权 + Same-Token 内部防绕过</description>
 
     <dependencies>
+        <!-- 健康检查：/actuator/health 供 compose healthcheck HTTP 探活（网关无库，仅进程级存活） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
         <!-- Spring Cloud Gateway（WebFlux，勿引 starter-web） -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>

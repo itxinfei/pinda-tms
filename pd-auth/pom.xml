@@ -15,6 +15,11 @@
     <description>认证授权服务：登录 / RBAC / 组织 / 租户（JDK21 + Spring Boot 3.3）</description>
 
     <dependencies>
+        <!-- 健康检查：/actuator/health 供 compose healthcheck HTTP 探活（默认含 DB 探针，healthy=能连库） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
         <!-- Web（Servlet / jakarta） -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
