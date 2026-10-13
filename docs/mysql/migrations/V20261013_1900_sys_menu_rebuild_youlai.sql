@@ -8,21 +8,29 @@
 -- 幂等: 表不存在才建；菜单种子按固定 id 幂等 upsert（INSERT ... ON DUPLICATE KEY UPDATE）。
 -- 作者: Claude Code  日期: 2026-10-13
 
--- 1) 旧 sys_menu 若为旧结构（缺 type 列）先改名留底，再按新结构建表（不 DROP，保数据安全）
-SET @has_type := (
-  SELECT COUNT(*) FROM information_schema.COLUMNS
-  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'sys_menu' AND COLUMN_NAME = 'type');
-SET @old_exists := (SELECT COUNT(*) FROM information_schema.TABLES
-  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'sys_menu');
-SET @legacy_exists := (SELECT COUNT(*) FROM information_schema.TABLES
-  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'sys_menu_legacy_20261013');
--- 仅当：有旧表 + 无type列 + 留底表不存在 时改名；用预处理执行 DDL
-SET @do_rename := IF(@old_exists = 1 AND @has_type = 0 AND @legacy_exists = 0,
-  'RENAME TABLE `sys_menu` TO `sys_menu_legacy_20261013`',
-  'SELECT ''no legacy rename needed'' AS msg');
-PREPARE stmt_rename FROM @do_rename;
-EXECUTE stmt_rename;
-DEALLOCATE PREPARE stmt_rename;
+-- 1) 旧 sys_menu 若为旧结构（缺 type 列）先改名留底，再按新结构建表（不 DROP，保数据安全）。
+--    用存储过程包裹条件 DDL（裸 PREPARE 在部分 mysql 客户端批处理下会中断后续语句）。
+DROP PROCEDURE IF EXISTS `p_sys_menu_legacy_rename`;
+DELIMITER $$
+CREATE PROCEDURE `p_sys_menu_legacy_rename`()
+BEGIN
+  DECLARE has_type INT DEFAULT 0;
+  DECLARE old_exists INT DEFAULT 0;
+  DECLARE legacy_exists INT DEFAULT 0;
+  SELECT COUNT(*) INTO has_type FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'sys_menu' AND COLUMN_NAME = 'type';
+  SELECT COUNT(*) INTO old_exists FROM information_schema.TABLES
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'sys_menu';
+  SELECT COUNT(*) INTO legacy_exists FROM information_schema.TABLES
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'sys_menu_legacy_20261013';
+  IF old_exists = 1 AND has_type = 0 AND legacy_exists = 0 THEN
+    SET @sql := 'RENAME TABLE `sys_menu` TO `sys_menu_legacy_20261013`';
+    PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
+  END IF;
+END$$
+DELIMITER ;
+CALL `p_sys_menu_legacy_rename`();
+DROP PROCEDURE IF EXISTS `p_sys_menu_legacy_rename`;
 
 CREATE TABLE IF NOT EXISTS `sys_menu` (
   `id`           BIGINT UNSIGNED NOT NULL COMMENT 'ID（种子用固定短ID；新增走雪花）',
