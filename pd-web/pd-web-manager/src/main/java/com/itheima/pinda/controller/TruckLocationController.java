@@ -1,5 +1,7 @@
 package com.itheima.pinda.controller;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+
 import com.itheima.pinda.DTO.TaskTransportDTO;
 import com.itheima.pinda.DTO.UserDTO;
 import com.itheima.pinda.DTO.transportline.TransportTripsTruckDriverDto;
@@ -44,6 +46,7 @@ public class TruckLocationController {
 
     @Operation(summary = "获取车辆位置详情")
     @GetMapping("truck-place-info/{id}")
+    @SaCheckPermission("truck:detail")
     public TruckLocationVo findTruckById(@PathVariable(name = "id") String id) {
         TruckLocationVo truckLocationVo = new TruckLocationVo();
         TruckDto truck = truckFeign.fineById(id);

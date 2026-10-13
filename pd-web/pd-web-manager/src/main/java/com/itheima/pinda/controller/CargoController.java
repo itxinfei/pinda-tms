@@ -1,5 +1,7 @@
 package com.itheima.pinda.controller;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+
 import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.DTO.OrderCargoDto;
 import com.itheima.pinda.DTO.base.GoodsTypeDto;
@@ -32,6 +34,7 @@ public class CargoController {
 
     @Operation(summary = "添加货物")
     @PostMapping("")
+    @SaCheckPermission("cargo:create")
     public OrderCargoVo saveOrderCargo(@RequestBody OrderCargoVo vo) {
         // 远程保存可能返回 null，避免 copyProperties NPE
         OrderCargoDto resultDto = cargoFeign.save(parseOderCargoVo2Dto(vo));
@@ -43,6 +46,7 @@ public class CargoController {
 
     @Operation(summary = "获取货物列表")
     @GetMapping(value = "")
+    @SaCheckPermission("cargo:list")
     public List<OrderCargoVo> findAll(@RequestParam(value = "orderId") String orderId) {
         // Feign 直接返回 List 可能为 null，统一通过 Rx 安全取值
         List<OrderCargoDto> cargoDtoList = Rx.list(cargoFeign.findAll(null, orderId));
@@ -68,6 +72,7 @@ public class CargoController {
 
     @Operation(summary = "更新货物信息")
     @PutMapping("/{id}")
+    @SaCheckPermission("cargo:update")
     public OrderCargoVo updateOrderCargo(@PathVariable(name = "id") String id, @RequestBody OrderCargoVo vo) {
         vo.setId(id);
         // 远程更新可能返回 null，避免 copyProperties NPE
@@ -80,6 +85,7 @@ public class CargoController {
 
     @Operation(summary = "删除货物")
     @DeleteMapping("/{id}")
+    @SaCheckPermission("cargo:delete")
     public Result delete(@PathVariable(name = "id") String id) {
         cargoFeign.del(id);
         return Result.ok();

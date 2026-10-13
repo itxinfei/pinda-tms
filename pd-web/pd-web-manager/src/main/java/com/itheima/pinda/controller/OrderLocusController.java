@@ -8,6 +8,8 @@
 
 package com.itheima.pinda.controller;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+
 import com.itheima.pinda.DTO.TaskPickupDispatchDTO;
 import com.itheima.pinda.DTO.TaskTransportDTO;
 import com.itheima.pinda.DTO.TransportOrderDTO;
@@ -53,6 +55,7 @@ public class OrderLocusController {
     private PickupDispatchTaskFeign pickupDispatchTaskFeign;
 
     @GetMapping("{id}")
+    @SaCheckPermission("order:detail")
     @Operation(summary = "查询订单轨迹参数")
     public List<OrderLocusVo> findLocusByOrderId(@PathVariable("id") String id) {
         List<OrderLocusVo> orderLocusVos = new ArrayList<>();

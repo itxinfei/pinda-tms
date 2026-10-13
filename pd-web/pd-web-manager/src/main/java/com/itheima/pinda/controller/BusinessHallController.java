@@ -1,5 +1,7 @@
 package com.itheima.pinda.controller;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+
 import com.itheima.pinda.DTO.AreaDTO;
 import com.itheima.pinda.DTO.UserDTO;
 import com.itheima.pinda.DTO.angency.AgencyScopeDto;
@@ -64,6 +66,7 @@ public class BusinessHallController {
 
     @Operation(summary = "添加货物类型")
     @PostMapping("/goodsType")
+    @SaCheckPermission("goodsType:create")
     public GoodsTypeVo saveGoodsType(@RequestBody GoodsTypeVo vo) {
         GoodsTypeDto dto = new GoodsTypeDto();
         BeanUtils.copyProperties(vo, dto);
@@ -78,6 +81,7 @@ public class BusinessHallController {
 
     @Operation(summary = "更新货物类型")
     @PutMapping("/goodsType/{id}")
+    @SaCheckPermission("goodsType:update")
     public GoodsTypeVo updateGoodsType(@PathVariable(name = "id") String id, @RequestBody GoodsTypeVo vo) {
         vo.setId(id);
         GoodsTypeDto dto = new GoodsTypeDto();
@@ -93,6 +97,7 @@ public class BusinessHallController {
 
     @Operation(summary = "获取货物类型分页数据")
     @GetMapping("/goodsType/page")
+    @SaCheckPermission("goodsType:list")
     public PageResponse<GoodsTypeVo> findGoodsTypeByPage(@RequestParam(name = "page") Integer page,
                                                          @RequestParam(name = "pageSize") Integer pageSize,
                                                          @RequestParam(name = "name", required = false) String name,
@@ -135,6 +140,7 @@ public class BusinessHallController {
 
     @Operation(summary = "获取货物类型详情")
     @GetMapping("/goodsType/{id}")
+    @SaCheckPermission("goodsType:detail")
     public GoodsTypeVo findGoodsTypeById(@PathVariable(name = "id") String id) {
         GoodsTypeDto dto = goodsTypeFeign.fineById(id);
         GoodsTypeVo vo = new GoodsTypeVo();
@@ -158,6 +164,7 @@ public class BusinessHallController {
 
     @Operation(summary = "删除货物类型")
     @DeleteMapping("/goodsType/{id}")
+    @SaCheckPermission("goodsType:delete")
     public Result deleteGoodsType(@PathVariable(name = "id") String id) {
         // 说明：货物类型关联校验（已被车辆类型关联时禁止删除）已在 pd-base disable 侧实现
         goodsTypeFeign.disable(id);
@@ -166,6 +173,7 @@ public class BusinessHallController {
 
     @Operation(summary = "获取快递员分页数据")
     @GetMapping("/courier/page")
+    @SaCheckPermission("courier:list")
     public PageResponse<SysUserVo> findCourierByPage(@RequestParam(name = "page") Integer page,
                                                      @RequestParam(name = "pageSize") Integer pageSize,
                                                      @RequestParam(name = "name", required = false) String name,
@@ -182,6 +190,7 @@ public class BusinessHallController {
 
     @Operation(summary = "获取快递员详情")
     @GetMapping("/courier/{id}")
+    @SaCheckPermission("courier:detail")
     public SysUserVo findCourierById(@PathVariable(name = "id") String id) {
         // 远程调用直接返回 UserDTO，可能为 null，判空避免 NPE
         UserDTO user = userFeign.get(Long.valueOf(id));
@@ -194,6 +203,7 @@ public class BusinessHallController {
 
     @Operation(summary = "保存快递员业务范围")
     @PostMapping("/courier/scope")
+    @SaCheckPermission("courier:update")
     public Result saveCourierScope(@RequestBody CourierScopeVo vo) {
         //验证和处理范围和区域信息
         Result result = validateParam(vo);
@@ -274,6 +284,7 @@ public class BusinessHallController {
 
     @Operation(summary = "获取快递员业务范围")
     @GetMapping("/courier/scope/{id}")
+    @SaCheckPermission("courier:detail")
     public CourierScopeVo findAllCourierScope(@PathVariable(name = "id") String id) {
         // Feign 直接返回 List 可能为 null，统一通过 Rx 安全取值
         List<CourierScopeDto> courierScopeDtoList = Rx.list(courierScopeFeign.findAllCourierScope(null, id));

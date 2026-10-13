@@ -1,5 +1,6 @@
 package com.itheima.pinda.controller;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.itheima.pinda.DTO.AreaDTO;
 import com.itheima.pinda.DTO.OrgDTO;
 import com.itheima.pinda.DTO.OrgTreeDTO;
@@ -106,6 +107,7 @@ public class AgencyController {
 
     @Operation(summary = "保存机构业务范围")
     @PostMapping("/scope")
+    @SaCheckPermission("agency:update")
     public Result saveScope(@RequestBody AgencyScopeVo vo) {
         //验证和处理范围和区域信息
         Result result = validateParam(vo);
