@@ -117,7 +117,7 @@ echo "==> [1/5] ci 容器内 Maven 打包（目标 $MODS；m2 基线增量优先
 # 宿主 /data/m2 挂为容器 /root/.m2（与 act_runner container.options 同款挂载），
 # settings 写死 /root/.m2/repository，两条链路共用同一持久仓库与基线文件。
 # FULL_BUILD/MODS 经 -e 传入容器；容器内 git 读 /workspace（=宿主仓库，完整历史）。
-docker run --rm --network host \
+docker run -i --rm --network host \
   -v "$REPO_DIR":/workspace -w /workspace \
   -v /data/m2:/root/.m2 \
   -v /data/ci:/ci:ro \
