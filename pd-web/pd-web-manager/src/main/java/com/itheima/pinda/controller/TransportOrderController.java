@@ -1,4 +1,5 @@
 package com.itheima.pinda.controller;
+import cn.dev33.satoken.annotation.SaCheckPermission;
 
 import com.itheima.pinda.DTO.TaskPickupDispatchDTO;
 import com.itheima.pinda.DTO.TaskTransportDTO;
@@ -67,6 +68,7 @@ public class TransportOrderController {
 
     @Operation(summary = "获取运单分页数据")
     @PostMapping("/page")
+    @SaCheckPermission("transport:list")
     public PageResponse<TransportOrderVo> findByPage(@RequestBody TransportOrderVo vo) {
         TransportOrderQueryDTO dto = new TransportOrderQueryDTO();
         if (vo != null) {
@@ -110,6 +112,7 @@ public class TransportOrderController {
 
     @Operation(summary = "获取运单详情")
     @GetMapping("/{id}")
+    @SaCheckPermission("transport:detail")
     public TransportOrderVo findById(@PathVariable(name = "id") String id) {
         // 远程查询可能返回 null，先判空避免后续转换 NPE
         TransportOrderDTO dto = transportOrderFeign.findById(Long.valueOf(id));

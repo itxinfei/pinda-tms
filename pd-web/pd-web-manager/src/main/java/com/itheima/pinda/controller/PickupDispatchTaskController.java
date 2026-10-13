@@ -1,4 +1,5 @@
 package com.itheima.pinda.controller;
+import cn.dev33.satoken.annotation.SaCheckPermission;
 
 import com.itheima.pinda.DTO.TaskPickupDispatchDTO;
 import com.itheima.pinda.DTO.webManager.TaskPickupDispatchQueryDTO;
@@ -49,6 +50,7 @@ public class PickupDispatchTaskController {
 
     @Operation(summary = "获取取派件分页数据")
     @PostMapping("/page")
+    @SaCheckPermission("pickup:list")
     public PageResponse<TaskPickupDispatchVo> findByPage(@RequestBody TaskPickupDispatchVo vo) {
         TaskPickupDispatchQueryDTO dto = new TaskPickupDispatchQueryDTO();
         if (vo != null) {
@@ -90,6 +92,7 @@ public class PickupDispatchTaskController {
 
     @Operation(summary = "更新取派件任务")
     @PutMapping("/{id}")
+    @SaCheckPermission("pickup:update")
     public TaskPickupDispatchVo update(@PathVariable(name = "id") String id, @RequestBody TaskPickupDispatchVo vo) {
         TaskPickupDispatchDTO dto = pickupDispatchTaskFeign.updateById(Long.valueOf(id), BeanUtil.parseTaskPickupDispatchVo2DTO(vo));
         return BeanUtil.parseTaskPickupDispatchDTO2Vo(dto, orderFeign, areaFeign, orgFeign, userFeign);

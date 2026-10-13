@@ -1,4 +1,5 @@
 package com.itheima.pinda.controller;
+import cn.dev33.satoken.annotation.SaCheckPermission;
 
 import com.itheima.pinda.DTO.DriverJobDTO;
 import com.itheima.pinda.DTO.webManager.DriverJobQueryDTO;
@@ -57,6 +58,7 @@ public class DriverJobController {
 
     @Operation(summary = "获取司机作业单分页数据")
     @PostMapping("/page")
+    @SaCheckPermission("driverJob:list")
     public PageResponse<DriverJobVo> findByPage(@RequestBody DriverJobVo vo) {
         DriverJobQueryDTO dto = new DriverJobQueryDTO();
         if (vo != null) {

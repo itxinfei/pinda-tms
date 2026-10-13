@@ -1,4 +1,5 @@
 package com.itheima.pinda.controller;
+import cn.dev33.satoken.annotation.SaCheckPermission;
 
 import com.itheima.pinda.DTO.OrgDTO;
 import com.itheima.pinda.DTO.TaskTransportDTO;
@@ -62,6 +63,7 @@ public class TransportTaskController {
 
     @Operation(summary = "获取运输任务分页数据")
     @PostMapping("/page")
+    @SaCheckPermission("task:list")
     public PageResponse<TaskTransportVo> findByPage(@RequestBody TaskTransportVo vo) {
         TaskTransportQueryDTO dto = new TaskTransportQueryDTO();
         if (vo != null) {
@@ -82,6 +84,7 @@ public class TransportTaskController {
 
     @Operation(summary = "获取运输任务详情")
     @GetMapping("/{id}")
+    @SaCheckPermission("task:detail")
     public TaskTransportVo findById(@PathVariable(name = "id") String id) {
         TaskTransportDTO dto = transportTaskFeign.findById(Long.valueOf(id));
         TaskTransportVo vo;
@@ -97,6 +100,7 @@ public class TransportTaskController {
 
     @Operation(summary = "获取运输任务坐标")
     @GetMapping("point/{id}")
+    @SaCheckPermission("task:detail")
     public LinkedHashSet<PointDTO> findPointById(@PathVariable(name = "id") String id) {
         LinkedHashSet<PointDTO> pointDTOS = new LinkedHashSet<>();
         TaskTransportDTO dto = transportTaskFeign.findById(Long.valueOf(id));
@@ -122,6 +126,7 @@ public class TransportTaskController {
 
     @Operation(summary = "更新运输任务")
     @PutMapping("/{id}")
+    @SaCheckPermission("task:update")
     public TaskTransportVo update(@PathVariable(name = "id") String id, @RequestBody TaskTransportVo vo) {
         TaskTransportDTO dto = transportTaskFeign.updateById(Long.valueOf(id), BeanUtil.parseTaskTransportVo2DTO(vo));
         return BeanUtil.parseTaskTransportDTO2Vo(dto, transportTripsFeign, orgFeign, userFeign, truckFeign, transportOrderFeign, orderFeign, areaFeign);
