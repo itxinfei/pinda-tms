@@ -5,6 +5,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.itheima.auth.common.BizException;
 import com.itheima.auth.config.MybatisPlusConfigure;
+import com.itheima.auth.config.StpInterfaceImpl;
 import com.itheima.auth.dto.LoginDTO;
 import com.itheima.auth.dto.LoginParamDTO;
 import com.itheima.auth.entity.AuthTenant;
@@ -39,6 +40,7 @@ public class AuthLoginService {
     private final AuthTenantMapper tenantMapper;
     private final AuthUserMapper userMapper;
     private final CoreOrgMapper orgMapper;
+    private final StpInterfaceImpl stpInterface;
     private final StringRedisTemplate redisTemplate;
     private final Environment environment;
 
@@ -127,6 +129,10 @@ public class AuthLoginService {
         if (user.getOrgId() != null) {
             session.set("orgId", user.getOrgId());
         }
+        // 角色 code 与权限码写入 token-session，供下游 BFF 经共享 Redis 直接读取做 @SaCheckPermission
+        // （SharedSessionStpInterface），无需 BFF 反查库/Feign；ADMIN 时 perms=["*"]
+        session.set("roles", stpInterface.getRoleList(user.getId(), null));
+        session.set("perms", stpInterface.getPermissionList(user.getId(), null));
 
         // 8. 更新最后登录时间、清零失败计数
         AuthUser update = new AuthUser();

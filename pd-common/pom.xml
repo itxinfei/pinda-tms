@@ -108,5 +108,12 @@
             <artifactId>mybatis-plus-core</artifactId>
             <optional>true</optional>
         </dependency>
+        <!-- Sa-Token 核心：仅编译期需要，用于跨服务共享 StpInterface（从 token-session 读
+             roles/perms）；optional 不向下传递，引了 sa-token starter 的 BFF 才条件装配 -->
+        <dependency>
+            <groupId>cn.dev33</groupId>
+            <artifactId>sa-token-core</artifactId>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
 </project>
