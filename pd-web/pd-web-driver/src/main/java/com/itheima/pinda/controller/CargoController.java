@@ -111,6 +111,14 @@ public class CargoController {
     @GetMapping("wait")
     public Result waitDelivery(Integer page, Integer pagesize) {
 
+        //  分页参数缺省兜底，避免下方 page == 1 及回传 PageResponse 时 Integer 拆箱 NPE
+        if (page == null || page < 1) {
+            page = 1;
+        }
+        if (pagesize == null || pagesize < 1) {
+            pagesize = 10;
+        }
+
         //  获取司机id 并放入参数
         String driverId = RequestContext.getUserId();
         log.info("待提货列表:{}", driverId);
