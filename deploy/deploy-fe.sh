@@ -25,6 +25,7 @@ cd "$REPO"
 
 # TAG 绑定 commit SHA（可回溯构建来源），附时间戳区分同 commit 重复部署
 TAG="manual-$(git rev-parse --short HEAD)-$(date +%Y%m%d%H%M)"
+export TAG   # compose 全文件插值：非本次部署的后端服务也带 ${TAG:?}，必须可解析，否则 up 报 required variable 缺失
 echo ">> 本次构建 TAG=$TAG"
 
 deploy_one() {

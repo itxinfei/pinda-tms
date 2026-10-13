@@ -227,7 +227,7 @@ rollback() {
     if [ -z "$p" ]; then echo "   跳过 $s（首次部署无基线，需人工处理）"; continue; fi
     tv="$(echo "$s" | tr 'a-z-' 'A-Z_')_TAG"
     echo "   回滚 $s -> $p"
-    env "$tv=$p" docker compose --env-file "$APPS_ENV" -f "$COMPOSE_FILE" up -d "$s" && any=1
+    env TAG="$TAG" "$tv=$p" docker compose --env-file "$APPS_ENV" -f "$COMPOSE_FILE" up -d "$s" && any=1
   done
   if [ $any -eq 1 ]; then
     for _ in $(seq 1 $HEALTH_TRIES); do
@@ -248,7 +248,7 @@ echo "==> [4/5] compose 滚动 + 健康检查"
 for s in "${SERVICES[@]}"; do
   tv="$(echo "$s" | tr 'a-z-' 'A-Z_')_TAG"
   echo "   >> 部署 $s:$TAG"
-  env "$tv=$TAG" docker compose --env-file "$APPS_ENV" -f "$COMPOSE_FILE" up -d "$s"
+  env TAG="$TAG" "$tv=$TAG" docker compose --env-file "$APPS_ENV" -f "$COMPOSE_FILE" up -d "$s"
   ok=0
   for _ in $(seq 1 $HEALTH_TRIES); do
     st=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$s" 2>/dev/null || echo missing)

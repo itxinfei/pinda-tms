@@ -320,9 +320,9 @@ jobs:
           for s in $SERVICES; do
             echo ">> 部署 $s:$TAG"
             tagvar="$(echo "$s" | tr 'a-z-' 'A-Z_')_TAG"
-            env "$tagvar=$TAG" docker compose --env-file /ci/apps.env \
+            env TAG="$TAG" "$tagvar=$TAG" docker compose --env-file /ci/apps.env \
               -f deploy/apps/docker-compose.app.yml up -d "$s"
-            env "$tagvar=$TAG" docker compose --env-file /ci/apps.env \
+            env TAG="$TAG" "$tagvar=$TAG" docker compose --env-file /ci/apps.env \
               -f deploy/apps/docker-compose.app.yml ps "$s"
             ok=0
             for i in $(seq 1 48); do
@@ -363,7 +363,7 @@ jobs:
               fi
               tagvar="$(echo "$s" | tr 'a-z-' 'A-Z_')_TAG"
               echo ">> 回滚 $s -> $prev"
-              if env "$tagvar=$prev" docker compose --env-file /ci/apps.env \
+              if env TAG="$TAG" "$tagvar=$prev" docker compose --env-file /ci/apps.env \
                    -f deploy/apps/docker-compose.app.yml up -d "$s"; then
                 rolled="$rolled $s"
               fi
