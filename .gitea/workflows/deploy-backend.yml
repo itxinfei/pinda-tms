@@ -6,7 +6,7 @@
 # 两条路共用同一张「compose 服务 = Maven 模块」白名单与固定部署顺序。
 #
 # 能力：
-#   - inputs.services 选择本次发布的后端服务（逗号分隔，默认 pd-auth,pd-gateway；all=全部 14 个）
+#   - inputs.services 必填：选择本次发布的后端服务（逗号分隔，不默认任何服务，防误触 auth/网关；all=全部 14 个）
 #   - 固定部署顺序：基础/业务服务先上，pd-gateway 始终最后切（见解析步骤 ORDER）
 #   - Maven 构建（2026-10-12 提速）：单服务默认只 package 目标模块，上游 SNAPSHOT 取自
 #     build-check 预热的持久 /data/m2；基线之后改过的内部模块先 install 刷新；
@@ -34,9 +34,9 @@ on:
   workflow_dispatch:
     inputs:
       services:
-        description: "要部署的服务（逗号分隔）；all=全部 13 个后端。默认仅 pd-auth,pd-gateway"
+        description: "要部署的服务（逗号分隔，必填）；all=全部 13 个后端。不默认任何服务——避免误点 Run 就动 pd-auth/网关这两个最敏感服务"
         type: string
-        default: "pd-auth,pd-gateway"
+        default: ""
       db_approved:
         description: "DB 变更门禁放行（diff 含 *.sql 时须人工审核后置 true）"
         type: boolean
@@ -115,7 +115,11 @@ jobs:
           source /tmp/pinda-svc.sh
 
           RAW="${{ github.event.inputs.services }}"
-          [ -z "$RAW" ] && RAW="pd-auth,pd-gateway"
+          # 必填：空值直接失败，杜绝"页面不填参数直接 Run 就误部署 auth/网关"
+          if [ -z "$(echo "$RAW" | tr -d '[:space:]')" ]; then
+            echo "::error::必须显式填写要部署的服务（逗号分隔，或 all），不默认部署任何服务"
+            exit 1
+          fi
           WANT=""
           case "$RAW" in
             all|ALL)
