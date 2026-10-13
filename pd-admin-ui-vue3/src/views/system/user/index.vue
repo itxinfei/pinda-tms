@@ -233,7 +233,10 @@
         </el-form-item>
 
         <el-form-item label="性别" prop="gender">
-          <DictSelect v-model="formData.gender" code="gender" />
+          <el-select v-model="formData.gender" placeholder="请选择性别" clearable style="width: 100%">
+            <el-option label="男" :value="UserGender.MALE" />
+            <el-option label="女" :value="UserGender.FEMALE" />
+          </el-select>
         </el-form-item>
 
         <el-form-item label="角色" prop="roleIds">
@@ -331,7 +334,7 @@
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from "element-plus";
 
 import UserAPI from "@/api/system/user";
-import DeptAPI from "@/api/system/dept";
+import OrgAPI from "@/api/org";
 import RoleAPI from "@/api/system/role";
 import type { UserForm, UserItem, UserQueryParams } from "@/api/system/user";
 import type { OptionItem } from "@/api/common";
@@ -445,7 +448,7 @@ function getAvatarText(row: UserItem): string {
 async function loadFormOptions(): Promise<void> {
   [roleOptions.value, deptOptions.value] = await Promise.all([
     RoleAPI.getOptions(),
-    DeptAPI.getOptions(),
+    OrgAPI.getOptions(),
   ]);
 }
 

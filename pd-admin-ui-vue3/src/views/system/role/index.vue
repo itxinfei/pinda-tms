@@ -231,22 +231,6 @@
           </el-select>
         </el-form-item>
 
-        <el-form-item
-          v-if="formData.dataScope === DATA_SCOPE_CUSTOM"
-          label="选择部门"
-          prop="deptIds"
-        >
-          <el-tree-select
-            v-model="formData.deptIds"
-            :data="deptOptions"
-            multiple
-            :render-after-expand="false"
-            check-strictly
-            placeholder="请选择部门"
-            style="width: 100%"
-          />
-        </el-form-item>
-
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="formData.status">
             <el-radio :value="CommonStatus.ENABLED">正常</el-radio>
@@ -293,8 +277,6 @@ import RoleAPI from "@/api/system/role";
 import type { RoleForm, RoleItem, RoleQueryParams } from "@/api/system/role";
 import MenuAPI from "@/api/system/menu";
 import type { MenuItem } from "@/api/system/menu";
-import DeptAPI from "@/api/system/dept";
-import type { OptionItem } from "@/api/common";
 import { usePageTable } from "@/composables";
 import { CommonStatus } from "@/enums";
 import { ROLE_ROOT } from "@/constants";
@@ -325,16 +307,8 @@ const roleFormRef = ref<FormInstance>();
 const permWrapperRef = ref<HTMLElement | null>(null);
 const { toggle: toggleFullscreen } = useFullscreen(permWrapperRef);
 
-// 自定义数据权限取值
-const DATA_SCOPE_CUSTOM = 5;
-
-const dataScopeOptions = [
-  { label: "全部数据", value: 1 },
-  { label: "部门及子部门数据", value: 2 },
-  { label: "本部门数据", value: 3 },
-  { label: "本人数据", value: 4 },
-  { label: "自定义部门数据", value: DATA_SCOPE_CUSTOM },
-];
+// P0 只支持"全部数据"；五档数据权限（部门/本人/自定义）按《62》P2 再放开
+const dataScopeOptions = [{ label: "全部数据", value: 1 }];
 
 // 左侧角色列表分页数据管理
 const { loading, list, total, params, fetchData } = usePageTable<RoleItem, RoleQueryParams>({
@@ -720,6 +694,7 @@ const dialogState = reactive({
 const initialFormData: RoleForm = {
   sort: 1,
   status: CommonStatus.ENABLED,
+  dataScope: 1, // P0 固定全部数据
 };
 
 const formData = reactive<RoleForm>({ ...initialFormData });
@@ -727,13 +702,8 @@ const formData = reactive<RoleForm>({ ...initialFormData });
 const rules: FormRules<RoleForm> = {
   name: [{ required: true, message: "请输入角色名称", trigger: "blur" }],
   code: [{ required: true, message: "请输入角色编码", trigger: "blur" }],
-  dataScope: [{ required: true, message: "请选择数据权限", trigger: "blur" }],
-  deptIds: [{ required: true, message: "请选择部门", trigger: "blur" }],
   status: [{ required: true, message: "请选择状态", trigger: "blur" }],
 };
-
-// 部门下拉选项（懒加载，新增/编辑时才请求）
-const deptOptions = ref<OptionItem[]>([]);
 
 /**
  * 打开角色表单弹窗
@@ -769,9 +739,6 @@ function resetForm(): void {
  */
 async function handleCreateClick(): Promise<void> {
   dialogState.title = "新增角色";
-  if (deptOptions.value.length === 0) {
-    deptOptions.value = await DeptAPI.getOptions();
-  }
   openDialog();
 }
 
@@ -783,9 +750,6 @@ async function handleCreateClick(): Promise<void> {
 async function handleEditClick(roleId?: string): Promise<void> {
   if (!roleId) return;
   dialogState.title = "修改角色";
-  if (deptOptions.value.length === 0) {
-    deptOptions.value = await DeptAPI.getOptions();
-  }
   const data = await RoleAPI.getFormData(roleId);
   Object.assign(formData, data);
   openDialog();
@@ -804,9 +768,8 @@ async function handleSubmit(): Promise<void> {
   if (!valid) return;
 
   const submitData: RoleForm = { ...formData };
-  if (submitData.dataScope !== DATA_SCOPE_CUSTOM) {
-    submitData.deptIds = undefined;
-  }
+  // P0 数据权限固定"全部数据"，不提交自定义部门
+  submitData.deptIds = undefined;
 
   submitting.value = true;
   try {

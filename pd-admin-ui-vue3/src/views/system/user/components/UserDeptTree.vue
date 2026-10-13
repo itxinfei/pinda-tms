@@ -20,7 +20,7 @@
 </template>
 
 <script setup lang="ts">
-import DeptAPI from "@/api/system/dept";
+import OrgAPI from "@/api/org";
 import type { OptionItem } from "@/api/common";
 import type { TreeNodeData } from "element-plus/es/components/tree";
 
@@ -73,7 +73,7 @@ function handleNodeClick(data: OptionItem): void {
 }
 
 onBeforeMount(() => {
-  DeptAPI.getOptions().then((data) => {
+  OrgAPI.getOptions().then((data) => {
     deptList.value = data;
   });
 });

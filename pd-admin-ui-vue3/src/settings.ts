@@ -86,11 +86,9 @@ export const appConfig = {
   tenantEnabled: envBool(env.VITE_TENANT_ENABLED, false),
   aiEnabled: envBool(env.VITE_AI_ENABLED, false),
 
-  // D-42 用户信息端点（/api/v1/users/me）是否已落地。
-  // 后端尚无该端点时保持 false：守卫不再发"必 404"的请求，直接用临时 mock 身份
-  // （roles=[ADMIN]/perms=[*]），消除每次刷新控制台的 404 红字。
-  // 待 pd-auth 提供真实用户信息端点后置 true（通常与 D-42 动态菜单一起放开）。
-  userInfoEndpointEnabled: false,
+  // D-42 用户信息端点（/api/v1/users/me）已落地（pd-auth v1，已实测返回
+  // roles/perms）。置 true：守卫拉取真实身份驱动 v-hasPerm；失败仍降级临时身份。
+  userInfoEndpointEnabled: true,
 } as const;
 
 export const defaults = {
