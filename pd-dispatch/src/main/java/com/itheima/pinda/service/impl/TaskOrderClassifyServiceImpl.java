@@ -159,15 +159,24 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
         OrderClassifyDTO.OrderClassifyDTOBuilder builder = OrderClassifyDTO.builder();
         builder.currentOrgId(orgId);
 
+        // 【P0事务隔离】单订单分类失败（地址异常/区域不一致/网点缺失/地图异常等）不应中断
+        // 整个机构的调度轮次：此处对每条订单单独 try-catch，失败订单仅记录日志并跳过（filter 掉），
+        // 其余订单继续参与分类与调度，避免"一单出错、整轮回滚、全部漏调度"。
         List<OrderClassifyDTO> orderClassifyDTOList = orderList.stream().map((item) -> {
-            OrderClassifyDTO.OrderClassifyDTOBuilder orderBuilder = OrderClassifyDTO.builder();
-            orderBuilder.order(item);//原始订单
-            orderBuilder.startOrgId(IdConvert.toLong(getStartAgencyId(item)));//起始机构
-            orderBuilder.endOrgId(IdConvert.toLong(getEndAgencyId(item)));//目的地机构（目的地网点）
-            orderBuilder.orderType(item.getOrderType());
-            orderBuilder.currentOrgId(orgId);
-            return orderBuilder.build();
-        }).collect(Collectors.toList());
+            try {
+                OrderClassifyDTO.OrderClassifyDTOBuilder orderBuilder = OrderClassifyDTO.builder();
+                orderBuilder.order(item);//原始订单
+                orderBuilder.startOrgId(IdConvert.toLong(getStartAgencyId(item)));//起始机构
+                orderBuilder.endOrgId(IdConvert.toLong(getEndAgencyId(item)));//目的地机构（目的地网点）
+                orderBuilder.orderType(item.getOrderType());
+                orderBuilder.currentOrgId(orgId);
+                return orderBuilder.build();
+            } catch (Exception e) {
+                log.error("[buildTransferOrder] 订单[{}]分类失败，跳过该订单（不影响本机构其余订单调度）: {}",
+                        item != null ? item.getId() : "null", e.getMessage());
+                return null;
+            }
+        }).filter(Objects::nonNull).collect(Collectors.toList());
 
         return orderClassifyDTOList;
     }
@@ -280,15 +289,22 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
         OrderClassifyDTO.OrderClassifyDTOBuilder builder = OrderClassifyDTO.builder();
         builder.currentOrgId(orgId);
 
+        // 【P0事务隔离】同 buildTransferOrder：单订单分类失败仅跳过该订单，不中断整轮调度。
         List<OrderClassifyDTO> orderClassifyDTOList = orderList.stream().map((item) -> {
-            OrderClassifyDTO.OrderClassifyDTOBuilder orderBuilder = OrderClassifyDTO.builder();
-            orderBuilder.order(item);//原始订单
-            orderBuilder.startOrgId(orgId);//起始机构（当前入库网点）
-            orderBuilder.endOrgId(IdConvert.toLong(getEndAgencyId(item)));//目的地机构（目的地网点）
-            orderBuilder.orderType(item.getOrderType());
-            orderBuilder.currentOrgId(orgId);
-            return orderBuilder.build();
-        }).collect(Collectors.toList());
+            try {
+                OrderClassifyDTO.OrderClassifyDTOBuilder orderBuilder = OrderClassifyDTO.builder();
+                orderBuilder.order(item);//原始订单
+                orderBuilder.startOrgId(orgId);//起始机构（当前入库网点）
+                orderBuilder.endOrgId(IdConvert.toLong(getEndAgencyId(item)));//目的地机构（目的地网点）
+                orderBuilder.orderType(item.getOrderType());
+                orderBuilder.currentOrgId(orgId);
+                return orderBuilder.build();
+            } catch (Exception e) {
+                log.error("[buildNewOrder] 订单[{}]分类失败，跳过该订单（不影响本机构其余订单调度）: {}",
+                        item != null ? item.getId() : "null", e.getMessage());
+                return null;
+            }
+        }).filter(Objects::nonNull).collect(Collectors.toList());
 
         return orderClassifyDTOList;
     }
