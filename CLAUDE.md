@@ -111,7 +111,7 @@
 
 ### C. 公开仓库卫生与部署方式（提交 6525774 / merge cc733b4，已同步 Gitea+Gitee）
 - `.gitignore` 新增：`.claude/`、`.atomcode/`、`.creative-design/`、`.gitea/`、`mvn_build*`（AI 工具配置/内网 CI 配置不再入库）。
-- `.gitea/workflows/*.yml` 已 `git rm --cached`（文件留在服务器本地）：**Gitea Actions 自动构建已停**——前端/后端 push 不再自动部署，统一手动（服务器 `bash /data/pinda-deploy/deploy-fe.sh <admin|customer|courier|driver>` 串行执行；后端如需部署另行手动构建）。
+- **CI/CD 现行格局（2026-10-13 审计修订，推翻本条早期"workflow 已不入库"的过时表述）**：`.gitignore` 实际放行 `.gitea/workflows/`（`!.gitea/workflows/`），2 条流水线**均在库且生效**——① `build-check.yml`：push master **自动跑编译门禁**（mvn install，不部署）；② `deploy-backend.yml`：后端发布，**仅手动 Run workflow**（DB 变更门禁/固定顺序/失败自动回滚）；③ 前端统一手动 `bash /data/pinda-deploy/deploy-fe.sh <admin|customer|courier|driver>`。**自动部署已停属实，自动编译门禁仍在**。原 `deploy.yml`（前端 Actions 流水线）已于 2026-10-13 审计后删除（健康检查在 job 容器内 curl 127.0.0.1 必失败，属带病双轨；git 历史可找回）。
 - 双远端 master 现状：Gitea + Gitee = `cc733b4`；**本地 master（9bb62e4 分叉线）尚未 merge**——你（Claude Code）继续提交前必须先 `git pull` / merge 远端，避免推送被拒与历史分叉。
 
 ### D. 前端工程规范待办（尚未执行，欢迎认领/推进，详见 `docs/前端工程优化与规范清单-2026-10-10.md`）
