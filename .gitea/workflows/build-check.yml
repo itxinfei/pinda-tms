@@ -53,3 +53,247 @@ jobs:
           ls -ld /root/.m2 || { echo "::error::/root/.m2 未挂载，检查 act_runner container.options"; exit 1; }
           mvn -B test -s /ci/maven-settings.xml
         timeout-minutes: 15
+
+  auto-deploy:
+    # ============================================================
+    # 变更感知自动部署（2026-10-14 用户拍板）：编译+测试门禁绿后自动执行。
+    # 以「部署基线」/root/.m2/.pinda-deploy.revision（上次成功部署的 HEAD）做 diff：
+    #   - 后端：服务模块变更→只部署该服务；共享库(pd-common/pd-service-api 等)/
+    #     根 pom/deploy 编排/.gitea 变更→全量收敛（保守正确）
+    #   - 前端：pd-admin-ui-vue3→admin；pd-mobile/<端>→对应端；pd-mobile 共享→三端
+    #   - diff 含 *.sql → 中止（DB 门禁），转人工以 db_approved=true 手动部署
+    #   - 任一服务/端探活(后端4min/前端60s)未过→自动回滚 PREV；
+    #     部署基线仅在全部成功后刷新 → 并发取消/部分失败会被下一次 push 的全量收敛自愈
+    #   - rabbit 健康指标：默认关（仅 oms/dispatch/netty 显式开），见 compose 锚点注释
+    # ============================================================
+    needs: [compile]
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码（内网 Gitea）
+        run: |
+          rm -rf ./* ./.??*
+          git clone --depth 100 -b "${GITHUB_REF_NAME:-master}" \
+            "http://192.168.20.130:3000/pinda/pinda-tms.git" .
+
+      - name: DB 变更门禁（diff 含 *.sql 即中止转人工）
+        run: |
+          BASE=$(cat /root/.m2/.pinda-deploy.revision 2>/dev/null || true)
+          if [ -n "$BASE" ] && git cat-file -e "${BASE}^{commit}" 2>/dev/null; then
+            SQL=$(git diff --name-only "$BASE" HEAD -- '*.sql' ':(exclude)codeback' 2>/dev/null || true)
+          else
+            FIRST=$(git rev-list --max-parents=0 HEAD)
+            SQL=$(git diff --name-only "$FIRST" HEAD -- '*.sql' ':(exclude)codeback' 2>/dev/null || true)
+          fi
+          if [ -n "$SQL" ]; then
+            echo "::error::diff 含 *.sql，自动部署中止；请人工审核后以 db_approved=true 手动部署（或勾 check_only 清基线）"
+            echo "$SQL"
+            exit 1
+          fi
+
+      - name: 计算变更目标（后端服务集 SERVICES / 前端端集 APPS）
+        run: |
+          {
+            echo 'declare -A MOD_OF=('
+            echo '  [pd-auth]=pd-auth [pd-base]=pd-base [pd-oms]=pd-oms [pd-work]=pd-work'
+            echo '  [pd-user]=pd-user [pd-dispatch]=pd-dispatch [pd-aggregation]=pd-aggregation [pd-netty]=pd-netty'
+            echo '  [pd-web-manager]=pd-web/pd-web-manager [pd-web-driver]=pd-web/pd-web-driver'
+            echo '  [pd-web-courier]=pd-web/pd-web-courier [pd-web-customer]=pd-web/pd-web-customer'
+            echo '  [pd-gateway]=pd-gateway'
+            echo ')'
+            echo 'ORDER="pd-auth pd-base pd-oms pd-work pd-user pd-dispatch pd-aggregation pd-netty pd-web-manager pd-web-driver pd-web-courier pd-web-customer pd-gateway"'
+          } > /tmp/svc.sh
+          source /tmp/svc.sh
+          BASE=$(cat /root/.m2/.pinda-deploy.revision 2>/dev/null || true)
+          if [ -z "$BASE" ] || ! git cat-file -e "${BASE}^{commit}" 2>/dev/null; then
+            echo "部署基线不可用（首次/超出浅克隆窗口）→ 全量收敛"
+            echo "SERVICES=ALL" >> "$GITHUB_ENV"; echo "APPS=ALL" >> "$GITHUB_ENV"; exit 0
+          fi
+          CHANGED=$(git diff --name-only "$BASE" HEAD)
+          if [ -z "$CHANGED" ]; then
+            echo "部署基线以来无变更（上一轮已全部部署）"
+            echo "SERVICES=" >> "$GITHUB_ENV"; echo "APPS=" >> "$GITHUB_ENV"; exit 0
+          fi
+          echo "基线 $BASE 以来变更 $(echo "$CHANGED" | wc -l) 个文件"
+          # ---- 后端归属 ----
+          want=""; lib=0; other=0
+          while IFS= read -r f; do
+            if [ -z "$f" ]; then continue; fi
+            case "$f" in
+              deploy/*|.gitea/*) other=1; continue ;;
+            esac
+            d=$(dirname "$f")
+            while [ "$d" != "." ] && [ ! -f "$d/pom.xml" ]; do d=$(dirname "$d"); done
+            if [ "$d" = "." ]; then other=1; continue; fi
+            hit=""
+            for s in $ORDER; do
+              if [ "${MOD_OF[$s]}" = "$d" ]; then hit=$s; break; fi
+            done
+            if [ -n "$hit" ]; then
+              case " $want " in *" $hit "*) ;; *) want="$want $hit" ;; esac
+            else
+              lib=1
+            fi
+          done <<< "$CHANGED"
+          if [ "$other" = "1" ] || [ "$lib" = "1" ]; then
+            echo "共享库/根pom/编排/流水线变更 → 后端全量收敛"
+            echo "SERVICES=ALL" >> "$GITHUB_ENV"
+          elif [ -n "${want// /}" ]; then
+            svcs=""
+            for s in $ORDER; do
+              case " $want " in *" $s "*) svcs="$svcs $s" ;; esac
+            done
+            echo "后端变更服务（部署序）:${svcs}"
+            echo "SERVICES=${svcs# }" >> "$GITHUB_ENV"
+          else
+            echo "后端无变更"; echo "SERVICES=" >> "$GITHUB_ENV"
+          fi
+          # ---- 前端归属 ----
+          fa=0; fd=0; fc=0; fu=0; fs=0
+          while IFS= read -r f; do
+            if [ -z "$f" ]; then continue; fi
+            case "$f" in
+              pd-admin-ui-vue3/*) fa=1 ;;
+              pd-mobile/driver/*) fd=1 ;;
+              pd-mobile/courier/*) fc=1 ;;
+              pd-mobile/customer/*) fu=1 ;;
+              pd-mobile/*) fs=1 ;;
+            esac
+          done <<< "$CHANGED"
+          apps=""
+          if [ "$fs" = "1" ]; then
+            apps="admin driver courier customer"
+          else
+            if [ "$fa" = "1" ]; then apps="$apps admin"; fi
+            if [ "$fd" = "1" ]; then apps="$apps driver"; fi
+            if [ "$fc" = "1" ]; then apps="$apps courier"; fi
+            if [ "$fu" = "1" ]; then apps="$apps customer"; fi
+          fi
+          if [ "$other" = "1" ]; then apps="admin driver courier customer"; fi
+          echo "前端变更端:${apps:-（无）}"
+          echo "APPS=$apps" >> "$GITHUB_ENV"
+
+      - name: 后端 Maven 构建（变更服务，-am 全链）
+        if: env.SERVICES != ''
+        timeout-minutes: 30
+        run: |
+          set -e
+          source /tmp/svc.sh
+          if [ "$SERVICES" = "ALL" ]; then SERVICES="$ORDER"; fi
+          MODS=""
+          for s in $SERVICES; do MODS="$MODS,${MOD_OF[$s]}"; done
+          MODS=${MODS#,}
+          TAG="auto-$(echo "${GITHUB_SHA}" | cut -c1-7)-$(date +%Y%m%d%H%M)"
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+          echo ">> 自动部署后端:$SERVICES"
+          echo ">> Maven -pl $MODS -am clean package"
+          mvn -B -Dmaven.test.skip=true -s /ci/maven-settings.xml -pl "$MODS" -am clean package
+
+      - name: 后端镜像构建 + 记录回滚基线
+        if: env.SERVICES != ''
+        timeout-minutes: 20
+        run: |
+          set -e
+          source /tmp/svc.sh
+          if [ "$SERVICES" = "ALL" ]; then SERVICES="$ORDER"; fi
+          : > /tmp/prev-tags
+          for s in $SERVICES; do
+            m="${MOD_OF[$s]}"
+            jar=$(find "$m/target" -maxdepth 1 -type f -name '*.jar' ! -name '*sources*' ! -name '*javadoc*' ! -name '*.original' | head -1)
+            if [ -z "$jar" ]; then echo "::error::未找到 $s 的 fat jar"; exit 1; fi
+            mkdir -p ".ctx/$s"; ln -f "$jar" ".ctx/$s/app.jar"
+            img=$(docker inspect -f '{{.Config.Image}}' "$s" 2>/dev/null || true)
+            if [ -n "$img" ]; then echo "$s ${img##*:}" >> /tmp/prev-tags; else echo "$s " >> /tmp/prev-tags; fi
+            echo ">> docker build pinda/$s:${TAG}"
+            docker build -f deploy/apps/Dockerfile -t "pinda/$s:${TAG}" ".ctx/$s"
+          done
+
+      - name: 后端滚动部署 + 健康检查
+        if: env.SERVICES != ''
+        timeout-minutes: 40
+        run: |
+          set -e
+          source /tmp/svc.sh
+          if [ "$SERVICES" = "ALL" ]; then SERVICES="$ORDER"; fi
+          for s in $SERVICES; do
+            tv="$(echo "$s" | tr 'a-z-' 'A-Z_')_TAG"
+            env TAG="$TAG" "$tv=$TAG" docker compose --env-file /ci/apps.env \
+              -f deploy/apps/docker-compose.app.yml up -d "$s"
+            ok=0
+            for i in $(seq 1 48); do
+              st=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$s" 2>/dev/null || echo missing)
+              if [ "$st" = "healthy" ]; then ok=1; break; fi
+              sleep 5
+            done
+            echo "$s health=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$s" 2>/dev/null)"
+            if [ "$ok" != "1" ]; then echo "::error::$s 探活未过（将回滚）"; exit 1; fi
+          done
+
+      - name: 后端失败自动回滚
+        if: ${{ failure() && env.SERVICES != '' }}
+        run: |
+          if [ ! -f /tmp/prev-tags ]; then exit 0; fi
+          rolled=""
+          while read -r s prev; do
+            if [ -z "$s" ]; then continue; fi
+            if [ -z "$prev" ]; then echo "跳过 $s（首次部署无基线）"; continue; fi
+            tv="$(echo "$s" | tr 'a-z-' 'A-Z_')_TAG"
+            echo ">> 回滚 $s -> $prev"
+            if env TAG="${TAG:-rollback}" "$tv=$prev" docker compose --env-file /ci/apps.env \
+                 -f deploy/apps/docker-compose.app.yml up -d "$s"; then
+              rolled="$rolled $s"
+            fi
+          done < <(tac /tmp/prev-tags)
+          echo "已回滚:${rolled:-无}"
+
+      - name: 前端部署（构建+滚动+健康检查+失败回滚）
+        if: env.APPS != ''
+        timeout-minutes: 30
+        run: |
+          set -e
+          COMPOSE=deploy/apps/docker-compose.app.yml
+          FE_TAG="autofe-$(echo "${GITHUB_SHA}" | cut -c1-7)-$(date +%Y%m%d%H%M)"
+          echo "FE_TAG=$FE_TAG" >> "$GITHUB_ENV"
+          build_one() {
+            case "$1" in
+              admin) docker build -f deploy/apps/Dockerfile.admin-h5 -t "pinda/pd-admin-h5:${FE_TAG}" . ;;
+              *) docker build -f deploy/apps/Dockerfile.mobile-h5 \
+                   --build-arg APP_PATH=pd-mobile --build-arg APP_SUBDIR="$1" \
+                   --build-arg APP_NAME="pd-mobile-$1" -t "pinda/pd-${1}-h5:${FE_TAG}" . ;;
+            esac
+          }
+          for app in $APPS; do
+            img="pd-${app}-h5"; tv="$(echo "$img" | tr 'a-z-' 'A-Z_')_TAG"
+            prev=$(docker inspect -f '{{.Config.Image}}' "$img" 2>/dev/null | sed -n 's/.*://p' || true)
+            echo ">> [$app] 回滚基线 PREV=${prev:-（首次部署）}"
+            build_one "$app"
+            proj=$(docker inspect -f '{{index .Config.Labels "com.docker.compose.project"}}' "$img" 2>/dev/null || echo "")
+            if [ "$proj" != "pinda-apps" ]; then docker rm -f "$img" 2>/dev/null || true; fi
+            env TAG="$FE_TAG" "$tv=$FE_TAG" docker compose --env-file /ci/apps.env -f "$COMPOSE" up -d "$img"
+            ok=0
+            for i in $(seq 1 12); do
+              st=$(docker inspect -f '{{.State.Health.Status}}' "$img" 2>/dev/null || echo missing)
+              if [ "$st" = "healthy" ]; then ok=1; break; fi
+              sleep 5
+            done
+            echo ">> [$app] health=$(docker inspect -f '{{.State.Health.Status}}' "$img" 2>/dev/null)"
+            if [ "$ok" != "1" ]; then
+              if [ -n "$prev" ]; then
+                echo ">> [$app] 回滚 -> $prev"
+                env TAG="$FE_TAG" "$tv=$prev" docker compose --env-file /ci/apps.env -f "$COMPOSE" up -d "$img"
+              fi
+              echo "::error::$app 前端自动部署失败"; exit 1
+            fi
+            OLD=$(docker images "pinda/$img" --format '{{.Tag}}' | grep -vE "^${FE_TAG}$|^${prev}$" || true)
+            if [ -n "$OLD" ]; then
+              echo "$OLD" | xargs -r -I{} docker rmi "pinda/$img:{}" 2>/dev/null || true
+            fi
+          done
+
+      - name: 刷新部署基线（全部成功后；失败/中断不刷，下次 push 全量收敛自愈）
+        if: success()
+        run: |
+          git rev-parse HEAD > /root/.m2/.pinda-deploy.revision
+          echo "部署基线已刷新: $(cat /root/.m2/.pinda-deploy.revision)"
+
+      # 【预留·暂未启用】自动部署结果通知（企微/邮件 webhook），接入方式同 deploy-backend.yml 尾部预留
+

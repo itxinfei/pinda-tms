@@ -44,6 +44,9 @@ x-ulimits: &app-ulimits
 
 # JVM 档位
 x-jvm-core: &jvm-core
+  # rabbit 健康指标默认关闭：全仓仅 oms/dispatch/netty 真用 rabbit（有 @RabbitListener，各自显式开 true），
+  # 其余服务的 spring-rabbit 均系传递依赖误入，指标连 localhost 必 DOWN 造成 /actuator/health 503 假告警
+  MANAGEMENT_HEALTH_RABBIT_ENABLED: "false"
   JAVA_OPTS: "-Xms96m -Xmx192m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:MaxMetaspaceSize=192m -XX:MaxDirectMemorySize=128m -Xss512k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -Dmybatis-plus.mapper-locations=classpath*:/mapper/**/*.xml -Dmybatis-plus.typeAliasesPackage=com.itheima.pinda.entity -Dmybatis-plus.configuration.map-underscore-to-camel-case=true -Dmybatis-plus.configuration.cache-enabled=true -Dmybatis-plus.configuration.call-setters-on-nulls=false -Dmybatis-plus.configuration.jdbc-type-for-null=NULL -Dmybatis-plus.global-config.db-config.id-type=ASSIGN_ID -Dmybatis-plus.global-config.banner=false"
   # JVM 系统属性（JAVA_TOOL_OPTIONS，优先级高于 Nacos 与 jar 内 druid.properties）：
   # 修复 druid-spring-boot-starter 1.1.x 的 druid.properties 自引用占位符导致的
@@ -104,6 +107,7 @@ x-jvm-core: &jvm-core
   MYBATIS_PLUS_GLOBAL_CONFIG_DB_CONFIG_LOGIC_NOT_DELETE_VALUE: "0"
   MYBATIS_PLUS_GLOBAL_CONFIG_BANNER: "false"
 x-jvm-small: &jvm-small
+  MANAGEMENT_HEALTH_RABBIT_ENABLED: "false"
   JAVA_OPTS: "-Xms64m -Xmx128m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:MaxMetaspaceSize=160m -XX:MaxDirectMemorySize=64m -Xss512k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -Dmybatis-plus.mapper-locations=classpath*:/mapper/**/*.xml -Dmybatis-plus.typeAliasesPackage=com.itheima.pinda.entity -Dmybatis-plus.configuration.map-underscore-to-camel-case=true -Dmybatis-plus.configuration.cache-enabled=true -Dmybatis-plus.configuration.call-setters-on-nulls=false -Dmybatis-plus.configuration.jdbc-type-for-null=NULL -Dmybatis-plus.global-config.db-config.id-type=ASSIGN_ID -Dmybatis-plus.global-config.banner=false"
   JAVA_TOOL_OPTIONS: "-Dbaidu.map.ak=${BAIDU_MAP_AK:-} -Dspring.datasource.druid.stat-view-servlet.enabled=false -Dspring.datasource.druid.web-stat-filter.enabled=false -Dspring.servlet.multipart.enabled=true -Dspring.servlet.multipart.max-file-size=100MB -Dspring.servlet.multipart.max-request-size=1000MB -Dspring.jackson.time-zone=GMT+8 -Dmybatis-plus.configuration.map-underscore-to-camel-case=true -Dmybatis-plus.configuration.cache-enabled=true -Dmybatis-plus.configuration.call-setters-on-nulls=false -Dmybatis-plus.configuration.jdbc-type-for-null=NULL -Dmybatis-plus.global-config.db-config.id-type=ASSIGN_ID -Dmybatis-plus.global-config.banner=false"
   # 含空格的值（如日期格式）不能放进 JAVA_TOOL_OPTIONS（JVM 按空白切分参数会断裂），
@@ -303,10 +307,6 @@ services:
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8185; printf \"GET /actuator/health HTTP/1.0\\r\\n\\r\\n\">&3; read -r L<&3; [[ $$L == *200* ]]' || exit 1"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
-      # pd-base 源码 0 处使用 rabbit（无 @RabbitListener），spring-rabbit 系传递依赖误入，
-      # 其 RabbitHealthIndicator 连默认 localhost:5672 必 DOWN → /actuator/health 503。
-      # 关掉该指标（中间件 rabbitmq 本身 healthy；非掩盖真实业务问题），其余服务按各自实际接 rabbit 情况处理。
-      MANAGEMENT_HEALTH_RABBIT_ENABLED: "false"
 
   pd-oms:
     <<: *app-core
@@ -319,6 +319,8 @@ services:
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8186; printf \"GET /actuator/health HTTP/1.0\\r\\n\\r\\n\">&3; read -r L<&3; [[ $$L == *200* ]]' || exit 1"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
+      # 真实使用 rabbit（消费 ORDER_DELIVERED 触发结算）→ 显式开启其健康指标
+      MANAGEMENT_HEALTH_RABBIT_ENABLED: "true"
       # RabbitMQ 在 pinda-infra 网络，跨网走宿主 IP（rabbitmq 在 pinda-infra_default、pd-oms 在 pinda-apps_default）
       RABBITMQ_HOST: 192.168.20.130
       RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-pinda}
@@ -362,6 +364,8 @@ services:
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8190; printf \"GET /actuator/health HTTP/1.0\\r\\n\\r\\n\">&3; read -r L<&3; [[ $$L == *200* ]]' || exit 1"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
+      # 真实使用 rabbit（调度事件消费）→ 显式开启其健康指标（连接参数在 Nacos pd-dispatch.yml）
+      MANAGEMENT_HEALTH_RABBIT_ENABLED: "true"
       # XXL-Job 执行器注册（2026-10-11 接入）：token 必须与 xxl-job-admin 容器启动参数同值，
       # 否则 admin 注册接口回 "The access token is wrong."、执行器地址列表恒为 null（42 次空转根因）。
       # 值在服务器 compose 同目录 .env(0600) 的 XXL_JOB_ACCESS_TOKEN（与 /data/ci/apps.env 同值），不进 Git。
@@ -396,6 +400,8 @@ services:
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8192; printf \"GET /actuator/health HTTP/1.0\\r\\n\\r\\n\">&3; read -r L<&3; [[ $$L == *200* ]]' || exit 1"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
+      # 真实使用 rabbit（GPS/告警上报消费）→ 显式开启其健康指标（连接参数在 Nacos pd-netty.yml）
+      MANAGEMENT_HEALTH_RABBIT_ENABLED: "true"
       # netty TCP 长连接吃堆外内存，显式恢复 256m（覆盖 jvm-core 锚点的 128m）
       JAVA_OPTS: "-Xms96m -Xmx192m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:MaxMetaspaceSize=192m -XX:MaxDirectMemorySize=256m -Xss512k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -Dmybatis-plus.mapper-locations=classpath*:/mapper/**/*.xml -Dmybatis-plus.typeAliasesPackage=com.itheima.pinda.entity -Dmybatis-plus.configuration.map-underscore-to-camel-case=true -Dmybatis-plus.configuration.cache-enabled=true -Dmybatis-plus.configuration.call-setters-on-nulls=false -Dmybatis-plus.configuration.jdbc-type-for-null=NULL -Dmybatis-plus.global-config.db-config.id-type=ASSIGN_ID -Dmybatis-plus.global-config.banner=false"
       # 单库 pinda_tms 后 netty 的 pd_alarm_record/pd_truck_location* 与其他表同库，URL 由 jar 内 application.yml 给出
