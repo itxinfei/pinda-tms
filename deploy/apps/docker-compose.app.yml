@@ -303,6 +303,10 @@ services:
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8185; printf \"GET /actuator/health HTTP/1.0\\r\\n\\r\\n\">&3; read -r L<&3; [[ $$L == *200* ]]' || exit 1"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
+      # pd-base 源码 0 处使用 rabbit（无 @RabbitListener），spring-rabbit 系传递依赖误入，
+      # 其 RabbitHealthIndicator 连默认 localhost:5672 必 DOWN → /actuator/health 503。
+      # 关掉该指标（中间件 rabbitmq 本身 healthy；非掩盖真实业务问题），其余服务按各自实际接 rabbit 情况处理。
+      MANAGEMENT_HEALTH_RABBIT_ENABLED: "false"
 
   pd-oms:
     <<: *app-core
