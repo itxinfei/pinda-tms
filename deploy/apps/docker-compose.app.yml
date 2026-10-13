@@ -246,7 +246,7 @@ services:
     ports: ["8760:8760"]
     healthcheck:
       <<: *hc-common
-      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8760; printf \"GET /actuator/health HTTP/1.0\\r\\n\\r\\n\">&3; read -r L<&3; [[ $L == *200* ]]' || exit 1"]
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8760; printf \"GET /actuator/health HTTP/1.0\\r\\n\\r\\n\">&3; read -r L<&3; [[ $$L == *200* ]]' || exit 1"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
       # CORS 白名单: 覆盖默认(localhost), 允许局域网前端端口访问(无端口=80页面)
@@ -272,7 +272,7 @@ services:
     ports: ["9000:9000"]
     healthcheck:
       <<: *hc-common
-      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/9000; printf \"GET /actuator/health HTTP/1.0\\r\\n\\r\\n\">&3; read -r L<&3; [[ $L == *200* ]]' || exit 1"]
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/9000; printf \"GET /actuator/health HTTP/1.0\\r\\n\\r\\n\">&3; read -r L<&3; [[ $$L == *200* ]]' || exit 1"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
       # JWT 签名密钥对的外部来源。
@@ -300,7 +300,7 @@ services:
     ports: ["8185:8185"]
     healthcheck:
       <<: *hc-common
-      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8185; printf \"GET /actuator/health HTTP/1.0\\r\\n\\r\\n\">&3; read -r L<&3; [[ $L == *200* ]]' || exit 1"]
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8185; printf \"GET /actuator/health HTTP/1.0\\r\\n\\r\\n\">&3; read -r L<&3; [[ $$L == *200* ]]' || exit 1"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
 
@@ -312,7 +312,7 @@ services:
     ports: ["8186:8186"]
     healthcheck:
       <<: *hc-common
-      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8186; printf \"GET /actuator/health HTTP/1.0\\r\\n\\r\\n\">&3; read -r L<&3; [[ $L == *200* ]]' || exit 1"]
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8186; printf \"GET /actuator/health HTTP/1.0\\r\\n\\r\\n\">&3; read -r L<&3; [[ $$L == *200* ]]' || exit 1"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
       # RabbitMQ 在 pinda-infra 网络，跨网走宿主 IP（rabbitmq 在 pinda-infra_default、pd-oms 在 pinda-apps_default）
@@ -328,7 +328,7 @@ services:
     ports: ["8187:8187"]
     healthcheck:
       <<: *hc-common
-      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8187; printf \"GET /actuator/health HTTP/1.0\\r\\n\\r\\n\">&3; read -r L<&3; [[ $L == *200* ]]' || exit 1"]
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8187; printf \"GET /actuator/health HTTP/1.0\\r\\n\\r\\n\">&3; read -r L<&3; [[ $$L == *200* ]]' || exit 1"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
 
@@ -340,7 +340,7 @@ services:
     ports: ["8189:8189"]
     healthcheck:
       <<: *hc-common
-      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8189; printf \"GET /actuator/health HTTP/1.0\\r\\n\\r\\n\">&3; read -r L<&3; [[ $L == *200* ]]' || exit 1"]
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8189; printf \"GET /actuator/health HTTP/1.0\\r\\n\\r\\n\">&3; read -r L<&3; [[ $$L == *200* ]]' || exit 1"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
 
@@ -355,7 +355,7 @@ services:
     ports: ["8190:8190", "9999:9999"]
     healthcheck:
       <<: *hc-common
-      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8190; printf \"GET /actuator/health HTTP/1.0\\r\\n\\r\\n\">&3; read -r L<&3; [[ $L == *200* ]]' || exit 1"]
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8190; printf \"GET /actuator/health HTTP/1.0\\r\\n\\r\\n\">&3; read -r L<&3; [[ $$L == *200* ]]' || exit 1"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
       # XXL-Job 执行器注册（2026-10-11 接入）：token 必须与 xxl-job-admin 容器启动参数同值，
@@ -374,7 +374,7 @@ services:
     ports: ["8191:8191"]
     healthcheck:
       <<: *hc-common
-      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8191; printf \"GET /actuator/health HTTP/1.0\\r\\n\\r\\n\">&3; read -r L<&3; [[ $L == *200* ]]' || exit 1"]
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8191; printf \"GET /actuator/health HTTP/1.0\\r\\n\\r\\n\">&3; read -r L<&3; [[ $$L == *200* ]]' || exit 1"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
       # 2026-10-10：原破环变量 SPRING_DATASOURCE_DRUID_URL 指向已删除的 pd_aggregation 库，
@@ -389,7 +389,7 @@ services:
     ports: ["8192:8192"]
     healthcheck:
       <<: *hc-common
-      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8192; printf \"GET /actuator/health HTTP/1.0\\r\\n\\r\\n\">&3; read -r L<&3; [[ $L == *200* ]]' || exit 1"]
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8192; printf \"GET /actuator/health HTTP/1.0\\r\\n\\r\\n\">&3; read -r L<&3; [[ $$L == *200* ]]' || exit 1"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
       # netty TCP 长连接吃堆外内存，显式恢复 256m（覆盖 jvm-core 锚点的 128m）
@@ -405,7 +405,7 @@ services:
     ports: ["8161:8161"]
     healthcheck:
       <<: *hc-common
-      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8161; printf \"GET /actuator/health HTTP/1.0\\r\\n\\r\\n\">&3; read -r L<&3; [[ $L == *200* ]]' || exit 1"]
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8161; printf \"GET /actuator/health HTTP/1.0\\r\\n\\r\\n\">&3; read -r L<&3; [[ $$L == *200* ]]' || exit 1"]
     environment:
       <<: [*jvm-small, *nacos-env, *redis-env]
 
@@ -417,7 +417,7 @@ services:
     ports: ["8162:8162"]
     healthcheck:
       <<: *hc-common
-      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8162; printf \"GET /actuator/health HTTP/1.0\\r\\n\\r\\n\">&3; read -r L<&3; [[ $L == *200* ]]' || exit 1"]
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8162; printf \"GET /actuator/health HTTP/1.0\\r\\n\\r\\n\">&3; read -r L<&3; [[ $$L == *200* ]]' || exit 1"]
     environment:
       <<: [*jvm-small, *nacos-env, *redis-env]
 
@@ -429,7 +429,7 @@ services:
     ports: ["8163:8163"]
     healthcheck:
       <<: *hc-common
-      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8163; printf \"GET /actuator/health HTTP/1.0\\r\\n\\r\\n\">&3; read -r L<&3; [[ $L == *200* ]]' || exit 1"]
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8163; printf \"GET /actuator/health HTTP/1.0\\r\\n\\r\\n\">&3; read -r L<&3; [[ $$L == *200* ]]' || exit 1"]
     environment:
       <<: [*jvm-small, *nacos-env, *redis-env]
 
@@ -441,7 +441,7 @@ services:
     ports: ["8164:8164"]
     healthcheck:
       <<: *hc-common
-      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8164; printf \"GET /actuator/health HTTP/1.0\\r\\n\\r\\n\">&3; read -r L<&3; [[ $L == *200* ]]' || exit 1"]
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8164; printf \"GET /actuator/health HTTP/1.0\\r\\n\\r\\n\">&3; read -r L<&3; [[ $$L == *200* ]]' || exit 1"]
     environment:
       <<: [*jvm-small, *nacos-env, *redis-env]
       # Feign 客户端 UserClient 的 base url：web-customer 经 compose 网络直连 pd-user:8189。
