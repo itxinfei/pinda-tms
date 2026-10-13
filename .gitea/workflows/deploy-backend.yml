@@ -34,9 +34,24 @@ on:
   workflow_dispatch:
     inputs:
       services:
-        description: "要部署的服务（逗号分隔，必填）；all=全部 13 个后端。不默认任何服务——避免误点 Run 就动 pd-auth/网关这两个最敏感服务"
-        type: string
-        default: ""
+        description: "选择要部署的后端服务（all=全部 13 个；单选，多服务组合用服务器 deploy.sh be a,b）"
+        type: choice
+        options:
+          - all
+          - pd-auth
+          - pd-base
+          - pd-oms
+          - pd-work
+          - pd-user
+          - pd-dispatch
+          - pd-aggregation
+          - pd-netty
+          - pd-web-manager
+          - pd-web-driver
+          - pd-web-courier
+          - pd-web-customer
+          - pd-gateway
+        default: all
       db_approved:
         description: "DB 变更门禁放行（diff 含 *.sql 时须人工审核后置 true）"
         type: boolean

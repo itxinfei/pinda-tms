@@ -1,0 +1,111 @@
+# ============================================
+# 品达TMS 前端手动部署（Gitea Actions，下拉选择部署谁）
+#
+# 触发：仅手动 Run workflow（与后端 deploy-backend 同风格）
+# 选择：apps 下拉 —— all / admin / driver / courier / customer
+# 流程（与 deploy-fe.sh 同构）：逐端 docker build → compose 滚动 → wget 健康检查
+#       （60s）→ 失败自动回滚到上一版本（PREV 基线）→ 成功后清理旧镜像
+# 说明：
+#   - 前端镜像 healthcheck 是 wget 首页（不涉 actuator 版本错位问题）
+#   - 构建上下文 = 本 job 的 clone（gitea master），非服务器 checkout
+#   - TAG=act-<短sha>-<时间戳>；compose 需 TAG 全文件可插值（${TAG:?}）
+# ============================================
+name: deploy-frontend
+
+on:
+  workflow_dispatch:
+    inputs:
+      apps:
+        description: "选择要部署的前端（4 个 H5 端）"
+        type: choice
+        options:
+          - all
+          - admin
+          - driver
+          - courier
+          - customer
+        default: all
+
+jobs:
+  deploy-fe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码（内网 Gitea，不用 actions/checkout 以避免外网）
+        run: |
+          rm -rf ./* ./.??*
+          git clone --depth 50 -b "${GITHUB_REF_NAME:-master}" \
+            "http://192.168.20.130:3000/pinda/pinda-tms.git" .
+
+      - name: 解析目标端与 TAG
+        run: |
+          APPS="${{ github.event.inputs.apps }}"
+          case "$APPS" in
+            all) APPS="admin driver courier customer" ;;
+            admin|driver|courier|customer) ;;
+            *) echo "::error::未知前端 '$APPS'，可选 all/admin/driver/courier/customer"; exit 1 ;;
+          esac
+          echo "APPS=$APPS" >> "$GITHUB_ENV"
+          echo "TAG=act-$(echo "${GITHUB_SHA}" | cut -c1-7)-$(date +%Y%m%d%H%M)" >> "$GITHUB_ENV"
+          echo "本次部署前端: $APPS"
+
+      - name: 逐端构建 + 滚动更新 + 健康检查（失败回滚上一版）
+        run: |
+          set -e
+          COMPOSE=deploy/apps/docker-compose.app.yml
+          build_one() {
+            case "$1" in
+              admin) docker build -f deploy/apps/Dockerfile.admin-h5 -t "pinda/pd-admin-h5:${TAG}" . ;;
+              *)     docker build -f deploy/apps/Dockerfile.mobile-h5 \
+                       --build-arg APP_PATH=pd-mobile \
+                       --build-arg APP_SUBDIR="$1" \
+                       --build-arg APP_NAME="pd-mobile-$1" \
+                       -t "pinda/pd-${1}-h5:${TAG}" . ;;
+            esac
+          }
+          for app in $APPS; do
+            img="pd-${app}-h5"
+            tv="$(echo "$img" | tr 'a-z-' 'A-Z_')_TAG"
+            prev=$(docker inspect -f '{{.Config.Image}}' "$img" 2>/dev/null | sed -n 's/.*://p' || true)
+            echo ">> [$app] 回滚基线 PREV=${prev:-（首次部署，无基线）}"
+            build_one "$app"
+            # 容器归属检查：非 pinda-apps 管理的历史容器先删除，由 compose 接管
+            proj=$(docker inspect -f '{{index .Config.Labels "com.docker.compose.project"}}' "$img" 2>/dev/null || echo "")
+            if [ "$proj" != "pinda-apps" ]; then
+              echo ">> [$app] 旧容器 $img 非 pinda-apps 管理（proj='$proj'），先删除由 compose 接管"
+              docker rm -f "$img" 2>/dev/null || true
+            fi
+            env TAG="$TAG" "$tv=$TAG" docker compose --env-file /ci/apps.env \
+              -f "$COMPOSE" up -d "$img"
+            ok=0
+            for i in $(seq 1 12); do
+              st=$(docker inspect -f '{{.State.Health.Status}}' "$img" 2>/dev/null || echo missing)
+              [ "$st" = "healthy" ] && { ok=1; break; }
+              sleep 5
+            done
+            echo ">> [$app] health=$(docker inspect -f '{{.State.Health.Status}}' "$img" 2>/dev/null)"
+            if [ "$ok" != "1" ]; then
+              if [ -n "$prev" ]; then
+                echo ">> [$app] 部署未健康，回滚 -> $prev"
+                env TAG="$TAG" "$tv=$prev" docker compose --env-file /ci/apps.env \
+                  -f "$COMPOSE" up -d "$img"
+                for i in $(seq 1 12); do
+                  st=$(docker inspect -f '{{.State.Health.Status}}' "$img" 2>/dev/null || echo missing)
+                  [ "$st" = "healthy" ] && break
+                  sleep 5
+                done
+                echo ">> [$app] 回滚后 health=$(docker inspect -f '{{.State.Health.Status}}' "$img" 2>/dev/null)"
+              else
+                echo ">> [$app] 首次部署无回滚基线，需人工处理"
+              fi
+              echo "::error::$app 前端部署失败"
+              exit 1
+            fi
+            # 清理旧镜像：保留当前 tag 与回滚基线 prev
+            OLD=$(docker images "pinda/$img" --format '{{.Tag}}' | grep -vE "^${TAG}$|^${prev}$" || true)
+            if [ -n "$OLD" ]; then
+              echo "$OLD" | xargs -r -I{} docker rmi "pinda/$img:{}" 2>/dev/null || true
+            fi
+          done
+          docker builder prune -f --keep-storage 5g >/dev/null 2>&1 || true
+          echo ">> 前端部署完成: $APPS  TAG=$TAG"
+        timeout-minutes: 30
