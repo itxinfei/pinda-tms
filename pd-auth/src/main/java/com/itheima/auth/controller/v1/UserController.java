@@ -1,0 +1,101 @@
+package com.itheima.auth.controller.v1;
+
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.itheima.auth.common.v1.ApiResult;
+import com.itheima.auth.common.v1.OptionVO;
+import com.itheima.auth.common.v1.PageResult;
+import com.itheima.auth.common.v1.UserForm;
+import com.itheima.auth.common.v1.UserVO;
+import com.itheima.auth.service.v1.UserService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * 用户管理（youlai 契约 /api/v1/users）。
+ * 个人中心 /me、profile、手机邮箱绑定在 P1 补充；Excel 导入导出单独步骤。
+ */
+@RestController
+@RequestMapping("/users")
+@RequiredArgsConstructor
+public class UserController {
+
+    private final UserService userService;
+
+    /** 分页（pageNum/pageSize/keywords/status/deptId），返回 {list,total} */
+    @GetMapping
+    @SaCheckPermission("sys:user:list")
+    public ApiResult<PageResult<UserVO>> page(
+            @RequestParam(value = "pageNum", defaultValue = "1") long pageNum,
+            @RequestParam(value = "pageSize", defaultValue = "10") long pageSize,
+            @RequestParam(value = "keywords", required = false) String keywords,
+            @RequestParam(value = "status", required = false) Integer status,
+            @RequestParam(value = "deptId", required = false) Long deptId) {
+        return ApiResult.success(userService.page(pageNum, pageSize, keywords, status, deptId));
+    }
+
+    @GetMapping("/{id}/form")
+    @SaCheckPermission("sys:user:list")
+    public ApiResult<UserForm> form(@PathVariable Long id) {
+        return ApiResult.success(userService.formData(id));
+    }
+
+    @PostMapping
+    @SaCheckPermission("sys:user:add")
+    public ApiResult<Long> create(@RequestBody UserForm form) {
+        return ApiResult.success(userService.create(form));
+    }
+
+    @PutMapping("/{id}")
+    @SaCheckPermission("sys:user:edit")
+    public ApiResult<Void> update(@PathVariable Long id, @RequestBody UserForm form) {
+        userService.update(id, form);
+        return ApiResult.success();
+    }
+
+    /** 重置密码（body: {password}；空则默认 123456） */
+    @PutMapping("/{id}/password/reset")
+    @SaCheckPermission("sys:user:resetPwd")
+    public ApiResult<Void> resetPassword(@PathVariable Long id, @RequestBody(required = false) Map<String, String> body) {
+        String pwd = body == null ? null : body.get("password");
+        userService.resetPassword(id, pwd);
+        return ApiResult.success();
+    }
+
+    /** 启停（前端开关） */
+    @PutMapping("/{id}/status")
+    @SaCheckPermission("sys:user:edit")
+    public ApiResult<Void> changeStatus(@PathVariable Long id, @RequestParam Integer status) {
+        userService.changeStatus(id, status);
+        return ApiResult.success();
+    }
+
+    /** 批量删除（逗号分隔） */
+    @DeleteMapping("/{ids}")
+    @SaCheckPermission("sys:user:delete")
+    public ApiResult<Void> delete(@PathVariable String ids) {
+        List<Long> idList = Arrays.stream(ids.split(","))
+                .map(String::trim).filter(s -> !s.isEmpty())
+                .map(Long::valueOf).toList();
+        userService.deleteByIds(idList);
+        return ApiResult.success();
+    }
+
+    /** 用户简要选项（P1 占位，先返回空选项避免前端报错） */
+    @GetMapping("/options")
+    @SaCheckPermission("sys:user:list")
+    public ApiResult<List<OptionVO>> options() {
+        return ApiResult.success(List.of());
+    }
+}
