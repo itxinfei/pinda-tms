@@ -10,28 +10,28 @@
 #   bash deploy-be.sh pd-base,pd-oms
 #
 # 流程: 白名单校验 -> 容器归属检查 -> 记录 PREV 镜像基线
-#       -> ci/pinda-ci 容器内 mvn 打包 -> 硬链接 fat jar 到 .ctx
+#       -> ci/xinfei-ci 容器内 mvn 打包 -> 硬链接 fat jar 到 .ctx
 #       -> docker build -> compose 滚动 -> 健康检查 -> 失败按 PREV 自动回滚
 #
 # Maven 构建（2026-10-12 提速改造，与 Gitea deploy-backend.yml 同构）:
 #   - 单/多服务默认只 package 目标模块，上游 SNAPSHOT 取自持久 m2（宿主 /data/m2 挂为
 #     容器 /root/.m2，与 Actions job 的 container.options 挂载完全一致；settings 已写死
-#     localRepository=/root/.m2/repository；基线文件 /root/.m2/.pinda-baseline.revision）；
+#     localRepository=/root/.m2/repository；基线文件 /root/.m2/.xinfei-baseline.revision）；
 #   - 基线之后改过的内部上游模块先 install 刷新，再打目标包（不带 -am）；
 #   - 无基线 / 命中 pom.xml 变更 / install 或 package 失败，自动回退 -am 全链构建（旧行为兜底）；
 #   - all 维持 -pl 全模块 -am clean package。
 #
 # 约定:
 #   - 不自动 git pull：服务器 compose/env 含本地-only 配置，自动拉取有冲突风险；
-#     部署前自行确认 /data/pinda-tms 已检出目标提交（脚本会打印当前 HEAD）。
-#   - Maven 在 ci/pinda-ci 容器内执行（与 Gitea Actions 同一 JDK21/Maven3.9.9/aliyun 源），
+#     部署前自行确认 /data/xinfei-tms 已检出目标提交（脚本会打印当前 HEAD）。
+#   - Maven 在 ci/xinfei-ci 容器内执行（与 Gitea Actions 同一 JDK21/Maven3.9.9/aliyun 源），
 #     镜像构建与 compose 在宿主执行。
-#   - compose 顶层 name: pinda-apps；逐服务以 PD_<SVC>_TAG 覆盖镜像 tag。
+#   - compose 顶层 name: xinfei-apps；逐服务以 PD_<SVC>_TAG 覆盖镜像 tag。
 # ============================================================
 set -uo pipefail
 
-REPO_DIR=/data/pinda-tms
-CI_IMAGE=ci/pinda-ci:latest
+REPO_DIR=/data/xinfei-tms
+CI_IMAGE=ci/xinfei-ci:latest
 COMPOSE_FILE=$REPO_DIR/deploy/apps/docker-compose.app.yml
 APPS_ENV=/data/ci/apps.env
 # Maven settings：mvn 在 ci 容器内执行，宿主 /data/ci 挂为容器内 /ci（只读），必须用容器路径
@@ -89,12 +89,12 @@ HEAD=$(git rev-parse --short HEAD 2>/dev/null || echo unknown)
 echo "==> 仓库 $REPO_DIR  HEAD=$HEAD  TAG=$TAG"
 echo "==> 部署顺序: ${SERVICES[*]}"
 
-# 容器归属检查：同名容器存在但非 pinda-apps 管理则中止（不自动删，防误删）
+# 容器归属检查：同名容器存在但非 xinfei-apps 管理则中止（不自动删，防误删）
 for s in "${SERVICES[@]}"; do
   if docker inspect -f '{{.Id}}' "$s" >/dev/null 2>&1; then
     pj=$(docker inspect -f '{{index .Config.Labels "com.docker.compose.project"}}' "$s" 2>/dev/null || echo "")
-    if [ "$pj" != "pinda-apps" ]; then
-      echo "!! 容器 $s 存在但 project='$pj'（非 pinda-apps），compose up 会撞名。"
+    if [ "$pj" != "xinfei-apps" ]; then
+      echo "!! 容器 $s 存在但 project='$pj'（非 xinfei-apps），compose up 会撞名。"
       echo "   确认可由 compose 接管后先执行: docker rm -f $s"
       exit 1
     fi
@@ -125,7 +125,7 @@ docker run -i --rm --network host \
   "$CI_IMAGE" bash -s <<'CTR' || { echo "!! Maven 打包失败，未改动任何容器"; exit 1; }
 set -euo pipefail
 SETTINGS=/ci/maven-settings.xml
-BASELINE_FILE=/root/.m2/.pinda-baseline.revision
+BASELINE_FILE=/root/.m2/.xinfei-baseline.revision
 MVN_COMMON="-B -Dmaven.test.skip=true -s $SETTINGS"
 
 fallback_build() {
@@ -213,8 +213,8 @@ done
 
 echo "==> [3/5] docker build"
 for s in "${SERVICES[@]}"; do
-  echo "   build pinda/$s:$TAG"
-  docker build -f deploy/apps/Dockerfile -t "pinda/$s:$TAG" "$CTX_ROOT/$s" \
+  echo "   build xinfei/$s:$TAG"
+  docker build -f deploy/apps/Dockerfile -t "xinfei/$s:$TAG" "$CTX_ROOT/$s" \
     || { echo "!! 镜像构建失败: $s（旧容器未改动）"; exit 1; }
 done
 

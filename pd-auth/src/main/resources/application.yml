@@ -28,7 +28,7 @@ spring:
         username: ${NACOS_USERNAME:nacos}
         password: ${NACOS_PASSWORD:123456}
   datasource:
-    url: jdbc:mysql://${MYSQL_HOST:192.168.20.130}:${MYSQL_PORT:3306}/pinda_tms?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://${MYSQL_HOST:192.168.20.130}:${MYSQL_PORT:3306}/xinfei_tms?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
     username: ${MYSQL_USERNAME:root}
     # dev 统一口令默认值（口径见 CLAUDE.md §5.2 /《57-账号密码与凭据总表》）；线上由环境变量覆盖
     password: ${MYSQL_PASSWORD:123456}
@@ -65,7 +65,7 @@ mybatis-plus:
       id-type: ASSIGN_ID
 
 # 业务参数（禁止硬编码到 Java 代码）
-pinda:
+xinfei:
   captcha:
     # 验证码有效期（秒）
     ttl: 120

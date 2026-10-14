@@ -32,27 +32,27 @@ public class RabbitMQConfig {
     /**
      * 领域事件交换机
      */
-    public static final String EXCHANGE_DOMAIN_EVENT = "pinda.domain.event.exchange";
+    public static final String EXCHANGE_DOMAIN_EVENT = "xinfei.domain.event.exchange";
 
     /**
      * 订单确认队列
      */
-    public static final String QUEUE_ORDER_CONFIRMED = "pinda.domain.event.queue.order.confirmed";
+    public static final String QUEUE_ORDER_CONFIRMED = "xinfei.domain.event.queue.order.confirmed";
 
     /**
      * 揽收完成队列
      */
-    public static final String QUEUE_PICKUP_COMPLETED = "pinda.domain.event.queue.pickup.completed";
+    public static final String QUEUE_PICKUP_COMPLETED = "xinfei.domain.event.queue.pickup.completed";
 
     /**
      * 订单交付队列
      */
-    public static final String QUEUE_ORDER_DELIVERED = "pinda.domain.event.queue.order.delivered";
+    public static final String QUEUE_ORDER_DELIVERED = "xinfei.domain.event.queue.order.delivered";
 
     /**
      * 死信队列
      */
-    public static final String QUEUE_DEAD_LETTER = "pinda.domain.event.queue.dead.letter";
+    public static final String QUEUE_DEAD_LETTER = "xinfei.domain.event.queue.dead.letter";
 
     /**
      * 交换机

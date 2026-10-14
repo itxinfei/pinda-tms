@@ -37,13 +37,13 @@ spring:
         file-extension: yml
         username: ${NACOS_USERNAME:nacos}
         password: ${NACOS_PASSWORD:123456}
-  # 数据源：单库 pinda_tms（本模块 pom 直接依赖 druid-spring-boot-3-starter，数据源本地声明，
+  # 数据源：单库 xinfei_tms（本模块 pom 直接依赖 druid-spring-boot-3-starter，数据源本地声明，
   # 口径对齐 pd-work/pd-oms 单库多租户标准模式。Nacos pd-aggregation.yml 仅存的
   # spring.datasource.db-name 键在本模块无消费者，属待清理残留）
   datasource:
     type: com.alibaba.druid.pool.DruidDataSource
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${MYSQL_HOST:192.168.20.130}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:pinda_tms}?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://${MYSQL_HOST:192.168.20.130}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:xinfei_tms}?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true
     username: ${MYSQL_USERNAME:root}
     password: ${MYSQL_PASSWORD:123456}
     druid:

@@ -180,7 +180,7 @@ public class RabbitGpsTraceConsumer {
      * 消费GPS轨迹数据
      * 用手动ack，处理成功才ack，失败就nack并重新入队
      */
-    @RabbitListener(queues = "pinda.gps.queue")
+    @RabbitListener(queues = "xinfei.gps.queue")
     public void consumeGpsTrace(Message message, Channel channel) {
         try {
             LocationEntity location = JSON.parseObject(message.getBody(), LocationEntity.class);

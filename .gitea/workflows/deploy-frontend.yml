@@ -34,7 +34,7 @@ jobs:
         run: |
           rm -rf ./* ./.??*
           git clone --depth 50 -b "${GITHUB_REF_NAME:-master}" \
-            "http://192.168.20.130:3000/pinda/pinda-tms.git" .
+            "http://192.168.20.130:3000/xinfei/xinfei-tms.git" .
 
       - name: 解析目标端与 TAG
         run: |
@@ -54,12 +54,12 @@ jobs:
           COMPOSE=deploy/apps/docker-compose.app.yml
           build_one() {
             case "$1" in
-              admin) docker build -f deploy/apps/Dockerfile.admin-h5 -t "pinda/pd-admin-h5:${TAG}" . ;;
+              admin) docker build -f deploy/apps/Dockerfile.admin-h5 -t "xinfei/pd-admin-h5:${TAG}" . ;;
               *)     docker build -f deploy/apps/Dockerfile.mobile-h5 \
                        --build-arg APP_PATH=pd-mobile \
                        --build-arg APP_SUBDIR="$1" \
                        --build-arg APP_NAME="pd-mobile-$1" \
-                       -t "pinda/pd-${1}-h5:${TAG}" . ;;
+                       -t "xinfei/pd-${1}-h5:${TAG}" . ;;
             esac
           }
           for app in $APPS; do
@@ -68,10 +68,10 @@ jobs:
             prev=$(docker inspect -f '{{.Config.Image}}' "$img" 2>/dev/null | sed -n 's/.*://p' || true)
             echo ">> [$app] 回滚基线 PREV=${prev:-（首次部署，无基线）}"
             build_one "$app"
-            # 容器归属检查：非 pinda-apps 管理的历史容器先删除，由 compose 接管
+            # 容器归属检查：非 xinfei-apps 管理的历史容器先删除，由 compose 接管
             proj=$(docker inspect -f '{{index .Config.Labels "com.docker.compose.project"}}' "$img" 2>/dev/null || echo "")
-            if [ "$proj" != "pinda-apps" ]; then
-              echo ">> [$app] 旧容器 $img 非 pinda-apps 管理（proj='$proj'），先删除由 compose 接管"
+            if [ "$proj" != "xinfei-apps" ]; then
+              echo ">> [$app] 旧容器 $img 非 xinfei-apps 管理（proj='$proj'），先删除由 compose 接管"
               docker rm -f "$img" 2>/dev/null || true
             fi
             env TAG="$TAG" "$tv=$TAG" docker compose --env-file /ci/apps.env \
@@ -101,9 +101,9 @@ jobs:
               exit 1
             fi
             # 清理旧镜像：保留当前 tag 与回滚基线 prev
-            OLD=$(docker images "pinda/$img" --format '{{.Tag}}' | grep -vE "^${TAG}$|^${prev}$" || true)
+            OLD=$(docker images "xinfei/$img" --format '{{.Tag}}' | grep -vE "^${TAG}$|^${prev}$" || true)
             if [ -n "$OLD" ]; then
-              echo "$OLD" | xargs -r -I{} docker rmi "pinda/$img:{}" 2>/dev/null || true
+              echo "$OLD" | xargs -r -I{} docker rmi "xinfei/$img:{}" 2>/dev/null || true
             fi
           done
           docker builder prune -f --keep-storage 5g >/dev/null 2>&1 || true

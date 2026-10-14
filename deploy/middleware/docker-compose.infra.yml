@@ -11,7 +11,7 @@
 # 口令一律走同目录 .env（root 0600，不入 Git）。缺任一项 compose 直接报错，
 # 不会静默起一个用默认口令的容器。
 # ============================================
-name: pinda-infra
+name: xinfei-infra
 
 x-ulimits: &ulimits
   ulimits:
@@ -34,7 +34,7 @@ services:
       #   my.cnf 挂在数据目录之外，docker restart / 重建都不丢，
       #   也方便 DBA 直接 cat 核对当前生效参数。
       # 每项参数的实测调整依据见同目录 my.cnf。
-      - /home/pdwl/mysql-conf/pinda.cnf:/etc/mysql/conf.d/pinda.cnf:ro
+      - /home/pdwl/mysql-conf/xinfei.cnf:/etc/mysql/conf.d/xinfei.cnf:ro
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?缺少 .env 里的 MYSQL_ROOT_PASSWORD}
     mem_limit: 1g
@@ -145,7 +145,7 @@ services:
       # 0.4 × 15.9G ≈ 6.4G，而本容器 cgroup 上限只有 1G —— 于是它永远不会自己进
       # 流控，先被 cgroup OOM kill。3.12 已废弃 RABBITMQ_VM_MEMORY_HIGH_WATERMARK
       # 环境变量，只能走配置文件。
-      - /data/rabbitmq-conf/20-pinda.conf:/etc/rabbitmq/conf.d/20-pinda.conf:ro
+      - /data/rabbitmq-conf/20-xinfei.conf:/etc/rabbitmq/conf.d/20-xinfei.conf:ro
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:?缺少 .env 里的 RABBITMQ_DEFAULT_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:?缺少 .env 里的 RABBITMQ_DEFAULT_PASS}
@@ -167,7 +167,7 @@ services:
 
 # 网络按运行时原样声明，不给这次变更引入额外的网络迁移：
 #   mysql8 / redis / nacos 历史上就是裸 docker run 起在默认 bridge（docker0, 172.17.0.0/16）；
-#   rabbitmq 由本 compose 项目创建过 pinda-infra_default（172.22.0.0/16）。
+#   rabbitmq 由本 compose 项目创建过 xinfei-infra_default（172.22.0.0/16）。
 #
 # 为什么 mysql8/redis/nacos 用 network_mode: bridge 而不是 networks：
 #   compose 会给 networks 下的服务自动附加 network-scoped alias，而 Docker 只对
@@ -175,9 +175,9 @@ services:
 #   "invalid config for network bridge: network-scoped aliases are only supported
 #    for user-defined networks"。network_mode 走的是 docker run --network bridge 的
 #   原生路径，不加别名，端口发布照常。
-# pinda-infra_default 标 external，compose 只使用不创建。全新机器上先执行：
-#   docker network create pinda-infra_default
+# xinfei-infra_default 标 external，compose 只使用不创建。全新机器上先执行：
+#   docker network create xinfei-infra_default
 networks:
   infra:
-    name: pinda-infra_default
+    name: xinfei-infra_default
     external: true

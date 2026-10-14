@@ -3,16 +3,16 @@
 # 三件事打包，避免为同一个目的重启两次：
 #   1) /etc/docker/daemon.json 增加容器默认 nofile=65535 与 BuildKit 自动 GC；
 #   2) 加载 br_netfilter（Docker 官方前置条件，当前缺失：/proc/sys/net/bridge 不存在）；
-#   3) 重启 dockerd 后补一次网桥网关地址（pinda-bridge-fix）。
+#   3) 重启 dockerd 后补一次网桥网关地址（xinfei-bridge-fix）。
 #
 # 用法: bash deploy/ci/apply-docker-window.sh            # 实际执行
 #       DRY_RUN=1 bash deploy/ci/apply-docker-window.sh  # 只看要改什么
-# 前提: deploy/ci/fix-docker-bridges.sh 已在 /usr/local/bin/pinda-bridge-fix.sh
+# 前提: deploy/ci/fix-docker-bridges.sh 已在 /usr/local/bin/xinfei-bridge-fix.sh
 set -uo pipefail
 
 DRY_RUN=${DRY_RUN:-0}
 TARGET=/etc/docker/daemon.json
-PENDING=/etc/docker/daemon.json.pinda
+PENDING=/etc/docker/daemon.json.xinfei
 
 cat > "$PENDING" <<'JSON'
 {
@@ -42,7 +42,7 @@ diff "$TARGET" "$PENDING" && echo "  (无差异)"
 
 echo "=== 2) 桥接过滤前置条件 ==="
 echo "  br_netfilter 已加载: $(lsmod | grep -c br_netfilter)  (0=未加载)"
-echo "  /etc/modules-load.d/pinda-docker.conf -> $(cat /etc/modules-load.d/pinda-docker.conf 2>/dev/null || echo 尚未创建)"
+echo "  /etc/modules-load.d/xinfei-docker.conf -> $(cat /etc/modules-load.d/xinfei-docker.conf 2>/dev/null || echo 尚未创建)"
 echo "  ufw 桥接口 FORWARD 放行: $(grep -c 'ufw-before-forward -i br-+' /etc/ufw/before.rules 2>/dev/null) 条"
 
 if [ "$DRY_RUN" = "1" ]; then
@@ -54,8 +54,8 @@ fi
 echo "=== 3) 执行 ==="
 cp -a "$TARGET" "$TARGET.bak-$(date +%F-%H%M%S)"
 cp -a "$PENDING" "$TARGET"
-printf 'br_netfilter\n' > /etc/modules-load.d/pinda-docker.conf
-printf 'net.bridge.bridge-nf-call-iptables=1\nnet.bridge.bridge-nf-call-ip6tables=1\n' > /etc/sysctl.d/99-pinda-bridge.conf
+printf 'br_netfilter\n' > /etc/modules-load.d/xinfei-docker.conf
+printf 'net.bridge.bridge-nf-call-iptables=1\nnet.bridge.bridge-nf-call-ip6tables=1\n' > /etc/sysctl.d/99-xinfei-bridge.conf
 modprobe br_netfilter 2>/dev/null || echo "  modprobe br_netfilter 失败（继续，重启后 modules-load 会再试）"
 sysctl --system >/dev/null 2>&1
 
@@ -77,11 +77,11 @@ if [ "$ok" != "1" ]; then
   systemctl restart docker
   sleep 10
   echo "  回滚后运行容器数: $(docker ps -q | wc -l)（builder.gc 需换成字节/纳秒整数等格式再试）"
-  bash /usr/local/bin/pinda-bridge-fix.sh
+  bash /usr/local/bin/xinfei-bridge-fix.sh
   exit 1
 fi
 
-bash /usr/local/bin/pinda-bridge-fix.sh
+bash /usr/local/bin/xinfei-bridge-fix.sh
 
 echo "=== 4) 核对 ==="
 docker info 2>/dev/null | grep -A3 -i "default ulimits" | head -4

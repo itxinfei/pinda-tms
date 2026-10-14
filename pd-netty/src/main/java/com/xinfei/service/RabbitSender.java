@@ -13,8 +13,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class RabbitSender {
 
-    public final static String GPS_EXCHANGE = "pinda.gps.exchange";//GPS轨迹交换机
-    public final static String GPS_QUEUE = "pinda.gps.queue";//GPS轨迹队列
+    public final static String GPS_EXCHANGE = "xinfei.gps.exchange";//GPS轨迹交换机
+    public final static String GPS_QUEUE = "xinfei.gps.queue";//GPS轨迹队列
     public final static String GPS_ROUTING_KEY = "gps.#";//GPS轨迹路由键
 
     @Autowired

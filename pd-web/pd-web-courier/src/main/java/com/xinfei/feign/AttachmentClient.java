@@ -15,7 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
  * 与 driver/customer 端保持一致，业务标识使用 courier。</p>
  */
 @FeignClient(
-        name = "${pinda.feign.authority-server:pd-file-server}",
+        name = "${xinfei.feign.authority-server:pd-file-server}",
         path = "/attachment"
 )
 public interface AttachmentClient {

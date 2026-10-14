@@ -34,7 +34,7 @@
 #   7) oom_score_adj：中间件 -500、应用 -200、构建容器 +500（在 act_runner 的
 #      container.options 里给），整机真出 OOM 时先杀构建，不动数据和服务。
 # ============================================
-name: pinda-apps
+name: xinfei-apps
 
 # 文件描述符（容器默认软限 1024）
 x-ulimits: &app-ulimits
@@ -210,7 +210,7 @@ x-nacos-env: &nacos-env
   # 开启后服务必须带合法账号口令，否则拉配置 403、启动失败。
   # dev 统一口径（CLAUDE.md §5.2）：全部微服务使用超管 nacos/123456，与 CI(/data/ci/apps.env)
   # 及各 yml 的 ${NACOS_USERNAME:nacos}/${NACOS_PASSWORD:123456} 默认值一致。
-  # 口令在服务器 apps/.env(0600)，不进 Git。命名空间级应用账号 pinda/123456
+  # 口令在服务器 apps/.env(0600)，不进 Git。命名空间级应用账号 xinfei/123456
   # （仅有 1cb93ce4-... 的 READ,WRITE 权限）保留备用，生产收紧时切回该账号。
   NACOS_USERNAME: ${NACOS_USERNAME:?缺少 .env 里的 NACOS_USERNAME}
   NACOS_PASSWORD: ${NACOS_PASSWORD:?缺少 .env 里的 NACOS_PASSWORD}
@@ -244,7 +244,7 @@ services:
   # ---------- 网关与鉴权（profile=test） ----------
   pd-gateway:
     <<: *app-edge
-    image: pinda/pd-gateway:${PD_GATEWAY_TAG:-${TAG:?TAG_not_set}}
+    image: xinfei/pd-gateway:${PD_GATEWAY_TAG:-${TAG:?TAG_not_set}}
     container_name: pd-gateway
     restart: unless-stopped
     ports: ["8760:8760"]
@@ -259,18 +259,18 @@ services:
       # 所以堆外与 OOM 参数必须在下面这一行重复一遍，否则锚点的加固对网关无效。
       JAVA_OPTS: "-Xms96m -Xmx192m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:MaxMetaspaceSize=192m -XX:MaxDirectMemorySize=128m -Xss512k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -Dcors.allowed.origins=http://192.168.20.130,http://192.168.20.130:8080,http://192.168.20.130:8081,http://192.168.20.130:8082,http://192.168.20.130:8083,http://192.168.20.130:8084,http://localhost:8080,http://localhost:3000"
       # JWT 验签公钥的外部来源（详见 pd-auth 段注释与部署文档 §2.11）
-      PINDA_JWT_PUB_KEY_PATH: ${PINDA_JWT_PUB_KEY_PATH:-}
+      XINFEI_JWT_PUB_KEY_PATH: ${XINFEI_JWT_PUB_KEY_PATH:-}
       # 网关镜像不含任何 JDBC 连接池（无 druid/hikari/tomcat-jdbc），却因 mysql.yml 强制
       # spring.datasource.type=com.alibaba.druid.pool.DruidDataSource 而触发 DataSourceAutoConfiguration
       # 绑定失败（classpath 缺类，Nacos 覆写救不了）。网关本就不连库，排除该自动配置。
       # 同时保留上面 jvm-core 继承来的 druid 占位符修复，避免网关未来若恢复 druid 时再踩坑。
       JAVA_TOOL_OPTIONS: "-Dbaidu.map.ak=${BAIDU_MAP_AK:-} -Dspring.datasource.druid.stat-view-servlet.enabled=false -Dspring.datasource.druid.web-stat-filter.enabled=false -Dspring.servlet.multipart.enabled=true -Dspring.servlet.multipart.max-file-size=100MB -Dspring.servlet.multipart.max-request-size=1000MB -Dspring.jackson.time-zone=GMT+8 -Dmybatis-plus.configuration.map-underscore-to-camel-case=true -Dmybatis-plus.configuration.cache-enabled=true -Dmybatis-plus.configuration.call-setters-on-nulls=false -Dmybatis-plus.configuration.jdbc-type-for-null=NULL -Dmybatis-plus.global-config.db-config.id-type=ASSIGN_ID -Dmybatis-plus.global-config.banner=false -Dspring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration"
     volumes:
-      - ${PINDA_JWT_HOST_DIR:-/data/pinda-jwt}:/data/pinda-jwt:ro
+      - ${XINFEI_JWT_HOST_DIR:-/data/xinfei-jwt}:/data/xinfei-jwt:ro
 
   pd-auth:
     <<: *app-edge
-    image: pinda/pd-auth:${PD_AUTH_TAG:-${TAG:?TAG_not_set}}
+    image: xinfei/pd-auth:${PD_AUTH_TAG:-${TAG:?TAG_not_set}}
     container_name: pd-auth
     restart: unless-stopped
     ports: ["9000:9000"]
@@ -288,17 +288,17 @@ services:
       # 轮换的完整步骤在 docs/部署文档.md §2.11。
       #
       # 语义：留空等于"未设置"，RsaKeyHelper 会照旧回落 classpath，所以现在这套
-      # 配置不改变任何在线行为；把新密钥放到宿主 /data/pinda-jwt 并在
+      # 配置不改变任何在线行为；把新密钥放到宿主 /data/xinfei-jwt 并在
       # /data/ci/deploy.env 里设好这两个变量，下次部署即切到仓外密钥。
-      PINDA_JWT_PRI_KEY_PATH: ${PINDA_JWT_PRI_KEY_PATH:-}
-      PINDA_JWT_PUB_KEY_PATH: ${PINDA_JWT_PUB_KEY_PATH:-}
+      XINFEI_JWT_PRI_KEY_PATH: ${XINFEI_JWT_PRI_KEY_PATH:-}
+      XINFEI_JWT_PUB_KEY_PATH: ${XINFEI_JWT_PUB_KEY_PATH:-}
     volumes:
-      - ${PINDA_JWT_HOST_DIR:-/data/pinda-jwt}:/data/pinda-jwt:ro
+      - ${XINFEI_JWT_HOST_DIR:-/data/xinfei-jwt}:/data/xinfei-jwt:ro
 
   # ---------- 基础微服务 ----------
   pd-base:
     <<: *app-core
-    image: pinda/pd-base:${PD_BASE_TAG:-${TAG:?TAG_not_set}}
+    image: xinfei/pd-base:${PD_BASE_TAG:-${TAG:?TAG_not_set}}
     container_name: pd-base
     restart: unless-stopped
     ports: ["8185:8185"]
@@ -310,7 +310,7 @@ services:
 
   pd-oms:
     <<: *app-core
-    image: pinda/pd-oms:${PD_OMS_TAG:-${TAG:?TAG_not_set}}
+    image: xinfei/pd-oms:${PD_OMS_TAG:-${TAG:?TAG_not_set}}
     container_name: pd-oms
     restart: unless-stopped
     ports: ["8186:8186"]
@@ -321,14 +321,14 @@ services:
       <<: [*jvm-core, *nacos-env, *redis-env]
       # 真实使用 rabbit（消费 ORDER_DELIVERED 触发结算）→ 显式开启其健康指标
       MANAGEMENT_HEALTH_RABBIT_ENABLED: "true"
-      # RabbitMQ 在 pinda-infra 网络，跨网走宿主 IP（rabbitmq 在 pinda-infra_default、pd-oms 在 pinda-apps_default）
+      # RabbitMQ 在 xinfei-infra 网络，跨网走宿主 IP（rabbitmq 在 xinfei-infra_default、pd-oms 在 xinfei-apps_default）
       RABBITMQ_HOST: 192.168.20.130
-      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-pinda}
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-xinfei}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
 
   pd-work:
     <<: *app-core
-    image: pinda/pd-work:${PD_WORK_TAG:-${TAG:?TAG_not_set}}
+    image: xinfei/pd-work:${PD_WORK_TAG:-${TAG:?TAG_not_set}}
     container_name: pd-work
     restart: unless-stopped
     ports: ["8187:8187"]
@@ -340,7 +340,7 @@ services:
 
   pd-user:
     <<: *app-core
-    image: pinda/pd-user:${PD_USER_TAG:-${TAG:?TAG_not_set}}
+    image: xinfei/pd-user:${PD_USER_TAG:-${TAG:?TAG_not_set}}
     container_name: pd-user
     restart: unless-stopped
     ports: ["8189:8189"]
@@ -352,7 +352,7 @@ services:
 
   pd-dispatch:
     <<: *app-core
-    image: pinda/pd-dispatch:${PD_DISPATCH_TAG:-${TAG:?TAG_not_set}}
+    image: xinfei/pd-dispatch:${PD_DISPATCH_TAG:-${TAG:?TAG_not_set}}
     container_name: pd-dispatch
     restart: unless-stopped
     # 9999 = XXL-Job 执行器回调端口：xxl-job-admin 位于默认 bridge 网（172.17.x），
@@ -376,7 +376,7 @@ services:
 
   pd-aggregation:
     <<: *app-core
-    image: pinda/pd-aggregation:${PD_AGGREGATION_TAG:-${TAG:?TAG_not_set}}
+    image: xinfei/pd-aggregation:${PD_AGGREGATION_TAG:-${TAG:?TAG_not_set}}
     container_name: pd-aggregation
     restart: unless-stopped
     ports: ["8191:8191"]
@@ -386,12 +386,12 @@ services:
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
       # 2026-10-10：原破环变量 SPRING_DATASOURCE_DRUID_URL 指向已删除的 pd_aggregation 库，
-      # 库名统一走单库 pinda_tms，URL 由 jar 内 application.yml 的 ${MYSQL_DATABASE} 给出。
+      # 库名统一走单库 xinfei_tms，URL 由 jar 内 application.yml 的 ${MYSQL_DATABASE} 给出。
 
   # netty 承载长连接与直接内存，按 core 档给足堆外额度
   pd-netty:
     <<: *app-edge
-    image: pinda/pd-netty:${PD_NETTY_TAG:-${TAG:?TAG_not_set}}
+    image: xinfei/pd-netty:${PD_NETTY_TAG:-${TAG:?TAG_not_set}}
     container_name: pd-netty
     restart: unless-stopped
     ports: ["8192:8192"]
@@ -404,12 +404,12 @@ services:
       MANAGEMENT_HEALTH_RABBIT_ENABLED: "true"
       # netty TCP 长连接吃堆外内存，显式恢复 256m（覆盖 jvm-core 锚点的 128m）
       JAVA_OPTS: "-Xms96m -Xmx192m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:MaxMetaspaceSize=192m -XX:MaxDirectMemorySize=256m -Xss512k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -Dmybatis-plus.mapper-locations=classpath*:/mapper/**/*.xml -Dmybatis-plus.typeAliasesPackage=com.xinfei.entity -Dmybatis-plus.configuration.map-underscore-to-camel-case=true -Dmybatis-plus.configuration.cache-enabled=true -Dmybatis-plus.configuration.call-setters-on-nulls=false -Dmybatis-plus.configuration.jdbc-type-for-null=NULL -Dmybatis-plus.global-config.db-config.id-type=ASSIGN_ID -Dmybatis-plus.global-config.banner=false"
-      # 单库 pinda_tms 后 netty 的 pd_alarm_record/pd_truck_location* 与其他表同库，URL 由 jar 内 application.yml 给出
+      # 单库 xinfei_tms 后 netty 的 pd_alarm_record/pd_truck_location* 与其他表同库，URL 由 jar 内 application.yml 给出
 
   # ---------- Web 聚合层 ----------
   pd-web-manager:
     <<: *app-small
-    image: pinda/pd-web-manager:${PD_WEB_MANAGER_TAG:-${TAG:?TAG_not_set}}
+    image: xinfei/pd-web-manager:${PD_WEB_MANAGER_TAG:-${TAG:?TAG_not_set}}
     container_name: pd-web-manager
     restart: unless-stopped
     ports: ["8161:8161"]
@@ -421,7 +421,7 @@ services:
 
   pd-web-driver:
     <<: *app-small
-    image: pinda/pd-web-driver:${PD_WEB_DRIVER_TAG:-${TAG:?TAG_not_set}}
+    image: xinfei/pd-web-driver:${PD_WEB_DRIVER_TAG:-${TAG:?TAG_not_set}}
     container_name: pd-web-driver
     restart: unless-stopped
     ports: ["8162:8162"]
@@ -433,7 +433,7 @@ services:
 
   pd-web-courier:
     <<: *app-small
-    image: pinda/pd-web-courier:${PD_WEB_COURIER_TAG:-${TAG:?TAG_not_set}}
+    image: xinfei/pd-web-courier:${PD_WEB_COURIER_TAG:-${TAG:?TAG_not_set}}
     container_name: pd-web-courier
     restart: unless-stopped
     ports: ["8163:8163"]
@@ -445,7 +445,7 @@ services:
 
   pd-web-customer:
     <<: *app-small
-    image: pinda/pd-web-customer:${PD_WEB_CUSTOMER_TAG:-${TAG:?TAG_not_set}}
+    image: xinfei/pd-web-customer:${PD_WEB_CUSTOMER_TAG:-${TAG:?TAG_not_set}}
     container_name: pd-web-customer
     restart: unless-stopped
     ports: ["8164:8164"]
@@ -476,7 +476,7 @@ services:
   # 端口 8081：老后台曾占用 8080，下线后不沿用，避免与历史书签/监控混淆。
   pd-admin-h5:
     <<: *app-static
-    image: pinda/pd-admin-h5:${PD_ADMIN_H5_TAG:-${TAG:?TAG_not_set}}
+    image: xinfei/pd-admin-h5:${PD_ADMIN_H5_TAG:-${TAG:?TAG_not_set}}
     container_name: pd-admin-h5
     restart: unless-stopped
     ports: ["8081:80"]
@@ -496,7 +496,7 @@ services:
   # 只有 H5 产物走 nginx 托管；微信小程序与 App 打包产物不走这里。
   pd-driver-h5:
     <<: *app-static
-    image: pinda/pd-driver-h5:${PD_DRIVER_H5_TAG:-${TAG:?TAG_not_set}}
+    image: xinfei/pd-driver-h5:${PD_DRIVER_H5_TAG:-${TAG:?TAG_not_set}}
     container_name: pd-driver-h5
     restart: unless-stopped
     ports: ["8082:80"]
@@ -511,10 +511,10 @@ services:
   # 构建方式（deploy-frontend 流水线已删除，现由宿主 deploy-fe.sh 构建）：
   #   docker build -f deploy/apps/Dockerfile.mobile-h5 \
   #     --build-arg APP_PATH=pd-mobile --build-arg APP_SUBDIR=courier \
-  #     --build-arg APP_NAME=pd-mobile-courier -t pinda/pd-courier-h5:<tag> .
+  #     --build-arg APP_NAME=pd-mobile-courier -t xinfei/pd-courier-h5:<tag> .
   pd-courier-h5:
     <<: *app-static
-    image: pinda/pd-courier-h5:${PD_COURIER_H5_TAG:-${TAG:?TAG_not_set}}
+    image: xinfei/pd-courier-h5:${PD_COURIER_H5_TAG:-${TAG:?TAG_not_set}}
     container_name: pd-courier-h5
     restart: unless-stopped
     ports: ["8083:80"]
@@ -529,10 +529,10 @@ services:
   # 构建方式（deploy-frontend 流水线已删除，现由宿主 deploy-fe.sh 构建）：
   #   docker build -f deploy/apps/Dockerfile.mobile-h5 \
   #     --build-arg APP_PATH=pd-mobile --build-arg APP_SUBDIR=customer \
-  #     --build-arg APP_NAME=pd-mobile-customer -t pinda/pd-customer-h5:<tag> .
+  #     --build-arg APP_NAME=pd-mobile-customer -t xinfei/pd-customer-h5:<tag> .
   pd-customer-h5:
     <<: *app-static
-    image: pinda/pd-customer-h5:${PD_CUSTOMER_H5_TAG:-${TAG:?TAG_not_set}}
+    image: xinfei/pd-customer-h5:${PD_CUSTOMER_H5_TAG:-${TAG:?TAG_not_set}}
     container_name: pd-customer-h5
     restart: unless-stopped
     ports: ["8084:80"]

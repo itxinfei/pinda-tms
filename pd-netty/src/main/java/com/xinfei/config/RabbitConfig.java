@@ -16,8 +16,8 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitConfig {
 
-    public static final String GPS_EXCHANGE = "pinda.gps.exchange";
-    public static final String GPS_QUEUE = "pinda.gps.queue";
+    public static final String GPS_EXCHANGE = "xinfei.gps.exchange";
+    public static final String GPS_QUEUE = "xinfei.gps.queue";
     public static final String GPS_ROUTING_KEY = "gps.#";
 
     /**

@@ -28,7 +28,7 @@ public class ConfigCrypto {
 
     public ConfigCrypto(String rawKey) {
         if (rawKey == null || rawKey.isBlank()) {
-            throw new IllegalArgumentException("pinda.config.crypto-key 不能为空");
+            throw new IllegalArgumentException("xinfei.config.crypto-key 不能为空");
         }
         try {
             byte[] digest = MessageDigest.getInstance("SHA-256")

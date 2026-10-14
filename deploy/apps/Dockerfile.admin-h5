@@ -3,7 +3,7 @@
 #
 # 构建上下文 = 仓库根目录（需要 pd-admin-ui-vue3/ 下的源码与 pnpm-lock.yaml）：
 #   docker build -f deploy/apps/Dockerfile.admin-ui-vue3 \
-#     -t pinda/pd-admin-h5:<tag> .
+#     -t xinfei/pd-admin-h5:<tag> .
 #
 # 为什么必须是多阶段：
 #   node-sass / vite / typescript 这些构建链有几百 MB，最终镜像只需要 dist 静态产物。

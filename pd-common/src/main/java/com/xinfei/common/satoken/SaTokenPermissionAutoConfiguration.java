@@ -37,7 +37,7 @@ public class SaTokenPermissionAutoConfiguration {
     }
 
     /**
-     * 端级角色绑定（X-01 下沉落点）：仅当服务显式配置 {@code pinda.auth.required-roles}
+     * 端级角色绑定（X-01 下沉落点）：仅当服务显式配置 {@code xinfei.auth.required-roles}
      * 时注册，多角色逗号分隔、OR 关系（通常写"本端角色,ADMIN"）。
      *
      * <p>拦截 /**（登录态已由网关校验，此处只做角色）， actuator 探针必须排除——
@@ -47,9 +47,9 @@ public class SaTokenPermissionAutoConfiguration {
      * 此处不再用 @Bean 注册以免 BFF 内重复 Bean 定义。</p>
      */
     @Bean
-    @ConditionalOnProperty(name = "pinda.auth.required-roles")
+    @ConditionalOnProperty(name = "xinfei.auth.required-roles")
     public WebMvcConfigurer requiredRoleInterceptorConfigurer(
-            @Value("${pinda.auth.required-roles}") String requiredRoles) {
+            @Value("${xinfei.auth.required-roles}") String requiredRoles) {
         String[] roles = Arrays.stream(requiredRoles.split(","))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())

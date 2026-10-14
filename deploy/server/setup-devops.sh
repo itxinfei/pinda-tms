@@ -11,12 +11,12 @@
 set -e
 
 GITEA_URL="http://192.168.20.130:3000"
-GITEA_ADMIN_USER="${GITEA_ADMIN_USER:-pinda}"
+GITEA_ADMIN_USER="${GITEA_ADMIN_USER:-xinfei}"
 : "${GITEA_ADMIN_PASS:?必须显式提供 GITEA_ADMIN_PASS（不在仓库里留默认口令）}"
-GITEA_ADMIN_EMAIL="${GITEA_ADMIN_EMAIL:-pinda@local}"
+GITEA_ADMIN_EMAIL="${GITEA_ADMIN_EMAIL:-xinfei@local}"
 
-echo "[1/3] 构建 CI 作业镜像 ci/pinda-ci:latest"
-docker build -f deploy/ci/Dockerfile -t ci/pinda-ci:latest .
+echo "[1/3] 构建 CI 作业镜像 ci/xinfei-ci:latest"
+docker build -f deploy/ci/Dockerfile -t ci/xinfei-ci:latest .
 
 echo "[2/3] 启动 Gitea"
 docker compose -f deploy/gitea/docker-compose.gitea.yml up -d gitea
@@ -39,9 +39,9 @@ Gitea 已就绪： ${GITEA_URL}
 登录账号： ${GITEA_ADMIN_USER} / ${GITEA_ADMIN_PASS}
 
 下一步：
-  1. 登录后新建仓库 pinda-tms（建空仓库，不要勾选初始化 README）。
+  1. 登录后新建仓库 xinfei-tms（建空仓库，不要勾选初始化 README）。
   2. 右上角头像 -> 管理面板 -> Actions -> Runners，创建 Runner 并复制【注册令牌】。
   3. 把令牌填入 deploy/gitea/docker-compose.gitea.yml 的 GITEA_RUNNER_REGISTRATION_TOKEN，执行：
        docker compose -f deploy/gitea/docker-compose.gitea.yml up -d
-     回到 Runners 页面应看到 pinda-runner 在线（绿点）。
+     回到 Runners 页面应看到 xinfei-runner 在线（绿点）。
 EOF

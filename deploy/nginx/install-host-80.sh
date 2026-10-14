@@ -18,20 +18,20 @@ TS=$(date +%F-%H%M)
 if [ -d /www/server/panel/vhost/nginx ]; then
     echo "!! 检测到宝塔 nginx。本脚本的 /etc/nginx 路径对它无效，改装到宝塔 vhost 目录。"
     DEST_DIR=/www/server/panel/vhost/nginx
-    install -m 0644 "$HERE/pinda-upgrade.conf" "$DEST_DIR/pinda-upgrade.conf"
-    install -m 0644 "$HERE/pinda-80.conf" "$DEST_DIR/pinda.conf"
+    install -m 0644 "$HERE/xinfei-upgrade.conf" "$DEST_DIR/xinfei-upgrade.conf"
+    install -m 0644 "$HERE/xinfei-80.conf" "$DEST_DIR/xinfei.conf"
     echo "已安装到 $DEST_DIR，请执行: /www/server/nginx/sbin/nginx -t && /www/server/nginx/sbin/nginx -s reload"
     exit 0
 fi
 
 # conf.d 只 include *.conf，后缀写错文件根本不会被加载（踩过）
-install -m 0644 "$HERE/pinda-upgrade.conf" /etc/nginx/conf.d/pinda-upgrade.conf
+install -m 0644 "$HERE/xinfei-upgrade.conf" /etc/nginx/conf.d/xinfei-upgrade.conf
 
-if [ -f /etc/nginx/sites-available/pinda ]; then
-    cp -a /etc/nginx/sites-available/pinda "/etc/nginx/sites-available/pinda.bak-$TS"
+if [ -f /etc/nginx/sites-available/xinfei ]; then
+    cp -a /etc/nginx/sites-available/xinfei "/etc/nginx/sites-available/xinfei.bak-$TS"
 fi
-install -m 0644 "$HERE/pinda-80.conf" /etc/nginx/sites-available/pinda
-ln -sfn /etc/nginx/sites-available/pinda /etc/nginx/sites-enabled/pinda
+install -m 0644 "$HERE/xinfei-80.conf" /etc/nginx/sites-available/xinfei
+ln -sfn /etc/nginx/sites-available/xinfei /etc/nginx/sites-enabled/xinfei
 
 nginx -t
 systemctl reload nginx

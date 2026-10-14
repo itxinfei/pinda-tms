@@ -11,7 +11,7 @@ import { isTenantEnabled } from "@/utils/tenant";
  * 后端真实用户信息端点上线（appConfig.userInfoEndpointEnabled=true）后不再使用。
  */
 const FALLBACK_USER_INFO = {
-  nickname: "pinda",
+  nickname: "xinfei",
   avatar: "",
   roles: ["ADMIN"],
   perms: ["*"],

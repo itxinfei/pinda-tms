@@ -150,7 +150,7 @@ const UserIcon = markRaw(User);
 const LockIcon = markRaw(Lock);
 
 const loginFormData = ref<LoginRequest>({
-  username: "pinda",
+  username: "xinfei",
   password: "123456",
   captchaId: "",
   captchaCode: "",
@@ -169,7 +169,7 @@ const loginRules = computed(() => ({
 // 心飞物流演示账号（必须是 pd_auth_user 中真实存在的账号，口径见《57-账号密码与凭据总表》）
 const demoAccounts = computed(() => [
   { username: "admin", label: t("login.accounts.admin") },
-  { username: "pinda", label: t("login.accounts.pinda") },
+  { username: "xinfei", label: t("login.accounts.xinfei") },
 ]);
 
 /**

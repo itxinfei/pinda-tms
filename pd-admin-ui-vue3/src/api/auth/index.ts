@@ -13,7 +13,7 @@ const AuthAPI = {
    */
   async login(data: LoginRequest) {
     const payload = {
-      tenantCode: "pinda", // 心飞默认租户编码（pd_auth.pd_auth_tenant 实测 code=pinda，LoginParamDTO 必填）
+      tenantCode: "xinfei", // 心飞默认租户编码（sys_tenant.code=xinfei，与后端租户种子一致；LoginParamDTO 必填）
       account: data.username,
       password: data.password,
       key: data.captchaId,

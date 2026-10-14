@@ -11,7 +11,7 @@
 #   mkdir -p /tmp/ci-ctx && cp /usr/bin/docker /tmp/ci-ctx/ \
 #   && cp /usr/libexec/docker/cli-plugins/docker-compose /tmp/ci-ctx/ \
 #   && cp /usr/libexec/docker/cli-plugins/docker-buildx /tmp/ci-ctx/
-#   docker build -f deploy/ci/Dockerfile -t ci/pinda-ci:latest /tmp/ci-ctx
+#   docker build -f deploy/ci/Dockerfile -t ci/xinfei-ci:latest /tmp/ci-ctx
 # 为什么不用静态包下载：download.docker.com / github.com 直连及 DaoCloud 加速
 # 在该网络下均 short read / HTTP 22 中断，改为复制宿主机已装二进制（版本更新，
 # 功能只多不少），彻底移除构建期的外网依赖。

@@ -6,12 +6,12 @@
 # 本机堆一批 git-sha tag（实测 22 小时堆出 191 个 tag / 可回收 19GB）。
 #
 # 安全边界（重要）：
-#   - 只动 pinda/pd-* 这一批应用镜像，绝不碰基础镜像与中间件镜像
-#     （运行时基础镜像 pinda/jre8-fontconfig:*、mysql/redis/nacos/
-#      rabbitmq/gitea/*、ci/pinda-ci、eclipse-temurin 等，这些是
-#      有意长期保留的）。注意：基础镜像名是 pinda/jre8-fontconfig，不以
-#      pinda/pd- 开头，本脚本的仓库过滤(grep '^pinda/pd-')天然不会选中它；
-#      若以后放宽该过滤，必须同时显式排除 pinda/jre8-fontconfig，否则下次
+#   - 只动 xinfei/pd-* 这一批应用镜像，绝不碰基础镜像与中间件镜像
+#     （运行时基础镜像 xinfei/jre8-fontconfig:*、mysql/redis/nacos/
+#      rabbitmq/gitea/*、ci/xinfei-ci、eclipse-temurin 等，这些是
+#      有意长期保留的）。注意：基础镜像名是 xinfei/jre8-fontconfig，不以
+#      xinfei/pd- 开头，本脚本的仓库过滤(grep '^xinfei/pd-')天然不会选中它；
+#      若以后放宽该过滤，必须同时显式排除 xinfei/jre8-fontconfig，否则下次
 #      构建会退回 14 次 apt；
 #   - 任何被容器（含已退出容器）引用的镜像一律不删；
 #   - 当前部署的 TAG 与最新 KEEP 个 tag 保留；
@@ -45,13 +45,13 @@ for cid in $(docker ps -aq 2>/dev/null); do
   [ -n "$img" ] && echo "$img" >> "$protected_ids"
   [ -n "$name" ] && [ "$name" != "<no value>" ] && echo "$name" >> "$protected_tags"
 done
-[ -n "$TAG" ] && for r in $(docker images --format '{{.Repository}}' | grep '^pinda/pd-' | sort -u); do
+[ -n "$TAG" ] && for r in $(docker images --format '{{.Repository}}' | grep '^xinfei/pd-' | sort -u); do
   echo "$r:$TAG" >> "$protected_tags"
 done
 
 kept_total=0; deleted_total=0
 
-for repo in $(docker images --format '{{.Repository}}' | grep '^pinda/pd-' | sort -u); do
+for repo in $(docker images --format '{{.Repository}}' | grep '^xinfei/pd-' | sort -u); do
   # 该服务下的 tag 按创建时间倒序（本机 docker CLI 不支持 --sort，故显式排）；
   # CreatedAt 形如 "2026-10-06 08:12:34 +0000 UTC"，年月日在前，字典序即时间序。
   all=$(docker images --format '{{.Tag}}|{{.CreatedAt}}' "$repo" \

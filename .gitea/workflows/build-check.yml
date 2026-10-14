@@ -3,7 +3,7 @@
 #
 # 策略（2026-10-12 提速改造）：
 # - 触发：push 到 master（每次推送兜底校验主干可编译）+ workflow_dispatch（可手动补跑）
-# - 执行：ci/pinda-ci（JDK21 + Maven 3.9.9）
+# - 执行：ci/xinfei-ci（JDK21 + Maven 3.9.9）
 # - 容器内路径（act_runner config.yaml container.options 决定）：
 #     宿主 /data/m2 -> 容器 /root/.m2；宿主 /data/ci -> 容器 /ci:ro
 #   settings.xml 已写死 localRepository=/root/.m2/repository，缓存本就持久共享，
@@ -12,7 +12,7 @@
 #     ① 编译门禁，主干不可编译直接红；
 #     ② 全部 SNAPSHOT（pd-common/pd-service-api 等内部模块）装进 /root/.m2/repository，
 #        作为 deploy-backend.yml / deploy-be.sh 单服务发布去掉 -am 后的上游制品基线；
-#        成功后把 HEAD 写入 /root/.m2/.pinda-baseline.revision（=宿主 /data/m2/ 同名文件）。
+#        成功后把 HEAD 写入 /root/.m2/.xinfei-baseline.revision（=宿主 /data/m2/ 同名文件）。
 # - concurrency：连续 push 只保留最新一轮，旧 run 自动取消，配合 runner capacity=1 不排队空转。
 # ============================================
 name: "CI-后端编译与测试门禁（push自动）"
@@ -46,15 +46,15 @@ jobs:
         run: |
           rm -rf ./* ./.??*
           git clone --depth 50 -b "${GITHUB_REF_NAME:-master}" \
-            "http://192.168.20.130:3000/pinda/pinda-tms.git" .
+            "http://192.168.20.130:3000/xinfei/xinfei-tms.git" .
 
       - name: Maven 全量 install（JDK21，编译门禁 + 刷新单服务发布的 m2 基线）
         run: |
           set -e
           ls -ld /root/.m2 || { echo "::error::/root/.m2 未挂载，检查 act_runner container.options"; exit 1; }
           mvn -B clean install -T 1C -Dmaven.test.skip=true -s /ci/maven-settings.xml
-          git rev-parse HEAD > /root/.m2/.pinda-baseline.revision
-          echo "m2 基线已刷新: $(cat /root/.m2/.pinda-baseline.revision)"
+          git rev-parse HEAD > /root/.m2/.xinfei-baseline.revision
+          echo "m2 基线已刷新: $(cat /root/.m2/.xinfei-baseline.revision)"
         timeout-minutes: 25
 
       - name: Maven 测试门禁（ArchUnit 架构红线 + 各模块单测）
@@ -69,14 +69,14 @@ jobs:
   auto-deploy:
     # ============================================================
     # 变更感知自动部署（2026-10-14 用户拍板）：编译+测试门禁绿后自动执行。
-    # 以「部署基线」/root/.m2/.pinda-deploy.revision（上次成功部署的 HEAD）做 diff：
+    # 以「部署基线」/root/.m2/.xinfei-deploy.revision（上次成功部署的 HEAD）做 diff：
     #   - 后端：服务模块变更→只部署该服务；共享库(pd-common/pd-service-api 等)/
     #     根 pom/deploy 编排/.gitea 变更→全量收敛（保守正确）
     #   - 前端：pd-admin-ui-vue3→admin；pd-mobile/<端>→对应端；pd-mobile 共享→三端
     #   - diff 含 *.sql → 中止（DB 门禁），转人工以 db_approved=true 手动部署
     #   - 任一服务/端探活(后端4min/前端60s)未过→自动回滚 PREV；
     #     部署基线仅在全部成功后刷新
-    #   - 对账自愈（2026-10-14 用户拍板）：滚动部署前写中断标记 .pinda-deploy.inprogress，
+    #   - 对账自愈（2026-10-14 用户拍板）：滚动部署前写中断标记 .xinfei-deploy.inprogress，
     #     成功刷基线时删除；若上轮被 cancel-in-progress 取消（标记残留），本轮检测到即
     #     强制全量收敛覆盖中断轮全部变更——消除「取消留半新半旧」窗口
     #   - rabbit 健康指标：默认关（仅 oms/dispatch/netty 显式开），见 compose 锚点注释
@@ -88,11 +88,11 @@ jobs:
         run: |
           rm -rf ./* ./.??*
           git clone --depth 100 -b "${GITHUB_REF_NAME:-master}" \
-            "http://192.168.20.130:3000/pinda/pinda-tms.git" .
+            "http://192.168.20.130:3000/xinfei/xinfei-tms.git" .
 
       - name: DB 变更门禁（diff 含 *.sql 即中止转人工）
         run: |
-          BASE=$(cat /root/.m2/.pinda-deploy.revision 2>/dev/null || true)
+          BASE=$(cat /root/.m2/.xinfei-deploy.revision 2>/dev/null || true)
           if [ -n "$BASE" ] && git cat-file -e "${BASE}^{commit}" 2>/dev/null; then
             SQL=$(git diff --name-only "$BASE" HEAD -- '*.sql' ':(exclude)codeback' 2>/dev/null || true)
           else
@@ -118,18 +118,18 @@ jobs:
             echo 'ORDER="pd-auth pd-base pd-oms pd-work pd-user pd-dispatch pd-aggregation pd-netty pd-web-manager pd-web-driver pd-web-courier pd-web-customer pd-gateway"'
           } > /tmp/svc.sh
           source /tmp/svc.sh
-          BASE=$(cat /root/.m2/.pinda-deploy.revision 2>/dev/null || true)
+          BASE=$(cat /root/.m2/.xinfei-deploy.revision 2>/dev/null || true)
           if [ -z "$BASE" ] || ! git cat-file -e "${BASE}^{commit}" 2>/dev/null; then
             echo "部署基线不可用（首次/超出浅克隆窗口）→ 全量收敛"
             echo "SERVICES=ALL" >> "$GITHUB_ENV"; echo "APPS=admin driver courier customer" >> "$GITHUB_ENV"; exit 0
           fi
           # ---- 对账自愈：上轮部署被 cancel-in-progress 中断（标记残留）则本轮强制全量收敛 ----
-          MARKER=/root/.m2/.pinda-deploy.inprogress
+          MARKER=/root/.m2/.xinfei-deploy.inprogress
           if [ -f "$MARKER" ]; then
             echo "检测到上轮部署中断标记（中断于 $(cat "$MARKER" 2>/dev/null || echo '?')）→ 对账自愈"
             if [ -z "$(git diff --name-only "$BASE" HEAD)" ]; then
               echo "基线..HEAD 无差异（上轮已部署完、仅基线刷新被打断）→ 直接补刷基线收尾"
-              git rev-parse HEAD > /root/.m2/.pinda-deploy.revision
+              git rev-parse HEAD > /root/.m2/.xinfei-deploy.revision
               rm -f "$MARKER"
               echo "SERVICES=" >> "$GITHUB_ENV"; echo "APPS=" >> "$GITHUB_ENV"; exit 0
             fi
@@ -232,16 +232,16 @@ jobs:
             mkdir -p ".ctx/$s"; ln -f "$jar" ".ctx/$s/app.jar"
             img=$(docker inspect -f '{{.Config.Image}}' "$s" 2>/dev/null || true)
             if [ -n "$img" ]; then echo "$s ${img##*:}" >> /tmp/prev-tags; else echo "$s " >> /tmp/prev-tags; fi
-            echo ">> docker build pinda/$s:${TAG}"
-            docker build -f deploy/apps/Dockerfile -t "pinda/$s:${TAG}" ".ctx/$s"
+            echo ">> docker build xinfei/$s:${TAG}"
+            docker build -f deploy/apps/Dockerfile -t "xinfei/$s:${TAG}" ".ctx/$s"
           done
 
       - name: 写部署中断标记（对账自愈：本轮若被 cancel，下轮检测到此标记即强制全量收敛）
         # 放在滚动部署（首个改容器面的 step）之前：镜像构建被取消不碰容器，无需标记
         if: env.SERVICES != '' || env.APPS != ''
         run: |
-          echo "${GITHUB_SHA}" > /root/.m2/.pinda-deploy.inprogress
-          echo "中断标记已写: $(cat /root/.m2/.pinda-deploy.inprogress | cut -c1-7)"
+          echo "${GITHUB_SHA}" > /root/.m2/.xinfei-deploy.inprogress
+          echo "中断标记已写: $(cat /root/.m2/.xinfei-deploy.inprogress | cut -c1-7)"
 
       - name: 后端滚动部署 + 健康检查（失败当场内联回滚）
         id: be_deploy
@@ -288,7 +288,7 @@ jobs:
                   -f "$COMPOSE" up -d "$s"; then
               deployed+=("$s")
               rollback_all
-              [ "$rb_fail" = "0" ] && rm -f /root/.m2/.pinda-deploy.inprogress   # 全部回滚成功才清标记；否则保留让下轮对账收敛
+              [ "$rb_fail" = "0" ] && rm -f /root/.m2/.xinfei-deploy.inprogress   # 全部回滚成功才清标记；否则保留让下轮对账收敛
               echo "::error::$s compose up 命令失败，已回滚，部署基线不刷新"
               exit 1
             fi
@@ -301,7 +301,7 @@ jobs:
             echo "$s health=$(health_of "$s")"
             if [ "$ok" != "1" ]; then
               rollback_all
-              [ "$rb_fail" = "0" ] && rm -f /root/.m2/.pinda-deploy.inprogress   # 全部回滚成功才清标记；否则保留让下轮对账收敛
+              [ "$rb_fail" = "0" ] && rm -f /root/.m2/.xinfei-deploy.inprogress   # 全部回滚成功才清标记；否则保留让下轮对账收敛
               echo "::error::$s 探活未过，已回滚，部署基线不刷新"
               exit 1
             fi
@@ -320,10 +320,10 @@ jobs:
           echo "FE_TAG=$FE_TAG" >> "$GITHUB_ENV"
           build_one() {
             case "$1" in
-              admin) docker build -f deploy/apps/Dockerfile.admin-h5 -t "pinda/pd-admin-h5:${FE_TAG}" . ;;
+              admin) docker build -f deploy/apps/Dockerfile.admin-h5 -t "xinfei/pd-admin-h5:${FE_TAG}" . ;;
               *) docker build -f deploy/apps/Dockerfile.mobile-h5 \
                    --build-arg APP_PATH=pd-mobile --build-arg APP_SUBDIR="$1" \
-                   --build-arg APP_NAME="pd-mobile-$1" -t "pinda/pd-${1}-h5:${FE_TAG}" . ;;
+                   --build-arg APP_NAME="pd-mobile-$1" -t "xinfei/pd-${1}-h5:${FE_TAG}" . ;;
             esac
           }
           for app in $APPS; do
@@ -332,7 +332,7 @@ jobs:
             echo ">> [$app] 回滚基线 PREV=${prev:-（首次部署）}"
             build_one "$app"
             proj=$(docker inspect -f '{{index .Config.Labels "com.docker.compose.project"}}' "$img" 2>/dev/null || echo "")
-            if [ "$proj" != "pinda-apps" ]; then docker rm -f "$img" 2>/dev/null || true; fi
+            if [ "$proj" != "xinfei-apps" ]; then docker rm -f "$img" 2>/dev/null || true; fi
             env TAG="$FE_TAG" "$tv=$FE_TAG" docker compose --env-file /ci/apps.env -f "$COMPOSE" up -d "$img"
             ok=0
             for i in $(seq 1 12); do
@@ -346,23 +346,23 @@ jobs:
                 echo ">> [$app] 回滚 -> $prev"
                 # 回滚成功才清中断标记；失败保留，让下轮对账收敛兜底
                 if env TAG="$FE_TAG" "$tv=$prev" docker compose --env-file /ci/apps.env -f "$COMPOSE" up -d "$img"; then
-                  rm -f /root/.m2/.pinda-deploy.inprogress
+                  rm -f /root/.m2/.xinfei-deploy.inprogress
                 fi
               fi
               echo "::error::$app 前端自动部署失败"; exit 1
             fi
-            OLD=$(docker images "pinda/$img" --format '{{.Tag}}' | grep -vE "^${FE_TAG}$|^${prev}$" || true)
+            OLD=$(docker images "xinfei/$img" --format '{{.Tag}}' | grep -vE "^${FE_TAG}$|^${prev}$" || true)
             if [ -n "$OLD" ]; then
-              echo "$OLD" | xargs -r -I{} docker rmi "pinda/$img:{}" 2>/dev/null || true
+              echo "$OLD" | xargs -r -I{} docker rmi "xinfei/$img:{}" 2>/dev/null || true
             fi
           done
 
       - name: 刷新部署基线（全部成功后；失败/中断不刷，下轮凭中断标记对账自愈）
         if: success()
         run: |
-          git rev-parse HEAD > /root/.m2/.pinda-deploy.revision
-          rm -f /root/.m2/.pinda-deploy.inprogress
-          echo "部署基线已刷新: $(cat /root/.m2/.pinda-deploy.revision)（中断标记已清除）"
+          git rev-parse HEAD > /root/.m2/.xinfei-deploy.revision
+          rm -f /root/.m2/.xinfei-deploy.inprogress
+          echo "部署基线已刷新: $(cat /root/.m2/.xinfei-deploy.revision)（中断标记已清除）"
 
       # 【预留·暂未启用】自动部署结果通知（企微/邮件 webhook），接入方式同 deploy-backend.yml 尾部预留
 

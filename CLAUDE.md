@@ -52,7 +52,7 @@
 4. **新增对外接口仍须注册 `pd_auth.pd_auth_resource` 并绑角色**（RBAC，手工插表，无自动注册）。新 `pd-gateway`（Sa-Token）只校验登录态 + Same-Token 防直连；未注册接口不再被网关拦，但菜单/权限不可见，注册绑定仍强制。
 5. **网关鉴权**：新 `pd-gateway`（Sa-Token+Redis）登录校验 + Same-Token 防直连。菜单动态下发（D-42）未实现（pd-auth 无 menu/router 端点），菜单空先确认功能未建、勿当缓存问题排查。
 6. **严禁新建/重写状态机**：`StateTransitionValidator` 已在用；真实缺口是跨端同步桥。
-7. **环境**：Docker 网 `172.21.0.x`；宿主 `192.168.20.130`；Nacos `8848`（ns `1cb93ce4…`，group `xinfei-tms`，鉴权已开，无 token 403）。dev 统一账号 `nacos/123456`（13 微服务+CI）；`pinda/123456` 仅命名空间读写备用。
+7. **环境**：Docker 网 `172.21.0.x`；宿主 `192.168.20.130`；Nacos `8848`（ns `1cb93ce4…`，group `xinfei-tms`，鉴权已开，无 token 403）。dev 统一账号 `nacos/123456`（13 微服务+CI）；`xinfei/123456` 仅命名空间读写备用。
 
 > 历史机制已删（2026-10-10）：旧 `pd-authority` 的 `AccessFilter` 资源关卡随模块删除不复存在；新网关口径见硬事实 4。
 
@@ -62,7 +62,7 @@
 - 全量重构已立项（D-61）：以 codeback/ 为参考、按《08》契约 / 《07》编码 / 《27》目标断言，全面重设计开发业务 Java/中间件/数据库（允许重设计表结构与内部分层，走 create-migration；禁夹带未拍板业务口径变更）。顺序与 DoD 见《53-全量重构总体规划》。
 
 ## 5. 关键纪律
-- 🔴 **代码必须走 Git**：本地改 → 编译自测 → `git diff` 给用户确认 → commit（中文 `type: 简述`）→ push 双远端（Gitea+Gitee）→ 服务器 `/data/pinda-tms` 内 `git pull` → ci 构建 → compose 滚动部署。**严禁** scp 上传源码或 ssh 直改服务器文件（使工作区分叉、无审计）。仅仓库链路不可用时经用户同意可临时直改，事后立即回填并在《99》台账登记。dev 库 `UPDATE/INSERT` 修正也须先报完整语句 + `WHERE` 经确认再执行，并同步 `sql/` 种子脚本防复发。
+- 🔴 **代码必须走 Git**：本地改 → 编译自测 → `git diff` 给用户确认 → commit（中文 `type: 简述`）→ push 双远端（Gitea+Gitee）→ 服务器 `/data/xinfei-tms` 内 `git pull` → ci 构建 → compose 滚动部署。**严禁** scp 上传源码或 ssh 直改服务器文件（使工作区分叉、无审计）。仅仓库链路不可用时经用户同意可临时直改，事后立即回填并在《99》台账登记。dev 库 `UPDATE/INSERT` 修正也须先报完整语句 + `WHERE` 经确认再执行，并同步 `sql/` 种子脚本防复发。
 - **多会话并行**：开工前读 `99-任务认领台账.md`，只改自己认领的模块/文件；"进行中"条目禁止其他会话动手，收工销账。
 - 先读后写；复用既有 API；禁止过度设计（YAGNI）；禁硬编码（cron/阈值/地图 Key/状态数字）；前端请求过 `src/utils/request` 拦截器。
 - **严禁跨模块写业务**：订单→pd-oms、调度→pd-dispatch、作业→pd-work、基础→pd-base、轨迹→pd-netty。
@@ -77,7 +77,7 @@
 - **favicon 换版**：改 `index.html` 引用加 `?v=版本号` query 绕过缓存。
 - **移动三端登录**：提交体必须带 `tenantCode`（统一 `xinfei`）。
 - **管理端菜单**：平级铺开，不做前端归组；无 title 的 `/` 根 Layout 壳须在侧边栏/顶栏取数时拍平（`useLayout.ts` 的 `flattenSidebarRoutes`），禁直接 filter 原始树；**禁止单独开动态路由开关**（4 前提缺一不可，见《58》）。
-- **CI/CD**：`.gitea/workflows/build-check.yml` push 自动编译门禁；`deploy-backend.yml` 仅手动 Run workflow；前端统一 `bash /data/pinda-deploy/deploy-fe.sh <admin|customer|courier|driver>`。自动部署已停，自动编译门禁仍在。
+- **CI/CD**：`.gitea/workflows/build-check.yml` push 自动编译门禁；`deploy-backend.yml` 仅手动 Run workflow；前端统一 `bash /data/xinfei-deploy/deploy-fe.sh <admin|customer|courier|driver>`。自动部署已停，自动编译门禁仍在。
 - **品牌色**：全端统一心飞红 `#FF0033`（按压 `#CC0029`、浅底 `#FFE5EA`）；原神领橙红 `#E15536`/管理端蓝 `#2B6CFF` 已废止（见《03》D-10、《13》§2.1、《14》§3）。
 - **线上 dev 账号（密码均 123456）**：管理端 `admin`(tenantCode=xinfei)；三端 `driver04`/`courier01`/`customer01`；统一演示 `demo`。`member_info`/`base_truck_driver` 仍空（业务数据无种子）。
 - **Logo 落地**：品牌资产库 `docs/brand/`；管理端 `public/favicon.ico` + `src/assets/images/`（logo-mark.png 图形 / logo-full.png 组合 / logo.png 旧组合标已不引用 / login-hero.png）；移动三端 `src/static/`（logo-mark-transparent.png 图形透明标 / logo-full-login.png 登录组合标 / logo-app.png App 图标 / favicon.ico / logo-<48~1024>.png 供 manifest），登录页 `/static/logo-full-login.png`。
@@ -85,7 +85,7 @@
 ## 5.2 当前阶段工作定调（🔴 2026-10-11 拍板，最高优先级）
 > 权威全文：SRS《06》§1.6；执行摘要《12》§0/§4。项目处于内网 dev、半成品、无真实用户、不上线；开发一切围绕管理端可见可用展开。
 
-1. **唯一主战场 = 管理端 `pd-admin-ui-vue3`**：按《55》《14》《16》做全做完、设计好；DoD = 写完 → 提交 → `bash /data/pinda-deploy/deploy-fe.sh admin` 部署 → 192.168.20.130 浏览器可见可用。后端任务以"打通管理端所需接口/数据"为优先级，不为架构完美阻塞页面。
+1. **唯一主战场 = 管理端 `pd-admin-ui-vue3`**：按《55》《14》《16》做全做完、设计好；DoD = 写完 → 提交 → `bash /data/xinfei-deploy/deploy-fe.sh admin` 部署 → 192.168.20.130 浏览器可见可用。后端任务以"打通管理端所需接口/数据"为优先级，不为架构完美阻塞页面。
 2. **dev 不做生产级安全功课**：中间件 dev 口令统一 `123456`（MySQL/Redis/RabbitMQ/Nacos），默认值可直接写 yml/compose；不要求密钥外置/0600/轮换。已落地的 Sa-Token/网关/多租户保留运行、不深化不拆除。
 3. **底线**：真实第三方凭证（地图 AK、微信/支付宝商户密钥、短信密钥）不入库，走环境变量/部署注入；真实用户/公网上线前另立生产加固清单统一收紧。
 4. 本条与其他文档/记忆中的旧安全口径冲突时，dev 阶段以本条为准；不构成上线后的永久豁免。

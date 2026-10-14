@@ -12,7 +12,7 @@
 #     --build-arg APP_PATH=pd-mobile \
 #     --build-arg APP_SUBDIR=driver \
 #     --build-arg APP_NAME=pd-mobile-driver \
-#     -t pinda/pd-driver-h5:<tag> .
+#     -t xinfei/pd-driver-h5:<tag> .
 #
 # 为什么 Node 22 + pnpm 10：
 #   uni-app 3.0 基于 Vite 5，要求 Node 18+；pnpm 10 与开发机构建版本(10.28)对齐，

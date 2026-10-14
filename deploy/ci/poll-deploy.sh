@@ -10,9 +10,9 @@
 #
 # 环境变量(均可选，默认值来自内网 Gitea):
 #   GITEA_URL      默认 http://192.168.20.130:3000
-#   REPO           默认 pinda/pinda-tms
-#   GITEA_USER     默认 pinda
-#   GITEA_PASS     默认 pinda123
+#   REPO           默认 xinfei/xinfei-tms
+#   GITEA_USER     默认 xinfei
+#   GITEA_PASS     默认 xinfei123
 #   POLL_INTERVAL  轮询间隔(秒) 默认 15
 #   TIMEOUT        总超时(秒) 默认 600
 #   DEPLOY_HOST    健康检查目标主机 默认 192.168.20.130
@@ -20,9 +20,9 @@
 set -euo pipefail
 
 GITEA_URL="${GITEA_URL:-http://192.168.20.130:3000}"
-REPO="${REPO:-pinda/pinda-tms}"
-GITEA_USER="${GITEA_USER:-pinda}"
-GITEA_PASS="${GITEA_PASS:-pinda123}"
+REPO="${REPO:-xinfei/xinfei-tms}"
+GITEA_USER="${GITEA_USER:-xinfei}"
+GITEA_PASS="${GITEA_PASS:-xinfei123}"
 POLL_INTERVAL="${POLL_INTERVAL:-15}"
 TIMEOUT="${TIMEOUT:-600}"
 HOST="${DEPLOY_HOST:-192.168.20.130}"

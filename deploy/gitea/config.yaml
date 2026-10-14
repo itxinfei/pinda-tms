@@ -1,6 +1,6 @@
 # ============================================
 # act_runner 配置
-# 作用：让每个 Actions job 用本地作业镜像 ci/pinda-ci:latest 启动，
+# 作用：让每个 Actions job 用本地作业镜像 ci/xinfei-ci:latest 启动，
 #       并把宿主机 docker.sock 与 Maven 缓存挂进 job 容器。
 # ============================================
 log:
@@ -10,10 +10,10 @@ runner:
   capacity: 1                 # 单机串行执行，避免多个构建同时抢占资源
   timeout: 3h
   insecure: false
-  # 标签：workflow 中 runs-on: ubuntu-latest 即使用 ci/pinda-ci 镜像
+  # 标签：workflow 中 runs-on: ubuntu-latest 即使用 ci/xinfei-ci 镜像
   # （该镜像需提前在宿主机 docker build 好，runner 会优先使用本地镜像）
   labels:
-    - "ubuntu-latest:docker://ci/pinda-ci:latest"
+    - "ubuntu-latest:docker://ci/xinfei-ci:latest"
 
 cache:
   enabled: false

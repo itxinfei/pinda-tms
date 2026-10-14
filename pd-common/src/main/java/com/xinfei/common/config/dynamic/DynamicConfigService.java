@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * 动态参数配置读取服务（CFG-01），供业务服务在运行期热读取第三方凭据 / 可调参数。
  *
- * <p>读取优先级（每个 key 独立缓存，TTL 由 {@code pinda.config.cache-ttl-seconds} 控制，默认 30s）：</p>
+ * <p>读取优先级（每个 key 独立缓存，TTL 由 {@code xinfei.config.cache-ttl-seconds} 控制，默认 30s）：</p>
  * <ol>
  *   <li>内存缓存未过期直接返回；</li>
  *   <li>直读同库 {@code sys_config}（平台全局 {@code tenant_id=0} 且 {@code status=1}），

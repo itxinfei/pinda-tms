@@ -46,7 +46,7 @@ worst=0
 while read -r repo n; do
   [ "$n" -gt "$worst" ] && worst=$n
   [ "$n" -gt "$KEEP" ] && printf "  超出 KEEP=%s: %s 有 %s 个 tag\n" "$KEEP" "$repo" "$n" && fail=1
-done < <(docker images --format '{{.Repository}}' | grep '^pinda/pd-' | sort | uniq -c | awk '{print $2" "$1}')
+done < <(docker images --format '{{.Repository}}' | grep '^xinfei/pd-' | sort | uniq -c | awk '{print $2" "$1}')
 echo "  单服务最多 tag 数: $worst（KEEP=$KEEP）"
 docker images -f dangling=true -q | wc -l | sed 's/^/  悬空镜像: /'
 docker builder du 2>/dev/null | tail -1 | sed 's/^/  /'
@@ -84,10 +84,10 @@ for c in $(docker ps --format '{{.Names}}' | grep '^pd-' | grep -v -- '-h5$' | s
   [ -n "$prof" ] || { printf "  %-18s %s\n" "$c" "读不到 profile（容器可能没起来）"; fail=1; continue; }
   # 开鉴权后：dataId 存在=200，不存在=404，未授权=403。先 .yml 再回退 .yaml（pd-auth）
   did="${c}.yml"
-  st=$(curl -s -o /dev/null -w '%{http_code}' -m 5 "$NACOS/nacos/v1/cs/configs?dataId=${did}&group=pinda-tms&tenant=${NS}&accessToken=${TOKEN}")
+  st=$(curl -s -o /dev/null -w '%{http_code}' -m 5 "$NACOS/nacos/v1/cs/configs?dataId=${did}&group=xinfei-tms&tenant=${NS}&accessToken=${TOKEN}")
   if [ "$st" = "404" ]; then
     did="${c}.yaml"
-    st=$(curl -s -o /dev/null -w '%{http_code}' -m 5 "$NACOS/nacos/v1/cs/configs?dataId=${did}&group=pinda-tms&tenant=${NS}&accessToken=${TOKEN}")
+    st=$(curl -s -o /dev/null -w '%{http_code}' -m 5 "$NACOS/nacos/v1/cs/configs?dataId=${did}&group=xinfei-tms&tenant=${NS}&accessToken=${TOKEN}")
   fi
   if [ "$st" = "200" ]; then
     printf "  %-18s profile=%-6s %s 存在\n" "$c" "$prof" "$did"
@@ -101,7 +101,7 @@ echo
 echo "=== 8. JWT 签名密钥是否已请出仓库（轮换状态） ==="
 # 背景：仓内 client/pri.key 是被 git 跟踪的真实 RSA 私钥，而仓库同时推到公开 Gitee。
 # 轮换手册见 docs/部署文档.md §2.11；这一节只回答"在线现在用的是哪把"。
-pri=$(docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' pd-auth 2>/dev/null | sed -n 's/^PINDA_JWT_PRI_KEY_PATH=//p')
+pri=$(docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' pd-auth 2>/dev/null | sed -n 's/^XINFEI_JWT_PRI_KEY_PATH=//p')
 if [ -n "$pri" ]; then
   target=${pri#file:}
   if [ -s "$target" ]; then
@@ -113,9 +113,9 @@ if [ -n "$pri" ]; then
 else
   echo "  未轮换：pd-auth 仍从镜像内 classpath 读私钥（部署文档 §2.11）"
 fi
-ls -d /data/pinda-jwt >/dev/null 2>&1 \
-  && echo "  宿主密钥目录: $(ls -l /data/pinda-jwt 2>/dev/null | tail -n +2 | wc -l) 个文件" \
-  || echo "  宿主密钥目录 /data/pinda-jwt 尚未创建（轮换时才需要）"
+ls -d /data/xinfei-jwt >/dev/null 2>&1 \
+  && echo "  宿主密钥目录: $(ls -l /data/xinfei-jwt 2>/dev/null | tail -n +2 | wc -l) 个文件" \
+  || echo "  宿主密钥目录 /data/xinfei-jwt 尚未创建（轮换时才需要）"
 
 echo
 [ "$fail" = 0 ] && echo "结论: 全部通过" || echo "结论: 有项目需要处理（见上面带 ! 或超出的行）"

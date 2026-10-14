@@ -8,8 +8,8 @@
 # ============================================
 set -e
 APP="${1:-all}"
-GIT_URL="http://192.168.20.130:3000/pinda/pinda-tms.git"
-REPO="${FE_REPO_DIR:-/data/pinda-tms}"
+GIT_URL="http://192.168.20.130:3000/xinfei/xinfei-tms.git"
+REPO="${FE_REPO_DIR:-/data/xinfei-tms}"
 APPS_ENV="${FE_APPS_ENV:-/data/ci/apps.env}"
 COMPOSE=deploy/apps/docker-compose.app.yml
 
@@ -33,26 +33,26 @@ deploy_one() {
   local tagvar prev st i ok
   tagvar="$(echo "$img" | tr 'a-z-' 'A-Z_')_TAG"
   echo "===================="
-  echo ">> [$sub] 构建镜像 pinda/$img:$TAG ..."
+  echo ">> [$sub] 构建镜像 xinfei/$img:$TAG ..."
   if [ "$sub" = "admin" ]; then
-    docker build -f deploy/apps/Dockerfile.admin-h5 -t "pinda/$img:$TAG" .
+    docker build -f deploy/apps/Dockerfile.admin-h5 -t "xinfei/$img:$TAG" .
   else
     docker build -f deploy/apps/Dockerfile.mobile-h5 \
       --build-arg APP_PATH=pd-mobile \
       --build-arg APP_SUBDIR="$sub" \
       --build-arg APP_NAME="pd-mobile-$sub" \
-      -t "pinda/$img:$TAG" .
+      -t "xinfei/$img:$TAG" .
   fi
   # 记录回滚基线：当前运行镜像 tag（无运行容器=首次部署，无基线则不回滚）
   prev=$(docker inspect -f '{{.Config.Image}}' "$img" 2>/dev/null | sed -n 's/.*://p')
   echo ">> [$sub] 回滚基线 PREV=${prev:-（首次部署，无基线）}"
   echo ">> [$sub] 滚动更新容器 ..."
   export PD_ADMIN_H5_TAG="$TAG" PD_DRIVER_H5_TAG="$TAG" PD_COURIER_H5_TAG="$TAG" PD_CUSTOMER_H5_TAG="$TAG"
-  # 容器归属检查：compose 文件声明 name: pinda-apps；历史手动 docker run 的容器无归属，
-  # 会让 compose 报容器名冲突。非 pinda-apps 归属的目标容器先删除，改由 compose 接管。
+  # 容器归属检查：compose 文件声明 name: xinfei-apps；历史手动 docker run 的容器无归属，
+  # 会让 compose 报容器名冲突。非 xinfei-apps 归属的目标容器先删除，改由 compose 接管。
   proj=$(docker inspect -f '{{index .Config.Labels "com.docker.compose.project"}}' "$img" 2>/dev/null || echo "")
-  if [ "$proj" != "pinda-apps" ]; then
-    echo ">> [$sub] 旧容器 $img 非 pinda-apps 管理（proj='$proj'），先删除由 compose 接管"
+  if [ "$proj" != "xinfei-apps" ]; then
+    echo ">> [$sub] 旧容器 $img 非 xinfei-apps 管理（proj='$proj'），先删除由 compose 接管"
     docker rm -f "$img" 2>/dev/null || true
   fi
   docker compose --env-file "$APPS_ENV" -f "$COMPOSE" up -d "$img"
@@ -81,9 +81,9 @@ deploy_one() {
     exit 1
   fi
   # 清理旧镜像：保留当前 tag 与回滚基线 prev（其余删；代码在 git，旧构建产物无保留价值）
-  OLD=$(docker images "pinda/$img" --format '{{.Tag}}' | grep -vE "^${TAG}$|^${prev}$")
+  OLD=$(docker images "xinfei/$img" --format '{{.Tag}}' | grep -vE "^${TAG}$|^${prev}$")
   if [ -n "$OLD" ]; then
-    echo "$OLD" | xargs -r -I{} docker rmi "pinda/$img:{}" 2>/dev/null || true
+    echo "$OLD" | xargs -r -I{} docker rmi "xinfei/$img:{}" 2>/dev/null || true
   fi
   # 控制前端构建缓存累积（保留 5g 近期缓存兼顾构建速度；后端流水线尾部另有全量清理）
   docker builder prune -f --keep-storage 5g >/dev/null 2>&1 || true
@@ -112,7 +112,7 @@ echo ">> 部署完成！"
 #   local st="$1"
 #   [ -n "${DEPLOY_NOTIFY_WEBHOOK:-}" ] || { echo "未配置 DEPLOY_NOTIFY_WEBHOOK，跳过通知"; return 0; }
 #   curl -sS -X POST "$DEPLOY_NOTIFY_WEBHOOK" -H 'Content-Type: application/json' \
-#     -d "{\"msgtype\":\"text\",\"text\":{\"content\":\"[pinda-tms] deploy-fe $st TAG=$TAG\"}}" || true
+#     -d "{\"msgtype\":\"text\",\"text\":{\"content\":\"[xinfei-tms] deploy-fe $st TAG=$TAG\"}}" || true
 # }
 # 用法示例：部署成功后 notify "成功"；失败分支 notify "失败"
 # ============================================================

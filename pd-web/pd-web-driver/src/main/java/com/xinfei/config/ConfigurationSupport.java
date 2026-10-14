@@ -57,9 +57,9 @@ public class ConfigurationSupport extends WebMvcConfigurationSupport {
     /**
      * 端级角色绑定（X-01 下沉落点）：本类 extends WebMvcConfigurationSupport 使 Boot MVC
      * 自动装配退避，pd-common 经 WebMvcConfigurer 注册的角色拦截器不被收集，须在此显式注册；
-     * 属性为空（未配置 pinda.auth.required-roles）时不注册。
+     * 属性为空（未配置 xinfei.auth.required-roles）时不注册。
      */
-    @Value("${pinda.auth.required-roles:}")
+    @Value("${xinfei.auth.required-roles:}")
     private String requiredRoles;
 
     /**

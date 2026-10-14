@@ -1,7 +1,7 @@
 # ============================================
 # 运行时基础镜像：JRE21 + 验证码所需字体库 + 东八区
 # 只建一次并长期复用（14 个服务镜像都 FROM 它），把 apt 从每次构建的关键路径上摘掉。
-#   docker build -f deploy/apps/Dockerfile.base -t pinda/jre21-fontconfig:1 .
+#   docker build -f deploy/apps/Dockerfile.base -t xinfei/jre21-fontconfig:1 .
 # 改了本文件请把 tag 递增（:2），CI 检测到 tag 不存在会自动重建。
 # ============================================
 # Temurin 21 JRE(Ubuntu 22.04 源持续维护)，匹配 JDK21 / Spring Boot 3.3.5 构建产物

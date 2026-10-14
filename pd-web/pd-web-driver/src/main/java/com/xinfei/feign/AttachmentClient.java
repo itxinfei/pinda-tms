@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 
 @FeignClient(
-        name = "${pinda.feign.file-server:pd-file-server}",
+        name = "${xinfei.feign.file-server:pd-file-server}",
         path = "/attachment"
 )
 public interface AttachmentClient {

@@ -2,7 +2,7 @@
 # 心飞物流TMS 后端构建与部署（Gitea Actions，手动触发，参数化选服务）
 #
 # 策略（2026-10-11 用户拍板）：push 只跑 build-check.yml 编译门禁、不部署；
-# 后端发布统一在本页手动 Run workflow，或在宿主执行 /data/pinda-deploy/deploy-be.sh。
+# 后端发布统一在本页手动 Run workflow，或在宿主执行 /data/xinfei-deploy/deploy-be.sh。
 # 两条路共用同一张「compose 服务 = Maven 模块」白名单与固定部署顺序。
 #
 # 能力：
@@ -12,17 +12,17 @@
 #     build-check 预热的持久 /data/m2；基线之后改过的内部模块先 install 刷新；
 #     无基线 / 命中 pom.xml 变更 / 直接打包失败，三种情况自动回退 -am 全链构建（旧行为，稳妥兜底）。
 #     all（全量发布）维持 -pl 全模块 -am clean package。
-#   - 统一 deploy/apps/Dockerfile（运行时基镜像 pinda/jre21-fontconfig:1），每服务独立上下文 .ctx/<svc>/app.jar
+#   - 统一 deploy/apps/Dockerfile（运行时基镜像 xinfei/jre21-fontconfig:1），每服务独立上下文 .ctx/<svc>/app.jar
 #   - DB 变更门禁 / PREV 回滚基线 / 逐服务健康检查（最长 4 分钟）/ 失败自动回滚 / 演练开关 / 清悬空镜像
 #
 # 前置（服务器侧，2026-10-09 起就绪）：
-#   - ci/pinda-ci:latest          = JDK21 + Maven 3.9.9 + Docker CLI + Compose v2
+#   - ci/xinfei-ci:latest          = JDK21 + Maven 3.9.9 + Docker CLI + Compose v2
 #   - /data/ci/maven-settings.xml = 阿里云 Maven settings（挂为 /ci，只读）
 #   - /data/ci/apps.env           = 密钥（NACOS_*/REDIS_PASSWORD/XXL_JOB_ACCESS_TOKEN，0600）
-#   - pinda/jre21-fontconfig:1    = 后端运行时基础镜像
-#   - compose 顶层 name: pinda-apps；镜像 tag 支持 PD_<SVC>_TAG 逐服务覆盖
+#   - xinfei/jre21-fontconfig:1    = 后端运行时基础镜像
+#   - compose 顶层 name: xinfei-apps；镜像 tag 支持 PD_<SVC>_TAG 逐服务覆盖
 #
-# 13 个可部署后端（compose 服务名 = 容器名 = 镜像名 pinda/<svc>）：
+# 13 个可部署后端（compose 服务名 = 容器名 = 镜像名 xinfei/<svc>）：
 #   pd-auth(9000) pd-base(8185) pd-oms(8186) pd-work(8187) pd-user(8189)
 #   pd-dispatch(8190) pd-aggregation(8191) pd-netty(8192)
 #   pd-web-manager(8161) pd-web-driver(8162) pd-web-courier(8163) pd-web-customer(8164)
@@ -68,13 +68,13 @@ on:
 jobs:
   deploy-backend:
     runs-on: ubuntu-latest
-    # 不显式设 DOCKER_BUILDKIT：ci/pinda-ci 已内置 buildx，docker 29 默认走 BuildKit
+    # 不显式设 DOCKER_BUILDKIT：ci/xinfei-ci 已内置 buildx，docker 29 默认走 BuildKit
     steps:
       - name: 检出代码（内网 Gitea，不用 actions/checkout 以避免外网）
         run: |
           rm -rf ./* ./.??*
           git clone --depth 50 -b "${GITHUB_REF_NAME:-master}" \
-            "http://192.168.20.130:3000/pinda/pinda-tms.git" .
+            "http://192.168.20.130:3000/xinfei/xinfei-tms.git" .
 
       - name: DB 变更脚本门禁
         # diff 含 *.sql（排除 codeback 备份区）= DDL 变更：未经人工审核不进部署。
@@ -82,8 +82,8 @@ jobs:
           BEFORE="${{ github.event.before }}"
           if [ -z "$BEFORE" ] || echo "$BEFORE" | grep -qE '^0{40}$'; then
             # 手动触发无 before：优先用「上次成功部署」基线，覆盖跨多提交累积的 SQL 变更
-            if [ -f /root/.m2/.pinda-deploy.revision ]; then
-              BEFORE=$(cat /root/.m2/.pinda-deploy.revision 2>/dev/null || true)
+            if [ -f /root/.m2/.xinfei-deploy.revision ]; then
+              BEFORE=$(cat /root/.m2/.xinfei-deploy.revision 2>/dev/null || true)
             fi
             # 基线缺失 / 不在浅克隆历史内，退回 HEAD~1（仅覆盖最近一次提交）
             if [ -z "$BEFORE" ] || ! git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
@@ -109,7 +109,7 @@ jobs:
           fi
 
       - name: 解析服务白名单并计算 TAG
-        # 生成 /tmp/pinda-svc.sh（MOD_OF 服务->模块映射 + ORDER 固定顺序），后续 step source 复用。
+        # 生成 /tmp/xinfei-svc.sh（MOD_OF 服务->模块映射 + ORDER 固定顺序），后续 step source 复用。
         # 用 echo 逐行生成而非缩进到 YAML 里的 heredoc，避免结束符被缩进导致不识别。
         run: |
           set -e
@@ -130,14 +130,14 @@ jobs:
             echo '  [pd-gateway]=pd-gateway'
             echo ')'
             echo 'ORDER="pd-auth pd-base pd-oms pd-work pd-user pd-dispatch pd-aggregation pd-netty pd-web-manager pd-web-driver pd-web-courier pd-web-customer pd-gateway"'
-          } > /tmp/pinda-svc.sh
-          source /tmp/pinda-svc.sh
+          } > /tmp/xinfei-svc.sh
+          source /tmp/xinfei-svc.sh
 
           # check_only：仅过 DB 门禁 + 刷部署基线，不构建/部署（纯仓库变更清门禁用）
           if [ "${{ github.event.inputs.check_only }}" = "true" ]; then
             echo "CHECK_ONLY=true：跳过服务解析/构建/部署，仅保留 DB 门禁与部署基线刷新"
             echo "SERVICES=" >> "$GITHUB_ENV"
-            echo 'SERVICES=""' >> /tmp/pinda-svc.sh
+            echo 'SERVICES=""' >> /tmp/xinfei-svc.sh
             exit 0
           fi
 
@@ -194,13 +194,13 @@ jobs:
           echo "SERVICES=$SERVICES" >> "$GITHUB_ENV"
           echo "MODS=$MODS" >> "$GITHUB_ENV"
           echo "TAG=$TAG" >> "$GITHUB_ENV"
-          echo "SERVICES=\"$SERVICES\"" >> /tmp/pinda-svc.sh
+          echo "SERVICES=\"$SERVICES\"" >> /tmp/xinfei-svc.sh
 
       - name: 记录回滚基线（各服务部署前镜像 TAG）
         if: ${{ github.event.inputs.check_only != 'true' }}
         # 每行 "<服务> <旧tag>"；容器不存在则旧 tag 为空（首次部署，失败时跳过该服务回滚）
         run: |
-          source /tmp/pinda-svc.sh
+          source /tmp/xinfei-svc.sh
           : > /tmp/prev-tags
           for s in $SERVICES; do
             img=$(docker inspect -f '{{.Config.Image}}' "$s" 2>/dev/null || true)
@@ -213,7 +213,7 @@ jobs:
         if: ${{ github.event.inputs.check_only != 'true' }}
         # 提速逻辑（与宿主 deploy-be.sh 同构）：
         #   1. 全量发布（all）：维持 -pl 全模块 -am clean package；
-        #   2. 单/多服务：读 /root/.m2/.pinda-baseline.revision（build-check 每次 push 刷新；
+        #   2. 单/多服务：读 /root/.m2/.xinfei-baseline.revision（build-check 每次 push 刷新；
         #      容器内 /root/.m2 = 宿主 /data/m2），git diff 基线..HEAD 把变更文件归属到内部
         #      模块（向上找最近含 pom.xml 的目录），变更的上游模块先 clean install，目标只
         #      clean package（不带 -am）；
@@ -221,7 +221,7 @@ jobs:
         #      一律回退原 -am 全链构建——任何不确定场景退化为旧行为，不会打出缺依赖的包。
         run: |
           set -e
-          BASELINE_FILE=/root/.m2/.pinda-baseline.revision
+          BASELINE_FILE=/root/.m2/.xinfei-baseline.revision
           MVN_COMMON="-B -Dmaven.test.skip=true -s /ci/maven-settings.xml"
 
           fallback_build() {
@@ -302,7 +302,7 @@ jobs:
         if: ${{ github.event.inputs.check_only != 'true' }}
         run: |
           set -e
-          source /tmp/pinda-svc.sh
+          source /tmp/xinfei-svc.sh
           for s in $SERVICES; do
             m="${MOD_OF[$s]}"
             jar=$(find "$m/target" -maxdepth 1 -type f -name '*.jar' \
@@ -321,8 +321,8 @@ jobs:
         run: |
           set -e
           for s in $SERVICES; do
-            echo ">> docker build pinda/$s:$TAG"
-            docker build -f deploy/apps/Dockerfile -t "pinda/$s:${TAG}" ".ctx/$s"
+            echo ">> docker build xinfei/$s:$TAG"
+            docker build -f deploy/apps/Dockerfile -t "xinfei/$s:${TAG}" ".ctx/$s"
           done
         timeout-minutes: 20
 
@@ -361,8 +361,8 @@ jobs:
         # 仅在全部服务健康后执行：失败/回滚时不刷新，保证基线始终指向"最后一次成功部署"。
         # check_only 模式无部署，此处刷新 = 标记"SQL/仓库变更已人工审核、无需部署"，使门禁基线越过该提交。
         run: |
-          git rev-parse HEAD > /root/.m2/.pinda-deploy.revision
-          echo "部署基线已刷新: $(cat /root/.m2/.pinda-deploy.revision)"
+          git rev-parse HEAD > /root/.m2/.xinfei-deploy.revision
+          echo "部署基线已刷新: $(cat /root/.m2/.xinfei-deploy.revision)"
 
       - name: 失败自动回滚到上一版本
         # 逆序回滚（先网关后业务），仅回滚有 PREV 基线的服务；首次部署无基线则跳过。
@@ -404,14 +404,14 @@ jobs:
       - name: 清理旧镜像与构建缓存
         # 构建产物不保留（代码在 git，可随时重构建）：
         #   1. 悬空层直接清；
-        #   2. pinda/pd-* 应用镜像删除所有未被运行容器引用的 tag（当前版本、回滚基线自动受 docker ps 检查保护；
-        #      基础镜像 pinda/jre21-fontconfig 不匹配 pinda/pd-* 前缀，天然不受影响）；
+        #   2. xinfei/pd-* 应用镜像删除所有未被运行容器引用的 tag（当前版本、回滚基线自动受 docker ps 检查保护；
+        #      基础镜像 xinfei/jre21-fontconfig 不匹配 xinfei/pd-* 前缀，天然不受影响）；
         #   3. 构建缓存全清——Maven 依赖缓存在 /data/m2 持久共享，不受影响，仅 docker 层重建略慢。
         if: always()
         run: |
           docker image prune -f
           for img in $(docker images --format '{{.Repository}}:{{.Tag}}' \
-              --filter=reference='pinda/pd-*' | grep -v ":$TAG$" || true); do
+              --filter=reference='xinfei/pd-*' | grep -v ":$TAG$" || true); do
             if ! docker ps --format '{{.Image}}' | grep -qxF "$img"; then
               echo ">> 清理未使用镜像 $img"
               docker rmi "$img" 2>/dev/null || true
@@ -430,5 +430,5 @@ jobs:
       #     if [ -z "$WEBHOOK" ]; then echo "未配置 DEPLOY_NOTIFY_WEBHOOK，跳过通知"; exit 0; fi
       #     ST="${{ job.status }}"
       #     curl -sS -X POST "$WEBHOOK" -H 'Content-Type: application/json' \
-      #       -d "{\"msgtype\":\"text\",\"text\":{\"content\":\"[pinda-tms] deploy-backend $ST TAG=${TAG:-check_only} HEAD=$(git rev-parse --short HEAD)\"}}" || true
+      #       -d "{\"msgtype\":\"text\",\"text\":{\"content\":\"[xinfei-tms] deploy-backend $ST TAG=${TAG:-check_only} HEAD=$(git rev-parse --short HEAD)\"}}" || true
       # ============================================================

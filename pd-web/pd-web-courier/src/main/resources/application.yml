@@ -61,7 +61,7 @@ spring:
   rabbitmq:
     host: ${RABBITMQ_HOST:192.168.20.130}
     port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USERNAME:pinda}
+    username: ${RABBITMQ_USERNAME:xinfei}
     password: ${RABBITMQ_PASSWORD:123456}
     virtual-host: ${RABBITMQ_VHOST:/}
   # Redis：BFF 需与网关/pd-auth/pd-netty 接同一个 db0，InternalAuthRequestInterceptor 才能
@@ -110,6 +110,6 @@ sa-token:
 
 # 端级角色绑定（X-01 下沉落点，网关只校验登录态）：逗号分隔 OR 关系；
 # ADMIN 并入是因现网移动端测试账号多绑 ADMIN
-pinda:
+xinfei:
   auth:
     required-roles: ROLE_COURIER,ADMIN

@@ -6,7 +6,7 @@
 #   3) 把令牌填入下面 GITEA_RUNNER_REGISTRATION_TOKEN，再：
 #      docker compose -f deploy/gitea/docker-compose.gitea.yml up -d
 # ============================================
-name: pinda-devops
+name: xinfei-devops
 
 services:
   gitea:
@@ -59,7 +59,7 @@ services:
         act_runner register
           --instance $${GITEA_INSTANCE_URL}
           --token $${GITEA_RUNNER_REGISTRATION_TOKEN}
-          --name pinda-runner
+          --name xinfei-runner
           --config /config.yaml
           --no-interactive;
         touch /data/.registered;

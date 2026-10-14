@@ -39,7 +39,7 @@ jobs:
         run: |
           rm -rf ./* ./.??*
           git clone --depth 50 -b "${GITHUB_REF_NAME:-master}" \
-            "http://192.168.20.130:3000/pinda/pinda-tms.git" .
+            "http://192.168.20.130:3000/xinfei/xinfei-tms.git" .
 
       - name: 安装 pnpm 并配置依赖源（阿里 npmmirror）
         run: |

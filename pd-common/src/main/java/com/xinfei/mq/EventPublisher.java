@@ -31,7 +31,7 @@ public class EventPublisher {
     /**
      * 交换机名称
      */
-    public static final String EXCHANGE_DOMAIN_EVENT = "pinda.domain.event.exchange";
+    public static final String EXCHANGE_DOMAIN_EVENT = "xinfei.domain.event.exchange";
 
     /**
      * 最大重试次数

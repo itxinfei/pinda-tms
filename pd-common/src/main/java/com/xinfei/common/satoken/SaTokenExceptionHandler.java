@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  * （pd-base/oms/work/dispatch/user 等）组件扫描命中——必须类级条件门控：
  * {@code @ConditionalOnClass(name=...)} 用字符串 ASM 判定（不写 class 字面量，
  * 否则条件判定本身就要加载缺失类），{@code @ConditionalOnProperty} 保证仅在
- * 配置了 {@code pinda.auth.required-roles} 的端生效。</p>
+ * 配置了 {@code xinfei.auth.required-roles} 的端生效。</p>
  *
  * <p>注意：不能用 @Bean 方法注册本类——BFF 既扫到类又走 @Bean 会产生重复
  * Bean 定义导致 BeanDefinitionOverrideException。</p>
@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @Slf4j
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @ConditionalOnClass(name = "cn.dev33.satoken.exception.NotRoleException")
-@ConditionalOnProperty(name = "pinda.auth.required-roles")
+@ConditionalOnProperty(name = "xinfei.auth.required-roles")
 @RestControllerAdvice
 public class SaTokenExceptionHandler {
 

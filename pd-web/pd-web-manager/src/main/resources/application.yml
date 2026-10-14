@@ -100,6 +100,6 @@ sa-token:
 # 端级角色绑定（X-01 下沉落点，网关只校验登录态）：逗号分隔 OR 关系，
 # 角色由 pd-auth 登录写入共享 Redis 会话，BFF 经 SharedSessionStpInterface 读取。
 # 未配置本键则拦截器不装配（pd-auth 等不受影响）。
-pinda:
+xinfei:
   auth:
     required-roles: ADMIN

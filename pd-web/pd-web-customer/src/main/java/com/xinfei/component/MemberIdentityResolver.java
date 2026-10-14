@@ -29,9 +29,9 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 public class MemberIdentityResolver {
 
     /** 请求级缓存键：会员雪花 ID 字符串 */
-    private static final String REQ_ATTR_MEMBER_ID = "pinda.customer.memberId";
+    private static final String REQ_ATTR_MEMBER_ID = "xinfei.customer.memberId";
     /** 请求级缓存键：会员完整信息 */
-    private static final String REQ_ATTR_MEMBER = "pinda.customer.member";
+    private static final String REQ_ATTR_MEMBER = "xinfei.customer.member";
 
     private final UserClient userClient;
     private final MemberFeign memberFeign;

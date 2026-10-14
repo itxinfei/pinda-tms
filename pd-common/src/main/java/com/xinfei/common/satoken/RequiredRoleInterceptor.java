@@ -17,7 +17,7 @@ import java.util.Arrays;
  * 网关 classpath 无 StpInterface，checkRole 恒空、全员 403）。</p>
  *
  * <p>由 {@link SaTokenPermissionAutoConfiguration} 在服务配置
- * {@code pinda.auth.required-roles} 时装配，多角色 OR 关系（任一命中即放行，
+ * {@code xinfei.auth.required-roles} 时装配，多角色 OR 关系（任一命中即放行，
  * 通常写"本端角色,ADMIN"）。</p>
  */
 public class RequiredRoleInterceptor implements HandlerInterceptor {

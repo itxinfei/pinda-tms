@@ -19,7 +19,7 @@ export const NETTY_BASE = GATEWAY + '/netty-service'
 export const TOKEN_KEY = 'pd_token'
 export const TOKEN_HEADER = 'token'
 // 企业编码（登录必填，后端 LoginParamDTO 校验 @NotBlank；种子租户见 pd_auth_多租户重建_20261009.sql）
-export const TENANT_CODE = 'pinda'
+export const TENANT_CODE = 'xinfei'
 // 角色：CUSTOMER / COURIER / DRIVER（资源表已建，用于权限与展示区分）
 export const ROLE = 'CUSTOMER'
 

@@ -51,13 +51,13 @@ public class AuthLoginService {
         return environment.acceptsProfiles(Profiles.of("dev"));
     }
 
-    @Value("${pinda.login.max-fail:5}")
+    @Value("${xinfei.login.max-fail:5}")
     private int maxLoginFail;
 
-    @Value("${pinda.login.lock-seconds:1800}")
+    @Value("${xinfei.login.lock-seconds:1800}")
     private long lockSeconds;
 
-    private static final String FAIL_KEY_PREFIX = "pinda:login:fail:";
+    private static final String FAIL_KEY_PREFIX = "xinfei:login:fail:";
 
     /**
      * 账号登录

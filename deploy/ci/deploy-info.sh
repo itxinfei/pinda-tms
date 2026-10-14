@@ -5,9 +5,9 @@
 set -uo pipefail
 
 GITEA=${GITEA:-http://127.0.0.1:3000}
-REPO=${REPO:-pinda/pinda-tms}
-# 凭据不写进仓库（这是开源仓库）。机器上放 /etc/pinda-gitea-cred（root 0600，内容 user:pass）。
-AUTH=${AUTH:-$(cat /etc/pinda-gitea-cred 2>/dev/null || true)}
+REPO=${REPO:-xinfei/xinfei-tms}
+# 凭据不写进仓库（这是开源仓库）。机器上放 /etc/xinfei-gitea-cred（root 0600，内容 user:pass）。
+AUTH=${AUTH:-$(cat /etc/xinfei-gitea-cred 2>/dev/null || true)}
 OUT_DIR=${OUT_DIR:-/var/www/deployinfo}
 DEPLOY_TAG=${TAG:-${1:-}}
 # 没显式给 TAG 时，用运行中容器实际在用的镜像 tag 当"当前部署版本"
@@ -101,7 +101,7 @@ fi
 commit_json="[${commit_json%,}]"
 
 # ---------- 前端与镜像 tag 是否一致 ----------
-img_tags=$(docker images --format '{{.Repository}}:{{.Tag}}' | grep '^pinda/pd-' | awk -F: '{print $2}' | sort -u | tr '\n' ' ')
+img_tags=$(docker images --format '{{.Repository}}:{{.Tag}}' | grep '^xinfei/pd-' | awk -F: '{print $2}' | sort -u | tr '\n' ' ')
 
 cat > "$OUT_DIR/deploy.html" <<HTML
 <!doctype html><html lang="zh"><head><meta charset="utf-8">

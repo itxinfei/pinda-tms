@@ -25,20 +25,20 @@ public class CaptchaService {
 
     private final StringRedisTemplate redisTemplate;
 
-    @Value("${pinda.captcha.ttl:120}")
+    @Value("${xinfei.captcha.ttl:120}")
     private long ttlSeconds;
 
-    @Value("${pinda.captcha.width:115}")
+    @Value("${xinfei.captcha.width:115}")
     private int width;
 
-    @Value("${pinda.captcha.height:42}")
+    @Value("${xinfei.captcha.height:42}")
     private int height;
 
-    @Value("${pinda.captcha.max-fail:5}")
+    @Value("${xinfei.captcha.max-fail:5}")
     private int maxFail;
 
-    private static final String CAPTCHA_KEY_PREFIX = "pinda:captcha:";
-    private static final String FAIL_KEY_PREFIX = "pinda:captcha:fail:";
+    private static final String CAPTCHA_KEY_PREFIX = "xinfei:captcha:";
+    private static final String FAIL_KEY_PREFIX = "xinfei:captcha:fail:";
 
     /**
      * 生成算术验证码并写入响应流（PNG）。

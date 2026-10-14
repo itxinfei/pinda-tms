@@ -29,12 +29,12 @@ public class SettlementDeliveredListener {
     /**
      * pd-oms 专属交付事件队列
      */
-    public static final String OMS_ORDER_DELIVERED_QUEUE = "pinda.oms.queue.order.delivered";
+    public static final String OMS_ORDER_DELIVERED_QUEUE = "xinfei.oms.queue.order.delivered";
 
     /**
      * 领域事件交换机（与 EventPublisher / pd-dispatch RabbitMQConfig 一致）
      */
-    public static final String DOMAIN_EVENT_EXCHANGE = "pinda.domain.event.exchange";
+    public static final String DOMAIN_EVENT_EXCHANGE = "xinfei.domain.event.exchange";
 
     /**
      * 交付事件路由键

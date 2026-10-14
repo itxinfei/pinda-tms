@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# 心飞物流TMS 统一部署入口（服务器 /data/pinda-deploy/deploy.sh）
+# 心飞物流TMS 统一部署入口（服务器 /data/xinfei-deploy/deploy.sh）
 # 真源在仓库 deploy/deploy.sh，改脚本一律改仓库版再同步，勿直接编辑本文件
 # ============================================================
 set -e
@@ -38,8 +38,8 @@ help() {
   Actions → deploy-frontend（前端，下拉选端/全部）
 
 注意:
-  - 后端从 /data/pinda-tms checkout 构建，脚本【不自动 pull】；
-    部署前确认: git -C /data/pinda-tms pull --ff-only（或核对 HEAD 为目标提交）
+  - 后端从 /data/xinfei-tms checkout 构建，脚本【不自动 pull】；
+    部署前确认: git -C /data/xinfei-tms pull --ff-only（或核对 HEAD 为目标提交）
   - 前端自动从 Gitea master 拉最新代码构建
   - 任一服务/端部署后 4 分钟(前端 60 秒)内未健康，自动回滚到上一版本
 EOF

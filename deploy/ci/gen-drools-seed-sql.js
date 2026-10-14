@@ -33,7 +33,7 @@ const sql = `-- 运价规则种子：把仓库里的 Drools 规则灌进 pd_oms.
 -- 灌完必须让每个运行中的实例重载（规则装在单 JVM 内存里，多实例要逐台刷）：
 --   curl -X POST http://<pd-oms 实例>:8186/rules/reload
 -- 只灌 pd_oms：pd-oms 的 datasource 实测就是 pd_oms（Nacos pd-oms-prod.yml:14），
--- pinda_tms 里的同名 rule 表是历史副本，不喂代码。
+-- xinfei_tms 里的同名 rule 表是历史副本，不喂代码。
 --
 -- ⚠️ 重构/删码提示（2026-10-09）：本 content 里三条续重规则调用
 --   new DroolsRulesServiceImpl().calcFee(addressRule)（.drl 第 33/50/67 行）。该调用

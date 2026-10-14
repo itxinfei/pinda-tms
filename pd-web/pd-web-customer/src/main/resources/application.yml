@@ -58,11 +58,11 @@ spring:
         enable-semaphore-default-bulkhead: true
   # RabbitMQ：MailingController 下单后经 pd-common EventPublisher 发布 OrderConfirmedEvent，
   # 供 pd-dispatch 消费驱动调度。此前缺本配置，Spring AMQP 默认连 localhost:5672 → Connection refused。
-  # 容器与 pinda-apps 网络隔离、无法用服务名，走宿主机 IP（同 MySQL/Redis），账号密码环境变量注入
+  # 容器与 xinfei-apps 网络隔离、无法用服务名，走宿主机 IP（同 MySQL/Redis），账号密码环境变量注入
   rabbitmq:
     host: ${RABBITMQ_HOST:192.168.20.130}
     port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USERNAME:pinda}
+    username: ${RABBITMQ_USERNAME:xinfei}
     password: ${RABBITMQ_PASSWORD:123456}
     virtual-host: ${RABBITMQ_VHOST:/}
   # Redis：BFF 需与网关/pd-auth/pd-netty 接同一个 db0，InternalAuthRequestInterceptor 才能
@@ -111,6 +111,6 @@ sa-token:
 
 # 端级角色绑定（X-01 下沉落点，网关只校验登录态）：逗号分隔 OR 关系；
 # CUSTOMER 角色码现网暂无（预留，建角色即生效）；ADMIN 并入是因 customer01 等测试账号绑 ADMIN
-pinda:
+xinfei:
   auth:
     required-roles: CUSTOMER,ADMIN
