@@ -42,20 +42,21 @@ export function transportTaskStatusView(status?: number) {
 }
 
 // ============ 关联订单状态 OrderStatus ============
+// 状态码 =《07》§一 紧凑口径 1~12（旧 23xxx 已全线作废，勿回填）；司机链路只涉其中 6 态
 export type OrderStatus =
-  | 23000
-  | 23005
-  | 23006
-  | 23009
-  | 23010
-  | 23011
+  | 1
+  | 6
+  | 7
+  | 10
+  | 11
+  | 12
 export const ORDER_STATUS_MAP: Record<number, { text: string; type: string }> = {
-  23000: { text: '待取件', type: 'warning' },
-  23005: { text: '运输中', type: 'primary' },
-  23006: { text: '网点出库', type: 'info' },
-  23009: { text: '已签收', type: 'success' },
-  23010: { text: '拒收', type: 'error' },
-  23011: { text: '已取消', type: 'info' },
+  1: { text: '待取件', type: 'warning' },
+  6: { text: '运输中', type: 'primary' },
+  7: { text: '网点出库', type: 'info' },
+  10: { text: '已签收', type: 'success' },
+  11: { text: '拒收', type: 'error' },
+  12: { text: '已取消', type: 'info' },
 }
 export function orderStatusView(status?: number) {
   if (status == null) return { text: '未知', type: 'info' }

@@ -11,6 +11,7 @@ import com.itheima.pinda.common.enums.ErrorCode;
 import com.itheima.pinda.common.exception.PdException;
 import com.itheima.pinda.common.utils.EntCoordSyncJob;
 import com.itheima.pinda.common.utils.OwnershipAssert;
+import com.itheima.pinda.common.utils.PageQuery;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.util.Rx;
@@ -213,6 +214,11 @@ public class CargoController {
     @GetMapping("history")
     public Result history(Integer page, Integer pagesize, String keyword) {
 
+        // D-05 分页规范化（《12》§8.4）：page>=1、pageSize<=500，非法入参回退默认，不再原样透传
+        int[] pp = PageQuery.normalize(page, pagesize);
+        page = pp[0];
+        pagesize = pp[1];
+
         //  获取司机id  并放入参数
         String driverId = RequestContext.getUserId();
 
@@ -221,7 +227,8 @@ public class CargoController {
         driverJobDTO.setPageSize(pagesize);
         driverJobDTO.setStatus(DriverJobStatus.COMPLETED.getCode());
         driverJobDTO.setDriverId(Long.valueOf(driverId));
-        driverJobDTO.setId(StringUtils.isBlank(keyword) ? null : Long.valueOf(keyword));
+        // D-01 一并修：keyword 非数字时不再 Long.valueOf 抛 500，按"无 id 筛选"处理
+        driverJobDTO.setId(StringUtils.isBlank(keyword) || !StringUtils.isNumeric(keyword) ? null : Long.valueOf(keyword));
 
         log.info("历史列表 PARAMS:{}", driverJobDTO);
         // 修改点：远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE

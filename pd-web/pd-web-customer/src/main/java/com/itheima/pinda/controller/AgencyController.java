@@ -5,6 +5,7 @@ import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONWriter;
 import com.itheima.pinda.DTO.AreaDTO;
 import com.itheima.pinda.DTO.OrgDTO;
+import com.itheima.pinda.common.utils.PageQuery;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.feign.AreaFeign;
@@ -59,6 +60,11 @@ public class AgencyController {
     @Operation(summary = "网点自寄分页")
     @GetMapping("page")
     public Result page(Integer page, Integer pagesize, Long cityId, String keyword, String latitude, String longitude) {
+
+        // D-05 分页规范化（《12》§8.4）：page>=1、pageSize<=500，非法入参回退默认，不再原样透传
+        int[] pp = PageQuery.normalize(page, pagesize);
+        page = pp[0];
+        pagesize = pp[1];
 
         // 远程调用返回 PageResponse<OrgDTO>，可能为 null；统一通过 Rx 取 items，避免 NPE
         PageResponse<OrgDTO> pageResult = orgFeign.pageLike(pagesize, page, keyword, cityId, latitude, longitude);

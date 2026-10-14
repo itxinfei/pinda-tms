@@ -3,6 +3,7 @@ package com.itheima.pinda.controller;
 
 import com.itheima.pinda.DTO.AddressBookDTO;
 import com.itheima.pinda.DTO.AreaDTO;
+import com.itheima.pinda.common.utils.PageQuery;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.component.MemberIdentityResolver;
 import com.itheima.pinda.util.Rx;
@@ -61,6 +62,10 @@ public class AddressBookController {
     @Operation(summary = "地址簿分页查询")
     @GetMapping("page")
     public Result page(Integer page, Integer pageSize, String keyword) {
+        // D-05 分页规范化（《12》§8.4）：page>=1、pageSize<=500，非法入参回退默认，不再原样透传
+        int[] pp = PageQuery.normalize(page, pageSize);
+        page = pp[0];
+        pageSize = pp[1];
         // 认证账号 ID 解析为会员雪花 ID（未登录/未绑手机号抛异常由全局 advice 处理）
         String memberId = memberIdentityResolver.requireCurrentMemberId();
         // 远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE

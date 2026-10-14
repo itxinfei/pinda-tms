@@ -7,6 +7,7 @@ import com.itheima.pinda.common.context.RequestContext;
 import com.itheima.pinda.common.exception.PdException;
 import com.itheima.pinda.common.utils.IdCardUtils;
 import com.itheima.pinda.common.utils.OwnershipAssert;
+import com.itheima.pinda.common.utils.PageQuery;
 import com.itheima.pinda.common.utils.PageResponse;
 import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.enums.MemberIdCardVerifyStatus;
@@ -111,6 +112,11 @@ public class CourierController {
     @ResponseBody
     @GetMapping("pickupDispatch")
     public Result pickupDispatch(Integer page, Integer pagesize, Integer taskType, Integer status, String keyword, String date) {
+
+        // D-05 分页规范化（《12》§8.4）：page>=1、pageSize<=500，非法入参回退默认，不再原样透传
+        int[] pp = PageQuery.normalize(page, pagesize);
+        page = pp[0];
+        pagesize = pp[1];
 
         //  快递员id  并放入参数
         String courierId = RequestContext.getUserId();

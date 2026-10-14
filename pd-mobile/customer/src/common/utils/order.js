@@ -1,20 +1,20 @@
 /* 品达TMS 客户端 · 订单状态/枚举映射（禁硬编码数字）
-   枚举来源：pd-service-api OrderStatus.java（23000~23011）
+   状态码 =《07》§一 紧凑口径 1~12（旧 23xxx 已全线作废，勿回填）
    状态色映射（UI规范 §2.1）：待处理=warning / 进行中=primary / 已完成=success / 异常=error */
 
 export const ORDER_STATUS_MAP = {
-  23000: { label: '待取件', type: 'warning' },
-  23001: { label: '已取件', type: 'primary' },
-  23002: { label: '网点自寄', type: 'primary' },
-  23003: { label: '网点入库', type: 'primary' },
-  23004: { label: '待装车', type: 'primary' },
-  23005: { label: '运输中', type: 'primary' },
-  23006: { label: '网点出库', type: 'primary' },
-  23007: { label: '待派送', type: 'primary' },
-  23008: { label: '派送中', type: 'primary' },
-  23009: { label: '已签收', type: 'success' },
-  23010: { label: '拒收', type: 'error' },
-  23011: { label: '已取消', type: 'info' },
+  1: { label: '待取件', type: 'warning' },
+  2: { label: '已取件', type: 'primary' },
+  3: { label: '网点自寄', type: 'primary' },
+  4: { label: '网点入库', type: 'primary' },
+  5: { label: '待装车', type: 'primary' },
+  6: { label: '运输中', type: 'primary' },
+  7: { label: '网点出库', type: 'primary' },
+  8: { label: '待派送', type: 'primary' },
+  9: { label: '派送中', type: 'primary' },
+  10: { label: '已签收', type: 'success' },
+  11: { label: '拒收', type: 'error' },
+  12: { label: '已取消', type: 'info' },
 };
 
 export const statusInfo = (status) => ORDER_STATUS_MAP[status] || { label: '未知', type: 'info' };

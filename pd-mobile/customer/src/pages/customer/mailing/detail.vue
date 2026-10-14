@@ -71,9 +71,9 @@ const detail = ref(null);
 const routeList = ref([]);
 const loading = ref(false);
 
-// 仅"待取件(23000)"可取消、可支付
-const canCancel = computed(() => detail.value && detail.value.status === 23000);
-const canPay = computed(() => detail.value && detail.value.status === 23000);
+// 仅"待取件(1)"可取消、可支付（《07》§一紧凑码）
+const canCancel = computed(() => detail.value && detail.value.status === 1);
+const canPay = computed(() => detail.value && detail.value.status === 1);
 
 const loadDetail = async () => {
   loading.value = true;
