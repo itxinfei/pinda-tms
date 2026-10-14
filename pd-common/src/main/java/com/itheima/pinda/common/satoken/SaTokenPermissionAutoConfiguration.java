@@ -42,6 +42,9 @@ public class SaTokenPermissionAutoConfiguration {
      *
      * <p>拦截 /**（登录态已由网关校验，此处只做角色）， actuator 探针必须排除——
      * 不放行会被 HTTP 探针 401 打成 unhealthy，触发 auto-deploy 全量回滚（两次教训）。</p>
+     *
+     * <p>{@link SaTokenExceptionHandler} 走类级条件组件扫描注册（见其类注释），
+     * 此处不再用 @Bean 注册以免 BFF 内重复 Bean 定义。</p>
      */
     @Bean
     @ConditionalOnProperty(name = "pinda.auth.required-roles")
@@ -59,12 +62,5 @@ public class SaTokenPermissionAutoConfiguration {
                         .excludePathPatterns("/actuator/**", "/favicon.ico");
             }
         };
-    }
-
-    /** 鉴权异常收口（401/403 统一 Result 壳）：与拦截器同条件装配，未配置的服务零影响 */
-    @Bean
-    @ConditionalOnProperty(name = "pinda.auth.required-roles")
-    public SaTokenExceptionHandler saTokenExceptionHandler() {
-        return new SaTokenExceptionHandler();
     }
 }
