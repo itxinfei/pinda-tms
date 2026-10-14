@@ -122,13 +122,13 @@ jobs:
         run: |
           {
             echo 'declare -A MOD_OF=('
-            echo '  [pd-auth]=pd-auth [pd-base]=pd-base [pd-oms]=pd-oms [pd-work]=pd-work'
-            echo '  [pd-user]=pd-user [pd-dispatch]=pd-dispatch [pd-aggregation]=pd-aggregation [pd-netty]=pd-netty'
-            echo '  [pd-web-manager]=pd-web/pd-web-manager [pd-web-driver]=pd-web/pd-web-driver'
-            echo '  [pd-web-courier]=pd-web/pd-web-courier [pd-web-customer]=pd-web/pd-web-customer'
-            echo '  [pd-gateway]=pd-gateway'
+            echo '  [xf-auth]=pd-auth [xf-base]=pd-base [xf-oms]=pd-oms [xf-work]=pd-work'
+            echo '  [xf-user]=pd-user [xf-dispatch]=pd-dispatch [xf-aggregation]=pd-aggregation [xf-netty]=pd-netty'
+            echo '  [xf-web-manager]=pd-web/pd-web-manager [xf-web-driver]=pd-web/pd-web-driver'
+            echo '  [xf-web-courier]=pd-web/pd-web-courier [xf-web-customer]=pd-web/pd-web-customer'
+            echo '  [xf-gateway]=pd-gateway'
             echo ')'
-            echo 'ORDER="pd-auth pd-base pd-oms pd-work pd-user pd-dispatch pd-aggregation pd-netty pd-web-manager pd-web-driver pd-web-courier pd-web-customer pd-gateway"'
+            echo 'ORDER="xf-auth xf-base xf-oms xf-work xf-user xf-dispatch xf-aggregation xf-netty xf-web-manager xf-web-driver xf-web-courier xf-web-customer xf-gateway"'
           } > /tmp/svc.sh
           source /tmp/svc.sh
           BASE=$(cat /root/.m2/.xinfei-deploy.revision 2>/dev/null || true)
