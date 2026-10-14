@@ -121,7 +121,7 @@ jobs:
           BASE=$(cat /root/.m2/.pinda-deploy.revision 2>/dev/null || true)
           if [ -z "$BASE" ] || ! git cat-file -e "${BASE}^{commit}" 2>/dev/null; then
             echo "部署基线不可用（首次/超出浅克隆窗口）→ 全量收敛"
-            echo "SERVICES=ALL" >> "$GITHUB_ENV"; echo "APPS=ALL" >> "$GITHUB_ENV"; exit 0
+            echo "SERVICES=ALL" >> "$GITHUB_ENV"; echo "APPS=admin driver courier customer" >> "$GITHUB_ENV"; exit 0
           fi
           # ---- 对账自愈：上轮部署被 cancel-in-progress 中断（标记残留）则本轮强制全量收敛 ----
           MARKER=/root/.m2/.pinda-deploy.inprogress
@@ -135,7 +135,7 @@ jobs:
             fi
             echo "→ 本轮强制全量收敛，覆盖中断轮全部变更"
             rm -f "$MARKER"
-            echo "SERVICES=ALL" >> "$GITHUB_ENV"; echo "APPS=ALL" >> "$GITHUB_ENV"; exit 0
+            echo "SERVICES=ALL" >> "$GITHUB_ENV"; echo "APPS=admin driver courier customer" >> "$GITHUB_ENV"; exit 0
           fi
           CHANGED=$(git diff --name-only "$BASE" HEAD)
           if [ -z "$CHANGED" ]; then
