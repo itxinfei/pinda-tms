@@ -21,6 +21,6 @@ public interface PaymentOrderMapper extends BaseMapper<PaymentOrder> {
      * pay_no 全局唯一（uk_pay_no）且回调已经过渠道验签，故显式忽略租户隔离。</p>
      */
     @InterceptorIgnore(tenantLine = "true")
-    @Select("SELECT tenant_id FROM pd_payment_order WHERE pay_no = #{payNo} LIMIT 1")
+    @Select("SELECT tenant_id FROM xf_payment_order WHERE pay_no = #{payNo} LIMIT 1")
     Long selectTenantIdByPayNo(@Param("payNo") String payNo);
 }

@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
  * 记录支付状态与渠道预支付参数，支撑支付流程闭环。</p>
  */
 @Data
-@TableName("pd_payment_order")
+@TableName("xf_payment_order")
 public class PaymentOrder implements Serializable {
 
     private static final long serialVersionUID = 1L;

@@ -21,7 +21,7 @@ digraph order_lifecycle {
   s23010 [label="23010 拒收\nCC:504\n⚠ 下游 MQ 回写全注释", fillcolor="#fce8e6"];
   s23011 [label="23011 已取消\nMC:742\n⚠ 无锁无退款", fillcolor="#fce8e6"];
   seed [label="线上种子数据 status=1\n(testdata.sql:84-90)\n❌ 不在任何键集\n→ 所有流转 return false", shape=note, fillcolor="#fde8e8"];
-  dup [label="流转图存两份\npd-oms 内联 map(OIS:52-86)\npd-work StateTransitionValidator:28\n靠人肉同步", shape=note, fillcolor="#fef7e0"];
+  dup [label="流转图存两份\nxf-oms 内联 map(OIS:52-86)\nxf-work StateTransitionValidator:28\n靠人肉同步", shape=note, fillcolor="#fef7e0"];
 
   s0 -> s23000 [label="pickupType=2 上门"];
   s0 -> s23002 [label="pickupType=1 自寄"];

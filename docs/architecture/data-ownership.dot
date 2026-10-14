@@ -8,10 +8,10 @@ digraph data_ownership {
   edge [fontname="Microsoft YaHei", fontsize=10];
 
   // 服务
-  oms [label="pd-oms 订单"]; work [label="pd-work 运输作业"]; disp [label="pd-dispatch 调度"];
-  base [label="pd-base 主数据"]; user [label="pd-user 会员"]; auth [label="旧 pd-auth-server 权限"];
-  agg [label="pd-aggregation 聚合读"]; netty [label="pd-netty 轨迹"]; druid [label="pd-druid 大屏/位置\n✅ 2026-10-11 已删", style="filled,dashed", fillcolor="#e8f5e9"];
-  webm [label="pd-web-manager"]; webc [label="pd-web-courier"]; webd [label="pd-web-driver"]; webu [label="pd-web-customer"];
+  oms [label="xf-oms 订单"]; work [label="xf-work 运输作业"]; disp [label="xf-dispatch 调度"];
+  base [label="xf-base 主数据"]; user [label="xf-user 会员"]; auth [label="旧 xf-auth-server 权限"];
+  agg [label="xf-aggregation 聚合读"]; netty [label="xf-netty 轨迹"]; druid [label="pd-druid 大屏/位置\n✅ 2026-10-11 已删", style="filled,dashed", fillcolor="#e8f5e9"];
+  webm [label="xf-web-manager"]; webc [label="xf-web-courier"]; webd [label="xf-web-driver"]; webu [label="xf-web-customer"];
 
   // 库（红色对象为实测问题）
   subgraph cluster_dbs { label="MySQL 192.168.20.130（实测 8 库）"; style=dashed; color="#9aa0a6";

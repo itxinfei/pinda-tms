@@ -17,11 +17,7 @@
           <transition name="fade-slide" mode="out-in">
             <div v-if="component === 'login'" key="login" class="login-card__form">
               <div class="login-card__brand">
-                <el-image :src="logoMark" class="login-card__logo" />
-                <div class="login-card__brand-text">
-                  <span class="login-card__brand-name">心飞物流</span>
-                  <span class="login-card__brand-en">FASTER AND SAFER</span>
-                </div>
+                <img :src="logoFull" class="login-card__logo-full" alt="心飞物流" />
               </div>
               <h2 class="login-card__title">{{ t("login.title") }}</h2>
               <p class="login-card__desc">{{ t("login.desc") }}</p>
@@ -131,7 +127,7 @@ import router from "@/router";
 import { useUserStore } from "@/stores";
 import { AuthStorage } from "@/utils/auth";
 import ResetPwd from "./components/ResetPwd.vue";
-import logoMark from "@/assets/images/logo-mark.png";
+import logoFull from "@/assets/images/logo-full.png";
 import loginHero from "@/assets/images/login-hero.png";
 import { useI18n } from "vue-i18n";
 
@@ -166,7 +162,7 @@ const loginRules = computed(() => ({
   captchaCode: [{ required: true, trigger: "blur", message: t("login.message.captchaCode.required") }],
 }));
 
-// 心飞物流演示账号（必须是 pd_auth_user 中真实存在的账号，口径见《57-账号密码与凭据总表》）
+// 心飞物流演示账号（必须是 sys_user 中真实存在的账号，口径见《57-账号密码与凭据总表》）
 const demoAccounts = computed(() => [
   { username: "admin", label: t("login.accounts.admin") },
   { username: "xinfei", label: t("login.accounts.xinfei") },
@@ -359,33 +355,10 @@ $brand-red: #d7000f; // 心飞品牌红：登录按钮、书法标语（参考�
     margin-bottom: 22px;
   }
 
-  &__logo {
-    width: 36px;
-    height: 36px;
-    flex-shrink: 0;
-  }
-
-  &__brand-text {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    min-width: 0;
-  }
-
-  &__brand-name {
-    font-size: 22px;
-    font-weight: 700;
-    line-height: 1.15;
-    color: $text-primary;
-    letter-spacing: 0;
-  }
-
-  &__brand-en {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 2.5px;
-    line-height: 1;
-    color: $brand-red;
+  &__logo-full {
+    height: 40px;
+    width: auto;
+    display: block;
   }
 
   &__title {
@@ -613,10 +586,6 @@ $brand-red: #d7000f; // 心飞品牌红：登录按钮、书法标语（参考�
 
 .dark .login-card {
   background: #0b1020;
-
-  &__brand-name {
-    color: rgb(255 255 255 / 88%);
-  }
 
   &__title {
     color: rgb(255 255 255 / 85%);

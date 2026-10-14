@@ -47,7 +47,7 @@ digraph support_domains_risk {
   // ---------- 证据锚点 ----------
   node [shape=box, style="rounded,filled", fillcolor="#f4f4f4", color="#9a9a9a"];
   E_pri  [label="git ls-files 命中2个pri.key\n636B DER 30820278 / origin_master同命中"];
-  E_gate [label="pd-gateway-prod.yml:10 header-name=token\n:19-22 ignore.auth.url=[/anno,/captcha]"];
+  E_gate [label="xf-gateway-prod.yml:10 header-name=token\n:19-22 ignore.auth.url=[/anno,/captcha]"];
   E_ds   [label="DataScopeInterceptor.java:40 唯一命中\nUserServiceImpl.java:61-63 传null"];
   E_area [label="导入区划四级.sql:47 TRUNCATE / :52 LOAD DATA注释\n实测3库各44703行"];
   E_eq   [label="TaskOrderClassifyServiceImpl:210,:330\nOrder.java:65,70,75=String / Area=Entity<Long>"];
@@ -60,7 +60,7 @@ digraph support_domains_risk {
   E_file [label="实测注册中心14个服务无pd-file-server\nAttachmentClient:16-19 无fallback"];
   E_menu [label="MenuController.java:181-195,:136-141\n参数优先于身份头"];
   E_pwd  [label="UserServiceImpl:78,154,175 md5\nBizConstant:15 =MD5(123456)"];
-  E_drv  [label="pd-web-driver/UserController:81\n实测 drivers=10 auth_users=13"];
+  E_drv  [label="xf-web-driver/UserController:81\n实测 drivers=10 auth_users=13"];
   E_ui   [label="api/{Dictionary,Tenant,Application,SystemApi,Msgs,Attachment}.js\n后端@RequestMapping顶层仅22个"];
   E_res  [label="AxiosApi.js:43-58 无条件resolve\nResult.java:20,23-25 只有code/msg"];
   E_adv  [label="DefaultGlobalExceptionHandler:52 abstract\n子类只有auth与gateway两个"];

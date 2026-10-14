@@ -153,3 +153,6 @@ docs/sql/
 
 # 坚果云同步残留（空占位文件，非源码）
 *.nssyncsc
+
+# 本地测试harness（含 .tokens.json 鉴权凭据，禁止入库）
+docs/测试/

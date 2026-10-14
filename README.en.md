@@ -100,7 +100,7 @@ Xinfei TMS was built to solve exactly this — it moves the whole chain of "reso
 | 1 | **4-End Synergy** | Admin + Customer + Courier + Driver apps covering all roles — most open-source TMS only ship an admin console |
 | 2 | **JDK 21 + SB 3.5.7 + Vue 3.5** | The most modern stack among similar open-source TMS; most still sit on JDK 8 + SB 2.x + Vue 2 |
 | 3 | **Drools + XXL-Job Intelligent Dispatch** | Rule-engine driven dispatch &amp; freight calculation instead of hard-coded if-else; distributed scheduling replaces Quartz |
-| 4 | **Netty Self-Built Tracking Ingestion** | No third-party SDK dependency; independent `pd-netty` microservice for high-concurrency device access |
+| 4 | **Netty Self-Built Tracking Ingestion** | No third-party SDK dependency; independent `xf-netty` microservice for high-concurrency device access |
 | 5 | **Sa-Token Multi-Tenancy** | SaaS-ready — one codebase serving multiple tenants |
 | 6 | **Clear Evolution Roadmap** | Kafka → TDengine/鹰眼 → OR-Tools → Spring AI planned; this is not a "ship and stop" project |
 
@@ -120,8 +120,8 @@ Xinfei TMS was built to solve exactly this — it moves the whole chain of "reso
 | Multi-tenant SaaS | ✅ | ❌ | ✅ |
 | Intelligent dispatch (Drools) | ✅ | ❌ if-else | ✅ |
 | Netty self-built tracking ingestion | ✅ | ❌ | ✅ |
-| Annual fee | **0 (Apache-2.0)** | 0 | **¥30K–300K** |
-| Freedom to customize | ✅ fully open | ✅ | ❌ black box |
+| Annual fee | **0 (learning/research)**; commercial use requires license | 0 | **¥30K–300K** |
+| Freedom to customize | ✅ source-available (free for personal learning/research, commercial use requires license) | ✅ | ❌ black box |
 
 > "Similar open-source TMS" refers to mainstream open-source TMS projects on Gitee/GitHub in general, not any specific project; corrections are welcome via Issue.
 
@@ -221,26 +221,26 @@ Booking 📦 → Order creation 📋 → Intelligent dispatch 🤖 (Drools) → 
 ```
 xinfei-tms/
 ├── Microservices (13)
-│   ├── pd-gateway/           # Unified gateway (Spring Cloud Gateway)
-│   ├── pd-auth/              # Auth center (Sa-Token + multi-tenant)
-│   ├── pd-base/              # Master data (org / vehicle / line / cargo)
-│   ├── pd-oms/               # Order management (OMS)
-│   ├── pd-dispatch/          # Intelligent dispatch (Drools + XXL-Job)
-│   ├── pd-work/              # Operations (pickup/delivery & transport tasks)
-│   ├── pd-user/              # Users & members
-│   ├── pd-netty/             # Tracking ingestion (Netty TCP)
-│   ├── pd-aggregation/       # Data aggregation
-│   └── pd-web/               # BFF layer (4-end APIs)
-│       ├── pd-web-manager/   #   Admin BFF
-│       ├── pd-web-courier/   #   Courier BFF
-│       ├── pd-web-customer/  #   Customer BFF
-│       └── pd-web-driver/    #   Driver BFF
+│   ├── xf-gateway/           # Unified gateway (Spring Cloud Gateway)
+│   ├── xf-auth/              # Auth center (Sa-Token + multi-tenant)
+│   ├── xf-base/              # Master data (org / vehicle / line / cargo)
+│   ├── xf-oms/               # Order management (OMS)
+│   ├── xf-dispatch/          # Intelligent dispatch (Drools + XXL-Job)
+│   ├── xf-work/              # Operations (pickup/delivery & transport tasks)
+│   ├── xf-user/              # Users & members
+│   ├── xf-netty/             # Tracking ingestion (Netty TCP)
+│   ├── xf-aggregation/       # Data aggregation
+│   └── xf-web/               # BFF layer (4-end APIs)
+│       ├── xf-web-manager/   #   Admin BFF
+│       ├── xf-web-courier/   #   Courier BFF
+│       ├── xf-web-customer/  #   Customer BFF
+│       └── xf-web-driver/    #   Driver BFF
 ├── Support libs (2 jars)
-│   ├── pd-common/            # Common components (utils / context / interceptors)
-│   └── pd-service-api/       # Inter-service API contracts (Feign)
+│   ├── xf-common/            # Common components (utils / context / interceptors)
+│   └── xf-service-api/       # Inter-service API contracts (Feign)
 ├── Frontend (4 ends)
-│   ├── pd-admin-ui-vue3/     # Admin (Vue3 + Element Plus)
-│   └── pd-mobile/            # Mobile 3 ends (uni-app Vue3)
+│   ├── xf-admin-ui-vue3/     # Admin (Vue3 + Element Plus)
+│   └── xf-mobile/            # Mobile 3 ends (uni-app Vue3)
 │       ├── customer/         #   Customer · Xinfei Express
 │       ├── courier/          #   Courier · Xinfei Courier
 │       └── driver/           #   Driver · Xinfei Driver
@@ -258,7 +258,7 @@ xinfei-tms/
 
 ![Microservice architecture](docs/microservice-arch.png)
 
-> Microservices split by business domain: `pd-auth`, `pd-gateway`, `pd-base`, `pd-oms`, `pd-dispatch`, `pd-work`, `pd-netty`, `pd-aggregation`, etc., communicating via OpenFeign, registered &amp; discovered via Nacos.
+> Microservices split by business domain: `xf-auth`, `xf-gateway`, `xf-base`, `xf-oms`, `xf-dispatch`, `xf-work`, `xf-netty`, `xf-aggregation`, etc., communicating via OpenFeign, registered &amp; discovered via Nacos.
 
 ### 6.3 Technology Architecture
 
@@ -293,7 +293,7 @@ xinfei-tms/
 
 #### 6.4.3 Code Snippets
 
-**Drools dispatch rule** (`pd-dispatch`) — rules are configuration, hot-reloaded without redeploy:
+**Drools dispatch rule** (`xf-dispatch`) — rules are configuration, hot-reloaded without redeploy:
 
 ```java
 rule "same-city order priority"
@@ -305,7 +305,7 @@ then
 end
 ```
 
-**Netty tracking ingestion** (`pd-netty`) — self-built TCP channel, no third-party SDK:
+**Netty tracking ingestion** (`xf-netty`) — self-built TCP channel, no third-party SDK:
 
 ```java
 @ChannelHandler.Sharable
@@ -360,7 +360,7 @@ After the full refactor the system converges to a **single MySQL database** (`xi
 ### 7.1 Environment &amp; Stack
 
 - **Backend**: JDK 21 + Spring Boot 3.5.7 + Spring Cloud 2025.0.0 (Spring Cloud Alibaba 2025.0.0.0), Nacos registry/config, OpenFeign, Spring Cloud Gateway auth, Sa-Token multi-tenant auth, XXL-Job, Drools.
-- **Frontend**: Admin `pd-admin-ui-vue3` (Vue 3 + Vite + Element Plus + Pinia + ECharts); Mobile uni-app (Vue 3 / Vite + uview-plus) for 3 apps.
+- **Frontend**: Admin `xf-admin-ui-vue3` (Vue 3 + Vite + Element Plus + Pinia + ECharts); Mobile uni-app (Vue 3 / Vite + uview-plus) for 3 apps.
 - **Storage &amp; middleware**: MySQL (single-db-by-domain), Redis cache, RabbitMQ, Druid; MinIO &amp; ES are planned (see §6.4).
 - **Support**: unified auth center (Sa-Token multi-tenant + captcha), gateway anti-direct-access, Netty tracking ingestion.
 
@@ -372,7 +372,7 @@ cd xinfei-tms
 docker-compose up -d        # start middleware: MySQL / Redis / RabbitMQ / Nacos
 # ① run the SQL under sql/: authoritative DDL = sql/infra/00_create_database.sql → 01_sys … 08_iot → 09_seed.sql,
 #    the rest organized by domain; sql/ is not tracked by git (maintained manually, see sql/README.md)
-# ② start pd-auth → pd-gateway → business microservices (mvn spring-boot:run or deploy scripts)
+# ② start xf-auth → xf-gateway → business microservices (mvn spring-boot:run or deploy scripts)
 # ③ start admin (pnpm i && pnpm dev) and mobile (run uni-app in HBuilderX)
 ```
 
@@ -527,7 +527,7 @@ All documents below are local files in the repo. **`docs/` and `docs/需求文�
 
 ### 11.1 🛠️ Paid Technical Services
 
-This project is **fully open source &amp; free under Apache-2.0**. The author also offers commercial support:
+This project is licensed under **BUSL-1.1**: free for personal learning, research, teaching and graduation projects; commercial use (production, private deployment, providing services, etc.) requires a commercial license from the author. The author also offers commercial support:
 
 - 🔧 **Secondary development / customization** (platform integration, new features, UI adjustments)
 - 🚀 **Private deployment delivery** (server, domain, environment, incl. VM image)
@@ -588,7 +588,7 @@ This project is **fully open source &amp; free under Apache-2.0**. The author al
 ## 13. ❓ FAQ
 
 **Q: Can I use it commercially?**
-A: Apache-2.0 license — free for commercial use, no strings attached.
+A: Free for personal learning, research, teaching and graduation projects; commercial use by enterprises (production environment, private deployment, providing services, etc.) requires a commercial license from the author (BUSL-1.1).
 
 **Q: Why such a modern stack (JDK 21 + Spring Boot 3.5)?**
 A: A new project in 2026 carries no legacy baggage; we adopt the latest LTS to avoid forced upgrades later.

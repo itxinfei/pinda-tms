@@ -516,7 +516,7 @@ table.cmp .price{color:var(--red);font-weight:900}
       <div class="card">
         <span class="ic"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4zM4 9h16M9 9v11"/></svg></span>
         <h3>Netty 轨迹接入</h3>
-        <p>pd-netty 独立微服务自建 TCP 通道，不依赖第三方 SDK，支撑高并发车载终端位置上报。</p>
+        <p>xf-netty 独立微服务自建 TCP 通道，不依赖第三方 SDK，支撑高并发车载终端位置上报。</p>
       </div>
       <div class="card">
         <span class="ic"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
@@ -727,7 +727,7 @@ table.cmp .price{color:var(--red);font-weight:900}
       </div>
       <div class="layer">
         <h4>服务层 · 13 个微服务</h4>
-        <p>BFF 四端聚合 · <code>pd-auth</code> 认证 · <code>pd-base</code> 档案 · <code>pd-oms</code> 订单 · <code>pd-dispatch</code> 调度 · <code>pd-work</code> 作业 · <code>pd-netty</code> 轨迹 · <code>pd-aggregation</code> 聚合</p>
+        <p>BFF 四端聚合 · <code>xf-auth</code> 认证 · <code>xf-base</code> 档案 · <code>xf-oms</code> 订单 · <code>xf-dispatch</code> 调度 · <code>xf-work</code> 作业 · <code>xf-netty</code> 轨迹 · <code>xf-aggregation</code> 聚合</p>
       </div>
       <div class="layer">
         <h4>数据与消息层</h4>
@@ -933,7 +933,7 @@ mysql -u root -p &lt; docs/sql/重构v2/00_create_database.sql</code>
         <span class="n">4</span>
         <div>
           <h4>启动服务与前端</h4>
-          <p>按序启动 pd-auth → pd-gateway → 业务微服务，再启动管理端与移动端。</p>
+          <p>按序启动 xf-auth → xf-gateway → 业务微服务，再启动管理端与移动端。</p>
           <code class="k"><span class="c"># 后端（每个微服务目录下）</span>
 mvn spring-boot:run
 <span class="c"># 管理端前端</span>
