@@ -85,6 +85,7 @@
 - **服务器品牌文案（2026-10-14 已改）**：Gitea `APP_NAME = 心飞物流`（已重启生效，配置备份 `.bak-xinfei`）、宝塔 `pinda-fronts.conf` 与 `/data/pinda-deploy/deploy-fe.sh` 注释已替换；`/data/pinda-tms/deploy/` 10 个文件的"品达TMS"注释已改（均带 `.bak-xinfei` 备份）。镜像/容器/库名等运行时标识符由 `0c41133` 停机迁移统一处理，勿散改。
 - **CI 前端部署哨兵值修复（2026-10-14，提交 72463356）**：`build-check.yml` 全量收敛路径曾把 `APPS=ALL` 直拼镜像名导致 `pinda/pd-ALL-h5` 非法标签，已改为真实四端列表 `admin driver courier customer`；后端 `SERVICES=ALL→$ORDER` 翻译逻辑不变。
 - **xinfei/xinfei-tms 仓库已建（2026-10-14）**：Gitea 新组织 `xinfei`（full_name: Xinfei Logistics）+ 公开仓库 `xinfei/xinfei-tms`，master 已推送；workflow 的 clone URL 从此仓库拉取，`check_only` 门禁与 fe-compile 已验证跑绿。本地 git remote 共三个：`gitea`（pinda/pinda-tms 旧）、`origin`（Gitee）、`xinfei`（新，过渡期与 gitea 同步推）。旧仓库暂不删，停机迁移收口后再定去留。
+- **RabbitMQ 用户迁移 xinfei（2026-10-14 已建，待切换删旧）**：新用户 `xinfei/123456`（administrator、vhost `/` 全权限）已创建并验证；`/data/ci/apps.env` 的 `RABBITMQ_USERNAME` 已改 `xinfei`（下次部署生效，备份 `apps.env.bak-rabbitmq-xinfei`）；旧用户 `pinda` **暂保留**——在跑服务（2 条连接）仍用它，待停机迁移滚动重启后再删除。
 
 ## 5.2 当前阶段工作定调（🔴 2026-10-11 拍板，最高优先级）
 > 权威全文：SRS《06》§1.6；执行摘要《12》§0/§4。项目处于内网 dev、半成品、无真实用户、不上线；开发一切围绕管理端可见可用展开。
