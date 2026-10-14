@@ -1,5 +1,5 @@
 # ============================================
-# 心飞TMS 新版后台管理系统（Vue3 + Vite + Element Plus）
+# 心飞物流TMS 新版后台管理系统（Vue3 + Vite + Element Plus）
 #
 # 构建上下文 = 仓库根目录（需要 pd-admin-ui-vue3/ 下的源码与 pnpm-lock.yaml）：
 #   docker build -f deploy/apps/Dockerfile.admin-ui-vue3 \

@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================
-# 心飞TMS 一键导入业务数据
+# 心飞物流TMS 一键导入业务数据
 # 前提：已在 MySQL 建好各业务库 pd_auth / pd_base / pd_oms / pd_work / pd_users / pd_dispatch / pd_aggregation
 # 用法：在【仓库根目录】执行
 #   bash deploy/server/import-data.sh

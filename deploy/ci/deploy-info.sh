@@ -106,7 +106,7 @@ img_tags=$(docker images --format '{{.Repository}}:{{.Tag}}' | grep '^pinda/pd-'
 cat > "$OUT_DIR/deploy.html" <<HTML
 <!doctype html><html lang="zh"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>心飞TMS 部署状态</title>
+<title>心飞物流TMS 部署状态</title>
 <style>
  body{font:14px/1.6 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif;margin:24px;color:#222;background:#fafafa}
  h1{font-size:20px;margin:0 0 4px} h2{font-size:15px;margin:22px 0 8px;color:#444}
@@ -121,7 +121,7 @@ cat > "$OUT_DIR/deploy.html" <<HTML
  .ok{color:#1a7f37} .warn{color:#b66000;font-weight:600}
  pre{background:#fff;padding:10px 14px;overflow:auto;font-size:12px;box-shadow:0 1px 2px rgba(0,0,0,.08);white-space:pre-wrap}
 </style></head><body>
-<h1>心飞TMS · 部署状态</h1>
+<h1>心飞物流TMS · 部署状态</h1>
 <div class="sub">生成于 $now 　|　 本次部署 TAG <code>${DEPLOY_TAG:-未提供}</code> 　|　 数据来自 docker 与 Gitea API，只读</div>
 
 <div class="kv">

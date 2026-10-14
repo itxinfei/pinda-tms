@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================
-# 心飞TMS 前端手动部署脚本（4 个 H5 端）
+# 心飞物流TMS 前端手动部署脚本（4 个 H5 端）
 # 用法: bash deploy-fe.sh [admin|driver|courier|customer|all]
 #   不带参数 = all（4 端全部署）
 # 流程: 从 Gitea 拉最新代码 -> docker build 目标端镜像 -> compose 滚动更新对应容器

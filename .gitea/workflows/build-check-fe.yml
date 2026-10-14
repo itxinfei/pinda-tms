@@ -1,5 +1,5 @@
 # ============================================================
-# 心飞TMS 前端 push 编译门禁（Gitea Actions）
+# 心飞物流TMS 前端 push 编译门禁（Gitea Actions）
 #
 # 触发：push 到 master 且改动触及前端目录（pd-admin-ui-vue3 / pd-mobile），
 #       或手动 Run workflow。

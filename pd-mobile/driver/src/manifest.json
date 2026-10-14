@@ -1,7 +1,7 @@
 {
     "name" : "心飞物流 · 司机端",
     "appid" : "",
-    "description" : "心飞TMS 司机端：运输任务、实时定位、轨迹回放",
+    "description" : "心飞物流TMS 司机端：运输任务、实时定位、轨迹回放",
     "versionName" : "1.0.0",
     "versionCode" : "100",
     "transformPx" : false,

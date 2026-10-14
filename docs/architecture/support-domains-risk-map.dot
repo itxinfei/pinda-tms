@@ -8,7 +8,7 @@ digraph support_domains_risk {
   ranksep=0.55;
   fontname="Microsoft YaHei";
   labelloc=t;
-  label="心飞TMS 支撑域风险地图 2026-10-08（实心=代码+实测双证，虚线=推断待证）\n图例：菱形=风险  矩形=证据  虚线=低置信  红=P0  橙=P1  灰=P2";
+  label="心飞物流TMS 支撑域风险地图 2026-10-08（实心=代码+实测双证，虚线=推断待证）\n图例：菱形=风险  矩形=证据  虚线=低置信  红=P0  橙=P1  灰=P2";
   compound=true;
 
   node [fontname="Microsoft YaHei", fontsize=10];

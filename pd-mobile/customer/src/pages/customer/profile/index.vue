@@ -80,7 +80,7 @@ const load = async () => {
 const goAddress = () => uni.navigateTo({ url: '/pages/customer/address/list' });
 const goMailingList = () => uni.reLaunch({ url: '/pages/customer/mailing/list' });
 const goAgency = () => uni.navigateTo({ url: '/pages/customer/agency/list' });
-const goAbout = () => uni.showToast({ title: '心飞物流 TMS v1.0', icon: 'none' });
+const goAbout = () => uni.showToast({ title: '心飞物流TMS v1.0', icon: 'none' });
 const goHome = () => uni.reLaunch({ url: '/pages/customer/home/index' });
 const goProfile = () => uni.reLaunch({ url: '/pages/customer/profile/index' });
 

@@ -1,4 +1,4 @@
-/* 心飞TMS 客户端 · 地址簿 API（/web-customer/address/**）
+/* 心飞物流TMS 客户端 · 地址簿 API（/web-customer/address/**）
    注意：本模块分页参数是 pageSize（驼峰大写S），其余接口是 pagesize（全小写） */
 import { request } from '../request/index.js';
 

@@ -1,5 +1,5 @@
 // 🔴 2026-10-10 注：本图为重构前快照。数据库已由各域分库重构为单一物理库 xinfei_tms（51 表）+ tenant_id 多租户；下方 cluster 标签里的"(库 pd_oms)"等旧库名仅作历史标注，业务流本身仍成立。现行库口径见 docs/02、《需求文档/45》。
-// 心飞TMS 端到端业务流（current-state，证据标注版）· 重构前快照
+// 心飞物流TMS 端到端业务流（current-state，证据标注版）· 重构前快照
 // 生成：flow-visualizer + graphviz；基线 ecd6725 + 192.168.20.130 实测（2026-10-08）
 // 读法：实线=代码路径已证实；虚线=推断/待验证；点线=应发生但没有实现；
 //       红色节点=断点；灰色=线上无数据（该环节从未真实走通）
@@ -7,7 +7,7 @@ digraph tms_business_flow {
   rankdir=TB;
   nodesep=0.35; ranksep=0.75;
   graph [fontname="Microsoft YaHei", labelloc=t, fontsize=15,
-         label="心飞TMS 业务主干：下单→揽收→入库→调度→运输→派送→签收→轨迹/结算（红色为断点）"];
+         label="心飞物流TMS 业务主干：下单→揽收→入库→调度→运输→派送→签收→轨迹/结算（红色为断点）"];
   node  [fontname="Microsoft YaHei", fontsize=11, shape=box, style="rounded,filled", fillcolor="#f5f7fa"];
   edge  [fontname="Microsoft YaHei", fontsize=10];
 
