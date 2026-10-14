@@ -10,7 +10,7 @@
     "light": "Light",
     "auto": "Follow System",
     "title": "Welcome",
-    "desc": "Pinda Logistics TMS",
+    "desc": "Xinfei Logistics TMS",
     "username": "Username",
     "usernamePlaceholder": "Please enter username",
     "password": "Password",
@@ -19,11 +19,11 @@
     "captchaCode": "Verify Code",
     "captchaPlaceholder": "Please enter verify code",
     "slogan": "Faster and Safer",
-    "copyright": "© 2020-2026 Pinda Logistics Group",
-    "footer": "Copyright © 2026-2026 Pinda TMS",
+    "copyright": "© 2020-2026 Xinfei Logistics Group",
+    "footer": "Copyright © 2026-2026 Xinfei TMS",
     "accounts": {
       "admin": "Administrator",
-      "pinda": "Pinda Account"
+      "pinda": "Xinfei Account"
     },
     "capsLock": "Caps Lock is On",
     "rememberMe": "Remember Me",
