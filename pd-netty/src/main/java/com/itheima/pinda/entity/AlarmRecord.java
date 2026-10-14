@@ -74,6 +74,26 @@ public class AlarmRecord implements Serializable {
     private Integer status;
 
     /**
+     * 处理人用户id（取自 Sa-Token loginId，对应 sys_user.id）
+     */
+    private Long handlerId;
+
+    /**
+     * 处理人名称（取自 pd-auth 登录时写入的 token-session name）
+     */
+    private String handlerName;
+
+    /**
+     * 处理时间
+     */
+    private LocalDateTime handleTime;
+
+    /**
+     * 处理说明/处置动作
+     */
+    private String handleRemark;
+
+    /**
      * 入库时间
      */
     private LocalDateTime createTime;

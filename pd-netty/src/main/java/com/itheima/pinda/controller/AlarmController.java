@@ -5,11 +5,13 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.controller.support.IdConverter;
+import com.itheima.pinda.DTO.AlarmHandleDTO;
 import com.itheima.pinda.DTO.ExceptionReportDTO;
 import com.itheima.pinda.entity.AlarmRecord;
 import com.itheima.pinda.enums.AlarmTypeEnum;
 import com.itheima.pinda.enums.ExceptionType;
 import com.itheima.pinda.service.IAlarmRecordService;
+import cn.dev33.satoken.stp.StpUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -46,6 +48,16 @@ public class AlarmController {
      * 告警内容列长度（iot_alarm_record.alarm_content 为 VARCHAR(255)）
      */
     private static final int ALARM_CONTENT_MAX_LENGTH = 255;
+
+    /**
+     * 处置说明列长度（iot_alarm_record.handle_remark 为 VARCHAR(500)）
+     */
+    private static final int HANDLE_REMARK_MAX_LENGTH = 500;
+
+    /**
+     * token-session 中处理人名称的键，由 pd-auth 登录时写入（AuthLoginService）
+     */
+    private static final String SESSION_HANDLER_NAME = "name";
 
     @Autowired
     private IAlarmRecordService alarmRecordService;
@@ -105,14 +117,19 @@ public class AlarmController {
     }
 
     /**
-     * 标记告警已处理
+     * 标记告警已处理，并写入处置留痕（R6-3：处理人/时间/说明，保留 ≥6 月）
      *
-     * @param id 告警记录ID
+     * <p>处理人取自登录态（Sa-Token loginId = sys_user.id，name 由 pd-auth 登录时写入 token-session），
+     * 不接受前端传入，避免冒充他人处置。</p>
+     *
+     * @param id    告警记录ID
+     * @param param 处置入参（可选），仅 remark
      * @return 更新后的告警记录
      */
     @Operation(summary = "标记告警已处理")
     @PutMapping("/{id}/handle")
-    public Result handle(@PathVariable("id") String id) {
+    public Result handle(@PathVariable("id") String id,
+                         @RequestBody(required = false) AlarmHandleDTO param) {
         Long idValue = IdConverter.toLong(id);
         if (idValue == null) {
             return Result.error(400, "id不能为空且必须为数字");
@@ -121,11 +138,17 @@ public class AlarmController {
         if (record == null) {
             return Result.error(404, "告警记录不存在");
         }
-        // 已是已处理状态则幂等返回成功，不重复更新
+        // 已是已处理状态则幂等返回成功，不覆盖首次处置留痕
         if (record.getStatus() != null && record.getStatus() == 1) {
             return Result.ok().put("data", record);
         }
         record.setStatus(1);
+        record.setHandlerId(StpUtil.getLoginIdAsLong());
+        Object handlerName = StpUtil.getTokenSession().get(SESSION_HANDLER_NAME);
+        record.setHandlerName(handlerName == null ? null : String.valueOf(handlerName));
+        record.setHandleTime(LocalDateTime.now());
+        record.setHandleRemark(param == null ? null
+                : truncate(param.getRemark(), HANDLE_REMARK_MAX_LENGTH));
         boolean updated = alarmRecordService.updateById(record);
         if (!updated) {
             return Result.error("标记已处理失败");
