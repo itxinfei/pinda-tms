@@ -2,7 +2,6 @@ package com.itheima.gateway.config;
 
 import cn.dev33.satoken.SaManager;
 import cn.dev33.satoken.exception.NotLoginException;
-import cn.dev33.satoken.exception.NotRoleException;
 import cn.dev33.satoken.reactor.context.SaReactorSyncHolder;
 import cn.dev33.satoken.reactor.filter.SaReactorFilter;
 import cn.dev33.satoken.router.SaRouter;
@@ -46,18 +45,11 @@ public class SaTokenConfigure {
                     SaRouter.match("/api/auth/anno/**").stop();
                     // 其余路径一律要求登录
                     SaRouter.match("/**", r -> StpUtil.checkLogin());
-                    // 角色路由绑定（《12》§8.5 / X-01）：checkLogin ≠ 鉴权，各端前缀必须显式绑定角色。
-                    // 现网 sys_role 实测：ADMIN / ROLE_DRIVER / ROLE_COURIER / WAREHOUSE /
-                    // CUSTOMER_SERVICE / FINANCE / FLEET_MANAGER；移动端测试账号多绑 ADMIN，
-                    // 故各端均为「对应角色 OR ADMIN」放行，避免锁死现有账号。
-                    // /api/web-customer/** 暂无专属角色码，先按 CUSTOMER 预留（建角色后即生效）。
-                    SaRouter.match("/api/manager/**", r -> StpUtil.checkRoleOr("ADMIN"));
-                    SaRouter.match("/api/web-driver/**", r -> StpUtil.checkRoleOr("ROLE_DRIVER", "ADMIN"));
-                    SaRouter.match("/api/web-courier/**", r -> StpUtil.checkRoleOr("ROLE_COURIER", "ADMIN"));
-                    SaRouter.match("/api/web-customer/**", r -> StpUtil.checkRoleOr("CUSTOMER", "ADMIN"));
-                    // 系统管理（youlai /api/v1）仅管理端角色可见
-                    SaRouter.match("/api/v1/**", r -> StpUtil.checkRoleOr("ADMIN"));
-                    // /api/auth/**（登录态相关）与 /api/netty-service/**（轨迹/告警四端共用）保持仅 checkLogin
+                    // 网关只做登录态校验（认证 Authentication），不在此做角色鉴权（Authorization）：
+                    // pd-gateway 不依赖 pd-common，classpath 没有 SharedSessionStpInterface，此处若调
+                    // StpUtil.checkRole(...) 会落到 Sa-Token 默认空实现（角色恒为空），把所有用户
+                    // （含 ADMIN）一律打成 403、后台全锁。X-01 各端角色绑定必须下沉到有角色数据的下游：
+                    // pd-auth 的 StpInterfaceImpl（查库）与各 pd-web-* BFF（SharedSessionStpInterface 读会话）。
                 })
                 .setError(e -> {
                     ServerWebExchange exchange = SaReactorSyncHolder.getExchange();
@@ -69,10 +61,6 @@ public class SaTokenConfigure {
                         response.setStatusCode(HttpStatus.UNAUTHORIZED);
                         body.setCode(401);
                         body.setMsg("未登录或登录已过期，请重新登录");
-                    } else if (e instanceof NotRoleException) {
-                        response.setStatusCode(HttpStatus.FORBIDDEN);
-                        body.setCode(403);
-                        body.setMsg("无权访问该端功能");
                     } else {
                         response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
                         body.setCode(500);
