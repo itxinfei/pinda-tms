@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>pinda-tms</artifactId>
-        <groupId>com.itheima</groupId>
+        <groupId>com.xinfei</groupId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -38,32 +38,32 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>com.itheima</groupId>
+                <groupId>com.xinfei</groupId>
                 <artifactId>pd-common</artifactId>
                 <version>${pd-common.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.itheima</groupId>
+                <groupId>com.xinfei</groupId>
                 <artifactId>pd-service-base-api</artifactId>
                 <version>${pd-service-base-api.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.itheima</groupId>
+                <groupId>com.xinfei</groupId>
                 <artifactId>pd-service-work-api</artifactId>
                 <version>${pd-service-work-api.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.itheima</groupId>
+                <groupId>com.xinfei</groupId>
                 <artifactId>pd-service-oms-api</artifactId>
                 <version>${pd-service-oms-api.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.itheima</groupId>
+                <groupId>com.xinfei</groupId>
                 <artifactId>pd-service-user-api</artifactId>
                 <version>${pd-service-user-api.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.itheima</groupId>
+                <groupId>com.xinfei</groupId>
                 <artifactId>pd-service-aggregation-api</artifactId>
                 <version>${pd-service-aggregation-api.version}</version>
             </dependency>

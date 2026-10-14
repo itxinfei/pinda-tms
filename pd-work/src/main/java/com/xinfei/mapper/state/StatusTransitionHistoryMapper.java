@@ -1,0 +1,15 @@
+package com.xinfei.mapper.state;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.xinfei.entity.state.StatusTransitionHistory;
+import org.apache.ibatis.annotations.Mapper;
+
+/**
+ * 状态流转历史Mapper接口
+ *
+ * @author Claude Code
+ * @since 2026-07-01
+ */
+@Mapper
+public interface StatusTransitionHistoryMapper extends BaseMapper<StatusTransitionHistory> {
+}

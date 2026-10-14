@@ -1,0 +1,466 @@
+package com.xinfei.service.impl;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.google.common.collect.Maps;
+import com.xinfei.DTO.OrderClassifyDTO;
+import com.xinfei.DTO.OrderClassifyGroupDTO;
+import com.xinfei.DTO.OrderSearchDTO;
+import com.xinfei.DTO.angency.AgencyScopeDto;
+import com.xinfei.DTO.AreaDTO;
+import com.xinfei.common.utils.EntCoordSyncJob;
+import com.xinfei.common.utils.Result;
+import com.xinfei.DTO.OrderDTO;
+import com.xinfei.entity.OrderClassifyEntity;
+import com.xinfei.entity.OrderClassifyOrderEntity;
+import com.xinfei.enums.OrderStatus;
+import com.xinfei.feign.OrderFeign;
+import com.xinfei.feign.AreaFeign;
+import com.xinfei.feign.agency.AgencyScopeFeign;
+import com.xinfei.future.PdCompletableFuture;
+import com.xinfei.service.IOrderClassifyOrderService;
+import com.xinfei.service.IOrderClassifyService;
+import com.xinfei.service.ITaskOrderClassifyService;
+import com.xinfei.utils.IdConvert;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
+
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+
+/**
+ * 订单分类实现类
+ */
+@Service
+@Slf4j
+@SuppressWarnings({"rawtypes", "unchecked"})
+public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
+    @Autowired
+    private OrderFeign orderFeign;
+    @Autowired
+    private AgencyScopeFeign agencyScopeFeign;
+    @Autowired
+    private IOrderClassifyService orderClassifyService;
+    @Autowired
+    private IOrderClassifyOrderService orderClassifyOrderService;
+
+    /**
+     * 订单分类核心逻辑
+     * @param orgId 机构id（网点或者转运中心的id）
+     * @param jobId 定时任务id
+     * @param logId 日志id
+     * @return
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public List<OrderClassifyGroupDTO> execute(Long orgId, Long jobId, Long logId) {
+        //用于存放当前机构下的订单
+        List<OrderClassifyDTO> orderClassifyDTOS = new ArrayList<>();
+        List<OrderClassifyGroupDTO> orderClassifyGroupDTOS = new ArrayList<>();
+
+        //获取当前机构下所有的订单数据(分为新订单和中转订单）
+        orderClassifyDTOS.addAll(buildNewOrder(orgId));
+        orderClassifyDTOS.addAll(buildTransferOrder(orgId));
+
+        //进行订单分类
+        Map<String, List<OrderClassifyDTO>> orderClassifyDTOGroup = orderClassifyDTOS.stream().collect(Collectors.groupingBy(OrderClassifyDTO::groupBy));
+
+        //进行对象转换，将当前Map对象转为 List<OrderClassifyGroupDTO>类型
+        orderClassifyDTOGroup.forEach((key,value) -> {
+            OrderClassifyGroupDTO.OrderClassifyGroupDTOBuilder groupBuilder = OrderClassifyGroupDTO.builder();
+            groupBuilder.key(key);
+            //获取原始订单ID列表
+            List<String> orderIds = value.stream().map((item) -> item.getOrder().getId()).collect(Collectors.toList());
+            groupBuilder.orders(orderIds);
+            OrderClassifyGroupDTO orderClassifyGroupDTO = groupBuilder.build();
+            orderClassifyGroupDTOS.add(orderClassifyGroupDTO);
+        });
+
+        //将分类结果保存到数据库
+        saveRecord(orderClassifyGroupDTOS,jobId,logId);
+
+        return orderClassifyGroupDTOS;
+    }
+
+    /**
+     * 保存订单分类结果
+     * @param orderClassifyGroupDTOS
+     * @param jobId
+     * @param logId
+     */
+    private void saveRecord(List<OrderClassifyGroupDTO> orderClassifyGroupDTOS, Long jobId, Long logId) {
+        orderClassifyGroupDTOS.forEach(item -> {
+            if (item.isNew()) {
+                log.info("新订单 保存分组信息");
+                OrderClassifyEntity entity = new OrderClassifyEntity();
+                entity.setClassify(item.getKey());
+                entity.setJobId(jobId);
+                entity.setJobLogId(logId);
+                if (!entity.getClassify().equals("ERROR")) {
+                    entity.setStartOrgId(item.getStartOrgId());
+                    entity.setEndOrgId(item.getEndOrgId());
+                }
+                entity.setTotal(item.getOrders().size());
+
+                // 先保存主表，由 MyBatis-Plus 回填雪花ID，再构造关联明细
+                orderClassifyService.save(entity);
+                item.setId(entity.getId());
+
+                List<OrderClassifyOrderEntity> orderClassifyOrders = item.getOrders().stream().map((orderId) -> {
+                    OrderClassifyOrderEntity orderClassifyOrderEntity = new OrderClassifyOrderEntity();
+                    // 订单ID为 pd-oms String 边界，落库 BIGINT 前转换
+                    orderClassifyOrderEntity.setOrderId(IdConvert.toLong(orderId));
+                    orderClassifyOrderEntity.setClassifyId(entity.getId());
+                    return orderClassifyOrderEntity;
+                }).collect(Collectors.toList());
+
+                orderClassifyOrderService.saveBatch(orderClassifyOrders);
+            } else {
+                log.info("中转订单，查询分组信息");
+                List<String> orderIds = new ArrayList<>(item.getOrders());
+                log.info("当前分组的订单id：{}", orderIds);
+                LambdaQueryWrapper<OrderClassifyOrderEntity> wrapper = new LambdaQueryWrapper<>();
+                wrapper.in(OrderClassifyOrderEntity::getOrderId, IdConvert.toLongList(orderIds));
+                List<OrderClassifyOrderEntity> orderClassifyOrders = orderClassifyOrderService.list(wrapper);
+                // 不出意外只会查到一个订单分类id
+                Set<Long> orderClassifyIds = orderClassifyOrders.stream().map(OrderClassifyOrderEntity::getClassifyId).collect(Collectors.toSet());
+                log.info("查询订单分组id:{}", orderClassifyIds);
+                if (CollectionUtils.isEmpty(orderClassifyIds)) {
+                    log.error("中转订单异常:{}", orderIds);
+                    //修改点：原 continue 位于 forEach 的 lambda 内（非循环），改为 return 跳过当前元素
+                    return;
+                }
+                item.setId(orderClassifyIds.iterator().next());
+            }
+        });
+    }
+
+    /**
+     *查询中转订单
+     * @param orgId
+     * @return
+     */
+    private List<OrderClassifyDTO> buildTransferOrder(Long orgId) {
+        OrderSearchDTO orderSearchDTO = new OrderSearchDTO();
+        //订单状态为运输中
+        orderSearchDTO.setStatus(OrderStatus.IN_TRANSIT.getCode());
+        //pd-oms 边界：currentAgencyId 为 String
+        orderSearchDTO.setCurrentAgencyId(IdConvert.toStr(orgId));
+        //调用Feign接口实现远程调用，查询当前机构下的新订单
+        List<OrderDTO> orderList = orderFeign.list(orderSearchDTO);
+
+        log.info("查询到新订单个数：{}",orderList.size());
+
+        OrderClassifyDTO.OrderClassifyDTOBuilder builder = OrderClassifyDTO.builder();
+        builder.currentOrgId(orgId);
+
+        // 【P0事务隔离】单订单分类失败（地址异常/区域不一致/网点缺失/地图异常等）不应中断
+        // 整个机构的调度轮次：此处对每条订单单独 try-catch，失败订单仅记录日志并跳过（filter 掉），
+        // 其余订单继续参与分类与调度，避免"一单出错、整轮回滚、全部漏调度"。
+        List<OrderClassifyDTO> orderClassifyDTOList = orderList.stream().map((item) -> {
+            try {
+                OrderClassifyDTO.OrderClassifyDTOBuilder orderBuilder = OrderClassifyDTO.builder();
+                orderBuilder.order(item);//原始订单
+                orderBuilder.startOrgId(IdConvert.toLong(getStartAgencyId(item)));//起始机构
+                orderBuilder.endOrgId(IdConvert.toLong(getEndAgencyId(item)));//目的地机构（目的地网点）
+                orderBuilder.orderType(item.getOrderType());
+                orderBuilder.currentOrgId(orgId);
+                return orderBuilder.build();
+            } catch (Exception e) {
+                log.error("[buildTransferOrder] 订单[{}]分类失败，跳过该订单（不影响本机构其余订单调度）: {}",
+                        item != null ? item.getId() : "null", e.getMessage());
+                return null;
+            }
+        }).filter(Objects::nonNull).collect(Collectors.toList());
+
+        return orderClassifyDTOList;
+    }
+
+    /**
+     * 根据订单获得起始机构id
+     * @param order
+     * @return
+     */
+    private String getStartAgencyId(OrderDTO order) {
+        //根据当前订单获取发件人地址详细信息，包含省市区
+        String address = senderFullAddress(order);
+        if(StringUtils.isBlank(address)){
+            exceptionHappend("发件人地址不能为空");
+        }
+
+        //调用百度地图工具类，根据地址获取对应的经纬度坐标
+        String location = EntCoordSyncJob.getCoordinate(address);
+        if(StringUtils.isBlank(location)){
+            // 百度地图不可用（未配置AK/外网不通）：按发件区县确定性匹配覆盖网点，
+            // 不依赖外网、结果可重复，保证内网调度链路不被地图服务中断
+            String fallbackAgencyId = resolveAgencyByCountyId(order.getSenderCountyId());
+            if(StringUtils.isNotBlank(fallbackAgencyId)){
+                log.info("百度地图不可用，按发件区县[{}]确定性匹配起始网点[{}]", order.getSenderCountyId(), fallbackAgencyId);
+                return fallbackAgencyId;
+            }
+            exceptionHappend("发件人地址不正确");
+        }
+
+        log.info("根据地址{}获取对应的坐标值{}",address,location);
+
+        //根据经纬度坐标获取对应的区县检查通过百度地图获取的区域是否和下单时选择的区域一致
+        Map map = EntCoordSyncJob.getLocationByPosition(location);//根据经纬度获取对应的区域信息（从百度官方获取）
+        if(ObjectUtils.isEmpty(map)){
+            exceptionHappend("根据经纬度获取区域信息为空");
+        }
+
+        String adcode = (String) map.get("adcode");
+
+        //根据adcode（区域编码）查询我们系统中的区域信息
+        AreaDTO area = areaFeign.getByCode(adcode + "000000");
+        if(area == null){
+            exceptionHappend("没有查询到区域数据");
+        }
+
+        // order 侧的区域 id 是 String（列 varchar(20)），area.getId() 是 Long，
+        // 直接 equals 恒 false，会让每一单都被判成"区域不一致"而无法进分单
+        if (!StringUtils.equals(order.getSenderCountyId(), String.valueOf(area.getId()))) {
+            exceptionHappend("发件地址区域id和根据坐标计算出的区域不一致");
+        }
+
+        //查询当前区县下的所有网点
+        List<AgencyScopeDto> agencyScope = agencyScopeFeign.findAllAgencyScope(area.getId().toString(), null, null, null);
+        if(agencyScope == null || agencyScope.size() == 0){
+            exceptionHappend("无法获取收件人所在网点信息");
+        }
+
+        //计算当前区域下所有网点距离收件人地址最近的网点
+        Result result = caculate(agencyScope,location);
+
+        return (String) result.get("agencyId");
+    }
+
+    /**
+     * 获得发件人详细地址信息
+     * @param order
+     * @return
+     */
+    @SneakyThrows
+    private String senderFullAddress(OrderDTO order) {
+        Long provinceId = Long.valueOf(order.getSenderProvinceId());//省份id
+        Long cityId = Long.valueOf(order.getSenderCityId());//市id
+        Long countyId = Long.valueOf(order.getSenderCountyId());//区id
+
+        Set<Long> areaSet = new HashSet<>();
+        areaSet.add(provinceId);
+        areaSet.add(cityId);
+        areaSet.add(countyId);
+
+        CompletableFuture<Map<Long, AreaDTO>> future = PdCompletableFuture.areaMapFuture(areaFeign, null, areaSet);
+        Map<Long, AreaDTO> areaMap = future.get();
+
+        //根据key（id的值）获取到对应的区域Area对象
+        String provinceName = areaMap.get(provinceId).getName();
+        String cityName = areaMap.get(cityId).getName();
+        String countyName = areaMap.get(countyId).getName();
+
+        StringBuffer stringBuffer = new StringBuffer();
+        stringBuffer.append(provinceName).append(cityName).append(countyName).append(order.getSenderAddress());
+
+        return stringBuffer.toString();
+    }
+
+    /**
+     * 获取指定机构下的新订单
+     * @param orgId
+     * @return
+     */
+    private List<OrderClassifyDTO> buildNewOrder(Long orgId) {
+        OrderSearchDTO orderSearchDTO = new OrderSearchDTO();
+        //订单状态为网点入库
+        orderSearchDTO.setStatus(OrderStatus.OUTLETS_WAREHOUSE.getCode());
+        //pd-oms 边界：currentAgencyId 为 String
+        orderSearchDTO.setCurrentAgencyId(IdConvert.toStr(orgId));
+        //调用Feign接口实现远程调用，查询当前机构下的新订单
+        List<OrderDTO> orderList = orderFeign.list(orderSearchDTO);
+
+        log.info("查询到新订单个数：{}",orderList.size());
+
+        OrderClassifyDTO.OrderClassifyDTOBuilder builder = OrderClassifyDTO.builder();
+        builder.currentOrgId(orgId);
+
+        // 【P0事务隔离】同 buildTransferOrder：单订单分类失败仅跳过该订单，不中断整轮调度。
+        List<OrderClassifyDTO> orderClassifyDTOList = orderList.stream().map((item) -> {
+            try {
+                OrderClassifyDTO.OrderClassifyDTOBuilder orderBuilder = OrderClassifyDTO.builder();
+                orderBuilder.order(item);//原始订单
+                orderBuilder.startOrgId(orgId);//起始机构（当前入库网点）
+                orderBuilder.endOrgId(IdConvert.toLong(getEndAgencyId(item)));//目的地机构（目的地网点）
+                orderBuilder.orderType(item.getOrderType());
+                orderBuilder.currentOrgId(orgId);
+                return orderBuilder.build();
+            } catch (Exception e) {
+                log.error("[buildNewOrder] 订单[{}]分类失败，跳过该订单（不影响本机构其余订单调度）: {}",
+                        item != null ? item.getId() : "null", e.getMessage());
+                return null;
+            }
+        }).filter(Objects::nonNull).collect(Collectors.toList());
+
+        return orderClassifyDTOList;
+    }
+
+    /**
+     * 抛出业务异常，中断当前流程
+     * @param msg 错误信息
+     */
+    private void exceptionHappend(String msg){
+        throw new RuntimeException(msg);
+    }
+
+    /**
+     * 确定性兜底：按区县id查询覆盖该区域的网点（不依赖百度地图）。
+     * 取该区县下配置的第一个网点，供百度地图不可用时使用。
+     * @param countyId 区县id
+     * @return 网点id，无配置时返回 null
+     */
+    private String resolveAgencyByCountyId(String countyId){
+        if(StringUtils.isBlank(countyId)){
+            return null;
+        }
+        List<AgencyScopeDto> agencyScopes = agencyScopeFeign.findAllAgencyScope(countyId, null, null, null);
+        if(agencyScopes == null || agencyScopes.isEmpty()){
+            return null;
+        }
+        return agencyScopes.get(0).getAgencyId();
+    }
+
+    /**
+     * 获取目的地网点id
+     * @param order
+     * @return
+     */
+    private String getEndAgencyId(OrderDTO order) {
+        //根据当前订单获取收件人地址详细信息，包含省市区，例如：北京市昌平区建材城西路金燕龙办公楼
+        String address = receiverFullAddress(order);
+        if(StringUtils.isBlank(address)){
+            exceptionHappend("收件人地址不能为空");
+        }
+
+        //调用百度地图工具类，根据地址获取对应的经纬度坐标
+        String location = EntCoordSyncJob.getCoordinate(address);
+        if(StringUtils.isBlank(location)){
+            // 百度地图不可用（未配置AK/外网不通）：按收件区县确定性匹配覆盖网点，
+            // 不依赖外网、结果可重复，保证内网调度链路不被地图服务中断
+            String fallbackAgencyId = resolveAgencyByCountyId(order.getReceiverCountyId());
+            if(StringUtils.isNotBlank(fallbackAgencyId)){
+                log.info("百度地图不可用，按收件区县[{}]确定性匹配目的网点[{}]", order.getReceiverCountyId(), fallbackAgencyId);
+                return fallbackAgencyId;
+            }
+            exceptionHappend("收件人地址不正确");
+        }
+
+        log.info("根据地址{}获取对应的坐标值{}",address,location);
+
+        //根据经纬度获取对应的区县检查通过百度地图获取的区域是否和下单时选择的区域一致
+        Map map = EntCoordSyncJob.getLocationByPosition(location);//根据经纬度获取对应的区域信息（从百度官方获取）
+        if(ObjectUtils.isEmpty(map)){
+            exceptionHappend("根据经纬度获取区域信息为空");
+        }
+
+        String adcode = (String) map.get("adcode");
+
+        //根据adcode（区域编码）查询我们系统中的区域信息
+        AreaDTO area = areaFeign.getByCode(adcode + "000000");
+        if(area == null){
+            exceptionHappend("没有查询到区域数据");
+        }
+
+        // 同上：Area.id 是 Long、order 侧县 id 是 varchar，直接 equals 恒 false
+        if(!StringUtils.equals(order.getReceiverCountyId(), String.valueOf(area.getId()))){
+            exceptionHappend("收货地址区域id和根据坐标计算出的区域不一致");
+        }
+
+        //查询当前区县下的所有网点
+        List<AgencyScopeDto> agencyScope = agencyScopeFeign.findAllAgencyScope(area.getId().toString(), null, null, null);
+        if(agencyScope == null || agencyScope.size() == 0){
+            exceptionHappend("无法获取收件人所在网点信息");
+        }
+
+        //计算当前区域下所有网点距离收件人地址最近的网点
+        Result result = caculate(agencyScope,location);
+
+        return (String) result.get("agencyId");
+    }
+
+    /**
+     * 从给定网点中查找覆盖指定点的网点
+     * @param agencyScopes
+     * @param location
+     * @return
+     */
+    private Result caculate(List<AgencyScopeDto> agencyScopes,String location) {
+        try {
+            for (AgencyScopeDto agencyScopeDto : agencyScopes) {
+                List<List<Map>> mutiPoints = agencyScopeDto.getMutiPoints();
+                for (List<Map> list : mutiPoints) {
+                    String[] originArray = location.split(",");
+                    //判断某个点是否在指定区域范围内
+                    boolean flag = EntCoordSyncJob.isInScope(list, Double.parseDouble(originArray[0]), Double.parseDouble(originArray[1]));
+                    if (flag) {
+                        return Result.ok().put("agencyId", agencyScopeDto.getAgencyId());
+                    }
+                }
+            }
+            return Result.error(5000, "获取网点失败");
+        } catch (Exception e) {
+            log.error("获取网点失败", e);
+            return Result.error(5000, "获取网点失败");
+        }
+    }
+
+    /**
+     * 获取坐标值
+     * @param map
+     * @return
+     */
+    private String getPoint(Map map){
+        String lng = map.get("lng").toString();
+        String lat = map.get("lat").toString();
+        return lng + "," + lat;
+    }
+
+    @Autowired
+    private AreaFeign areaFeign;
+
+    /**
+     * 根据订单获取对应的完整收件人地址信息
+     * @param order
+     * @return
+     */
+    @SneakyThrows
+    private String receiverFullAddress(OrderDTO order) {
+        Long provinceId = Long.valueOf(order.getReceiverProvinceId());//省份id
+        Long cityId = Long.valueOf(order.getReceiverCityId());//市id
+        Long countyId = Long.valueOf(order.getReceiverCountyId());//区id
+
+        Set<Long> areaSet = new HashSet<>();
+        areaSet.add(provinceId);
+        areaSet.add(cityId);
+        areaSet.add(countyId);
+
+        CompletableFuture<Map<Long, AreaDTO>> future = PdCompletableFuture.areaMapFuture(areaFeign, null, areaSet);
+        Map<Long, AreaDTO> areaMap = future.get();
+
+        //根据key（id的值）获取到对应的区域Area对象
+        String provinceName = areaMap.get(provinceId).getName();
+        String cityName = areaMap.get(cityId).getName();
+        String countyName = areaMap.get(countyId).getName();
+
+        StringBuffer stringBuffer = new StringBuffer();
+        stringBuffer.append(provinceName).append(cityName).append(countyName).append(order.getReceiverAddress());
+
+        return stringBuffer.toString();
+    }
+
+
+}

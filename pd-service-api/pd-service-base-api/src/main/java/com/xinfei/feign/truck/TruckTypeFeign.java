@@ -1,0 +1,91 @@
+package com.xinfei.feign.truck;
+
+import com.xinfei.common.utils.PageResponse;
+import com.xinfei.common.utils.Result;
+import com.xinfei.DTO.truck.TruckTypeDto;
+import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Hidden;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+
+@FeignClient(name = "pd-base")
+// 2026-10-10：Spring Cloud 2025 OpenFeign 禁止接口级 @RequestMapping，前缀下沉到各方法路径（URL 不变）
+@Hidden
+public interface TruckTypeFeign {
+    /**
+     * 添加车辆类型
+     *
+     * @param dto 车辆类型信息
+     * @return 车辆类型信息
+     */
+    @PostMapping("base/truck/type")
+    TruckTypeDto saveTruckType(@RequestBody TruckTypeDto dto);
+
+    /**
+     * 根据id获取车辆类型详情
+     *
+     * @param id 车辆类型id
+     * @return 车辆类型信息
+     */
+    @GetMapping("base/truck/type/{id}")
+    TruckTypeDto fineById(@PathVariable(name = "id") String id);
+
+    /**
+     * 获取车辆类型分页数据
+     *
+     * @param page            页码
+     * @param pageSize        页尺寸
+     * @param name            车辆类型名称
+     * @param allowableLoad   车辆载重
+     * @param allowableVolume 车辆体积
+     * @param status          状态：1=启用 0=停用，不传=查全部
+     * @return 车辆类型分页数据
+     */
+    @GetMapping("base/truck/type/page")
+    PageResponse<TruckTypeDto> findByPage(@RequestParam(name = "page") Integer page,
+                                          @RequestParam(name = "pageSize") Integer pageSize,
+                                          @RequestParam(name = "name", required = false) String name,
+                                          @RequestParam(name = "allowableLoad", required = false) BigDecimal allowableLoad,
+                                          @RequestParam(name = "allowableVolume", required = false) BigDecimal allowableVolume,
+                                          @RequestParam(name = "status", required = false) Integer status);
+
+    /**
+     * 获取车辆类型列表
+     *
+     * @param ids 车辆类型id
+     * @return 车辆类型列表
+     */
+    @GetMapping("base/truck/type")
+    List<TruckTypeDto> findAll(@RequestParam(name = "ids", required = false) List<String> ids);
+
+    /**
+     * 更新车辆类型信息
+     *
+     * @param id  车辆类型id
+     * @param dto 车辆类型信息
+     * @return 车辆类型信息
+     */
+    @PutMapping("base/truck/type/{id}")
+    TruckTypeDto update(@PathVariable(name = "id") String id, @RequestBody TruckTypeDto dto);
+
+    /**
+     * 删除车辆类型
+     *
+     * @param id 车辆类型Id
+     * @return 返回信息
+     */
+    @PutMapping("base/truck/type/{id}/disable")
+    Result disable(@PathVariable(name = "id") String id);
+
+    /**
+     * 启用车辆类型
+     *
+     * @param id 车辆类型Id
+     * @return 返回信息
+     */
+    @PutMapping("base/truck/type/{id}/enable")
+    Result enable(@PathVariable(name = "id") String id);
+}

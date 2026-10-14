@@ -63,7 +63,7 @@ export interface ExcelResult {
 }
 
 /**
- * 后端统一分页结果（com.itheima.pinda.common.utils.PageResponse）
+ * 后端统一分页结果（com.xinfei.common.utils.PageResponse）
  */
 export interface PageResponse<T> {
   /** 总记录数 */

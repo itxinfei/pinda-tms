@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.itheima.pinda.mapper.DriverMapper">
+<mapper namespace="com.xinfei.mapper.DriverMapper">
     <!--
       司机端作业分页（重构后口径）：
       1. work_driver_job 已含 start_org_id/end_org_id 及各计划/实际时间字段，
@@ -11,8 +11,8 @@
          否则 driverId 过滤失效会造成司机越权看到全员任务；
       4. deleted=0 过滤逻辑删除数据（0 未删 1 已删）。
     -->
-    <select id="findByPage" resultType="com.itheima.pinda.DTO.DriverJobDTO"
-            parameterType="com.itheima.pinda.DTO.AppDriverQueryDTO">
+    <select id="findByPage" resultType="com.xinfei.DTO.DriverJobDTO"
+            parameterType="com.xinfei.DTO.AppDriverQueryDTO">
         SELECT
             dj.id, dj.driver_id, dj.task_transport_id, dj.status,
             dj.start_org_id, dj.end_org_id,

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.itheima.pinda.mapper.CourierMapper">
+<mapper namespace="com.xinfei.mapper.CourierMapper">
     <!--
       快递员端取派件任务分页（重构后口径）：
       1. 已切换到 work_pickup_dispatch_task / oms_order / work_transport_order 新表；
@@ -9,8 +9,8 @@
       3. deleted=0 过滤逻辑删除数据（0 未删 1 已删）；
       4. status / taskType 为 Integer，仅判 null。
     -->
-    <select id="findByPage" resultType="com.itheima.pinda.DTO.TaskPickupDispatchDTO"
-            parameterType="com.itheima.pinda.DTO.AppCourierQueryDTO">
+    <select id="findByPage" resultType="com.xinfei.DTO.TaskPickupDispatchDTO"
+            parameterType="com.xinfei.DTO.AppCourierQueryDTO">
         SELECT tpd_.* FROM work_pickup_dispatch_task tpd_
         LEFT JOIN oms_order o_
             ON tpd_.order_id = o_.id

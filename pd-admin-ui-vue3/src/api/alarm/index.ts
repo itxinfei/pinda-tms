@@ -17,7 +17,7 @@ export enum AlarmHandleStatus {
 }
 
 /**
- * 告警类型语义码，与后端 com.itheima.pinda.enums.AlarmTypeEnum 枚举名一致。
+ * 告警类型语义码，与后端 com.xinfei.enums.AlarmTypeEnum 枚举名一致。
  * 查询接口的 alarmType 参数只认语义码字符串（如 "SPEED_OVER"），不传数字码。
  */
 export enum AlarmTypeKey {

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.itheima.pinda.mapper.WebManagerMapper">
-    <select id="findDriverJobByPage" resultType="com.itheima.pinda.DTO.DriverJobDTO">
+<mapper namespace="com.xinfei.mapper.WebManagerMapper">
+    <select id="findDriverJobByPage" resultType="com.xinfei.DTO.DriverJobDTO">
         SELECT driver_job.* FROM work_driver_job driver_job
         <if test="params.driverName != null and params.driverName != ''">
             LEFT JOIN sys_user auth_user ON driver_job.driver_id = auth_user.id
@@ -26,7 +26,7 @@
         order by driver_job.create_time desc
     </select>
 
-    <select id="findTaskPickupDispatchJobByPage" resultType="com.itheima.pinda.DTO.TaskPickupDispatchDTO">
+    <select id="findTaskPickupDispatchJobByPage" resultType="com.xinfei.DTO.TaskPickupDispatchDTO">
         SELECT task_pickup_dispatch.* FROM work_pickup_dispatch_task task_pickup_dispatch
         LEFT JOIN oms_order pdorder ON task_pickup_dispatch.order_id=pdorder.id
         LEFT JOIN work_transport_order transport_order ON pdorder.id=transport_order.order_id
@@ -66,7 +66,7 @@
         order by task_pickup_dispatch.create_time desc
     </select>
 
-    <select id="findTransportOrderByPage" resultType="com.itheima.pinda.DTO.TransportOrderDTO">
+    <select id="findTransportOrderByPage" resultType="com.xinfei.DTO.TransportOrderDTO">
         SELECT * FROM work_transport_order transport_order
         LEFT JOIN oms_order pdorder ON transport_order.order_id = pdorder.id
         <where>
@@ -110,7 +110,7 @@
         order by transport_order.create_time desc
     </select>
 
-    <select id="findTaskTransportByPage" resultType="com.itheima.pinda.DTO.TaskTransportDTO">
+    <select id="findTaskTransportByPage" resultType="com.xinfei.DTO.TaskTransportDTO">
         SELECT * FROM work_task_transport task_transport
         LEFT JOIN work_driver_job driver_job ON task_transport.id = driver_job.task_transport_id
         LEFT JOIN sys_user auth_user ON driver_job.driver_id = auth_user.id

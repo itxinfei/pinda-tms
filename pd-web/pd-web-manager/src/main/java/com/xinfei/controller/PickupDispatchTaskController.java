@@ -1,0 +1,100 @@
+package com.xinfei.controller;
+import cn.dev33.satoken.annotation.SaCheckPermission;
+
+import com.xinfei.DTO.TaskPickupDispatchDTO;
+import com.xinfei.DTO.webManager.TaskPickupDispatchQueryDTO;
+import com.xinfei.common.utils.PageResponse;
+import com.xinfei.feign.AreaFeign;
+import com.xinfei.feign.OrgFeign;
+import com.xinfei.feign.OrderFeign;
+import com.xinfei.feign.PickupDispatchTaskFeign;
+import com.xinfei.feign.UserFeign;
+import com.xinfei.feign.webManager.WebManagerFeign;
+import com.xinfei.util.BeanUtil;
+import com.xinfei.util.Rx;
+import com.xinfei.vo.work.TaskPickupDispatchVo;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * <p>
+ * 取件、派件任务信息表 前端控制器
+ * </p>
+ *
+ * @author jpf
+ * @since 2019-12-29
+ */
+@Tag(name = "派件、取件任务相关API")
+@Slf4j
+@RestController
+@RequestMapping("pickup-dispatch-task-manager")
+public class PickupDispatchTaskController {
+    @Autowired
+    private OrderFeign orderFeign;
+    @Autowired
+    private AreaFeign areaFeign;
+    @Autowired
+    private OrgFeign orgFeign;
+    @Autowired
+    private PickupDispatchTaskFeign pickupDispatchTaskFeign;
+    @Autowired
+    private UserFeign userFeign;
+    @Autowired
+    private WebManagerFeign webManagerFeign;
+
+    @Operation(summary = "获取取派件分页数据")
+    @PostMapping("/page")
+    @SaCheckPermission("pickup:list")
+    public PageResponse<TaskPickupDispatchVo> findByPage(@RequestBody TaskPickupDispatchVo vo) {
+        TaskPickupDispatchQueryDTO dto = new TaskPickupDispatchQueryDTO();
+        if (vo != null) {
+            dto.setPage(vo.getPage());
+            dto.setPageSize(vo.getPageSize());
+            if (vo.getTransportOrder() != null) {
+                dto.setTransportOrderId(vo.getTransportOrder().getId());
+            }
+            if (vo.getCourier() != null) {
+                dto.setCourierName(vo.getCourier().getName());
+            }
+            dto.setTaskType(vo.getTaskType());
+            dto.setStatus(vo.getStatus());
+            if (vo.getOrder() != null) {
+                dto.setSenderName(vo.getOrder().getSenderName());
+                if (vo.getOrder().getSenderProvince() != null) {
+                    dto.setSenderProvinceId(vo.getOrder().getSenderProvince().getId());
+                }
+                if (vo.getOrder().getSenderCity() != null) {
+                    dto.setSenderCityId(vo.getOrder().getSenderCity().getId());
+                }
+                dto.setReceiverName(vo.getOrder().getReceiverName());
+                if (vo.getOrder().getReceiverProvince() != null) {
+                    dto.setReceiverProvinceId(vo.getOrder().getReceiverProvince().getId());
+                }
+                if (vo.getOrder().getReceiverCity() != null) {
+                    dto.setReceiverCityId(vo.getOrder().getReceiverCity().getId());
+                }
+            }
+        }
+        // 远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
+        PageResponse<TaskPickupDispatchDTO> dtoPageResponse = webManagerFeign.findTaskPickupDispatchJobByPage(dto);
+        List<TaskPickupDispatchDTO> dtoList = Rx.items(dtoPageResponse);
+        List<TaskPickupDispatchVo> voList = dtoList.stream().map(taskPickupDispatchDTO -> BeanUtil.parseTaskPickupDispatchDTO2Vo(taskPickupDispatchDTO, orderFeign, areaFeign, orgFeign, userFeign)).collect(Collectors.toList());
+        return PageResponse.<TaskPickupDispatchVo>builder().items(voList).pagesize(vo.getPageSize()).page(vo.getPage())
+                .counts(dtoPageResponse != null ? dtoPageResponse.getCounts() : 0L)
+                .pages(dtoPageResponse != null ? dtoPageResponse.getPages() : 0L).build();
+    }
+
+    @Operation(summary = "更新取派件任务")
+    @PutMapping("/{id}")
+    @SaCheckPermission("pickup:update")
+    public TaskPickupDispatchVo update(@PathVariable(name = "id") String id, @RequestBody TaskPickupDispatchVo vo) {
+        TaskPickupDispatchDTO dto = pickupDispatchTaskFeign.updateById(Long.valueOf(id), BeanUtil.parseTaskPickupDispatchVo2DTO(vo));
+        return BeanUtil.parseTaskPickupDispatchDTO2Vo(dto, orderFeign, areaFeign, orgFeign, userFeign);
+    }
+}

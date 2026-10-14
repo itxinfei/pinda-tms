@@ -47,16 +47,16 @@ x-jvm-core: &jvm-core
   # rabbit 健康指标默认关闭：全仓仅 oms/dispatch/netty 真用 rabbit（有 @RabbitListener，各自显式开 true），
   # 其余服务的 spring-rabbit 均系传递依赖误入，指标连 localhost 必 DOWN 造成 /actuator/health 503 假告警
   MANAGEMENT_HEALTH_RABBIT_ENABLED: "false"
-  JAVA_OPTS: "-Xms96m -Xmx192m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:MaxMetaspaceSize=192m -XX:MaxDirectMemorySize=128m -Xss512k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -Dmybatis-plus.mapper-locations=classpath*:/mapper/**/*.xml -Dmybatis-plus.typeAliasesPackage=com.itheima.pinda.entity -Dmybatis-plus.configuration.map-underscore-to-camel-case=true -Dmybatis-plus.configuration.cache-enabled=true -Dmybatis-plus.configuration.call-setters-on-nulls=false -Dmybatis-plus.configuration.jdbc-type-for-null=NULL -Dmybatis-plus.global-config.db-config.id-type=ASSIGN_ID -Dmybatis-plus.global-config.banner=false"
+  JAVA_OPTS: "-Xms96m -Xmx192m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:MaxMetaspaceSize=192m -XX:MaxDirectMemorySize=128m -Xss512k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -Dmybatis-plus.mapper-locations=classpath*:/mapper/**/*.xml -Dmybatis-plus.typeAliasesPackage=com.xinfei.entity -Dmybatis-plus.configuration.map-underscore-to-camel-case=true -Dmybatis-plus.configuration.cache-enabled=true -Dmybatis-plus.configuration.call-setters-on-nulls=false -Dmybatis-plus.configuration.jdbc-type-for-null=NULL -Dmybatis-plus.global-config.db-config.id-type=ASSIGN_ID -Dmybatis-plus.global-config.banner=false"
   # JVM 系统属性（JAVA_TOOL_OPTIONS，优先级高于 Nacos 与 jar 内 druid.properties）：
   # 修复 druid-spring-boot-starter 1.1.x 的 druid.properties 自引用占位符导致的
   # "Circular placeholder reference"（Nacos 配置覆盖无效，优先级低于 druid.properties 的 @PropertySource）。
   # 给字面量后 Spring 先在系统属性层命中即返回，不再求值 ${...} 自引用，循环打破。网关切见其显式覆写。
   # 追加（2026-10-09）：mybatis-plus.mapper-locations / typeAliasesPackage 在各服务 bootstrap-prod.yml 里
   # 也是自引用占位符（${mybatis-plus.mapper-locations}），Nacos 未提供，jar 内也无默认值 → Circular。
-  # 业务服务的 mapper 资源在 classpath:/mapper/**，实体包统一为 com.itheima.pinda.entity（aggregation 的
+  # 业务服务的 mapper 资源在 classpath:/mapper/**，实体包统一为 com.xinfei.entity（aggregation 的
   # mapper 用 FQN DTO，给该包名仅用于占位符破环，不影响功能）。pd-gateway 因显式覆写 JAVA_TOOL_OPTIONS 不受本锚点影响。
-  JAVA_TOOL_OPTIONS: "-Dbaidu.map.ak=${BAIDU_MAP_AK:-} -Dspring.datasource.druid.stat-view-servlet.enabled=false -Dspring.datasource.druid.web-stat-filter.enabled=false -Dspring.servlet.multipart.enabled=true -Dspring.servlet.multipart.max-file-size=100MB -Dspring.servlet.multipart.max-request-size=1000MB -Dspring.jackson.time-zone=GMT+8 -Dmybatis-plus.configuration.map-underscore-to-camel-case=true -Dmybatis-plus.configuration.cache-enabled=true -Dmybatis-plus.configuration.call-setters-on-nulls=false -Dmybatis-plus.configuration.jdbc-type-for-null=NULL -Dmybatis-plus.global-config.db-config.id-type=ASSIGN_ID -Dmybatis-plus.global-config.banner=false -Dmybatis-plus.mapper-locations=classpath*:/mapper/**/*.xml -Dmybatis-plus.typeAliasesPackage=com.itheima.pinda.entity -Dspring.datasource.druid.type=com.alibaba.druid.pool.DruidDataSource -Dspring.datasource.druid.driver-class-name=com.mysql.cj.jdbc.Driver -Dspring.datasource.druid.initial-size=5 -Dspring.datasource.druid.min-idle=5 -Dspring.datasource.druid.max-active=20 -Dspring.datasource.druid.max-wait=60000 -Dspring.datasource.druid.pool-prepared-statements=false -Dspring.datasource.druid.max-pool-prepared-statement-per-connection-size=20 -Dspring.datasource.druid.time-between-eviction-runs-millis=60000 -Dspring.datasource.druid.min-evictable-idle-time-millis=300000 -Dspring.datasource.druid.test-while-idle=true -Dspring.datasource.druid.test-on-borrow=false -Dspring.datasource.druid.test-on-return=false -Dspring.datasource.druid.stat-view-servlet.url-pattern=/druid/* -Dspring.datasource.druid.filter.stat.log-slow-sql=true -Dspring.datasource.druid.filter.stat.slow-sql-millis=5000 -Dspring.datasource.druid.filter.stat.merge-sql=true -Dspring.datasource.druid.filter.wall.config.multi-statement-allow=true"
+  JAVA_TOOL_OPTIONS: "-Dbaidu.map.ak=${BAIDU_MAP_AK:-} -Dspring.datasource.druid.stat-view-servlet.enabled=false -Dspring.datasource.druid.web-stat-filter.enabled=false -Dspring.servlet.multipart.enabled=true -Dspring.servlet.multipart.max-file-size=100MB -Dspring.servlet.multipart.max-request-size=1000MB -Dspring.jackson.time-zone=GMT+8 -Dmybatis-plus.configuration.map-underscore-to-camel-case=true -Dmybatis-plus.configuration.cache-enabled=true -Dmybatis-plus.configuration.call-setters-on-nulls=false -Dmybatis-plus.configuration.jdbc-type-for-null=NULL -Dmybatis-plus.global-config.db-config.id-type=ASSIGN_ID -Dmybatis-plus.global-config.banner=false -Dmybatis-plus.mapper-locations=classpath*:/mapper/**/*.xml -Dmybatis-plus.typeAliasesPackage=com.xinfei.entity -Dspring.datasource.druid.type=com.alibaba.druid.pool.DruidDataSource -Dspring.datasource.druid.driver-class-name=com.mysql.cj.jdbc.Driver -Dspring.datasource.druid.initial-size=5 -Dspring.datasource.druid.min-idle=5 -Dspring.datasource.druid.max-active=20 -Dspring.datasource.druid.max-wait=60000 -Dspring.datasource.druid.pool-prepared-statements=false -Dspring.datasource.druid.max-pool-prepared-statement-per-connection-size=20 -Dspring.datasource.druid.time-between-eviction-runs-millis=60000 -Dspring.datasource.druid.min-evictable-idle-time-millis=300000 -Dspring.datasource.druid.test-while-idle=true -Dspring.datasource.druid.test-on-borrow=false -Dspring.datasource.druid.test-on-return=false -Dspring.datasource.druid.stat-view-servlet.url-pattern=/druid/* -Dspring.datasource.druid.filter.stat.log-slow-sql=true -Dspring.datasource.druid.filter.stat.slow-sql-millis=5000 -Dspring.datasource.druid.filter.stat.merge-sql=true -Dspring.datasource.druid.filter.wall.config.multi-statement-allow=true"
   # 含空格的值（如日期格式）不能放进 JAVA_TOOL_OPTIONS（JVM 按空白切分参数会断裂），
   # 改用环境变量注入，Spring 松弛绑定 SPRINT_JACKSON_DATE_FORMAT -> spring.jackson.date-format，且不触发占位符死循环。
   SPRING_JACKSON_DATE_FORMAT: "yyyy-MM-dd HH:mm:ss"
@@ -93,7 +93,7 @@ x-jvm-core: &jvm-core
   SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE: "1000MB"
   SPRING_JACKSON_TIME_ZONE: "GMT+8"
   MYBATIS_PLUS_MAPPER_LOCATIONS: "classpath*:/mapper/**/*.xml"
-  MYBATIS_PLUS_TYPE_ALIASES_PACKAGE: "com.itheima.pinda.entity"
+  MYBATIS_PLUS_TYPE_ALIASES_PACKAGE: "com.xinfei.entity"
   MYBATIS_PLUS_CONFIGURATION_MAP_UNDERSCORE_TO_CAMEL_CASE: "true"
   MYBATIS_PLUS_CONFIGURATION_CACHE_ENABLED: "true"
   MYBATIS_PLUS_CONFIGURATION_CALL_SETTERS_ON_NULLS: "false"
@@ -108,7 +108,7 @@ x-jvm-core: &jvm-core
   MYBATIS_PLUS_GLOBAL_CONFIG_BANNER: "false"
 x-jvm-small: &jvm-small
   MANAGEMENT_HEALTH_RABBIT_ENABLED: "false"
-  JAVA_OPTS: "-Xms64m -Xmx128m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:MaxMetaspaceSize=160m -XX:MaxDirectMemorySize=64m -Xss512k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -Dmybatis-plus.mapper-locations=classpath*:/mapper/**/*.xml -Dmybatis-plus.typeAliasesPackage=com.itheima.pinda.entity -Dmybatis-plus.configuration.map-underscore-to-camel-case=true -Dmybatis-plus.configuration.cache-enabled=true -Dmybatis-plus.configuration.call-setters-on-nulls=false -Dmybatis-plus.configuration.jdbc-type-for-null=NULL -Dmybatis-plus.global-config.db-config.id-type=ASSIGN_ID -Dmybatis-plus.global-config.banner=false"
+  JAVA_OPTS: "-Xms64m -Xmx128m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:MaxMetaspaceSize=160m -XX:MaxDirectMemorySize=64m -Xss512k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -Dmybatis-plus.mapper-locations=classpath*:/mapper/**/*.xml -Dmybatis-plus.typeAliasesPackage=com.xinfei.entity -Dmybatis-plus.configuration.map-underscore-to-camel-case=true -Dmybatis-plus.configuration.cache-enabled=true -Dmybatis-plus.configuration.call-setters-on-nulls=false -Dmybatis-plus.configuration.jdbc-type-for-null=NULL -Dmybatis-plus.global-config.db-config.id-type=ASSIGN_ID -Dmybatis-plus.global-config.banner=false"
   JAVA_TOOL_OPTIONS: "-Dbaidu.map.ak=${BAIDU_MAP_AK:-} -Dspring.datasource.druid.stat-view-servlet.enabled=false -Dspring.datasource.druid.web-stat-filter.enabled=false -Dspring.servlet.multipart.enabled=true -Dspring.servlet.multipart.max-file-size=100MB -Dspring.servlet.multipart.max-request-size=1000MB -Dspring.jackson.time-zone=GMT+8 -Dmybatis-plus.configuration.map-underscore-to-camel-case=true -Dmybatis-plus.configuration.cache-enabled=true -Dmybatis-plus.configuration.call-setters-on-nulls=false -Dmybatis-plus.configuration.jdbc-type-for-null=NULL -Dmybatis-plus.global-config.db-config.id-type=ASSIGN_ID -Dmybatis-plus.global-config.banner=false"
   # 含空格的值（如日期格式）不能放进 JAVA_TOOL_OPTIONS（JVM 按空白切分参数会断裂），
   # 改用环境变量注入，Spring 松弛绑定 SPRINT_JACKSON_DATE_FORMAT -> spring.jackson.date-format，且不触发占位符死循环。
@@ -144,7 +144,7 @@ x-jvm-small: &jvm-small
   SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE: "1000MB"
   SPRING_JACKSON_TIME_ZONE: "GMT+8"
   MYBATIS_PLUS_MAPPER_LOCATIONS: "classpath*:/mapper/**/*.xml"
-  MYBATIS_PLUS_TYPE_ALIASES_PACKAGE: "com.itheima.pinda.entity"
+  MYBATIS_PLUS_TYPE_ALIASES_PACKAGE: "com.xinfei.entity"
   MYBATIS_PLUS_CONFIGURATION_MAP_UNDERSCORE_TO_CAMEL_CASE: "true"
   MYBATIS_PLUS_CONFIGURATION_CACHE_ENABLED: "true"
   MYBATIS_PLUS_CONFIGURATION_CALL_SETTERS_ON_NULLS: "false"
@@ -403,7 +403,7 @@ services:
       # 真实使用 rabbit（GPS/告警上报消费）→ 显式开启其健康指标（连接参数在 Nacos pd-netty.yml）
       MANAGEMENT_HEALTH_RABBIT_ENABLED: "true"
       # netty TCP 长连接吃堆外内存，显式恢复 256m（覆盖 jvm-core 锚点的 128m）
-      JAVA_OPTS: "-Xms96m -Xmx192m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:MaxMetaspaceSize=192m -XX:MaxDirectMemorySize=256m -Xss512k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -Dmybatis-plus.mapper-locations=classpath*:/mapper/**/*.xml -Dmybatis-plus.typeAliasesPackage=com.itheima.pinda.entity -Dmybatis-plus.configuration.map-underscore-to-camel-case=true -Dmybatis-plus.configuration.cache-enabled=true -Dmybatis-plus.configuration.call-setters-on-nulls=false -Dmybatis-plus.configuration.jdbc-type-for-null=NULL -Dmybatis-plus.global-config.db-config.id-type=ASSIGN_ID -Dmybatis-plus.global-config.banner=false"
+      JAVA_OPTS: "-Xms96m -Xmx192m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:MaxMetaspaceSize=192m -XX:MaxDirectMemorySize=256m -Xss512k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -Dmybatis-plus.mapper-locations=classpath*:/mapper/**/*.xml -Dmybatis-plus.typeAliasesPackage=com.xinfei.entity -Dmybatis-plus.configuration.map-underscore-to-camel-case=true -Dmybatis-plus.configuration.cache-enabled=true -Dmybatis-plus.configuration.call-setters-on-nulls=false -Dmybatis-plus.configuration.jdbc-type-for-null=NULL -Dmybatis-plus.global-config.db-config.id-type=ASSIGN_ID -Dmybatis-plus.global-config.banner=false"
       # 单库 pinda_tms 后 netty 的 pd_alarm_record/pd_truck_location* 与其他表同库，URL 由 jar 内 application.yml 给出
 
   # ---------- Web 聚合层 ----------

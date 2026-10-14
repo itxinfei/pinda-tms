@@ -135,7 +135,7 @@ import type { TransportLineTypeRecord, TransportLineTypePageQuery } from "@/api/
 import { CommonStatus } from "@/enums";
 
 /**
- * 机构类型枚举，与后端 com.itheima.pinda.enums.org.OrgType 保持一致
+ * 机构类型枚举，与后端 com.xinfei.enums.org.OrgType 保持一致
  * 1 分公司 / 2 一级转运中心 / 3 二级转运中心 / 4 网点
  */
 const AGENCY_TYPE_OPTIONS = [

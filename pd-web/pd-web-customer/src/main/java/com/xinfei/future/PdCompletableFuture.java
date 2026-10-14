@@ -1,0 +1,120 @@
+package com.xinfei.future;
+
+import com.xinfei.DTO.AreaDTO;
+import com.xinfei.DTO.OrderCargoDto;
+import com.xinfei.DTO.OrgDTO;
+import com.xinfei.DTO.TaskPickupDispatchDTO;
+import com.xinfei.DTO.TransportOrderDTO;
+import com.xinfei.enums.pickuptask.PickupDispatchTaskStatus;
+import com.xinfei.feign.AreaFeign;
+import com.xinfei.feign.CargoFeign;
+import com.xinfei.feign.OrgFeign;
+import com.xinfei.feign.PickupDispatchTaskFeign;
+import com.xinfei.feign.TransportOrderFeign;
+import com.xinfei.common.context.AsyncRequestHeaders;
+import com.xinfei.util.Rx;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.CollectionUtils;
+
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+
+@Slf4j
+public class PdCompletableFuture {
+
+
+    public static final CompletableFuture<Map<Long, AreaDTO>> areaMapFuture(AreaFeign api, Long parentId, Set<Long> areaSet) {
+        // D-02 空集守卫（《12》§8.1）：空集合打 Feign 会让下游 findAll 无 WHERE 条件全表扫描
+        if (areaSet == null || areaSet.isEmpty()) {
+            return CompletableFuture.completedFuture(new HashMap<>());
+        }
+        // Feign 直接返回裸 List（无 R 包装），远程失败可能为 null，统一通过 Rx 安全取值
+        List<AreaDTO> result = api.findAll(parentId, new ArrayList<>(areaSet));
+        return AsyncRequestHeaders.supplyAsync(() ->
+                Rx.list(result).stream().collect(Collectors.toMap(AreaDTO::getId, vo -> vo)));
+    }
+
+    /**
+     * 获取机构数据列表
+     *
+     * @param api        数据接口
+     * @param agencyType 机构类型
+     * @param ids        机构id列表
+     * @return 执行结果
+     */
+    public static final CompletableFuture<Map<Long, OrgDTO>> agencyMapFuture(OrgFeign api, Integer agencyType, Set<String> ids, Long countyId) {
+        return AsyncRequestHeaders.supplyAsync(() -> {
+            List<OrgDTO> result = api.list(agencyType, ids.stream().mapToLong(Long::valueOf).boxed().collect(Collectors.toList()), countyId, null, null);
+            // 远程调用成功但结果可能为 null，增加判空避免 NPE
+            if (result != null) {
+                return result.stream().collect(Collectors.toMap(OrgDTO::getId, org -> org));
+            }
+            return new HashMap<>();
+        });
+    }
+
+    /**
+     * 获取货物信息列表
+     *
+     * @param api
+     * @param cargoSet
+     * @return
+     */
+    public static CompletableFuture<Map<String, OrderCargoDto>> cargoMapFuture(CargoFeign api, Set<String> cargoSet) {
+        return AsyncRequestHeaders.supplyAsync(() -> {
+            if (CollectionUtils.isEmpty(cargoSet)) {
+                return new HashMap<>();
+            }
+            List<OrderCargoDto> result = api.list(cargoSet.stream().collect(Collectors.toList()));
+            if (!CollectionUtils.isEmpty(result)) {
+                // 同一订单历史上可能存在重复货物明细（旧"重复保存"缺陷遗留），toMap 必须给合并策略，否则 Duplicate key 500
+                return result.stream().collect(Collectors.toMap(OrderCargoDto::getOrderId, cargoDto -> cargoDto, (v1, v2) -> v1));
+            }
+            return new HashMap<>();
+        });
+    }
+
+
+    /**
+     * @param api
+     * @param taskPickupDispatchSet
+     * @param taskType
+     * @return
+     */
+    public static CompletableFuture<Map<String, TaskPickupDispatchDTO>> taskTranSportMapFuture(PickupDispatchTaskFeign api, Set<String> taskPickupDispatchSet, Integer taskType) {
+        return AsyncRequestHeaders.supplyAsync(() -> {
+            TaskPickupDispatchDTO queryDTO = new TaskPickupDispatchDTO();
+            queryDTO.setTaskType(taskType);
+            // TaskPickupDispatchDTO.orderIds 已 Long 化（订单 ID），调用边界转换
+            queryDTO.setOrderIds(taskPickupDispatchSet.stream().map(Long::valueOf).collect(Collectors.toList()));
+            List<TaskPickupDispatchDTO> result = api.findAll(queryDTO);
+            if (!CollectionUtils.isEmpty(result)) {
+                log.info("TaskPickupDispatchDTO result：{}", result);
+                result = result.stream().filter(item -> (!PickupDispatchTaskStatus.CANCELLED.getCode().equals(item.getStatus()))).collect(Collectors.toList());
+                log.info("TaskPickupDispatchDTO result by duplicate：{}", result);
+                // Map 以订单 ID(String) 为键供调用方查询；orderId 为 null 无法入键，先过滤
+                return result.stream()
+                        .filter(item -> item.getOrderId() != null)
+                        .collect(Collectors.toMap(item -> String.valueOf(item.getOrderId()), item -> item, (v1, v2) -> v1));
+            }
+            return new HashMap<>();
+        });
+    }
+
+    public static CompletableFuture<Map<String, TransportOrderDTO>> transportOrderMapFuture(TransportOrderFeign api, Set<String> taskPickupDispatchSet) {
+        return AsyncRequestHeaders.supplyAsync(() -> {
+            if (CollectionUtils.isEmpty(taskPickupDispatchSet)) {
+                return new HashMap<>();
+            }
+            List<TransportOrderDTO> result = api.findByOrderIds(taskPickupDispatchSet.stream().map(Long::valueOf).collect(Collectors.toList()));
+            if (!CollectionUtils.isEmpty(result)) {
+                return result.stream()
+                        .filter(dto -> dto.getOrderId() != null)
+                        .collect(Collectors.toMap(dto -> String.valueOf(dto.getOrderId()), transportOrderDTO -> transportOrderDTO));
+            }
+            return new HashMap<>();
+        });
+    }
+
+}

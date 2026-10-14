@@ -4,10 +4,10 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<artifactId>pinda-tms</artifactId>
-		<groupId>com.itheima</groupId>
+		<groupId>com.xinfei</groupId>
 		<version>1.0.0-SNAPSHOT</version>
 	</parent>
-	<groupId>com.itheima</groupId>
+	<groupId>com.xinfei</groupId>
 	<artifactId>pd-oms</artifactId>
 	<version>1.0.0-SNAPSHOT</version>
 	<name>pd-oms</name>
@@ -33,12 +33,12 @@
 		</dependency>
 		<!--项目依赖-->
 		<dependency>
-			<groupId>com.itheima</groupId>
+			<groupId>com.xinfei</groupId>
 			<artifactId>pd-common</artifactId>
 			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 		<dependency>
-			<groupId>com.itheima</groupId>
+			<groupId>com.xinfei</groupId>
 			<artifactId>pd-service-oms-domain</artifactId>
 			<version>1.0.0-SNAPSHOT</version>
 		</dependency>

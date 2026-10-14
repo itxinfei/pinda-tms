@@ -1,0 +1,181 @@
+package com.xinfei.controller.transportline;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.xinfei.DTO.transportline.TransportLineDto;
+import com.xinfei.common.utils.PageResponse;
+import com.xinfei.common.utils.Result;
+import com.xinfei.controller.support.IdConverter;
+import com.xinfei.entity.transportline.PdTransportLine;
+import com.xinfei.service.transportline.IPdTransportLineService;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * TransportLineController
+ */
+@RestController
+@RequestMapping("base/transportLine")
+public class TransportLineController {
+    @Autowired
+    private IPdTransportLineService transportLineService;
+
+    /**
+     * 添加线路
+     *
+     * @param dto 线路信息
+     * @return 线路信息
+     */
+    @PostMapping("")
+    public TransportLineDto saveTransportLine(@RequestBody TransportLineDto dto) {
+        PdTransportLine pdTransportLine = new PdTransportLine();
+        BeanUtils.copyProperties(dto, pdTransportLine);
+        fillEntity(dto, pdTransportLine);
+        pdTransportLine = transportLineService.saveTransportLine(pdTransportLine);
+        return toDto(pdTransportLine);
+    }
+
+    /**
+     * 根据id获取线路详情
+     *
+     * @param id 线路id
+     * @return 线路详情
+     */
+    @GetMapping("/{id}")
+    public TransportLineDto findById(@PathVariable(name = "id") String id) {
+        PdTransportLine pdTransportLine = transportLineService.getById(IdConverter.toLong(id));
+        if (pdTransportLine == null) {
+            TransportLineDto dto = new TransportLineDto();
+            dto.setId(id);
+            return dto;
+        }
+        return toDto(pdTransportLine);
+    }
+
+    /**
+     * 获取线路分页信息
+     *
+     * @param page                页码
+     * @param pageSize            页尺寸
+     * @param lineNumber          线路编号
+     * @param name                线路名称
+     * @param transportLineTypeId 线路类型id
+     * @return 线路分页信息
+     */
+    @GetMapping("/page")
+    public PageResponse<TransportLineDto> findByPage(@RequestParam(name = "page") Integer page,
+                                                     @RequestParam(name = "pageSize") Integer pageSize,
+                                                     @RequestParam(name = "lineNumber", required = false) String lineNumber,
+                                                     @RequestParam(name = "name", required = false) String name,
+                                                     @RequestParam(name = "transportLineTypeId", required = false) String transportLineTypeId) {
+        IPage<PdTransportLine> transportLinePage = transportLineService.findByPage(page, pageSize, lineNumber, name,
+                IdConverter.toLong(transportLineTypeId));
+        List<TransportLineDto> dtoList = new ArrayList<>();
+        transportLinePage.getRecords().forEach(pdTransportLine -> dtoList.add(toDto(pdTransportLine)));
+        return PageResponse.<TransportLineDto>builder().items(dtoList).pagesize(pageSize).page(page)
+                .counts(transportLinePage.getTotal()).pages(transportLinePage.getPages()).build();
+    }
+
+    /**
+     * 获取线路列表
+     *
+     * @param ids 线路id列表
+     * @return 线路列表
+     */
+    @GetMapping("")
+    public List<TransportLineDto> findAll(@RequestParam(name = "ids", required = false) List<String> ids,
+                                          @RequestParam(name = "agencyId", required = false) String agencyId,
+                                          @RequestParam(name = "agencyIds", required = false) List<String> agencyIds) {
+        return transportLineService.findAll(IdConverter.toLongList(ids), IdConverter.toLong(agencyId),
+                IdConverter.toLongList(agencyIds)).stream()
+                .map(this::toDto)
+                .toList();
+    }
+
+    /**
+     * 更新线路信息
+     *
+     * @param id  线路id
+     * @param dto 线路信息
+     * @return 线路信息
+     */
+    @PutMapping("/{id}")
+    public TransportLineDto update(@PathVariable(name = "id") String id, @RequestBody TransportLineDto dto) {
+        PdTransportLine pdTransportLine = new PdTransportLine();
+        BeanUtils.copyProperties(dto, pdTransportLine);
+        fillEntity(dto, pdTransportLine);
+        pdTransportLine.setId(IdConverter.toLong(id));
+        transportLineService.updateById(pdTransportLine);
+        dto.setId(id);
+        return dto;
+    }
+
+    /**
+     * 删除线路
+     *
+     * @param id 线路id
+     * @return 返回信息
+     */
+    @PutMapping("/{id}/disable")
+    public Result disable(@PathVariable(name = "id") String id) {
+        transportLineService.disable(IdConverter.toLong(id));
+        return Result.ok();
+    }
+
+
+    /**
+     * 获取线路列表
+     *
+     * @return 线路列表
+     */
+    @PostMapping("list")
+    public List<TransportLineDto> list(@RequestBody TransportLineDto transportLineDto) {
+        LambdaQueryWrapper<PdTransportLine> wrapper = new LambdaQueryWrapper<>();
+
+        wrapper.eq(StringUtils.isNotEmpty(transportLineDto.getStartAgencyId()),
+                PdTransportLine::getStartOrgId, IdConverter.toLong(transportLineDto.getStartAgencyId()));
+        wrapper.eq(StringUtils.isNotEmpty(transportLineDto.getEndAgencyId()),
+                PdTransportLine::getEndOrgId, IdConverter.toLong(transportLineDto.getEndAgencyId()));
+        wrapper.eq(StringUtils.isNotEmpty(transportLineDto.getAgencyId()),
+                PdTransportLine::getOrgId, IdConverter.toLong(transportLineDto.getAgencyId()));
+        wrapper.eq(null != (transportLineDto.getStatus()), PdTransportLine::getStatus, transportLineDto.getStatus());
+
+        return transportLineService.list(wrapper).stream()
+                .map(this::toDto)
+                .toList();
+    }
+
+    /**
+     * DTO 差异字段填充：机构 id（String→Long）、耗时（BigDecimal→Integer 分钟）
+     */
+    private void fillEntity(TransportLineDto dto, PdTransportLine entity) {
+        entity.setOrgId(IdConverter.toLong(dto.getAgencyId()));
+        entity.setStartOrgId(IdConverter.toLong(dto.getStartAgencyId()));
+        entity.setEndOrgId(IdConverter.toLong(dto.getEndAgencyId()));
+        if (dto.getEstimatedTime() != null) {
+            entity.setEstimatedTime(dto.getEstimatedTime().intValue());
+        }
+    }
+
+    /**
+     * 实体 → DTO：机构 id（Long→String）、耗时（Integer 分钟→BigDecimal）
+     */
+    private TransportLineDto toDto(PdTransportLine entity) {
+        TransportLineDto dto = new TransportLineDto();
+        BeanUtils.copyProperties(entity, dto);
+        dto.setId(IdConverter.toStr(entity.getId()));
+        dto.setAgencyId(IdConverter.toStr(entity.getOrgId()));
+        dto.setStartAgencyId(IdConverter.toStr(entity.getStartOrgId()));
+        dto.setEndAgencyId(IdConverter.toStr(entity.getEndOrgId()));
+        if (entity.getEstimatedTime() != null) {
+            dto.setEstimatedTime(BigDecimal.valueOf(entity.getEstimatedTime()));
+        }
+        return dto;
+    }
+}

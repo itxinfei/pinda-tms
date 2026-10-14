@@ -1,0 +1,171 @@
+package com.xinfei.service.impl;
+
+import com.xinfei.common.CustomIdGenerator;
+import com.xinfei.entity.Order;
+import com.xinfei.entity.PaymentOrder;
+import com.xinfei.enums.OrderPaymentStatus;
+import com.xinfei.pay.PayChannel;
+import com.xinfei.service.IOrderService;
+import com.xinfei.service.IPaymentOrderService;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.lang.reflect.Field;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+/**
+ * 统一支付服务单元测试
+ *
+ * <p>覆盖支付回调安全校验：跨渠道拒绝、金额不一致拒绝、非法金额拒绝、重复回调幂等，
+ * 以及模拟渠道自动支付后订单/支付单状态联动。</p>
+ */
+public class PayServiceImplTest {
+
+    private PayServiceImpl payService;
+    private IPaymentOrderService paymentOrderService;
+    private IOrderService orderService;
+    private PayChannel mockChannel;
+
+    @BeforeEach
+    public void setUp() throws Exception {
+        payService = new PayServiceImpl();
+        paymentOrderService = mock(IPaymentOrderService.class);
+        orderService = mock(IOrderService.class);
+        CustomIdGenerator idGenerator = mock(CustomIdGenerator.class);
+        when(idGenerator.nextId(any())).thenReturn(100L, 101L);
+
+        mockChannel = mock(PayChannel.class);
+        when(mockChannel.channelCode()).thenReturn(PaymentOrder.CHANNEL_MOCK);
+        when(mockChannel.verifyCallback(any())).thenReturn(true);
+        when(mockChannel.parseTradeNo(any())).thenReturn("PAY-001");
+
+        // 注册第二个渠道(wechat)，使跨渠道一致性校验分支可被真正触达
+        PayChannel wechatChannel = mock(PayChannel.class);
+        when(wechatChannel.channelCode()).thenReturn("wechat");
+        when(wechatChannel.verifyCallback(any())).thenReturn(true);
+        when(wechatChannel.parseTradeNo(any())).thenReturn("PAY-001");
+
+        List<PayChannel> channels = new ArrayList<>();
+        channels.add(mockChannel);
+        channels.add(wechatChannel);
+
+        ReflectionTestUtils.setField(payService, "paymentOrderService", paymentOrderService);
+        ReflectionTestUtils.setField(payService, "orderService", orderService);
+        ReflectionTestUtils.setField(payService, "idGenerator", idGenerator);
+        ReflectionTestUtils.setField(payService, "payChannels", channels);
+        ReflectionTestUtils.setField(payService, "defaultChannel", PaymentOrder.CHANNEL_MOCK);
+        // 支付回调租户桥（tenant-bridge 改动引入）：无租户上下文的外部渠道回调按 pay_no 反查租户，
+        // 走 paymentOrderMapper.selectTenantIdByPayNo；此处补 mock，否则回调用例 NPE。
+        com.xinfei.mapper.PaymentOrderMapper paymentOrderMapper = mock(com.xinfei.mapper.PaymentOrderMapper.class);
+        when(paymentOrderMapper.selectTenantIdByPayNo(any())).thenReturn(1L);
+        ReflectionTestUtils.setField(payService, "paymentOrderMapper", paymentOrderMapper);
+    }
+
+    private PaymentOrder pendingOrder() {
+        PaymentOrder po = new PaymentOrder();
+        po.setId("1");
+        po.setOrderId(1L);
+        po.setPayNo("PAY-001");
+        po.setPayChannel(PaymentOrder.CHANNEL_MOCK);
+        po.setAmount(new BigDecimal("23.50"));
+        po.setStatus(PaymentOrder.STATUS_PENDING);
+        return po;
+    }
+
+    @Test
+    public void testCallbackChannelMismatchRejected() throws Exception {
+        PaymentOrder po = pendingOrder();
+        when(paymentOrderService.getOne(any())).thenReturn(po);
+
+        // 回调渠道与支付单渠道不一致 → 拒绝
+        Map<String, String> params = new HashMap<>();
+        params.put("payNo", "PAY-001");
+        params.put("amount", "23.50");
+        assertFalse(payService.handleCallback("wechat", params));
+    }
+
+    @Test
+    public void testCallbackAmountMismatchRejected() throws Exception {
+        PaymentOrder po = pendingOrder();
+        when(paymentOrderService.getOne(any())).thenReturn(po);
+
+        // 回调金额与支付单金额不一致 → 拒绝
+        Map<String, String> params = new HashMap<>();
+        params.put("payNo", "PAY-001");
+        params.put("amount", "99.00");
+        assertFalse(payService.handleCallback(PaymentOrder.CHANNEL_MOCK, params));
+    }
+
+    @Test
+    public void testCallbackMalformedAmountRejected() throws Exception {
+        PaymentOrder po = pendingOrder();
+        when(paymentOrderService.getOne(any())).thenReturn(po);
+
+        // 回调金额非数字 → 拒绝
+        Map<String, String> params = new HashMap<>();
+        params.put("payNo", "PAY-001");
+        params.put("amount", "abc");
+        assertFalse(payService.handleCallback(PaymentOrder.CHANNEL_MOCK, params));
+    }
+
+    @Test
+    public void testCallbackDuplicateIsIdempotent() throws Exception {
+        PaymentOrder po = pendingOrder();
+        po.setStatus(PaymentOrder.STATUS_PAID);
+        when(paymentOrderService.getOne(any())).thenReturn(po);
+
+        // 已支付订单重复回调 → 幂等返回 true，不抛异常
+        Map<String, String> params = new HashMap<>();
+        params.put("payNo", "PAY-001");
+        params.put("amount", "23.50");
+        assertTrue(payService.handleCallback(PaymentOrder.CHANNEL_MOCK, params));
+    }
+
+    @Test
+    public void testMockCreatePaymentAutoPays() throws Exception {
+        // 模拟渠道创建支付单后服务端直接完成支付：支付单与订单均置为已支付
+        Order order = new Order();
+        order.setId(1L);
+        order.setAmount(new BigDecimal("23.50"));
+        order.setPaymentStatus(OrderPaymentStatus.UNPAID.getStatus());
+        when(orderService.getById(1L)).thenReturn(order);
+
+        PaymentOrder po = pendingOrder();
+        // 支付完成后的支付单（模拟渠道自动支付后应处于已支付状态）
+        PaymentOrder paidPo = pendingOrder();
+        paidPo.setStatus(PaymentOrder.STATUS_PAID);
+        // createPayment 先查待支付单(无)，回调时查询到待支付单，随后查询支付后支付单(已支付)
+        when(paymentOrderService.getOne(any())).thenReturn(null, po, paidPo);
+        when(mockChannel.createPayment(any(), any(), any())).thenReturn("{\"mock\":true}");
+
+        PaymentOrder result = payService.createPayment("1");
+        assertEquals(Integer.valueOf(PaymentOrder.STATUS_PAID), result.getStatus());
+        assertEquals(PaymentOrder.CHANNEL_MOCK, result.getPayChannel());
+    }
+
+    @Test
+    public void testCreatePaymentUnknownChannelReturnsNull() throws Exception {
+        ReflectionTestUtils.setField(payService, "defaultChannel", "unknown-channel");
+        Order order = new Order();
+        order.setId(1L);
+        order.setAmount(new BigDecimal("23.50"));
+        when(orderService.getById(1L)).thenReturn(order);
+        when(paymentOrderService.getOne(any())).thenReturn(null);
+
+        // 未知支付渠道 → 优雅返回 null（而非 NPE）
+        org.junit.jupiter.api.Assertions.assertNull(payService.createPayment("1"));
+    }
+}

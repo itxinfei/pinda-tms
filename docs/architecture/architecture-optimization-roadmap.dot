@@ -44,7 +44,7 @@ digraph architecture_optimization_roadmap {
   S2 [label="S-2 数据归属是假的\n7库同1实例/12张无人写的副本\nnetty+druid 寄养 pd_oms", shape=diamond, style=filled, fillcolor="#ffe3b3", color="#cc6600"];
   S2a [label="每个共享对象定归属：owner读 or Feign\n禁止第三态；pinda_tms 改名归档", shape=box, style=filled, fillcolor="#ffe3b3"];
 
-  S3 [label="S-3 公共层双轨\npd-common 与 pd-tools-common\n同根包 com.itheima.pinda.common\n（当前无重复类=风险敞口）", shape=diamond, style=filled, fillcolor="#ffe3b3", color="#cc6600"];
+  S3 [label="S-3 公共层双轨\npd-common 与 pd-tools-common\n同根包 com.xinfei.common\n（当前无重复类=风险敞口）", shape=diamond, style=filled, fillcolor="#ffe3b3", color="#cc6600"];
   S3a [label="advice/返回体/枚举/包名 收敛为一份\n与阶段0 同期做", shape=box, style=filled, fillcolor="#ffe3b3"];
 
   S5 [label="S-5 一致性策略缺决策\n@GlobalTransactional 仅5处\n转发中心77写/0事务", shape=diamond, style=filled, fillcolor="#ffe3b3", color="#cc6600"];
