@@ -1,4 +1,4 @@
-/* 心飞TMS 客户端 · 网点/物品类型/区域/用户/轨迹 API */
+/* 心飞物流TMS 客户端 · 网点/物品类型/区域/用户/轨迹 API */
 import { request } from '../request/index.js';
 
 /** 网点分页 GET /agency/page?page=&pagesize=&keyword=&cityId= */

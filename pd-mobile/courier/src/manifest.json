@@ -1,7 +1,7 @@
 {
     "name" : "心飞物流 · 快递员端",
     "appid" : "",
-    "description" : "心飞TMS 快递员端：取件派件、扫码接单、签收管理",
+    "description" : "心飞物流TMS 快递员端：取件派件、扫码接单、签收管理",
     "versionName" : "1.0.0",
     "versionCode" : "100",
     "transformPx" : false,

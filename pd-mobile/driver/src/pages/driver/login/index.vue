@@ -32,7 +32,7 @@
       <view class="login-agree">登录即代表同意《用户协议》和《隐私政策》</view>
     </view>
 
-    <view class="login-footer">心飞物流 TMS · 司机端</view>
+    <view class="login-footer">心飞物流TMS · 司机端</view>
   </view>
 </template>
 

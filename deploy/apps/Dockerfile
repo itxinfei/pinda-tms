@@ -1,5 +1,5 @@
 # ============================================
-# 心飞TMS 微服务通用镜像（一份复用，全部 14 个 Spring Boot 服务）
+# 心飞物流TMS 微服务通用镜像（一份复用，全部 14 个 Spring Boot 服务）
 #
 # 构建上下文 = 只含该服务 jar 的目录（CI 里用硬链接准备，见 .gitea/workflows/deploy-backend.yml）：
 #   mkdir -p .ctx/pd-base && ln -f deploy/jars/pd-base.jar .ctx/pd-base/app.jar

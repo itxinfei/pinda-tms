@@ -1,5 +1,5 @@
 # ============================================
-# 心飞TMS 后端构建与部署（Gitea Actions，手动触发，参数化选服务）
+# 心飞物流TMS 后端构建与部署（Gitea Actions，手动触发，参数化选服务）
 #
 # 策略（2026-10-11 用户拍板）：push 只跑 build-check.yml 编译门禁、不部署；
 # 后端发布统一在本页手动 Run workflow，或在宿主执行 /data/pinda-deploy/deploy-be.sh。

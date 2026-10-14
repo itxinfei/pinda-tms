@@ -1,4 +1,4 @@
-// 心飞TMS 架构优化路线图（先后依赖，不是甘特）
+// 心飞物流TMS 架构优化路线图（先后依赖，不是甘特）
 // 维护：与 tech-stack-and-system-architecture-review.md §3/§4/§5 的编号一一对应，改文必改图。
 // 读法：菱形=结构问题/未知，矩形=动作，圆角=外部前提；实线=必须先行，虚线=收益推断或待证前置。
 // 颜色：红=P0（升级前/期内）橙=P1（升级后立刻）灰=P2（功能稳定后）蓝=升级周计划既有阶段。
@@ -8,7 +8,7 @@ digraph architecture_optimization_roadmap {
   ranksep=0.62;
   fontname="Microsoft YaHei";
   labelloc=t;
-  label="心飞TMS 架构优化顺序 2026-10-09\n核心逻辑：先让升级能被验证（R-1）与边界收口（S-4），再定归属（S-2/S-3），最后才动拓扑（S-1）\n红=P0  橙=P1  灰=P2  蓝=《29》周计划既有阶段  虚线=待证/收益推断";
+  label="心飞物流TMS 架构优化顺序 2026-10-09\n核心逻辑：先让升级能被验证（R-1）与边界收口（S-4），再定归属（S-2/S-3），最后才动拓扑（S-1）\n红=P0  橙=P1  灰=P2  蓝=《29》周计划既有阶段  虚线=待证/收益推断";
   compound=true;
 
   node [fontname="Microsoft YaHei", fontsize=10];

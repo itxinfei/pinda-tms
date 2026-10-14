@@ -493,7 +493,7 @@ All documents below are local files in the repo. **`docs/` and `docs/需求文�
 | [docs/03-功能规划与需求说明.md](docs/03-功能规划与需求说明.md) | Feature list &amp; requirements |
 | [docs/04-部署与二次开发指南.md](docs/04-部署与二次开发指南.md) | Deployment, initialization &amp; secondary development guide |
 | [docs/05-部署文档.md](docs/05-部署文档.md) | Middleware deployment manual |
-| [docs/06-心飞TMS-开发测试环境手册.md](docs/06-心飞TMS-开发测试环境手册.md) | Dev / test environment guide |
+| [docs/06-心飞物流TMS-开发测试环境手册.md](docs/06-心飞物流TMS-开发测试环境手册.md) | Dev / test environment guide |
 
 **② Requirements docs** (`docs/需求文档/`, independent numbering, authoritative entry: 00-索引):
 
