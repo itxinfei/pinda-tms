@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @Slf4j
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @RestControllerAdvice
-public class GlobalExceptionHandler {
+public class SaTokenExceptionHandler {
 
     /** 未登录或登录已过期（受保护 HTTP 端点被匿名访问） */
     @ExceptionHandler(NotLoginException.class)
