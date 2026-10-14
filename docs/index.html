@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>心飞物流TMS · 开源运输管理系统</title>
+<meta name="description" content="心飞物流TMS — 面向运输企业与承运商的运输管理系统。四端协同 · 微服务架构 · 智能调度，JDK 21 + Spring Boot 3.5 + Vue 3.5，BUSL-1.1（个人学习研究免费，企业商用需授权）。">
+<link rel="icon" type="image/png" href="brand/logo-mark-32.png">
+<!-- 字体：自托管镜像（避免直连 Google Fonts），fallback 用系统中文字体栈 -->
+<link rel="preconnect" href="https://miaoda.feishu.cn">
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap">
+<style>
+/* ===== 设计令牌 ===== */
+:root{
+  --bg:#FFFFFF;
+  --bg-soft:#F3F7FA;
+  --line:#E2EAF1;
+  --ink:#1D2C3B;
+  --ink-2:#4E6172;
+  --ink-3:#8A9BA9;
+  --red:#C83A2F;
+  --red-deep:#A52E26;
+  --amber:#E39A3B;
+  --teal:#2E9E8F;
+  --blue:#5B7BD5;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(23,46,64,.04),0 10px 28px -16px rgba(23,46,64,.14);
+  --font:"Noto Sans SC","PingFang SC","Microsoft YaHei","Hiragino Sans GB",system-ui,-apple-system,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font);
+  color:var(--ink);
+  background:var(--bg);
+  line-height:1.7;
+  font-size:16px;
+  -webkit-font-smoothing:antialiased;
+}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+ul,ol{list-style:none}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+section{scroll-margin-top:84px}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:13px;font-weight:700;letter-spacing:.12em;color:var(--red);
+}
+.eyebrow::before{content:"";width:22px;height:2px;background:var(--red);border-radius:2px}
+.section-title{font-size:clamp(26px,4vw,34px);font-weight:900;line-height:1.35;margin:12px 0 10px;letter-spacing:-.01em}
+.section-sub{color:var(--ink-2);max-width:640px;font-size:15.5px}
+.section-head{margin-bottom:44px}
+.sec{padding:84px 0}
+
+/* ===== 导航 ===== */
+.nav{
+  position:sticky;top:0;z-index:50;
+  background:rgba(255,255,255,.92);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);
+}
+.nav-inner{display:flex;align-items:center;gap:26px;height:76px}
+.nav-brand{display:flex;align-items:center;gap:12px;font-weight:900;font-size:20px;color:var(--ink)}
+.nav-brand img{height:44px;width:auto}
+.nav-links{display:none;align-items:center;gap:28px;margin-left:auto;font-size:15px;color:var(--ink-2)}
+.nav-links a:hover{color:var(--red)}
+.nav-cta{
+  display:none;align-items:center;gap:6px;
+  margin-left:0;background:var(--red);color:#fff;font-size:14px;font-weight:700;
+  padding:9px 18px;border-radius:999px;transition:background .2s;
+}
+.nav-cta:hover{background:var(--red-deep)}
+.nav-toggle{
+  margin-left:auto;width:42px;height:42px;border:1px solid var(--line);border-radius:10px;
+  background:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+}
+.nav-toggle span{width:18px;height:2px;background:var(--ink);border-radius:2px;transition:.25s}
+.nav.open .nav-toggle span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.nav.open .nav-toggle span:nth-child(2){opacity:0}
+.nav.open .nav-toggle span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+.nav.open .nav-links{
+  display:flex;flex-direction:column;align-items:flex-start;gap:4px;
+  position:absolute;top:76px;left:0;right:0;background:#fff;border-bottom:1px solid var(--line);
+  padding:14px 24px 18px;margin:0;
+}
+.nav.open .nav-links a{display:block;width:100%;padding:10px 0;border-bottom:1px dashed var(--line);font-size:15px}
+.nav.open .nav-links a:last-child{border-bottom:none}
+@media (min-width:1024px){
+  .nav-links{display:flex}
+  .nav-cta{display:inline-flex}
+  .nav-toggle{display:none}
+}
+
+/* ===== Hero ===== */
+.hero{
+  color:var(--ink);
+  position:relative;overflow:hidden;
+  background:
+    radial-gradient(900px 420px at 85% -10%, rgba(46,158,143,.12), transparent 60%),
+    radial-gradient(760px 400px at -8% 112%, rgba(200,58,47,.07), transparent 60%),
+    linear-gradient(180deg,#EDF5FA 0%,#F5FAFD 58%,#FFFFFF 100%);
+}
+.hero::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(29,44,59,.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(29,44,59,.045) 1px, transparent 1px);
+  background-size:44px 44px;
+  -webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,.9),transparent 88%);
+          mask-image:linear-gradient(180deg,rgba(0,0,0,.9),transparent 88%);
+}
+.hero-inner{display:grid;gap:40px;padding-block:76px 64px;align-items:center;position:relative}
+.hero-kicker{
+  display:inline-flex;align-items:center;gap:8px;
+  border:1px solid #D8E5EE;border-radius:999px;
+  padding:6px 14px;font-size:13px;color:var(--ink-2);background:rgba(255,255,255,.75);
+}
+.hero-kicker b{color:var(--red);font-weight:700}
+.hero h1{
+  font-size:clamp(34px,6vw,54px);font-weight:900;line-height:1.18;letter-spacing:-.015em;
+  margin:22px 0 14px;color:var(--ink);
+}
+.hero h1 .accent{color:var(--red)}
+.hero .sub{color:var(--ink-2);font-size:17px;max-width:560px;margin-bottom:10px}
+.hero .sub b{color:var(--ink);font-weight:600}
+.hero-tags{display:flex;flex-wrap:wrap;gap:10px;margin:20px 0 30px}
+.hero-tags span{
+  font-size:13.5px;color:var(--ink-2);border:1px solid var(--line);
+  border-radius:8px;padding:6px 12px;background:rgba(255,255,255,.9);
+}
+.hero-tags span i{font-style:normal;color:var(--red);font-weight:700;margin-right:4px}
+.hero-cta{display:flex;flex-wrap:wrap;gap:14px}
+.btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:13px 26px;border-radius:10px;font-weight:700;font-size:15.5px;transition:.2s;
+}
+.btn-primary{background:var(--red);color:#fff}
+.btn-primary:hover{background:var(--red-deep)}
+.btn-ghost{border:1px solid #C9D6E0;color:var(--ink);background:rgba(255,255,255,.7)}
+.btn-ghost:hover{border-color:var(--red);color:var(--red);background:#fff}
+.hero-shot{
+  background:#fff;border:1px solid #DCE6EE;
+  border-radius:16px;padding:12px;box-shadow:0 28px 64px -30px rgba(23,46,64,.28);
+}
+.shot-bar{display:flex;align-items:center;gap:8px;padding:4px 8px 12px}
+.shot-bar i{width:10px;height:10px;border-radius:50%;display:block}
+.shot-bar i:nth-child(1){background:#FF5F57}
+.shot-bar i:nth-child(2){background:#FEBC2E}
+.shot-bar i:nth-child(3){background:#28C840}
+.shot-bar em{font-style:normal;font-size:12.5px;color:var(--ink-3);margin-left:8px;letter-spacing:.02em}
+.hero-shot img{border-radius:8px;width:100%;aspect-ratio:16/9;object-fit:cover;background:#EAF1F6}
+.hero-note{display:flex;gap:16px;margin-top:36px;flex-wrap:wrap;font-size:13px;color:var(--ink-3)}
+.hero-note span{display:inline-flex;align-items:center;gap:6px}
+.hero-note i{width:6px;height:6px;border-radius:50%;background:var(--teal);display:inline-block}
+@media (min-width:1024px){
+  .hero-inner{grid-template-columns:1.05fr 1fr;padding-block:96px 84px}
+}
+
+/* ===== 数据条 ===== */
+.stats{border-bottom:1px solid var(--line);background:var(--bg-soft)}
+.stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:0}
+.stats-item{padding:30px 18px;text-align:center;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+.stats-item:nth-child(2n){border-right:none}
+.stats-item:nth-last-child(-n+2){border-bottom:none}
+.stats-item b{
+  display:block;font-size:clamp(30px,5vw,42px);font-weight:900;line-height:1.15;color:var(--ink);
+  font-variant-numeric:tabular-nums;letter-spacing:-.02em;
+}
+.stats-item b em{font-style:normal;font-size:.55em;font-weight:700;color:var(--red);margin-left:2px}
+.stats-item span{display:block;font-size:13.5px;color:var(--ink-3);margin-top:6px}
+@media (min-width:900px){
+  .stats-grid{grid-template-columns:repeat(6,1fr)}
+  .stats-item,.stats-item:nth-child(2n),.stats-item:nth-last-child(-n+2){border-right:1px solid var(--line);border-bottom:none}
+  .stats-item:last-child{border-right:none}
+}
+
+/* ===== 通用卡片 ===== */
+.card{
+  background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+  padding:26px;transition:transform .2s,box-shadow .2s;
+}
+.card:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
+.card .ic{
+  width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+  background:var(--bg-soft);margin-bottom:16px;
+}
+.card .ic svg{width:22px;height:22px;stroke:var(--red);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.card h3{font-size:17px;font-weight:700;margin-bottom:8px}
+.card p{font-size:14px;color:var(--ink-2);line-height:1.75}
+.grid3{display:grid;gap:18px;grid-template-columns:1fr}
+@media (min-width:768px){.grid3{grid-template-columns:repeat(2,1fr)}}
+@media (min-width:1024px){.grid3{grid-template-columns:repeat(3,1fr)}}
+
+/* ===== 痛点对照 ===== */
+.pain{background:var(--bg-soft)}
+.pain-list{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:#fff}
+.pain-row{display:grid;grid-template-columns:1fr;gap:0}
+.pain-row+.pain-row{border-top:1px solid var(--line)}
+.pain-cell{padding:18px 22px;font-size:14.5px}
+.pain-cell:first-child{font-weight:700;color:var(--ink);background:var(--bg-soft);display:flex;align-items:center;gap:10px}
+.pain-cell:first-child::before{content:"";width:8px;height:8px;border-radius:2px;background:var(--red);flex-shrink:0}
+.pain-cell:last-child{color:var(--ink-2)}
+.pain-cell:last-child::before{content:"→";color:var(--teal);font-weight:900;margin-right:10px}
+@media (min-width:768px){
+  .pain-row{grid-template-columns:1fr 1fr}
+  .pain-cell:last-child{border-left:1px solid var(--line)}
+}
+
+/* ===== 四端 ===== */
+.ends-grid{display:grid;gap:18px;grid-template-columns:1fr}
+@media (min-width:768px){.ends-grid{grid-template-columns:repeat(2,1fr)}}
+@media (min-width:1024px){.ends-grid{grid-template-columns:repeat(4,1fr)}}
+.end-card{position:relative;overflow:hidden}
+.end-card::after{
+  content:"";position:absolute;right:-24px;bottom:-24px;width:96px;height:96px;border-radius:50%;
+  background:radial-gradient(circle,rgba(200,58,47,.10),transparent 70%);
+}
+.end-card .role{
+  display:inline-block;font-size:12px;font-weight:700;color:#fff;background:var(--ink);
+  border-radius:999px;padding:3px 10px;margin-bottom:12px;
+}
+.end-card:nth-child(1) .role{background:var(--red)}
+.end-card:nth-child(2) .role{background:var(--teal)}
+.end-card:nth-child(3) .role{background:var(--amber);color:#3A2A0E}
+.end-card:nth-child(4) .role{background:var(--blue)}
+.end-card h3{font-size:18px;font-weight:900}
+.end-card .alias{font-size:13px;color:var(--ink-3);margin-bottom:10px}
+.end-card ul{margin-top:12px;display:grid;gap:7px}
+.end-card li{font-size:13.5px;color:var(--ink-2);display:flex;gap:8px;align-items:flex-start}
+.end-card li::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--red);margin-top:8px;flex-shrink:0}
+
+/* ===== 业务流程 ===== */
+.flow{background:var(--bg-soft)}
+.flow-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.flow-item{
+  background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;
+  display:flex;gap:14px;align-items:flex-start;
+}
+.flow-item .no{
+  font-size:13px;font-weight:900;color:var(--red);font-variant-numeric:tabular-nums;
+  border:1px solid var(--line);border-radius:8px;padding:4px 8px;flex-shrink:0;background:var(--bg-soft);
+}
+.flow-item h4{font-size:15px;font-weight:700;margin-bottom:2px}
+.flow-item p{font-size:13px;color:var(--ink-3)}
+@media (min-width:900px){
+  .flow-grid{grid-template-columns:repeat(4,1fr)}
+  .flow-item{flex-direction:column;gap:10px}
+  .flow-item .no{align-self:flex-start}
+}
+
+/* ===== 功能全景 ===== */
+.feat-item{display:flex;gap:14px;align-items:flex-start}
+.feat-item .ic{width:40px;height:40px;flex-shrink:0;margin-bottom:0}
+.feat-item h3{font-size:15.5px}
+.feat-item p{font-size:13.5px}
+
+/* ===== 架构 ===== */
+.arch{background:var(--bg-soft)}
+.arch-fig{border:1px solid var(--line);border-radius:var(--radius);background:#fff;padding:14px;margin-top:8px}
+.arch-fig img{border-radius:8px;width:100%}
+.arch-fig figcaption{font-size:12.5px;color:var(--ink-3);padding:12px 6px 4px;text-align:center}
+.arch-layers{display:grid;gap:14px;margin-top:26px;grid-template-columns:1fr}
+@media (min-width:768px){.arch-layers{grid-template-columns:repeat(4,1fr)}}
+.layer{border-left:3px solid var(--red);background:#fff;border-radius:0 var(--radius) var(--radius) 0;padding:18px 20px;box-shadow:var(--shadow)}
+.layer:nth-child(2){border-color:var(--amber)}
+.layer:nth-child(3){border-color:var(--teal)}
+.layer:nth-child(4){border-color:var(--blue)}
+.layer h4{font-size:15px;font-weight:900;margin-bottom:8px}
+.layer p{font-size:13px;color:var(--ink-2);line-height:1.8}
+.layer p code{background:var(--bg-soft);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:12px;color:var(--ink)}
+
+/* ===== 截图 ===== */
+.shots .shot-groups{display:grid;gap:40px}
+.shot-group h3{font-size:18px;font-weight:900;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.shot-group h3::before{content:"";width:8px;height:8px;border-radius:2px;background:var(--red)}
+.shot-grid{display:grid;gap:16px;grid-template-columns:1fr}
+@media (min-width:768px){.shot-grid{grid-template-columns:repeat(3,1fr)}}
+.shot-grid.half{grid-template-columns:1fr}
+@media (min-width:768px){.shot-grid.half{grid-template-columns:repeat(2,1fr)}}
+.shot{
+  border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:#fff;
+  cursor:zoom-in;transition:transform .2s,box-shadow .2s;
+}
+.shot:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
+.shot .frame{background:#F7F9FB;border-bottom:1px solid var(--line)}
+.shot .frame img{width:100%;aspect-ratio:16/9;object-fit:cover}
+.shot.mobile .frame img{aspect-ratio:9/16;object-fit:cover;object-position:top}
+.shot figcaption{padding:12px 14px;font-size:13px;color:var(--ink-2)}
+.shot figcaption b{display:block;color:var(--ink);font-size:14px;font-weight:700;margin-bottom:2px}
+.lightbox{
+  position:fixed;inset:0;z-index:100;background:rgba(8,15,22,.92);
+  display:none;align-items:center;justify-content:center;padding:24px;cursor:zoom-out;
+}
+.lightbox.open{display:flex}
+.lightbox img{max-width:96vw;max-height:90vh;object-fit:contain;border-radius:8px}
+.lightbox .cap{position:absolute;bottom:20px;left:0;right:0;text-align:center;color:#B9C6D2;font-size:14px}
+
+/* ===== 技术栈 ===== */
+.stack-grid{display:grid;gap:18px;grid-template-columns:1fr}
+@media (min-width:768px){.stack-grid{grid-template-columns:repeat(2,1fr)}}
+.stack-card h3{font-size:16px;font-weight:900;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.stack-card h3 .dot{width:9px;height:9px;border-radius:3px;background:var(--red)}
+.stack-card:nth-child(2) h3 .dot{background:var(--teal)}
+.stack-card:nth-child(3) h3 .dot{background:var(--amber)}
+.stack-card:nth-child(4) h3 .dot{background:#8A93A6}
+.stack-card ul{display:grid;gap:9px}
+.stack-card li{font-size:13.5px;color:var(--ink-2);display:flex;gap:9px}
+.stack-card li::before{content:"•";color:var(--red);flex-shrink:0}
+.badge-cloud{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px;padding:20px 22px;background:#fff;border:1px solid var(--line);border-radius:var(--radius)}
+.badge-cloud img{height:22px;width:auto}
+.badge-cloud .more{margin-left:auto;font-size:12.5px;color:var(--ink-3);display:inline-flex;align-items:center}
+
+/* ===== 快速开始 ===== */
+.start{background:var(--bg-soft)}
+.start-steps{display:grid;gap:0;grid-template-columns:1fr}
+.step{display:grid;grid-template-columns:44px minmax(0,1fr);gap:18px;padding:22px 0;border-bottom:1px dashed var(--line)}
+.step:last-child{border-bottom:none}
+.step .n{
+  width:44px;height:44px;border-radius:12px;background:var(--ink);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;
+}
+.step:nth-child(1) .n{background:var(--red)}
+.step:nth-child(2) .n{background:var(--amber);color:#3A2A0E}
+.step:nth-child(3) .n{background:var(--teal)}
+.step:nth-child(4) .n{background:var(--blue)}
+.step h4{font-size:16px;font-weight:700;margin-bottom:6px}
+.step p{font-size:14px;color:var(--ink-2);margin-bottom:10px}
+.step code.k{
+  display:block;background:#F4F7FA;border:1px solid var(--line);color:#33475A;
+  border-radius:10px;padding:14px 18px;
+  font-family:"Cascadia Code","JetBrains Mono",Consolas,monospace;font-size:13.5px;line-height:1.9;
+  overflow-x:auto;white-space:pre;
+}
+.step code.k .c{color:#8A9BA9}
+.step code.k .cm{color:#A8B6C2}
+
+/* ===== 对比 ===== */
+.cmp-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:#fff}
+table.cmp{width:100%;border-collapse:collapse;table-layout:fixed;min-width:640px;font-size:14px}
+table.cmp colgroup col:first-child{width:30%}
+table.cmp colgroup col{width:23.33%}
+table.cmp th,table.cmp td{padding:14px 16px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+table.cmp thead th{background:#EDF4F9;color:var(--ink);font-weight:700;font-size:14px;border-bottom:1px solid var(--line)}
+table.cmp thead th:first-child{background:var(--red);color:#fff}
+table.cmp tbody tr:last-child td{border-bottom:none}
+table.cmp td{color:var(--ink-2)}
+table.cmp td:first-child{font-weight:700;color:var(--ink)}
+table.cmp .ok{color:var(--teal);font-weight:900}
+table.cmp .no{color:#B0BCC6;font-weight:500}
+table.cmp .price{color:var(--red);font-weight:900}
+
+/* ===== 里程碑 ===== */
+.milestones{background:var(--bg-soft)}
+.timeline{max-width:780px;margin:0 auto;display:grid;gap:0}
+.tl-item{display:grid;grid-template-columns:88px 30px 1fr;position:relative;padding-bottom:34px}
+.tl-item:last-child{padding-bottom:0}
+.tl-item::before{
+  content:"";position:absolute;left:102px;top:10px;bottom:-4px;width:2px;background:var(--line);
+}
+.tl-item:last-child::before{display:none}
+.tl-time{font-size:13.5px;font-weight:700;color:var(--ink-3);padding-top:2px;font-variant-numeric:tabular-nums}
+.tl-dot{
+  width:12px;height:12px;border-radius:50%;background:#fff;border:3px solid var(--red);
+  justify-self:center;margin-top:4px;z-index:1;
+}
+.tl-item.done .tl-dot{background:var(--red)}
+.tl-item.todo .tl-dot{border-color:var(--amber)}
+.tl-body{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin-left:14px}
+.tl-body h4{font-size:15px;font-weight:900;margin-bottom:3px}
+.tl-body p{font-size:13.5px;color:var(--ink-2)}
+
+/* ===== FAQ ===== */
+.faq-list{display:grid;gap:12px;max-width:820px;margin:0 auto}
+.faq-item{border:1px solid var(--line);border-radius:12px;background:#fff;overflow:hidden}
+.faq-item details summary{
+  list-style:none;cursor:pointer;display:flex;align-items:center;gap:12px;
+  padding:18px 20px;font-weight:700;font-size:15.5px;
+}
+.faq-item summary::-webkit-details-marker{display:none}
+.faq-item summary .q{
+  width:26px;height:26px;border-radius:8px;background:var(--bg-soft);color:var(--red);
+  display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;flex-shrink:0;
+}
+.faq-item summary .pm{margin-left:auto;color:var(--ink-3);font-size:18px;transition:transform .2s;flex-shrink:0}
+.faq-item details[open] summary .pm{transform:rotate(45deg)}
+.faq-item .ans{padding:0 20px 18px 58px;font-size:14px;color:var(--ink-2)}
+
+/* ===== 贡献 ===== */
+.contribute .grid3{grid-template-columns:1fr}
+@media (min-width:1024px){.contribute .grid3{grid-template-columns:repeat(3,1fr)}}
+.contribute .card .ic{background:var(--bg-soft)}
+.contribute .card h3{font-size:15.5px}
+.contribute code.inline{background:var(--bg-soft);border:1px solid var(--line);border-radius:5px;padding:1px 7px;font-size:12.5px;color:var(--red)}
+
+/* ===== Footer ===== */
+.footer{background:#F3F7FA;border-top:1px solid var(--line);color:var(--ink-2);padding:60px 0 36px}
+.footer-grid{display:grid;gap:36px;grid-template-columns:1fr;margin-bottom:40px}
+.footer h4{color:var(--ink);font-size:15px;font-weight:900;margin-bottom:16px}
+.footer .f-brand{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.footer .f-brand img{height:42px;width:auto;border-radius:8px}
+.footer .f-brand b{color:var(--ink);font-size:18px;font-weight:900}
+.footer p.desc{font-size:13.5px;line-height:1.9;max-width:340px}
+.footer ul{display:grid;gap:10px;font-size:14px}
+.footer ul a:hover{color:var(--red)}
+.footer .qq{display:inline-flex;align-items:center;gap:8px;background:rgba(200,58,47,.08);border-radius:8px;padding:8px 14px;color:var(--red);font-weight:700;font-size:14px}
+.footer-bottom{border-top:1px solid var(--line);padding-top:24px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;font-size:12.5px;color:var(--ink-3)}
+.footer-bottom a:hover{color:var(--red)}
+@media (min-width:768px){.footer-grid{grid-template-columns:1.4fr 1fr 1fr}}
+
+/* ===== 移动端字体下限 ===== */
+@media (max-width:767px){
+  .hero .sub{font-size:15.5px}
+  .btn{padding:12px 20px;font-size:14.5px}
+  .section-sub{font-size:14.5px}
+}
+</style>
+</head>
+<body>
+
+<!-- ==================== 导航 ==================== -->
+<header class="nav" id="nav">
+  <div class="wrap nav-inner">
+    <a class="nav-brand" href="#top">
+      <img src="brand/logo-full.png" alt="心飞物流">
+    </a>
+    <nav class="nav-links" id="navLinks">
+      <a href="#highlights">核心亮点</a>
+      <a href="#architecture">系统架构</a>
+      <a href="#screens">真实截图</a>
+      <a href="#stack">技术栈</a>
+      <a href="#quickstart">快速开始</a>
+      <a href="#milestones">里程碑</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <a class="nav-cta" href="https://gitee.com/itxinfei/xinfei-tms" target="_blank" rel="noopener">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.2 1 2V17h6v-.3c0-.8.4-1.5 1-2A7 7 0 0 0 12 2z"/></svg>
+      查看仓库
+    </a>
+    <button class="nav-toggle" id="navToggle" aria-label="展开菜单"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<main id="top">
+
+<!-- ==================== Hero ==================== -->
+<section class="hero">
+  <div class="wrap hero-inner">
+    <div>
+      <span class="hero-kicker">源码公开 · 学习研究免费 · <b>BUSL-1.1</b> &nbsp;·&nbsp; <b>TMS</b> 运输管理系统</span>
+      <h1>心飞物流 <span class="accent">TMS</span></h1>
+      <p class="sub">面向运输企业与承运商的<b>开源运输管理系统</b>，把「运力准备 → 下单 → 调度 → 运输 → 派送 → 签收 → 结算」全链路搬进一套系统。</p>
+      <div class="hero-tags">
+        <span><i>4</i>端协同</span>
+        <span><i>13</i>个微服务</span>
+        <span><i>54</i>张数据表</span>
+        <span><i>27</i>项技术栈</span>
+        <span><i>101</i>条功能需求</span>
+        <span><i>JDK 21</i> + <i>SB 3.5</i> + <i>Vue 3.5</i></span>
+      </div>
+      <div class="hero-cta">
+        <a class="btn btn-primary" href="#quickstart">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          5 分钟跑起来
+        </a>
+        <a class="btn btn-ghost" href="https://gitee.com/itxinfei/xinfei-tms" target="_blank" rel="noopener">Gitee 仓库</a>
+      </div>
+      <div class="hero-note">
+        <span><i></i>2026-10-12 真实运行环境实测</span>
+        <span><i></i>Docker Compose 一键部署</span>
+        <span><i></i>Gitea Actions 自动构建</span>
+      </div>
+    </div>
+    <figure class="hero-shot">
+      <div class="shot-bar"><i></i><i></i><i></i><em>心飞物流TMS · 工作台仪表盘</em></div>
+      <img src="screenshots/admin-dashboard.png" alt="心飞物流TMS 工作台仪表盘真实截图">
+    </figure>
+  </div>
+</section>
+
+<!-- ==================== 数据条 ==================== -->
+<section class="stats" aria-label="项目数据">
+  <div class="wrap stats-grid">
+    <div class="stats-item"><b>13<em>个</em></b><span>业务微服务</span></div>
+    <div class="stats-item"><b>4<em>端</em></b><span>管理 / 客户 / 快递员 / 司机</span></div>
+    <div class="stats-item"><b>101<em>条</em></b><span>功能需求</span></div>
+    <div class="stats-item"><b>54<em>张</em></b><span>数据表（单库分域）</span></div>
+    <div class="stats-item"><b>27<em>项</em></b><span>技术栈</span></div>
+    <div class="stats-item"><b>0<em>元</em></b><span>学习/研究年费 · BUSL-1.1</span></div>
+  </div>
+</section>
+
+<!-- ==================== 核心亮点 ==================== -->
+<section class="sec" id="highlights">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">核心亮点</span>
+      <h2 class="section-title">为什么是心飞物流TMS</h2>
+      <p class="section-sub">商业 TMS 太贵、旧开源 TMS 太老。心飞想做第三个选择：开源免费、全链路闭环、技术前沿、四端协同。</p>
+    </div>
+    <div class="grid3">
+      <div class="card">
+        <span class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18M8 22h8M12 18v4"/></svg></span>
+        <h3>四端协同</h3>
+        <p>管理端 + 客户端 + 快递员端 + 司机端，覆盖全角色。多数开源 TMS 只有管理端，心飞一步到位。</p>
+      </div>
+      <div class="card">
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></svg></span>
+        <h3>前沿技术栈</h3>
+        <p>JDK 21 + Spring Boot 3.5.7 + Spring Cloud 2025 + Vue 3.5 + uni-app，同类开源 TMS 中最新的组合。</p>
+      </div>
+      <div class="card">
+        <span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3M8 3h8"/></svg></span>
+        <h3>Drools 智能调度</h3>
+        <p>规则引擎驱动调度与运费计算，规则可视化、可热更新，不用改代码发版，替代 if-else 硬编码。</p>
+      </div>
+      <div class="card">
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4zM4 9h16M9 9v11"/></svg></span>
+        <h3>Netty 轨迹接入</h3>
+        <p>pd-netty 独立微服务自建 TCP 通道，不依赖第三方 SDK，支撑高并发车载终端位置上报。</p>
+      </div>
+      <div class="card">
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+        <h3>Sa-Token 多租户</h3>
+        <p>SaaS 化就绪，一套代码服务多个租户，多租户认证与鉴权开箱即用，多数开源 TMS 仍单租户。</p>
+      </div>
+      <div class="card">
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M3 12h4l2-7 4 14 2-7h6"/></svg></span>
+        <h3>清晰的演进路线</h3>
+        <p>Kafka → TDengine / 鹰眼 → OR-Tools → Spring AI 规划落地中，不是做完就停的项目。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 痛点对照 ==================== -->
+<section class="sec pain" id="pain">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">解决什么</span>
+      <h2 class="section-title">行业痛点 → 心飞解法</h2>
+      <p class="section-sub">物流行业车辆、司机、线路散落难管，运输不透明，调度与计费靠人工——心飞把这些问题逐一对齐。</p>
+    </div>
+    <div class="pain-list">
+      <div class="pain-row">
+        <div class="pain-cell">车辆 / 驾驶员 / 线路分散，难以统一考核</div>
+        <div class="pain-cell">基础数据集中管理 + 多维统计报表，人车线一目了然</div>
+      </div>
+      <div class="pain-row">
+        <div class="pain-cell">调度靠人工、配载凭经验</div>
+        <div class="pain-cell">定时调度 + 路径规划自动生成运输任务与车次分配</div>
+      </div>
+      <div class="pain-row">
+        <div class="pain-cell">运输过程黑盒，在途不可见</div>
+        <div class="pain-cell">GPS 车辆定位 + 轨迹回放，在途状态实时可查</div>
+      </div>
+      <div class="pain-row">
+        <div class="pain-cell">运费计算不透明、易出错</div>
+        <div class="pain-cell">Drools 动态规则引擎，计费规则可配置、可追溯</div>
+      </div>
+      <div class="pain-row">
+        <div class="pain-cell">客户查件无渠道、签收无留证</div>
+        <div class="pain-cell">客户端 App 查物流 + 电子签收 / 回单留证</div>
+      </div>
+      <div class="pain-row">
+        <div class="pain-cell">数据孤岛、统计靠手工</div>
+        <div class="pain-cell">数据聚合 + 实时分析，经营报表自动产出</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 四端协同 ==================== -->
+<section class="sec" id="ends">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">四端协同</span>
+      <h2 class="section-title">一套系统，四个角色</h2>
+      <p class="section-sub">从内部管理员到外部客户，从快递员到司机，每类角色都有专属端。</p>
+    </div>
+    <div class="ends-grid">
+      <div class="card end-card">
+        <span class="role">后台系统</span>
+        <h3>心飞物流TMS 管理端</h3>
+        <div class="alias">公司内部管理员 · Vue 3 + Element Plus</div>
+        <ul>
+          <li>基础数据维护</li>
+          <li>订单管理、运单管理</li>
+          <li>调度、在途监控与报表</li>
+        </ul>
+      </div>
+      <div class="card end-card">
+        <span class="role">客户端 App</span>
+        <h3>心飞速运</h3>
+        <div class="alias">外部客户 · uni-app</div>
+        <ul>
+          <li>在线寄件下单</li>
+          <li>物流轨迹查询</li>
+          <li>电子签收确认</li>
+        </ul>
+      </div>
+      <div class="card end-card">
+        <span class="role">快递员端 App</span>
+        <h3>心飞快递员</h3>
+        <div class="alias">内部快递员 · uni-app</div>
+        <ul>
+          <li>接收取件 / 派件任务</li>
+          <li>任务状态回传</li>
+          <li>签收拍照留证</li>
+        </ul>
+      </div>
+      <div class="card end-card">
+        <span class="role">司机端 App</span>
+        <h3>心飞司机宝</h3>
+        <div class="alias">内部司机 · uni-app</div>
+        <ul>
+          <li>接收运输任务</li>
+          <li>实时上报位置信息</li>
+          <li>行车作业单执行</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 业务流程 ==================== -->
+<section class="sec flow" id="flow">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">业务流程</span>
+      <h2 class="section-title">从寄件到结算，全链路闭环</h2>
+      <p class="section-sub">寄件下单到收件人签收，每一步都有系统承接，不留断点。</p>
+    </div>
+    <div class="flow-grid">
+      <div class="flow-item"><span class="no">01</span><div><h4>寄件下单</h4><p>客户端 App 在线寄件</p></div></div>
+      <div class="flow-item"><span class="no">02</span><div><h4>订单创建</h4><p>OMS 全生命周期状态管理</p></div></div>
+      <div class="flow-item"><span class="no">03</span><div><h4>智能调度</h4><p>Drools 规则引擎配载分车</p></div></div>
+      <div class="flow-item"><span class="no">04</span><div><h4>司机接单</h4><p>司机宝接收运输任务</p></div></div>
+      <div class="flow-item"><span class="no">05</span><div><h4>作业执行</h4><p>取派件 / 运输任务流转</p></div></div>
+      <div class="flow-item"><span class="no">06</span><div><h4>轨迹追踪</h4><p>Netty TCP 实时位置上报</p></div></div>
+      <div class="flow-item"><span class="no">07</span><div><h4>回单签收</h4><p>电子签收 POD 留证</p></div></div>
+      <div class="flow-item"><span class="no">08</span><div><h4>对账结算</h4><p>计费规则可配置可追溯</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 功能全景 ==================== -->
+<section class="sec" id="features">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">功能全景</span>
+      <h2 class="section-title">覆盖运输业务十二大模块</h2>
+      <p class="section-sub">订单、调度、在途、档案、结算一应俱全，101 条功能需求逐条落地。</p>
+    </div>
+    <div class="grid3">
+      <div class="card feat-item">
+        <span class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18"/></svg></span>
+        <div><h3>订单管理</h3><p>寄件下单、货物管理、全生命周期状态、运费试算</p></div>
+      </div>
+      <div class="card feat-item">
+        <span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></span>
+        <div><h3>智能调度</h3><p>订单分类、路径规划、运输任务与车次 / 车辆 / 司机分配</p></div>
+      </div>
+      <div class="card feat-item">
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4zM4 9h16M9 9v11"/></svg></span>
+        <div><h3>运输管理</h3><p>运输任务执行、司机作业单、在途状态跟踪</p></div>
+      </div>
+      <div class="card feat-item">
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M12 21s-7-5.1-7-11a7 7 0 0 1 14 0c0 5.9-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
+        <div><h3>GPS 在途监控</h3><p>车辆实时定位、轨迹回放、偏航与异常监控</p></div>
+      </div>
+      <div class="card feat-item">
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4zM9 4v16M4 9h5M4 15h5"/></svg></span>
+        <div><h3>配送执行</h3><p>取派件任务、运单管理、电子签收（POD）</p></div>
+      </div>
+      <div class="card feat-item">
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/><path d="M7 6v12M17 6v12"/></svg></span>
+        <div><h3>车辆 / 线路 / 车次</h3><p>车队、车辆、车型、线路、车次等运输资源维护</p></div>
+      </div>
+      <div class="card feat-item">
+        <span class="ic"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.2 3.3-5 6.5-5s5.7 1.8 6.5 5M16 4.5a3.5 3.5 0 0 1 0 7M17.8 15.4c2 .7 3.4 2.3 3.7 4.6"/></svg></span>
+        <div><h3>人员管理</h3><p>司机、快递员、岗位与组织管理</p></div>
+      </div>
+      <div class="card feat-item">
+        <span class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></span>
+        <div><h3>客户门户</h3><p>客户端 App 寄件、查单、物流跟踪</p></div>
+      </div>
+      <div class="card feat-item">
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M12 2v20M17 7H9.5a2.5 2.5 0 0 0 0 5h5a2.5 2.5 0 0 1 0 5H7"/></svg></span>
+        <div><h3>回单与结算</h3><p>回单签收留证、费用结算、对账</p></div>
+      </div>
+      <div class="card feat-item">
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16M8 15l4-5 3 3 5-7"/></svg></span>
+        <div><h3>数据报表</h3><p>运输量、时效、成本、绩效多维统计</p></div>
+      </div>
+      <div class="card feat-item">
+        <span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></svg></span>
+        <div><h3>基础信息</h3><p>组织机构、菜单、权限、字典等支撑数据</p></div>
+      </div>
+      <div class="card feat-item">
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z"/><path d="M9.5 12l2 2 3.5-4"/></svg></span>
+        <div><h3>统一认证与权限</h3><p>Sa-Token 用户、角色、菜单、多租户认证鉴权</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 系统架构 ==================== -->
+<section class="sec arch" id="architecture">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">系统架构</span>
+      <h2 class="section-title">四层架构 · 13 个微服务</h2>
+      <p class="section-sub">展示层 → 网关层 → 服务层 → 数据层，微服务按业务域拆分，OpenFeign 互调，Nacos 统一注册发现。</p>
+    </div>
+    <figure class="arch-fig">
+      <img src="system-arch.png" alt="心飞物流TMS 系统架构图（2026-10-12 实测版）">
+      <figcaption>系统架构实测版 · 服务 13 个 · 中间件 8 + 4 规划 · 依据《60-技术栈评估与演进路线》</figcaption>
+    </figure>
+    <div class="arch-layers">
+      <div class="layer">
+        <h4>展示层 · 四端协同</h4>
+        <p>管理端 <code>Vue3</code> :8081 · 客户端 <code>H5</code> :8084 · 快递员端 <code>H5</code> :8083 · 司机端 <code>H5</code> :8082</p>
+      </div>
+      <div class="layer">
+        <h4>统一接入网关</h4>
+        <p><code>Spring Cloud Gateway</code> :8760 · 路由转发 · Sa-Token 多租户鉴权 · Same-Token 防直连</p>
+      </div>
+      <div class="layer">
+        <h4>服务层 · 13 个微服务</h4>
+        <p>BFF 四端聚合 · <code>pd-auth</code> 认证 · <code>pd-base</code> 档案 · <code>pd-oms</code> 订单 · <code>pd-dispatch</code> 调度 · <code>pd-work</code> 作业 · <code>pd-netty</code> 轨迹 · <code>pd-aggregation</code> 聚合</p>
+      </div>
+      <div class="layer">
+        <h4>数据与消息层</h4>
+        <p><code>MySQL 8</code> 单库 54 表 · <code>Redis 7</code> · <code>RabbitMQ</code> · Netty TCP · Nacos · XXL-Job · Docker Compose</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 真实截图 ==================== -->
+<section class="sec shots" id="screens">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">真实截图</span>
+      <h2 class="section-title">来自真实运行环境的实测画面</h2>
+      <p class="section-sub">以下截图均采集自 2026-10-12 真实运行环境（192.168.20.130），点击可放大查看。</p>
+    </div>
+    <div class="shot-groups">
+      <div class="shot-group">
+        <h3>后台管理端</h3>
+        <div class="shot-grid">
+          <figure class="shot" data-cap="管理端登录 · 统一账号 + 验证码校验">
+            <div class="frame"><img src="screenshots/admin-login.png" alt="管理端登录页面截图"></div>
+            <figcaption><b>管理端登录</b>统一账号 + 验证码校验</figcaption>
+          </figure>
+          <figure class="shot" data-cap="工作台仪表盘 · 订单 / 告警 / 待办与图表统计">
+            <div class="frame"><img src="screenshots/admin-dashboard.png" alt="工作台仪表盘截图"></div>
+            <figcaption><b>工作台仪表盘</b>订单 / 告警 / 待办与图表统计</figcaption>
+          </figure>
+          <figure class="shot" data-cap="订单管理 · 状态筛选 / 分页列表（真实数据）">
+            <div class="frame"><img src="screenshots/admin-order.png" alt="订单管理页面截图"></div>
+            <figcaption><b>订单管理</b>状态筛选 / 分页列表（真实数据）</figcaption>
+          </figure>
+        </div>
+      </div>
+      <div class="shot-group">
+        <h3>移动三端 App</h3>
+        <div class="shot-grid">
+          <figure class="shot mobile" data-cap="客户端 · 心飞速运 · 寄件 / 查物流 H5">
+            <div class="frame"><img src="screenshots/mobile-customer.png" alt="客户端心飞速运截图"></div>
+            <figcaption><b>客户端 · 心飞速运</b>寄件 / 查物流 · H5</figcaption>
+          </figure>
+          <figure class="shot mobile" data-cap="快递员端 · 心飞快递员 · 取派件任务 H5">
+            <div class="frame"><img src="screenshots/mobile-courier.png" alt="快递员端心飞快递员截图"></div>
+            <figcaption><b>快递员端 · 心飞快递员</b>取派件任务 · H5</figcaption>
+          </figure>
+          <figure class="shot mobile" data-cap="司机端 · 心飞司机宝 · 运输任务 / 位置上报 H5">
+            <div class="frame"><img src="screenshots/mobile-driver.png" alt="司机端心飞司机宝截图"></div>
+            <figcaption><b>司机端 · 心飞司机宝</b>运输任务 / 位置上报 · H5</figcaption>
+          </figure>
+        </div>
+      </div>
+      <div class="shot-group">
+        <h3>运维与中间件</h3>
+        <div class="shot-grid half">
+          <figure class="shot" data-cap="部署状态总览 · 全部微服务健康监测">
+            <div class="frame"><img src="screenshots/ops-deploy-status.png" alt="部署状态总览截图"></div>
+            <figcaption><b>部署状态总览</b>全部微服务健康监测</figcaption>
+          </figure>
+          <figure class="shot" data-cap="Gitea CI/CD 工作流 · 按序部署 + 逐服务健康检查">
+            <div class="frame"><img src="screenshots/ops-gitea-workflow.png" alt="Gitea CI/CD 工作流截图"></div>
+            <figcaption><b>Gitea CI/CD 工作流</b>deploy-backend 按序部署</figcaption>
+          </figure>
+          <figure class="shot" data-cap="Nacos 注册 / 配置中心 · 服务与配置统一管理">
+            <div class="frame"><img src="screenshots/ops-nacos.png" alt="Nacos 控制台截图"></div>
+            <figcaption><b>Nacos 控制台</b>注册 / 配置中心</figcaption>
+          </figure>
+          <figure class="shot" data-cap="XXL-Job 任务调度中心 · 定时任务与调度报表">
+            <div class="frame"><img src="screenshots/ops-xxljob.png" alt="XXL-Job 调度中心截图"></div>
+            <figcaption><b>XXL-Job 调度中心</b>分布式任务调度</figcaption>
+          </figure>
+          <figure class="shot" data-cap="Docker 容器总览 · 微服务与中间件容器健康状态">
+            <div class="frame"><img src="screenshots/ops-docker.png" alt="Docker 容器总览截图"></div>
+            <figcaption><b>Docker 容器总览</b>容器健康状态</figcaption>
+          </figure>
+          <figure class="shot" data-cap="MySQL 8.0 数据库 · xinfei_tms 全部 54 张表（InnoDB）">
+            <div class="frame"><img src="screenshots/ops-mysql.png" alt="MySQL 数据库截图"></div>
+            <figcaption><b>MySQL 8.0 数据库</b>xinfei_tms 54 张表</figcaption>
+          </figure>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 技术栈 ==================== -->
+<section class="sec" id="stack">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">技术栈</span>
+      <h2 class="section-title">27 项技术栈，全新一代</h2>
+      <p class="section-sub">2026 年的新项目没有历史包袱，直接采用最新 LTS 与主流组件。</p>
+    </div>
+    <div class="stack-grid">
+      <div class="card stack-card">
+        <h3><span class="dot"></span>后端框架</h3>
+        <ul>
+          <li>JDK 21（虚拟线程）+ Spring Boot 3.5.7</li>
+          <li>Spring Cloud 2025.0.0 + Alibaba 2025.0.0.0</li>
+          <li>Spring Cloud Gateway 统一网关</li>
+          <li>Nacos 注册 / 配置中心</li>
+          <li>Sa-Token + JWT 多租户认证</li>
+          <li>Drools 8.38 规则引擎 + XXL-Job 2.4.1</li>
+          <li>MyBatis-Plus + Druid + MapStruct</li>
+          <li>Netty TCP 轨迹接入</li>
+        </ul>
+      </div>
+      <div class="card stack-card">
+        <h3><span class="dot"></span>前端与移动端</h3>
+        <ul>
+          <li>管理端：Vue 3.5 + Vite + Element Plus</li>
+          <li>状态：Pinia · 图表：ECharts</li>
+          <li>移动端：uni-app Vue3 + uview-plus</li>
+          <li>四端：管理端 / 客户端 / 快递员端 / 司机端</li>
+        </ul>
+      </div>
+      <div class="card stack-card">
+        <h3><span class="dot"></span>存储与中间件</h3>
+        <ul>
+          <li>MySQL 8.0 单库分域（54 张表）</li>
+          <li>Redis 7 缓存 · RabbitMQ 消息解耦</li>
+          <li>Docker Compose 容器编排</li>
+          <li>Gitea + Actions CI/CD 自动构建</li>
+          <li>百度地图：地址解析 / 距离计算 / 轨迹</li>
+        </ul>
+      </div>
+      <div class="card stack-card">
+        <h3><span class="dot"></span>规划中（演进路线）</h3>
+        <ul>
+          <li>MinIO 对象存储 · Zipkin 链路追踪（P1）</li>
+          <li>Kafka 轨迹流 + Debezium CDC（P2）</li>
+          <li>Elasticsearch 检索 · Doris OLAP（P2）</li>
+          <li>Google OR-Tools 智能排线（P2）</li>
+          <li>Spring AI 智能客服 / 查件 Agent（P3）</li>
+          <li>快递100 开放平台 · Flowable 审批流（P3）</li>
+        </ul>
+      </div>
+    </div>
+    <div class="badge-cloud">
+      <img src="badges/license.svg" alt="BUSL-1.1">
+      <img src="badges/jdk.svg" alt="JDK 21">
+      <img src="badges/spring-cloud.svg" alt="Spring Cloud">
+      <img src="badges/gateway.svg" alt="Gateway">
+      <img src="badges/sa-token.svg" alt="Sa-Token">
+      <img src="badges/nacos.svg" alt="Nacos">
+      <img src="badges/mysql.svg" alt="MySQL">
+      <img src="badges/redis.svg" alt="Redis">
+      <img src="badges/netty.svg" alt="Netty">
+      <img src="badges/drools.svg" alt="Drools">
+      <img src="badges/xxl-job.svg" alt="XXL-Job">
+      <img src="badges/kafka.svg" alt="Kafka">
+      <img src="badges/vue.svg" alt="Vue">
+      <img src="badges/uniapp.svg" alt="uni-app">
+      <img src="badges/minio.svg" alt="MinIO">
+      <img src="badges/or-tools.svg" alt="OR-Tools">
+      <img src="badges/doris.svg" alt="Doris">
+      <img src="badges/spring-ai.svg" alt="Spring AI">
+      <img src="badges/druid.svg" alt="Druid">
+      <img src="badges/baidu-map.svg" alt="百度地图">
+      <span class="more">+ 7 项规划中组件</span>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 快速开始 ==================== -->
+<section class="sec start" id="quickstart">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">快速开始</span>
+      <h2 class="section-title">5 分钟跑起来</h2>
+      <p class="section-sub">Docker Compose 一键起中间件，建库后启动服务即可体验完整业务闭环。</p>
+    </div>
+    <div class="start-steps">
+      <div class="step">
+        <span class="n">1</span>
+        <div>
+          <h4>克隆仓库</h4>
+          <p>从 Gitee 拉取最新代码（推送到 GitHub 后同样适用）。</p>
+          <code class="k"><span class="c"># 克隆仓库</span>
+git clone https://gitee.com/itxinfei/xinfei-tms.git
+cd xinfei-tms</code>
+        </div>
+      </div>
+      <div class="step">
+        <span class="n">2</span>
+        <div>
+          <h4>启动中间件</h4>
+          <p>一键拉起 MySQL / Redis / RabbitMQ / Nacos 等基础设施。</p>
+          <code class="k"><span class="c"># 起中间件</span>
+docker-compose up -d</code>
+        </div>
+      </div>
+      <div class="step">
+        <span class="n">3</span>
+        <div>
+          <h4>初始化数据库</h4>
+          <p>执行 <code class="inline">docs/sql</code> 建库脚本，一键得到 xinfei_tms 单库 + 种子数据（54 张表）。</p>
+          <code class="k"><span class="c"># 建库脚本在 docs/sql 目录（重构v2 全量脚本 + 演示种子数据）</span>
+mysql -u root -p &lt; docs/sql/重构v2/00_create_database.sql</code>
+        </div>
+      </div>
+      <div class="step">
+        <span class="n">4</span>
+        <div>
+          <h4>启动服务与前端</h4>
+          <p>按序启动 pd-auth → pd-gateway → 业务微服务，再启动管理端与移动端。</p>
+          <code class="k"><span class="c"># 后端（每个微服务目录下）</span>
+mvn spring-boot:run
+<span class="c"># 管理端前端</span>
+cd pd-admin-ui-vue3 && pnpm i && pnpm dev
+<span class="c"># 移动端：HBuilderX 导入 pd-mobile 运行 uni-app</span></code>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 对比 ==================== -->
+<section class="sec" id="compare">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">横向对比</span>
+      <h2 class="section-title">心飞 vs 同类方案</h2>
+      <p class="section-sub">「同类开源」泛指 Gitee / GitHub 上主流开源 TMS 项目，不针对特定项目。</p>
+    </div>
+    <div class="cmp-wrap">
+      <table class="cmp">
+        <colgroup><col><col><col><col></colgroup>
+        <thead>
+          <tr><th>能力</th><th>心飞物流TMS</th><th>同类开源 TMS</th><th>商业 TMS</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>四端协同（管理 + 客户 + 快递员 + 司机）</td><td class="ok">是</td><td class="no">否 · 仅管理端</td><td class="ok">是</td></tr>
+          <tr><td>JDK 21 + Spring Boot 3.5</td><td class="ok">是</td><td class="no">否 · 多为 JDK 8</td><td class="ok">部分已升级</td></tr>
+          <tr><td>多租户 SaaS</td><td class="ok">是</td><td class="no">否</td><td class="ok">是</td></tr>
+          <tr><td>智能调度（Drools 规则引擎）</td><td class="ok">是</td><td class="no">否 · if-else 硬编码</td><td class="ok">是</td></tr>
+          <tr><td>Netty 自建轨迹接入</td><td class="ok">是</td><td class="no">否</td><td class="ok">是</td></tr>
+          <tr><td>年费</td><td class="price">0（学习/研究）</td><td>0</td><td class="price">3-30 万</td></tr>
+          <tr><td>二开自由</td><td class="ok">是 · 源码公开（商用需授权）</td><td class="ok">是</td><td class="no">否 · 黑盒交付</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 里程碑 ==================== -->
+<section class="sec milestones" id="milestones">
+  <div class="wrap">
+    <div class="section-head" style="text-align:center">
+      <span class="eyebrow" style="justify-content:center">里程碑</span>
+      <h2 class="section-title">项目演进路线</h2>
+    </div>
+    <ol class="timeline">
+      <li class="tl-item done">
+        <time class="tl-time">2026-09</time>
+        <span class="tl-dot"></span>
+        <div class="tl-body"><h4>项目立项</h4><p>四端骨架 + 13 微服务 + 全链路业务闭环</p></div>
+      </li>
+      <li class="tl-item done">
+        <time class="tl-time">2026-10</time>
+        <span class="tl-dot"></span>
+        <div class="tl-body"><h4>技术栈现代化</h4><p>JDK 21 + SB 3.5.7 + Vue 3.5 + Sa-Token 多租户 + XXL-Job</p></div>
+      </li>
+      <li class="tl-item todo">
+        <time class="tl-time">2026-Q4</time>
+        <span class="tl-dot"></span>
+        <div class="tl-body"><h4>轨迹链路升级</h4><p>Kafka + TDengine / 鹰眼 + ES 运单检索</p></div>
+      </li>
+      <li class="tl-item todo">
+        <time class="tl-time">2027-H1</time>
+        <span class="tl-dot"></span>
+        <div class="tl-body"><h4>智能排线</h4><p>OR-Tools + MinIO 回单 + Doris 报表</p></div>
+      </li>
+      <li class="tl-item todo">
+        <time class="tl-time">2027-H2</time>
+        <span class="tl-dot"></span>
+        <div class="tl-body"><h4>AI 能力落地</h4><p>Spring AI 智能客服 + 回单 OCR + 动态 ETA</p></div>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- ==================== FAQ ==================== -->
+<section class="sec" id="faq">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">常见问题</span>
+      <h2 class="section-title">FAQ</h2>
+    </div>
+    <div class="faq-list">
+      <div class="faq-item">
+        <details>
+          <summary><span class="q">Q</span>能商用吗？<span class="pm">+</span></summary>
+          <div class="ans">个人学习、研究、教学、毕设免费；企业/组织商用（生产环境、私有化交付、对外提供服务等）需联系作者获取商业授权（BUSL-1.1）。</div>
+        </details>
+      </div>
+      <div class="faq-item">
+        <details>
+          <summary><span class="q">Q</span>技术栈为什么这么新（JDK 21 + Spring Boot 3.5）？<span class="pm">+</span></summary>
+          <div class="ans">2026 年的新项目没有历史包袱，直接采用最新 LTS，避免日后被迫升级。</div>
+        </details>
+      </div>
+      <div class="faq-item">
+        <details>
+          <summary><span class="q">Q</span>有文档吗？<span class="pm">+</span></summary>
+          <div class="ans">有。架构、技术栈、功能规划、部署、开发环境手册齐全，见仓库 docs/ 目录（01-技术栈说明、02-架构设计、04-部署与二次开发指南等）。</div>
+        </details>
+      </div>
+      <div class="faq-item">
+        <details>
+          <summary><span class="q">Q</span>移动端支持小程序吗？<span class="pm">+</span></summary>
+          <div class="ans">uni-app 三端架构（App / H5 / 小程序），当前以 H5 为主，小程序发布前需配置真实 appid。</div>
+        </details>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 参与贡献 ==================== -->
+<section class="sec contribute" id="contribute">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">参与贡献</span>
+      <h2 class="section-title">一起让心飞更好</h2>
+      <p class="section-sub">欢迎提交 Pull Request！提交前请遵守以下约定。</p>
+    </div>
+    <div class="grid3">
+      <div class="card">
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg></span>
+        <h3>代码规范</h3>
+        <p>后端遵循《阿里巴巴 Java 开发手册》，前端遵循 ESLint + Prettier + Stylelint 约束。</p>
+      </div>
+      <div class="card">
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M3 3v18h18M8 17l4-5 3 3 6-8"/></svg></span>
+        <h3>提交格式</h3>
+        <p><code class="inline">type(scope): description</code>，如 <code class="inline">feat(oms): 新增拆单接口</code> / <code class="inline">fix(dispatch): 修复路线规划空指针</code>。</p>
+      </div>
+      <div class="card">
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/><path d="M9 7v10M15 7v10"/></svg></span>
+        <h3>工程约束</h3>
+        <p>不过度设计、禁止硬编码（cron / 阈值 / 地图 Key / 状态数字一律外部化配置）；所有请求走网关，禁止直连微服务。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ==================== Footer ==================== -->
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <div class="f-brand">
+          <img src="brand/logo-full.png" alt="心飞物流">
+          <b>心飞物流TMS</b>
+        </div>
+        <p class="desc">面向运输企业与承运商的开源运输管理系统。全流程闭环 · 四端协同 · 微服务架构 · 开箱即用。</p>
+      </div>
+      <div>
+        <h4>仓库与文档</h4>
+        <ul>
+          <li><a href="https://gitee.com/itxinfei/xinfei-tms" target="_blank" rel="noopener">Gitee 仓库</a></li>
+          <li><a href="../README.md">README（中文）</a></li>
+          <li><a href="../README.en.md">README（English）</a></li>
+          <li><a href="../02-架构设计.md">架构设计文档</a></li>
+          <li><a href="../04-部署与二次开发指南.md">部署与二次开发指南</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>联系与支持</h4>
+        <ul>
+          <li><a href="https://gitee.com/itxinfei" target="_blank" rel="noopener">作者主页</a></li>
+          <li>商务合作 / 项目讲解 / 私有化部署</li>
+          <li><span class="qq">QQ：747011882</span></li>
+          <li>BUSL-1.1 · 学习研究免费，商用需授权</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 心飞物流TMS · 开源运输管理系统</span>
+      <span>基于 <a href="https://gitee.com/itxinfei/xinfei-tms" target="_blank" rel="noopener">gitee.com/itxinfei/xinfei-tms</a> 构建</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ==================== 灯箱 ==================== -->
+<div class="lightbox" id="lightbox" role="dialog" aria-label="截图预览">
+  <img id="lightboxImg" src="" alt="截图大图">
+  <div class="cap" id="lightboxCap"></div>
+</div>
+
+<script>
+/* ===== 移动端导航 ===== */
+(function(){
+  var nav=document.getElementById('nav');
+  var toggle=document.getElementById('navToggle');
+  toggle.addEventListener('click',function(){nav.classList.toggle('open');});
+  nav.querySelectorAll('a').forEach(function(a){
+    a.addEventListener('click',function(){nav.classList.remove('open');});
+  });
+})();
+
+/* ===== 截图灯箱 ===== */
+(function(){
+  var lb=document.getElementById('lightbox');
+  var img=document.getElementById('lightboxImg');
+  var cap=document.getElementById('lightboxCap');
+  document.querySelectorAll('.shot').forEach(function(shot){
+    shot.addEventListener('click',function(){
+      var src=shot.querySelector('img').getAttribute('src');
+      img.setAttribute('src',src);
+      cap.textContent=shot.getAttribute('data-cap')||'';
+      lb.classList.add('open');
+    });
+  });
+  lb.addEventListener('click',function(){lb.classList.remove('open');});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'){lb.classList.remove('open');}});
+})();
+</script>
+</body>
+</html>
+</main>
+</body>
+</html>

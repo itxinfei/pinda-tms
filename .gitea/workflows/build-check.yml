@@ -10,7 +10,7 @@
 #   历史浪费点只有一个：只 compile 不 install，内部 SNAPSHOT 从不进仓库。
 # - mvn clean install（不再只 compile）双重作用：
 #     ① 编译门禁，主干不可编译直接红；
-#     ② 全部 SNAPSHOT（pd-common/pd-service-api 等内部模块）装进 /root/.m2/repository，
+#     ② 全部 SNAPSHOT（xf-common/xf-service-api 等内部模块）装进 /root/.m2/repository，
 #        作为 deploy-backend.yml / deploy-be.sh 单服务发布去掉 -am 后的上游制品基线；
 #        成功后把 HEAD 写入 /root/.m2/.xinfei-baseline.revision（=宿主 /data/m2/ 同名文件）。
 # - concurrency：连续 push 只保留最新一轮，旧 run 自动取消，配合 runner capacity=1 不排队空转。
@@ -58,17 +58,17 @@ jobs:
         timeout-minutes: 25
 
       - name: Maven 测试门禁（ArchUnit 架构红线 + 各模块单测）
-        # 曾经的盲区：push 只编译零测试。此步把《12》§8 横切红线（ArchUnit，如 pd-dispatch
+        # 曾经的盲区：push 只编译零测试。此步把《12》§8 横切红线（ArchUnit，如 xf-dispatch
         # ModuleArchitectureTest）与各模块单测接入 CI；install 已装好内部 SNAPSHOT，test 复用、无需 -am。
         # 2026-10-14 提速：全 reactor `mvn test` 串行空转 13 个模块（实际仅 4 个有测试）是主要耗时。
-        #   ① 收窄到有测试的 4 个模块（pd-oms/pd-dispatch/pd-work/pd-netty），其余 9 个无测试模块不再空转；
+        #   ① 收窄到有测试的 4 个模块（xf-oms/xf-dispatch/xf-work/xf-netty），其余 9 个无测试模块不再空转；
         #   ② 加 -T 1C 并行；
         #   ③ 漏测兜底：一旦这 4 个模块之外出现新测试文件，自动回退全量 mvn test，不静默漏测。
         run: |
           set -e
           ls -ld /root/.m2 || { echo "::error::/root/.m2 未挂载，检查 act_runner container.options"; exit 1; }
-          TEST_MODS="pd-oms,pd-dispatch,pd-work,pd-netty"
-          EXTRA=$(git ls-files 'Test*.java' '*Test.java' '*Tests.java' '*TestCase.java' | grep -vE '^pd-(oms|dispatch|work|netty)/' || true)
+          TEST_MODS="xf-oms,xf-dispatch,xf-work,xf-netty"
+          EXTRA=$(git ls-files 'Test*.java' '*Test.java' '*Tests.java' '*TestCase.java' | grep -vE '^xf-(oms|dispatch|work|netty)/' || true)
           if [ -n "$EXTRA" ]; then
             echo "::warning::检测到 4 个测试模块之外的测试文件，回退全量 mvn test（避免漏测）："
             echo "$EXTRA"
@@ -83,9 +83,9 @@ jobs:
     # ============================================================
     # 变更感知自动部署（2026-10-14 用户拍板）：编译+测试门禁绿后自动执行。
     # 以「部署基线」/root/.m2/.xinfei-deploy.revision（上次成功部署的 HEAD）做 diff：
-    #   - 后端：服务模块变更→只部署该服务；共享库(pd-common/pd-service-api 等)/
+    #   - 后端：服务模块变更→只部署该服务；共享库(xf-common/xf-service-api 等)/
     #     根 pom/deploy 编排/.gitea 变更→全量收敛（保守正确）
-    #   - 前端：pd-admin-ui-vue3→admin；pd-mobile/<端>→对应端；pd-mobile 共享→三端
+    #   - 前端：xf-admin-ui-vue3→admin；xf-mobile/<端>→对应端；xf-mobile 共享→三端
     #   - diff 含 *.sql → 中止（DB 门禁），转人工以 db_approved=true 手动部署
     #   - 任一服务/端探活(后端4min/前端60s)未过→自动回滚 PREV；
     #     部署基线仅在全部成功后刷新
@@ -122,11 +122,11 @@ jobs:
         run: |
           {
             echo 'declare -A MOD_OF=('
-            echo '  [xf-auth]=pd-auth [xf-base]=pd-base [xf-oms]=pd-oms [xf-work]=pd-work'
-            echo '  [xf-user]=pd-user [xf-dispatch]=pd-dispatch [xf-aggregation]=pd-aggregation [xf-netty]=pd-netty'
-            echo '  [xf-web-manager]=pd-web/pd-web-manager [xf-web-driver]=pd-web/pd-web-driver'
-            echo '  [xf-web-courier]=pd-web/pd-web-courier [xf-web-customer]=pd-web/pd-web-customer'
-            echo '  [xf-gateway]=pd-gateway'
+            echo '  [xf-auth]=xf-auth [xf-base]=xf-base [xf-oms]=xf-oms [xf-work]=xf-work'
+            echo '  [xf-user]=xf-user [xf-dispatch]=xf-dispatch [xf-aggregation]=xf-aggregation [xf-netty]=xf-netty'
+            echo '  [xf-web-manager]=xf-web/xf-web-manager [xf-web-driver]=xf-web/xf-web-driver'
+            echo '  [xf-web-courier]=xf-web/xf-web-courier [xf-web-customer]=xf-web/xf-web-customer'
+            echo '  [xf-gateway]=xf-gateway'
             echo ')'
             echo 'ORDER="xf-auth xf-base xf-oms xf-work xf-user xf-dispatch xf-aggregation xf-netty xf-web-manager xf-web-driver xf-web-courier xf-web-customer xf-gateway"'
           } > /tmp/svc.sh
@@ -194,11 +194,11 @@ jobs:
           while IFS= read -r f; do
             if [ -z "$f" ]; then continue; fi
             case "$f" in
-              pd-admin-ui-vue3/*) fa=1 ;;
-              pd-mobile/driver/*) fd=1 ;;
-              pd-mobile/courier/*) fc=1 ;;
-              pd-mobile/customer/*) fu=1 ;;
-              pd-mobile/*) fs=1 ;;
+              xf-admin-ui-vue3/*) fa=1 ;;
+              xf-mobile/driver/*) fd=1 ;;
+              xf-mobile/courier/*) fc=1 ;;
+              xf-mobile/customer/*) fu=1 ;;
+              xf-mobile/*) fs=1 ;;
             esac
           done <<< "$CHANGED"
           apps=""
@@ -333,14 +333,14 @@ jobs:
           echo "FE_TAG=$FE_TAG" >> "$GITHUB_ENV"
           build_one() {
             case "$1" in
-              admin) docker build -f deploy/apps/Dockerfile.admin-h5 -t "xinfei/pd-admin-h5:${FE_TAG}" . ;;
+              admin) docker build -f deploy/apps/Dockerfile.admin-h5 -t "xinfei/xf-admin-h5:${FE_TAG}" . ;;
               *) docker build -f deploy/apps/Dockerfile.mobile-h5 \
-                   --build-arg APP_PATH=pd-mobile --build-arg APP_SUBDIR="$1" \
-                   --build-arg APP_NAME="pd-mobile-$1" -t "xinfei/pd-${1}-h5:${FE_TAG}" . ;;
+                   --build-arg APP_PATH=xf-mobile --build-arg APP_SUBDIR="$1" \
+                   --build-arg APP_NAME="xf-mobile-$1" -t "xinfei/xf-${1}-h5:${FE_TAG}" . ;;
             esac
           }
           for app in $APPS; do
-            img="pd-${app}-h5"; tv="$(echo "$img" | tr 'a-z-' 'A-Z_')_TAG"
+            img="xf-${app}-h5"; tv="$(echo "$img" | tr 'a-z-' 'A-Z_')_TAG"
             prev=$(docker inspect -f '{{.Config.Image}}' "$img" 2>/dev/null | sed -n 's/.*://p' || true)
             echo ">> [$app] 回滚基线 PREV=${prev:-（首次部署）}"
             build_one "$app"

@@ -43,12 +43,12 @@ HEALTH_TRIES=48   # 每 5s 一次，最长 4 分钟
 ORDER=(xf-auth xf-base xf-oms xf-work xf-user xf-dispatch xf-aggregation xf-netty \
        xf-web-manager xf-web-driver xf-web-courier xf-web-customer xf-gateway)
 declare -A MOD_OF=(
-  [xf-auth]=pd-auth [xf-base]=pd-base [xf-oms]=pd-oms [xf-work]=pd-work
-  [xf-user]=pd-user [xf-dispatch]=pd-dispatch [xf-aggregation]=pd-aggregation
-  [xf-netty]=pd-netty
-  [xf-web-manager]=pd-web/pd-web-manager [xf-web-driver]=pd-web/pd-web-driver
-  [xf-web-courier]=pd-web/pd-web-courier [xf-web-customer]=pd-web/pd-web-customer
-  [xf-gateway]=pd-gateway
+  [xf-auth]=xf-auth [xf-base]=xf-base [xf-oms]=xf-oms [xf-work]=xf-work
+  [xf-user]=xf-user [xf-dispatch]=xf-dispatch [xf-aggregation]=xf-aggregation
+  [xf-netty]=xf-netty
+  [xf-web-manager]=xf-web/xf-web-manager [xf-web-driver]=xf-web/xf-web-driver
+  [xf-web-courier]=xf-web/xf-web-courier [xf-web-customer]=xf-web/xf-web-customer
+  [xf-gateway]=xf-gateway
 )
 
 usage() {

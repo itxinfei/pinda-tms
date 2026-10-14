@@ -16,18 +16,18 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>pd-common</module>
-        <module>pd-base</module>
-        <module>pd-oms</module>
-        <module>pd-work</module>
-        <module>pd-user</module>
-        <module>pd-service-api</module>
-        <module>pd-web</module>
-        <module>pd-dispatch</module>
-        <module>pd-aggregation</module>
-        <module>pd-netty</module>
-        <module>pd-gateway</module>
-        <module>pd-auth</module>
+        <module>xf-common</module>
+        <module>xf-base</module>
+        <module>xf-oms</module>
+        <module>xf-work</module>
+        <module>xf-user</module>
+        <module>xf-service-api</module>
+        <module>xf-web</module>
+        <module>xf-dispatch</module>
+        <module>xf-aggregation</module>
+        <module>xf-netty</module>
+        <module>xf-gateway</module>
+        <module>xf-auth</module>
     </modules>
 
     <properties>
@@ -44,7 +44,6 @@
         <easy-captcha.version>1.6.2</easy-captcha.version>
         <!-- Excel 导入导出（用户等管理端，SYS#4） -->
         <easyexcel.version>3.3.4</easyexcel.version>
-
         <!-- ↓↓↓ 新栈第三方版本（Boot3 / jakarta） ↓↓↓ -->
         <!-- FastJSON2（替换 fastjson 1.2.x） -->
         <fastjson2.version>2.0.53</fastjson2.version>
@@ -57,9 +56,9 @@
         <guava.version>33.4.8-jre</guava.version>
         <!-- Commons IO（Spring Boot 3.x BOM 不再托管，需统一显式版本） -->
         <commons-io.version>2.16.1</commons-io.version>
-        <!-- Drools（pd-oms 运费规则；8.38 为 8.x 最高、已 jakarta 化，纯 KIE API 编程式装配） -->
+        <!-- Drools（xf-oms 运费规则；8.38 为 8.x 最高、已 jakarta 化，纯 KIE API 编程式装配） -->
         <drools.version>8.38.0.Final</drools.version>
-        <!-- HttpClient 4（pd-oms HttpRequestUtil 过渡使用，Boot3 BOM 已不托管；迁 5 需重写工具类） -->
+        <!-- HttpClient 4（xf-oms HttpRequestUtil 过渡使用，Boot3 BOM 已不托管；迁 5 需重写工具类） -->
         <httpclient.version>4.5.11</httpclient.version>
         <!-- MapStruct：编译期 DTO/Entity 映射，替代 BeanUtils.copyProperties（全栈 238 处，逐步迁移） -->
         <mapstruct.version>1.6.3</mapstruct.version>
@@ -133,7 +132,7 @@
                 <artifactId>mybatis-plus-extension</artifactId>
                 <version>${mybatis-plus.version}</version>
             </dependency>
-            <!-- MyBatis-Plus 核心（IdentifierGenerator 等；pd-common 以 optional 引入做 ID 适配） -->
+            <!-- MyBatis-Plus 核心（IdentifierGenerator 等；xf-common 以 optional 引入做 ID 适配） -->
             <dependency>
                 <groupId>com.baomidou</groupId>
                 <artifactId>mybatis-plus-core</artifactId>

@@ -1,5 +1,5 @@
 /*
- * 从 pd-oms/src/main/resources/rules/orderAmountCalc.drl 生成 docs/sql/运价规则_种子_orderAmountCalc.sql
+ * 从 xf-oms/src/main/resources/rules/orderAmountCalc.drl 生成 docs/sql/运价规则_种子_orderAmountCalc.sql
  *
  * 用法（在仓库根目录）：node deploy/ci/gen-drools-seed-sql.js
  * 为什么要有这个生成器：rule 表里的 content 与 .drl 文件是同一份运价的两个副本，
@@ -9,7 +9,7 @@ const fs = require('fs')
 const path = require('path')
 
 const repo = path.resolve(__dirname, '..', '..')
-const drlPath = path.join(repo, 'pd-oms', 'src', 'main', 'resources', 'rules', 'orderAmountCalc.drl')
+const drlPath = path.join(repo, 'xf-oms', 'src', 'main', 'resources', 'rules', 'orderAmountCalc.drl')
 const outPath = path.join(repo, 'docs', 'sql', '运价规则_种子_orderAmountCalc.sql')
 
 const drl = fs.readFileSync(drlPath, 'utf8').replace(/\r\n/g, '\n').trimEnd()
@@ -21,19 +21,19 @@ if (drl.includes("'")) {
 }
 const literal = drl.replace(/\\/g, '\\\\')
 
-const sql = `-- 运价规则种子：把仓库里的 Drools 规则灌进 pd_oms.rule（可重复执行）
+const sql = `-- 运价规则种子：把仓库里的 Drools 规则灌进 xinfei_tms.rule（可重复执行）
 --
 -- 为什么需要：ReloadDroolsRulesService.loadRules() 只认 rule_key='tms'，而线上
--- pd_oms.rule 是 0 行（2026-10-08 实测）→ getKieContainer() 为空 →
+-- rule 表是 0 行（2026-10-08 于旧分库 pd_oms 实测）→ getKieContainer() 为空 →
 -- OrderServiceImpl.calculateAmount() 直接 return null：下单与报价都算不出运费。
 -- 仓库里从来没有这条 INSERT，所以"计价代码齐全"和"能算出价"是两回事。
 --
--- 单一真源是 pd-oms/src/main/resources/rules/orderAmountCalc.drl；改价后重新生成：
+-- 单一真源是 xf-oms/src/main/resources/rules/orderAmountCalc.drl；改价后重新生成：
 --   node deploy/ci/gen-drools-seed-sql.js
 -- 灌完必须让每个运行中的实例重载（规则装在单 JVM 内存里，多实例要逐台刷）：
 --   curl -X POST http://<xf-oms 实例>:8186/rules/reload
--- 只灌 pd_oms：xf-oms 的 datasource 实测就是 pd_oms（Nacos 云端旧 dataId pd-oms-prod.yml:14），
--- xinfei_tms 里的同名 rule 表是历史副本，不喂代码。
+-- 库名口径（2026-10-10 架构重置）：原 8 分库已合并为单库 xinfei_tms，
+--   xf-oms 的 datasource 实测即 MYSQL_DATABASE 默认值 xinfei_tms（application.yml:52），旧的 pd_oms 库已不存在。
 --
 -- ⚠️ 重构/删码提示（2026-10-09）：本 content 里三条续重规则调用
 --   new DroolsRulesServiceImpl().calcFee(addressRule)（.drl 第 33/50/67 行）。该调用
@@ -43,7 +43,7 @@ const sql = `-- 运价规则种子：把仓库里的 Drools 规则灌进 pd_oms.
 --   口径与算例的唯一真源：docs/需求文档/52-旧代码独占知识固化_计费事件与异常上报契约.md §1
 --   （旧代码删除后，本 SQL 与《52》§1 共同构成运价规则的幸存副本）。
 
-USE pd_oms;
+USE xinfei_tms;
 
 DELETE FROM rule WHERE rule_key = 'tms';
 

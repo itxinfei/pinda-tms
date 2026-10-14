@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xinfei.mapper.base.XfGoodsTypeMapper">
+
+    <select id="findByPage" resultType="com.xinfei.entity.base.XfGoodsType">
+        SELECT
+        goods_type.*
+        FROM
+        base_goods_type goods_type
+        <if test="truckTypeId != null || truckTypeName != null">
+            LEFT JOIN base_truck_type_goods truck_type_goods_type ON goods_type.id = truck_type_goods_type.goods_type_id
+        </if>
+        <if test="truckTypeName != null">
+            LEFT JOIN base_truck_type truck_type ON 	truck_type_goods_type.truck_type_id=truck_type.id
+        </if>
+        <where>
+            <!-- status 为 null 时不过滤，档案列表可同时查看启用与停用项 -->
+            <if test="status != null">
+                AND goods_type.status = #{status}
+            </if>
+            <if test="truckTypeName != null">
+                AND truck_type.status=1
+            </if>
+            <if test="name != null">
+                AND goods_type.name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="truckTypeId != null">
+                AND truck_type_goods_type.truck_type_id = #{truckTypeId}
+            </if>
+            <if test="truckTypeName != null">
+                AND goods_type.name LIKE CONCAT('%', #{truckTypeName}, '%')
+            </if>
+        </where>
+    </select>
+
+</mapper>
