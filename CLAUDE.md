@@ -81,6 +81,9 @@
 - **品牌色**：全端统一心飞红 `#FF0033`（按压 `#CC0029`、浅底 `#FFE5EA`）；原神领橙红 `#E15536`/管理端蓝 `#2B6CFF` 已废止（见《03》D-10、《13》§2.1、《14》§3）。
 - **线上 dev 账号（密码均 123456）**：管理端 `admin`(tenantCode=xinfei)；三端 `driver04`/`courier01`/`customer01`；统一演示 `demo`。`member_info`/`base_truck_driver` 仍空（业务数据无种子）。
 - **Logo 落地**：品牌资产库 `docs/brand/`；管理端 `public/favicon.ico` + `src/assets/images/`（logo-mark.png 图形 / logo-full.png 组合 / logo.png 旧组合标已不引用 / login-hero.png）；移动三端 `src/static/`（logo-mark-transparent.png 图形透明标 / logo-full-login.png 登录组合标 / logo-app.png App 图标 / favicon.ico / logo-<48~1024>.png 供 manifest），登录页 `/static/logo-full-login.png`。
+- **Nacos 分组迁移 xinfei-tms（2026-10-14 已生效）**：13 个后端服务 yml（含 `pd-web/pd-web-*` 嵌套目录，共 42 处 `group:`）+ Nacos 服务端 14 个配置已从 `pinda-tms` 组迁至 `xinfei-tms` 组，滚动部署后全部服务已验证注册新分组；旧组配置暂留作回退，稳定后可删。
+- **服务器品牌文案（2026-10-14 已改）**：Gitea `APP_NAME = 心飞物流`（已重启生效，配置备份 `.bak-xinfei`）、宝塔 `pinda-fronts.conf` 与 `/data/pinda-deploy/deploy-fe.sh` 注释已替换；`/data/pinda-tms/deploy/` 10 个文件的"品达TMS"注释已改（均带 `.bak-xinfei` 备份）。镜像/容器/库名等运行时标识符由 `0c41133` 停机迁移统一处理，勿散改。
+- **CI 前端部署哨兵值修复（2026-10-14，提交 72463356）**：`build-check.yml` 全量收敛路径曾把 `APPS=ALL` 直拼镜像名导致 `pinda/pd-ALL-h5` 非法标签，已改为真实四端列表 `admin driver courier customer`；后端 `SERVICES=ALL→$ORDER` 翻译逻辑不变。
 
 ## 5.2 当前阶段工作定调（🔴 2026-10-11 拍板，最高优先级）
 > 权威全文：SRS《06》§1.6；执行摘要《12》§0/§4。项目处于内网 dev、半成品、无真实用户、不上线；开发一切围绕管理端可见可用展开。
