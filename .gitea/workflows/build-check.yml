@@ -1,5 +1,5 @@
 # ============================================
-# 品达TMS 后端 push 编译门禁（Gitea Actions）
+# 心飞TMS 后端 push 编译门禁（Gitea Actions）
 #
 # 策略（2026-10-12 提速改造）：
 # - 触发：push 到 master（每次推送兜底校验主干可编译）+ workflow_dispatch（可手动补跑）

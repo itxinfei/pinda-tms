@@ -247,7 +247,7 @@ function createSseConnection(options: UseSseOptions = {}) {
       .then(async (response) => {
         if (!response.ok) {
           if (response.status === 401 || response.status === 403) {
-            // 品达无 refreshToken：401/403 直接走会话失效出口，弹窗后跳登录页，不再刷新重连
+            // 心飞无 refreshToken：401/403 直接走会话失效出口，弹窗后跳登录页，不再刷新重连
             connectionTimeoutTimer = clearTimer(connectionTimeoutTimer);
             await useUserStoreHook().redirectToLogin("expired");
             isManualDisconnect = true;

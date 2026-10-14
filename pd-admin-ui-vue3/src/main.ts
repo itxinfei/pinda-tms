@@ -28,7 +28,7 @@ Object.entries(ElementPlusIcons).forEach(([name, comp]) => app.component(name, c
 
 setupPermissionGuard();
 
-// 临时关掉：SSE 实时推送和字典同步（品达后端暂无这些接口）
+// 临时关掉：SSE 实时推送和字典同步（心飞后端暂无这些接口）
 // useSse().connect();
 // useDictStoreHook().setupDictSync();
 

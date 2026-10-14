@@ -2,7 +2,7 @@
  * API 响应壳
  */
 export interface ApiResult<T = unknown> {
-  /** 业务状态码（脚手架为字符串码，品达后端为数字码） */
+  /** 业务状态码（脚手架为字符串码，心飞后端为数字码） */
   code: string | number;
   /** 业务数据 */
   data: T;

@@ -98,7 +98,7 @@ public class AlipayPayChannel implements PayChannel {
         bizContent.put("out_trade_no", payNo);
         bizContent.put("product_code", "FAST_INSTANT_TRADE_PAY");
         bizContent.put("total_amount", amount.toPlainString());
-        bizContent.put("subject", "品达物流-订单" + orderId);
+        bizContent.put("subject", "心飞物流-订单" + orderId);
         params.put("biz_content", JSON.toJSONString(bizContent));
 
         // RSA2 签名

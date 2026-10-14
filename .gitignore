@@ -110,6 +110,7 @@ codeback/
 # 服务器运维敏感文件（不入库）
 deploy/middleware/my.cnf
 deploy/ci/docker-compose.ci.yml
+心飞TMS服务器优化报告-*.md
 品达TMS服务器优化报告-*.md
 
 # ===== AI 工具本地配置与本地调试脚本（明确私有，不进任何 remote） =====

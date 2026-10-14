@@ -6,7 +6,7 @@
 		{
 			"path": "pages/customer/home/index",
 			"style": {
-				"navigationBarTitleText": "品达物流 · 客户端",
+				"navigationBarTitleText": "心飞物流 · 客户端",
 				"enablePullDownRefresh": false
 			}
 		},
@@ -70,7 +70,7 @@
 	],
 	"globalStyle": {
 		"navigationBarTextStyle": "white",
-		"navigationBarTitleText": "品达物流 · 客户端",
+		"navigationBarTitleText": "心飞物流 · 客户端",
 		"navigationBarBackgroundColor": "#E15536",
 		"backgroundColor": "#F5F6F8"
 	}

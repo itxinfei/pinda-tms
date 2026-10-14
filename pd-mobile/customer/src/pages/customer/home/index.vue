@@ -1,12 +1,12 @@
 <template>
   <view class="page home-page">
-    <u-navbar :title="'品达物流'" :back="false" :borderBottom="false" bgColor="#E15536" placeholder>
+    <u-navbar :title="'心飞物流'" :back="false" :borderBottom="false" bgColor="#E15536" placeholder>
       <template #left><view /></template>
     </u-navbar>
 
     <!-- 欢迎区 -->
     <view class="home-hero">
-      <view class="home-title">您好，欢迎使用品达物流</view>
+      <view class="home-title">您好，欢迎使用心飞物流</view>
       <view class="home-count">
         <view class="count-num">{{ countNum }}</view>
         <view class="count-label">当前进行中的订单</view>

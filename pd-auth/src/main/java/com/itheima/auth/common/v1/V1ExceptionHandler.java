@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /**
  * /api/v1（youlai 契约）专用异常处理：仅作用于 controller.v1 包，
- * 优先于全局 {@code GlobalExceptionHandler}（后者返回品达数字 code 的 R）。
+ * 优先于全局 {@code GlobalExceptionHandler}（后者返回心飞数字 code 的 R）。
  * 统一返回字符串 code 的 {@link ApiResult}：成功 00000、未登录 A0230、无权限 A0301。
  */
 @Slf4j

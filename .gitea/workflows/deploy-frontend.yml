@@ -1,5 +1,5 @@
 # ============================================
-# 品达TMS 前端手动部署（Gitea Actions，下拉选择部署谁）
+# 心飞TMS 前端手动部署（Gitea Actions，下拉选择部署谁）
 #
 # 触发：仅手动 Run workflow（与后端 deploy-backend 同风格）
 # 选择：apps 下拉 —— all / admin / driver / courier / customer

@@ -170,7 +170,7 @@ public class OrderEventMQListener {
 
             // 6. 发送妥投/拒收短信通知
             if (event.isSigned()) {
-                sendOrderSms(event.getOrderId(), "您的快件已被签收，感谢使用品达物流。");
+                sendOrderSms(event.getOrderId(), "您的快件已被签收，感谢使用心飞物流。");
             } else {
                 sendOrderSms(event.getOrderId(), "您的快件因未能送达，如有疑问请联系客服。");
             }

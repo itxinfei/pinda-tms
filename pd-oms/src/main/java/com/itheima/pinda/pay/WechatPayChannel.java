@@ -90,7 +90,7 @@ public class WechatPayChannel implements PayChannel {
         JSONObject body = new JSONObject();
         body.put("appid", appId);
         body.put("mchid", mchId);
-        body.put("description", "品达物流-订单" + orderId);
+        body.put("description", "心飞物流-订单" + orderId);
         body.put("out_trade_no", payNo);
         body.put("notify_url", notifyUrl);
         JSONObject amountObj = new JSONObject();

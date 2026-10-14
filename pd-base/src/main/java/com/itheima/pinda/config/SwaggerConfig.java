@@ -15,7 +15,7 @@ public class SwaggerConfig {
         // 接口文档基本信息
         return new OpenAPI()
                 .info(new Info()
-                        .title("品达物流管理后台基础数据--Swagger文档")
+                        .title("心飞物流管理后台基础数据--Swagger文档")
                         .version("1.0"));
     }
 }

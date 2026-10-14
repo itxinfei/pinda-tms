@@ -33,7 +33,7 @@ public class HuaweiSmsChannel implements SmsChannel {
     /**
      * 短信签名
      */
-    @Value("${sms.channel.huawei.sign-name:品达物流}")
+    @Value("${sms.channel.huawei.sign-name:心飞物流}")
     private String signName;
 
     /**

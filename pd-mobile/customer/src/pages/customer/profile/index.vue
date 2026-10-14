@@ -9,7 +9,7 @@
         <view v-else class="avatar-default">{{ profileName }}</view>
       </view>
       <view class="profile-info">
-        <view class="profile-name">{{ profile ? (profile.name || '品达用户') : '品达用户' }}</view>
+        <view class="profile-name">{{ profile ? (profile.name || '心飞用户') : '心飞用户' }}</view>
         <view class="profile-phone">{{ profile ? maskPhone(profile.phone) : '加载中...' }}</view>
       </view>
     </view>
@@ -33,7 +33,7 @@
       </view>
       <view class="menu-row" @click="goAbout">
         <u-icon name="info-circle" color="#E15536" size="20" />
-        <text class="menu-text">关于品达</text>
+        <text class="menu-text">关于心飞</text>
         <u-icon name="arrow-right" color="#C9CDD4" size="18" />
       </view>
     </view>
@@ -80,7 +80,7 @@ const load = async () => {
 const goAddress = () => uni.navigateTo({ url: '/pages/customer/address/list' });
 const goMailingList = () => uni.reLaunch({ url: '/pages/customer/mailing/list' });
 const goAgency = () => uni.navigateTo({ url: '/pages/customer/agency/list' });
-const goAbout = () => uni.showToast({ title: '品达物流 TMS v1.0', icon: 'none' });
+const goAbout = () => uni.showToast({ title: '心飞物流 TMS v1.0', icon: 'none' });
 const goHome = () => uni.reLaunch({ url: '/pages/customer/home/index' });
 const goProfile = () => uni.reLaunch({ url: '/pages/customer/profile/index' });
 

@@ -17,7 +17,7 @@
         <LangSelect />
       </div>
 
-      <!-- 临时关掉：通知中心（品达后端暂无此接口）
+      <!-- 临时关掉：通知中心（心飞后端暂无此接口）
       <div class="layout-toolbar__item">
         <NoticeCenter />
       </div>

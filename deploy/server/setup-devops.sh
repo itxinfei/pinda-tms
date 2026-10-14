@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================
-# 品达TMS DevOps 一键初始化
+# 心飞TMS DevOps 一键初始化
 #   构建 CI 作业镜像 -> 启动 Gitea -> 创建管理员
 # 用法：在【仓库根目录】执行
 #   bash deploy/server/setup-devops.sh

@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * youlai 契约分页结果：{list,total}。
  *
- * <p>区别于品达 {@code PageResponse{items,counts,page,pagesize,pages}}；
+ * <p>区别于心飞 {@code PageResponse{items,counts,page,pagesize,pages}}；
  * v1 控制器统一用本结构返回，前端 PageResult&lt;T&gt; 直接消费。</p>
  */
 @Data

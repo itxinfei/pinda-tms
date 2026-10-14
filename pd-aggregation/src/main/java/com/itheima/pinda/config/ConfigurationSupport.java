@@ -68,7 +68,7 @@ public class ConfigurationSupport {
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("品达物流管理数据聚合服务--Swagger文档")
+                        .title("心飞物流管理数据聚合服务--Swagger文档")
                         .version("1.0"));
     }
 }

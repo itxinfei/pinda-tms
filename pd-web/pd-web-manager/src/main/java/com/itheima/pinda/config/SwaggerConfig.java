@@ -18,7 +18,7 @@ public class SwaggerConfig implements WebMvcConfigurer {
     @Bean
     public OpenAPI customOpenApi() {
         return new OpenAPI().info(new Info()
-                .title("品达物流管理后台--接口文档")
+                .title("心飞物流管理后台--接口文档")
                 .version("1.0"));
     }
 

@@ -8,7 +8,7 @@ import java.io.Serializable;
  * youlai 契约统一响应（/api/v1/**，经网关 StripPrefix=2 后 pd-auth 侧路径）。
  *
  * <p>成功码固定字符串 {@code "00000"}（前端 vue3-element-admin 拦截器认该码，
- * 同时兼容数字 0）；与品达自有 {@code auth.common.R}（数字 code）分开，避免污染
+ * 同时兼容数字 0）；与心飞自有 {@code auth.common.R}（数字 code）分开，避免污染
  * Feign 内部契约。错误码沿用 youlai 前缀：A0230 未登录、A0301 权限不足。</p>
  */
 @Data

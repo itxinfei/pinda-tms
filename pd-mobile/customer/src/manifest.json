@@ -1,7 +1,7 @@
 {
-    "name" : "品达物流 · 客户端",
+    "name" : "心飞物流 · 客户端",
     "appid" : "",
-    "description" : "品达TMS 客户端：在线寄件、运单查询、实时轨迹",
+    "description" : "心飞TMS 客户端：在线寄件、运单查询、实时轨迹",
     "versionName" : "1.0.0",
     "versionCode" : "100",
     "transformPx" : false,
@@ -88,7 +88,7 @@
         "router" : {
             "base" : "/"
         },
-        "title" : "品达物流 · 客户端",
+        "title" : "心飞物流 · 客户端",
         "template" : "index.html"
     },
     "vueVersion" : "3"

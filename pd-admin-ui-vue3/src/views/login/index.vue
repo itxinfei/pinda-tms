@@ -19,7 +19,7 @@
               <div class="login-card__brand">
                 <el-image :src="logoMark" class="login-card__logo" />
                 <div class="login-card__brand-text">
-                  <span class="login-card__brand-name">品达物流</span>
+                  <span class="login-card__brand-name">心飞物流</span>
                   <span class="login-card__brand-en">FASTER AND SAFER</span>
                 </div>
               </div>
@@ -166,7 +166,7 @@ const loginRules = computed(() => ({
   captchaCode: [{ required: true, trigger: "blur", message: t("login.message.captchaCode.required") }],
 }));
 
-// 品达物流演示账号（必须是 pd_auth_user 中真实存在的账号，口径见《57-账号密码与凭据总表》）
+// 心飞物流演示账号（必须是 pd_auth_user 中真实存在的账号，口径见《57-账号密码与凭据总表》）
 const demoAccounts = computed(() => [
   { username: "admin", label: t("login.accounts.admin") },
   { username: "pinda", label: t("login.accounts.pinda") },
@@ -241,7 +241,7 @@ $text-primary: #273248;
 $text-secondary: #667085;
 $text-muted: #98a2b3;
 $input-h: 44px;
-$brand-red: #d7000f; // 品达品牌红：登录按钮、书法标语（参考原版登录页）
+$brand-red: #d7000f; // 心飞品牌红：登录按钮、书法标语（参考原版登录页）
 
 .login-page {
   // 品牌色阶：从运行时主题色派生，切换主题色板（ArcoD/AntD/ElementD）时整页跟随

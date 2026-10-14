@@ -13,7 +13,7 @@ const AuthAPI = {
    */
   async login(data: LoginRequest) {
     const payload = {
-      tenantCode: "pinda", // 品达默认租户编码（pd_auth.pd_auth_tenant 实测 code=pinda，LoginParamDTO 必填）
+      tenantCode: "pinda", // 心飞默认租户编码（pd_auth.pd_auth_tenant 实测 code=pinda，LoginParamDTO 必填）
       account: data.username,
       password: data.password,
       key: data.captchaId,
@@ -31,7 +31,7 @@ const AuthAPI = {
     // 转成前端期望格式：{ accessToken, refreshToken, tokenType, expiresIn }
     return {
       accessToken: result.token || "",
-      refreshToken: result.token || "", // 品达没有 refreshToken，先用 accessToken 代替
+      refreshToken: result.token || "", // 心飞没有 refreshToken，先用 accessToken 代替
       tokenType: "Bearer",
       expiresIn: 7200,
     };

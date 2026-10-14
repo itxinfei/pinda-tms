@@ -22,7 +22,7 @@ http.interceptors.request.use(
     if (!config.anonymous) {
       const token = AuthStorage.getAccessToken();
       if (token) {
-        // 品达网关用 token 头，不是 Authorization: Bearer
+        // 心飞网关用 token 头，不是 Authorization: Bearer
         config.headers.token = token;
       }
     }
@@ -46,7 +46,7 @@ http.interceptors.response.use(
 
     const { code, data, msg } = response.data;
 
-    // 兼容两种成功码：前端模板的 "00000" 和品达的 0
+    // 兼容两种成功码：前端模板的 "00000" 和心飞的 0
     if (code === ApiCodeEnum.SUCCESS || code === 0) {
       return data;
     }

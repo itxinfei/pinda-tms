@@ -1,5 +1,5 @@
 # ============================================
-# 品达TMS Gitea Actions 作业镜像
+# 心飞TMS Gitea Actions 作业镜像
 # 内含：JDK21 + Maven3.9 + Docker CLI + Compose v2 + Buildx 插件
 #   - Maven     ：一次构建全部后端 fat jar（JDK21 / Spring Boot 3.3.5）
 #   - Docker CLI：通过挂载的 /var/run/docker.sock 操作宿主机 Docker 构建/部署

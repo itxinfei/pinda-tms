@@ -1,5 +1,5 @@
 # ============================================
-# 品达TMS DevOps 组件：Gitea（Git 仓库）+ act_runner（Gitea Actions 执行器）
+# 心飞TMS DevOps 组件：Gitea（Git 仓库）+ act_runner（Gitea Actions 执行器）
 # 启动：
 #   1) 先只启动 gitea：docker compose -f deploy/gitea/docker-compose.gitea.yml up -d gitea
 #   2) 在 Gitea「管理面板 -> Actions -> Runners -> Create Runner」获取注册令牌

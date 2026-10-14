@@ -152,7 +152,7 @@ schedule:
     interval-ms: ${SCHEDULE_RETRY_INTERVAL_MS:2000}
 
 # XXL-Job 执行器（2026-10-10 调度改造：替代自研 Quartz/@Scheduled，控制台见《56-中间件信息总表》§2）
-# 定时触发/开关/频率统一由 admin 控制台「品达调度中心」分组管理，服务侧只保留业务重试参数
+# 定时触发/开关/频率统一由 admin 控制台「心飞调度中心」分组管理，服务侧只保留业务重试参数
 xxl:
   job:
     admin:
@@ -177,18 +177,18 @@ sms:
     aliyun:
       access-key-id: ${SMS_ALIYUN_ACCESS_KEY_ID:}
       access-key-secret: ${SMS_ALIYUN_ACCESS_KEY_SECRET:}
-      sign-name: ${SMS_ALIYUN_SIGN_NAME:品达物流}
+      sign-name: ${SMS_ALIYUN_SIGN_NAME:心飞物流}
       template-code: ${SMS_ALIYUN_TEMPLATE_CODE:}
     tencent:
       secret-id: ${SMS_TENCENT_SECRET_ID:}
       secret-key: ${SMS_TENCENT_SECRET_KEY:}
       sdk-app-id: ${SMS_TENCENT_SDK_APP_ID:}
-      sign-name: ${SMS_TENCENT_SIGN_NAME:品达物流}
+      sign-name: ${SMS_TENCENT_SIGN_NAME:心飞物流}
       template-id: ${SMS_TENCENT_TEMPLATE_ID:}
     huawei:
       app-key: ${SMS_HUAWEI_APP_KEY:}
       app-secret: ${SMS_HUAWEI_APP_SECRET:}
-      sign-name: ${SMS_HUAWEI_SIGN_NAME:品达物流}
+      sign-name: ${SMS_HUAWEI_SIGN_NAME:心飞物流}
       template-id: ${SMS_HUAWEI_TEMPLATE_ID:}
     device:
       # 通用设备短信接口地址（短信猫/短信池）

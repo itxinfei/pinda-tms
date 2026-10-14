@@ -10,7 +10,7 @@
     "light": "明亮",
     "auto": "跟随系统",
     "title": "欢迎登录",
-    "desc": "品达物流运输管理系统",
+    "desc": "心飞物流运输管理系统",
     "username": "用户名",
     "usernamePlaceholder": "请输入用户名",
     "password": "密码",
@@ -19,11 +19,11 @@
     "captchaCode": "验证码",
     "captchaPlaceholder": "请输入验证码",
     "slogan": "品质速递 使命必达",
-    "copyright": "© 2020-2026 品达物流集团",
-    "footer": "Copyright © 2026-2026 品达物流 TMS",
+    "copyright": "© 2020-2026 心飞物流集团",
+    "footer": "Copyright © 2026-2026 心飞物流 TMS",
     "accounts": {
       "admin": "管理员",
-      "pinda": "品达账号"
+      "pinda": "心飞账号"
     },
     "capsLock": "大写锁定已打开",
     "rememberMe": "记住我",

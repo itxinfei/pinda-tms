@@ -1,4 +1,4 @@
-/* 品达TMS 客户端 · 寄件/运单 API（/web-customer/mailing/**） */
+/* 心飞TMS 客户端 · 寄件/运单 API（/web-customer/mailing/**） */
 import { request } from '../request/index.js';
 
 /** 运费试算 POST /mailing/totalPrice → { amount: "800.00" } */

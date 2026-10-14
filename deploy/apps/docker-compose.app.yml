@@ -1,5 +1,5 @@
 # ============================================
-# 品达TMS 应用编排：14 个 Spring Boot 微服务 + 前端（新版 Vue3 后台 + uniapp H5）
+# 心飞TMS 应用编排：14 个 Spring Boot 微服务 + 前端（新版 Vue3 后台 + uniapp H5）
 #
 # 部署（镜像 tag 由环境变量 TAG 注入，TAG 一般取 git 短提交号）：
 #   TAG=1a2b3c4 docker compose -f deploy/apps/docker-compose.app.yml up -d --remove-orphans

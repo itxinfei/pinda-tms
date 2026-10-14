@@ -1,4 +1,4 @@
-/* 品达TMS 客户端 · 登录/验证码 API */
+/* 心飞TMS 客户端 · 登录/验证码 API */
 import { request, BASE_URL } from '../request/index.js';
 
 /** 验证码图片地址（直接用 img src） */
