@@ -5,7 +5,7 @@
 
     <!-- 品牌区：放大 logo + 端名 -->
     <view class="login-brand">
-      <image class="login-logo" src="/static/logo-full.png" mode="widthFix" />
+      <image class="login-logo" src="/static/logo-full-login.png" mode="widthFix" />
       <view class="login-end">品达物流 · 司机端</view>
     </view>
 

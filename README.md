@@ -1,6 +1,8 @@
 <div align="center">
 
-# 🚚 品达物流 TMS
+# 🚚 心飞物流 TMS
+
+<img src="docs/brand/logo-mark.png" width="160" alt="心飞物流 TMS"/>
 
 <p>
   <b>面向运输企业与承运商的开源运输管理系统（TMS）</b><br/>
@@ -37,14 +39,13 @@
   <img src="docs/badges/vue.svg" alt="Vue"/>
   <img src="docs/badges/uniapp.svg" alt="uni-app"/>
 </p>
-
 </div>
 
 <p align="center"><b>简体中文</b> · <a href="README.en.md">English</a></p>
 
 > *Pinda TMS — Open-source Transportation Management System with 4-end synergy, powered by JDK 21 + Spring Boot 3.5 + Vue 3.5.*
 
-> **品达 TMS** 是一款**四端协同**（管理端 + 客户端 + 快递员端 + 司机端）的开源运输管理系统，基于 **JDK 21 + Spring Boot 3.5.7 + Vue 3.5** 构建，覆盖寄件 → 订单 → 智能调度 → 作业 → 轨迹 → 回单全链路。Drools 规则引擎驱动智能调度，Netty 自建轨迹接入，Sa-Token 多租户 SaaS 就绪——覆盖订单管理、配载作业、调度分配、行车管理、GPS 车辆定位、数据报表全流程，让运输运作效率与成本管控一步到位。
+> **心飞 TMS** 是一款**四端协同**（管理端 + 客户端 + 快递员端 + 司机端）的开源运输管理系统，基于 **JDK 21 + Spring Boot 3.5.7 + Vue 3.5** 构建，覆盖寄件 → 订单 → 智能调度 → 作业 → 轨迹 → 回单全链路。Drools 规则引擎驱动智能调度，Netty 自建轨迹接入，Sa-Token 多租户 SaaS 就绪——覆盖订单管理、配载作业、调度分配、行车管理、GPS 车辆定位、数据报表全流程，让运输运作效率与成本管控一步到位。
 
 <p align="center">
 <b><a href="#sec-tech"><code>13</code></a></b> 个微服务 · <b><code>4</code></b> 端协同 · <b><a href="docs/需求文档/01-业务需求全景.md"><code>101</code></a></b> 条功能需求 · <b><a href="sql/README.md"><code>54</code></a></b> 张数据表 · <b><a href="docs/01-技术栈说明.md"><code>27</code></a></b> 项技术栈 · 全链路业务闭环
@@ -83,9 +84,9 @@
 
 物流运输市场最普遍的四种业态是 **快递、快运、专线、三方**，它们支撑着全国商品货物的流通。无论是哪一类企业，核心痛点都高度一致：**车辆、驾驶员、线路散落难管，运输过程不透明，调度与计费靠人工，成本与时效无从考核**。
 
-品达物流 TMS 正是为解决这些问题而生——它把「运力资源准备 → 下单 → 调度 → 运输 → 派送 → 签收 → 结算」的全链路搬进一套系统，对车辆、驾驶员、线路进行全面详尽的统计与考核，帮助企业**提高运作效率、降低运输成本，在激烈的市场竞争中处于领先地位**。
+心飞物流 TMS 正是为解决这些问题而生——它把「运力资源准备 → 下单 → 调度 → 运输 → 派送 → 签收 → 结算」的全链路搬进一套系统，对车辆、驾驶员、线路进行全面详尽的统计与考核，帮助企业**提高运作效率、降低运输成本，在激烈的市场竞争中处于领先地位**。
 
-> 💡 **为什么做这个项目？** 市面上的 TMS 要么**太贵**（商业年费 3-30 万），要么**太旧**（JDK 8 + Vue 2 停留在上个时代），要么**太重**（实施周期 6 个月起步）。品达 TMS 想做**第三个选择**：开源免费、全链路闭环、技术前沿、四端协同——开箱即用，二次开发友好。
+> 💡 **为什么做这个项目？** 市面上的 TMS 要么**太贵**（商业年费 3-30 万），要么**太旧**（JDK 8 + Vue 2 停留在上个时代），要么**太重**（实施周期 6 个月起步）。心飞 TMS 想做**第三个选择**：开源免费、全链路闭环、技术前沿、四端协同——开箱即用，二次开发友好。
 
 ---
 
@@ -104,7 +105,7 @@
 | 5 | **Sa-Token 多租户** | SaaS 化就绪，一套代码服务多个租户——多数开源 TMS 单租户 |
 | 6 | **清晰的演进路线** | Kafka → TDengine/鹰眼 → OR-Tools → Spring AI 规划中，不是做完就停的项目 |
 
-### 2.2 谁适合用品达？
+### 2.2 谁适合用心飞？
 
 - 🚛 **中小微车队**（10-50 辆）：想数字化，但买不起年费 3-30 万的商业 TMS
 - 🚀 **物流初创团队**：需要一个功能全、栈新、能跑的四端 TMS 做 MVP
@@ -113,7 +114,7 @@
 
 ### 2.3 与同类方案对比
 
-| 能力 | 品达 TMS | 同类开源 TMS | 商业 TMS |
+| 能力 | 心飞 TMS | 同类开源 TMS | 商业 TMS |
 | --- | --- | --- | --- |
 | 四端协同（管理+客户+快递员+司机） | ✅ | ❌ 仅管理端 | ✅ |
 | JDK 21 + Spring Boot 3.5 | ✅ | ❌ 多为 JDK 8 | 部分已升级 |
@@ -160,7 +161,7 @@
 
 ## 三、🎯 解决的核心痛点
 
-| 行业痛点 | 品达 TMS 的解法 |
+| 行业痛点 | 心飞 TMS 的解法 |
 | --- | --- |
 | 车辆 / 驾驶员 / 线路分散，难以统一考核 | 基础数据集中管理 + 多维统计报表，人车线一目了然 |
 | 调度靠人工、配载凭经验 | 定时调度 + 路径规划自动生成运输任务与车次分配 |
@@ -177,10 +178,10 @@
 
 | 端 | 名称 | 使用对象 | 核心能力 |
 | --- | --- | --- | --- |
-| 后台系统管理端 | 品达 TMS 管理端 | 公司内部管理员 | 基础数据维护、订单管理、运单管理 |
-| 客户端 App | **品达速运** | 外部客户 | 寄件、查询物流信息 |
-| 快递员端 App | **品达快递员** | 公司内部快递员 | 接收取派件任务 |
-| 司机端 App | **品达司机宝** | 公司内部司机 | 接收运输任务、上报位置信息 |
+| 后台系统管理端 | 心飞 TMS 管理端 | 公司内部管理员 | 基础数据维护、订单管理、运单管理 |
+| 客户端 App | **心飞速运** | 外部客户 | 寄件、查询物流信息 |
+| 快递员端 App | **心飞快递员** | 公司内部快递员 | 接收取派件任务 |
+| 司机端 App | **心飞司机宝** | 公司内部司机 | 接收运输任务、上报位置信息 |
 
 ---
 
@@ -192,7 +193,7 @@
 
 ![整体业务流程](docs/business-flow.png)
 
-从寄件人下单到收件人签收，品达 TMS 覆盖完整业务链路：
+从寄件人下单到收件人签收，心飞 TMS 覆盖完整业务链路：
 
 ```
 寄件下单 📦 → 订单创建 📋 → 智能调度 🤖（Drools）→ 司机接单 🚚
@@ -256,9 +257,9 @@ pinda-tms/
 ├── 前端（4 端）
 │   ├── pd-admin-ui-vue3/     # 管理端（Vue3 + Element Plus）
 │   └── pd-mobile/            # 移动三端（uni-app Vue3）
-│       ├── customer/         #   客户端 · 品达速运
-│       ├── courier/          #   快递员端 · 品达快递员
-│       └── driver/           #   司机端 · 品达司机宝
+│       ├── customer/         #   客户端 · 心飞速运
+│       ├── courier/          #   快递员端 · 心飞快递员
+│       └── driver/           #   司机端 · 心飞司机宝
 ├── deploy/                   # Docker Compose 编排与部署脚本
 └── docs/                     # 文档 + 截图 + 徽章
 ```
@@ -431,15 +432,15 @@ docker-compose up -d        # 起中间件：MySQL / Redis / RabbitMQ / Nacos
 
 <table>
 <tr>
-<td align="center" width="33%"><b>客户端 · 品达速运</b><br/><br/>
+<td align="center" width="33%"><b>客户端 · 心飞速运</b><br/><br/>
   <img src="docs/screenshots/mobile-customer.png" alt="客户端 H5" style="max-width:180px;border-radius:8px;border:1px solid #e5e7eb;"/>
   <br/><sub>寄件 / 查物流 · H5（:8084）</sub>
 </td>
-<td align="center" width="33%"><b>快递员端 · 品达快递员</b><br/><br/>
+<td align="center" width="33%"><b>快递员端 · 心飞快递员</b><br/><br/>
   <img src="docs/screenshots/mobile-courier.png" alt="快递员端 H5" style="max-width:180px;border-radius:8px;border:1px solid #e5e7eb;"/>
   <br/><sub>取派件任务 · H5（:8083）</sub>
 </td>
-<td align="center" width="33%"><b>司机端 · 品达司机宝</b><br/><br/>
+<td align="center" width="33%"><b>司机端 · 心飞司机宝</b><br/><br/>
   <img src="docs/screenshots/mobile-driver.png" alt="司机端 H5" style="max-width:180px;border-radius:8px;border:1px solid #e5e7eb;"/>
   <br/><sub>运输任务 / 位置上报 · H5（:8082）</sub>
 </td>
@@ -578,7 +579,7 @@ docker-compose up -d        # 起中间件：MySQL / Redis / RabbitMQ / Nacos
 
 ### 11.4 ☕ 赞助支持
 
-> 本项目由 **AI 辅助开发**，持续迭代需投入大量时间与 AI 工具成本。如果品达 TMS 对你有帮助，欢迎赞助支持作者持续更新。
+> 本项目由 **AI 辅助开发**，持续迭代需投入大量时间与 AI 工具成本。如果心飞 TMS 对你有帮助，欢迎赞助支持作者持续更新。
 
 > 📌 **赞助联系**：添加 **QQ：`747011882`** 洽谈（赞助者名单将更新至 README）；微信 / 支付宝扫码入口准备中。
 
@@ -641,4 +642,4 @@ A: uni-app 三端架构（App / H5 / 小程序），当前以 H5 为主，小程
 
 <p align="center"><sub>TMS 开源 · 运输管理系统 · 物流系统 · 车队管理 · 调度系统 · 轨迹追踪 · Spring Cloud 微服务 · JDK 21 · Vue 3 · uni-app</sub></p>
 
-<p align="center"><sub>品达物流 TMS · 开源运输管理系统 · 全流程 · 四端协同 · 微服务架构</sub></p>
+<p align="center"><sub>心飞物流 TMS · 开源运输管理系统 · 全流程 · 四端协同 · 微服务架构</sub></p>

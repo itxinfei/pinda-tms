@@ -85,7 +85,7 @@ async function refreshLatest() {
           latitude: g.latitude,
           longitude: g.longitude,
           title: '车辆',
-          iconPath: '/static/logo.png',
+          iconPath: '/static/logo-96.png',
           width: 24,
           height: 24,
         },
