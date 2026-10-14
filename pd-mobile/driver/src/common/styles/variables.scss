@@ -1,9 +1,9 @@
 // 设计 Token（唯一真源）：颜色 / 间距 / 字号 / 圆角 / 阴影
 // 修改点：三端共用，禁止在各页面写死 hex / px，统一引用下方 class 与 CSS 变量。
 page {
-  --c-primary: #E15536;
-  --c-primary-dark: #B53D22;
-  --c-primary-light: #FFEEEB;
+  --c-primary: #FF0033;
+  --c-primary-dark: #CC0029;
+  --c-primary-light: #FFE5EA;
   --c-success: #00B42A;
   --c-warning: #FF7D00;
   --c-error: #F53F3F;

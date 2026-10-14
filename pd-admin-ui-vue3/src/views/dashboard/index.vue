@@ -179,8 +179,8 @@ const statusBars = computed<OverviewBar[]>(() => {
       label: "待处理",
       valueText: `${formatNumber(p)} 单 · ${pct(p)}%`,
       percent: pct(p),
-      color: getCssVar("--el-color-primary", "#165dff"),
-      gradient: `linear-gradient(90deg, ${getCssVar("--el-color-primary", "#165dff")}, ${getCssVar("--el-color-primary-light-5", "#6ea1ff")})`,
+      color: getCssVar("--el-color-primary", "#FF0033"),
+      gradient: `linear-gradient(90deg, ${getCssVar("--el-color-primary", "#FF0033")}, ${getCssVar("--el-color-primary-light-5", "#6ea1ff")})`,
     },
     {
       label: "运输中",

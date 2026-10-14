@@ -32,7 +32,7 @@ export const themePalettePresets = [
     name: "ArcoD",
     description: "蓝橙对比清晰，适合现代中后台",
     colors: {
-      primary: "#165DFF",
+      primary: "#FF0033",
       success: "#00B42A",
       warning: "#FF7D00",
       danger: "#F53F3F",
