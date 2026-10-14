@@ -3,7 +3,7 @@
 // 修改点：由 courier 端改写为 driver，登录页路径改为 /pages/driver/login/index
 export default {
   onLaunch: function () {
-    const token = uni.getStorageSync('pd_token')
+    const token = uni.getStorageSync('xf_token')
     if (!token) {
       uni.reLaunch({ url: '/pages/driver/login/index' })
     }

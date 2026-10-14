@@ -3,7 +3,7 @@
 export default {
   onLaunch: function () {
     // 登录守卫：无 token 引导回登录页（与 driver/courier 一致）
-    const token = uni.getStorageSync('pd_token');
+    const token = uni.getStorageSync('xf_token');
     if (!token) {
       uni.reLaunch({ url: '/pages/customer/login/index' });
     }

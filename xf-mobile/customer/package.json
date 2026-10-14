@@ -1,5 +1,5 @@
 {
-  "name": "pd-mobile-customer",
+  "name": "xf-mobile-customer",
   "version": "1.0.0",
   "scripts": {
     "dev:custom": "uni -p",

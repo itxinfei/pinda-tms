@@ -1,5 +1,5 @@
 {
-  "name": "pd-mobile-driver",
+  "name": "xf-mobile-driver",
   "version": "1.0.0",
   "scripts": {
     "dev:custom": "uni -p",

@@ -1,6 +1,6 @@
 // 离线队列：无网络时缓冲上报任务，恢复后补传（司机端定位上报 / 异常上报使用）
 // 修改点：三端复用，无需改动。
-const KEY = 'pd_offline_queue'
+const KEY = 'xf_offline_queue'
 
 export interface OfflineItem {
   id: string

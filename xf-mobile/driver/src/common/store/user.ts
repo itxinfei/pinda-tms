@@ -5,7 +5,7 @@ import { TOKEN_KEY, ROLE } from '../config'
 export const useUserStore = defineStore('user', {
   state: () => ({
     token: (uni.getStorageSync(TOKEN_KEY) as string) || '',
-    userInfo: (uni.getStorageSync('pd_user_info') as any) || null,
+    userInfo: (uni.getStorageSync('xf_user_info') as any) || null,
     role: ROLE,
   }),
   getters: {
@@ -18,13 +18,13 @@ export const useUserStore = defineStore('user', {
     },
     setUserInfo(info: any) {
       this.userInfo = info
-      uni.setStorageSync('pd_user_info', info)
+      uni.setStorageSync('xf_user_info', info)
     },
     logout() {
       this.token = ''
       this.userInfo = null
       uni.removeStorageSync(TOKEN_KEY)
-      uni.removeStorageSync('pd_user_info')
+      uni.removeStorageSync('xf_user_info')
     },
   },
 })

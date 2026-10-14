@@ -36,7 +36,7 @@ logs/
 log.path_IS_UNDEFINED/
 *.log
 
-# 前端依赖目录（全仓库任意层级，覆盖 pd-admin-ui-vue3 / pd-mobile 各端及包内嵌套 node_modules）
+# 前端依赖目录（全仓库任意层级，覆盖 xf-admin-ui-vue3 / xf-mobile 各端及包内嵌套 node_modules）
 node_modules/
 # 前端构建产物
 dist/
@@ -58,7 +58,7 @@ Thumbs.db
 # 构建必需：VITE_API_BASE 等构建期变量，Docker 构建从 git 拉代码时必须存在，
 # 否则产物 baseURL 为 undefined、/api/* 落进 SPA fallback（2026-10-10 线上故障根因）。
 # 仅放行生产构建所需文件；.env / .env.development 仍禁止入库。
-!pd-admin-ui-vue3/.env.production
+!xf-admin-ui-vue3/.env.production
 
 # IDE/工具配置（本地个人工具，非项目代码）
 .codebuddy/
@@ -103,6 +103,9 @@ CLAUDE.md
 # 注意：docs/**/*.md 不覆盖 csv，故整目录显式忽略
 docs/需求文档/
 
+# 中间件导出/迁移快照（含 Nacos 配置导出、MySQL/RabbitMQ/Gitea 配置，疑似含连接串/口令，禁止入库；2026-10-14）
+docs/中间件和数据库/
+
 # 本地调试脚本（含服务器操作，防误提交）
 .seata-*.sh
 .charset*.sh
@@ -145,6 +148,8 @@ mvn_build*
 
 # SQL 脚本统一放仓库根 /sql/，本人维护、不进 git（避免 DB 门禁反复触发）
 /sql/
+# docs 下散落 SQL 同禁（统一收口到根 /sql/；2026-10-14）
+docs/sql/
 
 # 坚果云同步残留（空占位文件，非源码）
 *.nssyncsc

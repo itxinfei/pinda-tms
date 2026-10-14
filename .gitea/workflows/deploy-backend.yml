@@ -115,19 +115,19 @@ jobs:
           set -e
           {
             echo 'declare -A MOD_OF=('
-            echo '  [xf-auth]=pd-auth'
-            echo '  [xf-base]=pd-base'
-            echo '  [xf-oms]=pd-oms'
-            echo '  [xf-work]=pd-work'
-            echo '  [xf-user]=pd-user'
-            echo '  [xf-dispatch]=pd-dispatch'
-            echo '  [xf-aggregation]=pd-aggregation'
-            echo '  [xf-netty]=pd-netty'
-            echo '  [xf-web-manager]=pd-web/pd-web-manager'
-            echo '  [xf-web-driver]=pd-web/pd-web-driver'
-            echo '  [xf-web-courier]=pd-web/pd-web-courier'
-            echo '  [xf-web-customer]=pd-web/pd-web-customer'
-            echo '  [xf-gateway]=pd-gateway'
+            echo '  [xf-auth]=xf-auth'
+            echo '  [xf-base]=xf-base'
+            echo '  [xf-oms]=xf-oms'
+            echo '  [xf-work]=xf-work'
+            echo '  [xf-user]=xf-user'
+            echo '  [xf-dispatch]=xf-dispatch'
+            echo '  [xf-aggregation]=xf-aggregation'
+            echo '  [xf-netty]=xf-netty'
+            echo '  [xf-web-manager]=xf-web/xf-web-manager'
+            echo '  [xf-web-driver]=xf-web/xf-web-driver'
+            echo '  [xf-web-courier]=xf-web/xf-web-courier'
+            echo '  [xf-web-customer]=xf-web/xf-web-customer'
+            echo '  [xf-gateway]=xf-gateway'
             echo ')'
             echo 'ORDER="xf-auth xf-base xf-oms xf-work xf-user xf-dispatch xf-aggregation xf-netty xf-web-manager xf-web-driver xf-web-courier xf-web-customer xf-gateway"'
           } > /tmp/xinfei-svc.sh
@@ -404,14 +404,14 @@ jobs:
       - name: 清理旧镜像与构建缓存
         # 构建产物不保留（代码在 git，可随时重构建）：
         #   1. 悬空层直接清；
-        #   2. xinfei/pd-* 应用镜像删除所有未被运行容器引用的 tag（当前版本、回滚基线自动受 docker ps 检查保护；
-        #      基础镜像 xinfei/jre21-fontconfig 不匹配 xinfei/pd-* 前缀，天然不受影响）；
+        #   2. xinfei/xf-* 与遗留 xinfei/pd-* 应用镜像删除所有未被运行容器引用的 tag（当前版本、回滚基线自动受 docker ps 检查保护；
+        #      基础镜像 xinfei/jre21-fontconfig 不匹配 xinfei/[xf|pd]-* 前缀，天然不受影响）；
         #   3. 构建缓存全清——Maven 依赖缓存在 /data/m2 持久共享，不受影响，仅 docker 层重建略慢。
         if: always()
         run: |
           docker image prune -f
           for img in $(docker images --format '{{.Repository}}:{{.Tag}}' \
-              --filter=reference='xinfei/pd-*' | grep -v ":$TAG$" || true); do
+              --filter=reference='xinfei/xf-*' --filter=reference='xinfei/pd-*' | grep -v ":$TAG$" || true); do
             if ! docker ps --format '{{.Image}}' | grep -qxF "$img"; then
               echo ">> 清理未使用镜像 $img"
               docker rmi "$img" 2>/dev/null || true

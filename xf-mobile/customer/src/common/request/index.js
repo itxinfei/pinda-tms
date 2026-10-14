@@ -15,7 +15,7 @@ const BASE_URL = (import.meta.env && import.meta.env.VITE_API_BASE) || '/prod-ap
  */
 export function request(options) {
   return new Promise((resolve, reject) => {
-    const token = uni.getStorageSync('pd_token') || '';
+    const token = uni.getStorageSync('xf_token') || '';
     // loading 参数：调用方传 { loading: true } 时统一提示（finally 兜底关闭）
     const loading = !!(options && options.loading);
     if (loading) uni.showLoading({ title: '加载中...' });
@@ -34,7 +34,7 @@ export function request(options) {
         const body = res.data;
         // 401：清登录态跳登录
         if (res.statusCode === 401 || (body && body.code === 401)) {
-          uni.removeStorageSync('pd_token');
+          uni.removeStorageSync('xf_token');
           uni.removeStorageSync('userInfo');
           uni.reLaunch({ url: '/pages/customer/login/index' });
           hideLoading();

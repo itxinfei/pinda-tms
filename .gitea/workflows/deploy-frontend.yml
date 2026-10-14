@@ -54,16 +54,16 @@ jobs:
           COMPOSE=deploy/apps/docker-compose.app.yml
           build_one() {
             case "$1" in
-              admin) docker build -f deploy/apps/Dockerfile.admin-h5 -t "xinfei/pd-admin-h5:${TAG}" . ;;
+              admin) docker build -f deploy/apps/Dockerfile.admin-h5 -t "xinfei/xf-admin-h5:${TAG}" . ;;
               *)     docker build -f deploy/apps/Dockerfile.mobile-h5 \
-                       --build-arg APP_PATH=pd-mobile \
+                       --build-arg APP_PATH=xf-mobile \
                        --build-arg APP_SUBDIR="$1" \
-                       --build-arg APP_NAME="pd-mobile-$1" \
-                       -t "xinfei/pd-${1}-h5:${TAG}" . ;;
+                       --build-arg APP_NAME="xf-mobile-$1" \
+                       -t "xinfei/xf-${1}-h5:${TAG}" . ;;
             esac
           }
           for app in $APPS; do
-            img="pd-${app}-h5"
+            img="xf-${app}-h5"
             tv="$(echo "$img" | tr 'a-z-' 'A-Z_')_TAG"
             prev=$(docker inspect -f '{{.Config.Image}}' "$img" 2>/dev/null | sed -n 's/.*://p' || true)
             echo ">> [$app] 回滚基线 PREV=${prev:-（首次部署，无基线）}"

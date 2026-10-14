@@ -1,5 +1,5 @@
 {
-  "name": "pd-mobile-courier",
+  "name": "xf-mobile-courier",
   "version": "1.0.0",
   "scripts": {
     "dev:custom": "uni -p",

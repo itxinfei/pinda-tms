@@ -9,10 +9,10 @@
 #
 # 构建示例（司机端）：
 #   docker build -f deploy/apps/Dockerfile.mobile-h5 \
-#     --build-arg APP_PATH=pd-mobile \
+#     --build-arg APP_PATH=xf-mobile \
 #     --build-arg APP_SUBDIR=driver \
-#     --build-arg APP_NAME=pd-mobile-driver \
-#     -t xinfei/pd-driver-h5:<tag> .
+#     --build-arg APP_NAME=xf-mobile-driver \
+#     -t xinfei/xf-driver-h5:<tag> .
 #
 # 为什么 Node 22 + pnpm 10：
 #   uni-app 3.0 基于 Vite 5，要求 Node 18+；pnpm 10 与开发机构建版本(10.28)对齐，
@@ -26,11 +26,11 @@ RUN npm config set registry https://registry.npmmirror.com \
  && npm install -g pnpm@10 --registry=https://registry.npmmirror.com
 
 # APP_PATH：移动端 monorepo 在仓库中的相对路径
-ARG APP_PATH=pd-mobile
+ARG APP_PATH=xf-mobile
 # APP_SUBDIR：目标端在 workspace 内的子目录（driver/courier/customer）
 ARG APP_SUBDIR=driver
 # APP_NAME：目标端包名（pnpm -F 过滤用）
-ARG APP_NAME=pd-mobile-driver
+ARG APP_NAME=xf-mobile-driver
 
 WORKDIR /build
 

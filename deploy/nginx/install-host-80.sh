@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 安装宿主机 :80 入口配置（反代到新版后台容器 pd-admin-h5）。
+# 安装宿主机 :80 入口配置（反代到新版后台容器 xf-admin-h5）。
 # 用途：换机/重建后一条命令恢复，避免 :80 与容器端口又各跑一份产物。
 # 用法: bash deploy/nginx/install-host-80.sh
 #
@@ -41,5 +41,5 @@ a=$(curl -s -m 7 http://127.0.0.1/ | grep -oE "assets/js/index\.[a-zA-Z0-9]+\.js
 b=$(curl -s -m 7 http://127.0.0.1:8081/ | grep -oE "assets/js/index\.[a-zA-Z0-9]+\.js" | head -1)
 echo "  :80    $a"
 echo "  :8081  $b"
-[ "$a" = "$b" ] || { echo "  两个入口产物不一致，检查 pd-admin-h5 是否健康"; exit 1; }
+[ "$a" = "$b" ] || { echo "  两个入口产物不一致，检查 xf-admin-h5 是否健康"; exit 1; }
 curl -s -m 7 http://127.0.0.1/prod-api/authority/anno/captcha -o /dev/null -w "  :80 /prod-api 验证码: HTTP %{http_code}\n"

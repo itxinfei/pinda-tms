@@ -16,7 +16,7 @@ export const AUTH_BASE = GATEWAY + '/auth'
 // 轨迹 / 定位前缀（免鉴权）
 export const NETTY_BASE = GATEWAY + '/netty-service'
 
-export const TOKEN_KEY = 'pd_token'
+export const TOKEN_KEY = 'xf_token'
 export const TOKEN_HEADER = 'token'
 // 企业编码（登录必填，后端 LoginParamDTO 校验 @NotBlank；种子租户见 pd_auth_多租户重建_20261009.sql）
 export const TENANT_CODE = 'xinfei'
