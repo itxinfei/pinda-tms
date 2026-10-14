@@ -23,12 +23,15 @@ public class SaTokenConfigure implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         // 网关身份凭证校验：不经业务排除（与 pd-auth 同一姿势）
+        // /actuator/** 放行：compose HTTP 探针不带 Same-Token，纳入校验必 401
+        // （run#297 auto-deploy 网关修后轮到 netty 探活失败全量回滚的根因，2026-10-14）
         registry.addInterceptor(new SaInterceptor(handle -> SaSameUtil.checkCurrentRequestToken()))
                 .addPathPatterns("/**")
-                .excludePathPatterns("/favicon.ico");
+                .excludePathPatterns("/favicon.ico", "/actuator/**");
 
         // 登录校验：pd-netty 无匿名 HTTP 端点，全部要求登录
         registry.addInterceptor(new SaInterceptor(handle -> StpUtil.checkLogin()))
-                .addPathPatterns("/**");
+                .addPathPatterns("/**")
+                .excludePathPatterns("/actuator/**");
     }
 }
