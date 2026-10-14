@@ -1,6 +1,6 @@
 <div align="center">
 
-# <img src="docs/brand/logo-mark.png"  alt="心飞物流TMS"/> 心飞物流TMS
+# <img src="docs/brand/logo-mark.png" width="60" alt="心飞物流TMS"/> 心飞物流TMS
 
 
 
