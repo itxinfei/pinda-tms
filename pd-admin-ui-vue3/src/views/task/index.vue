@@ -153,6 +153,7 @@
               <el-table-column label="经度" prop="lng" width="150" />
               <el-table-column label="纬度" prop="lat" width="150" />
             </el-table>
+            <ECharts :options="pointMapOption" width="100%" height="280px" class="task-detail__map" />
           </div>
 
           <div v-if="detail.transportOrders?.length" class="task-detail__block">
@@ -176,6 +177,10 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
+import * as echarts from "echarts/core";
+import { ScatterChart } from "echarts/charts";
+import chinaGeoJSON from "@/views/bigscreen/assets/chinaGeoJSON.json";
+import ECharts from "@/components/ECharts/index.vue";
 import TransportTaskAPI from "@/api/transport-task";
 import {
   TransportTaskStatus,
@@ -185,6 +190,12 @@ import {
   type TaskTransportPageQuery,
   type TransportPoint,
 } from "@/api/transport-task";
+
+// echarts/core 为模块单例：此处 registerMap 与全局 ECharts 组件共享同一份注册表，
+// 必须在模块求值阶段（早于组件 mounted）完成 china 地图注册，供 geo 坐标系散点使用。
+echarts.registerMap("china", chinaGeoJSON as never);
+// 途经点散点需按需注册 ScatterChart，复用 echarts/core 单例。
+echarts.use([ScatterChart]);
 
 type TagType = "primary" | "success" | "info" | "warning" | "danger";
 
@@ -298,6 +309,54 @@ const taskStepActive = computed(() => {
   return 0;
 });
 
+/** 途经点地图预览：仅取有效经纬度，绘制在中国地图 geo 坐标系上的散点 */
+const pointMapOption = computed<echarts.EChartsCoreOption>(() => {
+  const data = points.value
+    .map((p) => {
+      const lng = Number(p.lng);
+      const lat = Number(p.lat);
+      if (!Number.isFinite(lng) || !Number.isFinite(lat)) return null;
+      return { name: p.name || `${lng},${lat}`, value: [lng, lat] as [number, number] };
+    })
+    .filter(
+      (x): x is { name: string; value: [number, number] } => x !== null
+    );
+
+  return {
+    tooltip: {
+      trigger: "item",
+      formatter: (params: { name?: string; value?: number[] }) =>
+        params.value
+          ? `${params.name}<br/>经度：${params.value[0]}<br/>纬度：${params.value[1]}`
+          : `${params.name}`,
+    },
+    geo: {
+      map: "china",
+      roam: true,
+      zoom: 1.1,
+      label: { show: false },
+      itemStyle: { areaColor: "#f5f6f8", borderColor: "#cfd4dc" },
+      emphasis: { itemStyle: { areaColor: "#e8eaed" }, label: { show: false } },
+    },
+    series: [
+      {
+        type: "scatter",
+        coordinateSystem: "geo",
+        data,
+        symbolSize: 10,
+        label: {
+          show: true,
+          formatter: "{b}",
+          position: "right",
+          fontSize: 11,
+          color: "#303133",
+        },
+        itemStyle: { color: "#e15536" },
+      },
+    ],
+  };
+});
+
 async function openDetail(row: TaskTransportRecord) {
   detailVisible.value = true;
   detailLoading.value = true;
@@ -344,6 +403,14 @@ onMounted(loadList);
 
 .task-detail__order-tag {
   margin: 0;
+}
+
+/* 途经点地图预览：在表格下方给出地理散点，限制高度避免撑爆抽屉 */
+.task-detail__map {
+  margin-top: 12px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 4px;
+  background: #fff;
 }
 
 /* 任务进度步骤条（T-046）：与描述区块视觉密度一致；已取消提示条与步骤条留白 */
