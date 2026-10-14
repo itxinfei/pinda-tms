@@ -125,6 +125,16 @@ export interface TaskTransportPageQuery {
   driverName?: string;
 }
 
+/** 运输任务途经点（GET /point/{id} 返回） */
+export interface TransportPoint {
+  /** 途经点名称（机构名） */
+  name?: string;
+  /** 经度 */
+  lng?: string;
+  /** 纬度 */
+  lat?: string;
+}
+
 const TransportTaskAPI = {
   /** 运输任务分页 */
   page(data: TaskTransportPageQuery) {
@@ -138,6 +148,13 @@ const TransportTaskAPI = {
   getDetail(id: string) {
     return request<unknown, TaskTransportDetail>({
       url: `${TASK_BASE_URL}/${id}`,
+      method: "get",
+    });
+  },
+  /** 运输任务途经点 */
+  getPoints(id: string) {
+    return request<unknown, TransportPoint[]>({
+      url: `${TASK_BASE_URL}/point/${id}`,
       method: "get",
     });
   },

@@ -146,6 +146,15 @@
             <el-descriptions-item label="实际交付">{{ detail.actualDeliveryTime || "-" }}</el-descriptions-item>
           </el-descriptions>
 
+          <div v-if="points.length" class="task-detail__block">
+            <div class="task-detail__title">途经点（{{ points.length }}）</div>
+            <el-table :data="points" border size="small">
+              <el-table-column label="途经点" prop="name" min-width="180" show-overflow-tooltip />
+              <el-table-column label="经度" prop="lng" width="150" />
+              <el-table-column label="纬度" prop="lat" width="150" />
+            </el-table>
+          </div>
+
           <div v-if="detail.transportOrders?.length" class="task-detail__block">
             <div class="task-detail__title">关联运单（{{ detail.transportOrders.length }}）</div>
             <div class="task-detail__orders">
@@ -174,6 +183,7 @@ import {
   type TaskTransportRecord,
   type TaskTransportDetail,
   type TaskTransportPageQuery,
+  type TransportPoint,
 } from "@/api/transport-task";
 
 type TagType = "primary" | "success" | "info" | "warning" | "danger";
@@ -257,6 +267,8 @@ function handleReset() {
 const detailVisible = ref(false);
 const detailLoading = ref(false);
 const detail = ref<TaskTransportDetail>();
+/** 途经点（GET /point/{id}） */
+const points = ref<TransportPoint[]>([]);
 
 /** 任务进度步骤条（T-046）：4 个主节点按实际时间推进；已取消时流程终止（顶部 alert 提示，步骤停驻） */
 type TaskStep = { label: string; time: string; status: "success" | "process" | "wait" | "error" };
@@ -290,8 +302,14 @@ async function openDetail(row: TaskTransportRecord) {
   detailVisible.value = true;
   detailLoading.value = true;
   detail.value = undefined;
+  points.value = [];
   try {
-    detail.value = await TransportTaskAPI.getDetail(row.id);
+    const [detailRes, pointsRes] = await Promise.all([
+      TransportTaskAPI.getDetail(row.id),
+      TransportTaskAPI.getPoints(row.id),
+    ]);
+    detail.value = detailRes;
+    points.value = pointsRes ?? [];
   } finally {
     detailLoading.value = false;
   }
