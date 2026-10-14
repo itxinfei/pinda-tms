@@ -108,3 +108,9 @@ sa-token:
   is-share: false
   token-style: uuid
   is-log: false
+
+# 端级角色绑定（X-01 下沉落点，网关只校验登录态）：逗号分隔 OR 关系；
+# CUSTOMER 角色码现网暂无（预留，建角色即生效）；ADMIN 并入是因 customer01 等测试账号绑 ADMIN
+pinda:
+  auth:
+    required-roles: CUSTOMER,ADMIN

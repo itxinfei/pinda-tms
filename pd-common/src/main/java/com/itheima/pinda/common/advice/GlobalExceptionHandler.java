@@ -55,10 +55,11 @@ public class GlobalExceptionHandler {
         return Result.error(HttpStatus.BAD_REQUEST.value(), msg);
     }
 
-    /** 缺必填参数 / 参数类型错误 / 请求体不可读：400 */
+    /** 缺必填参数 / 参数类型错误 / 请求体不可读 / 类型转换失败：400 */
     @ExceptionHandler({MissingServletRequestParameterException.class,
             MethodArgumentTypeMismatchException.class,
-            HttpMessageNotReadableException.class})
+            HttpMessageNotReadableException.class,
+            IllegalArgumentException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Result handleBadRequest(Exception e) {
         log.warn("[参数错误] 400: {}", e.getMessage());

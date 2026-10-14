@@ -107,3 +107,9 @@ sa-token:
   is-share: false
   token-style: uuid
   is-log: false
+
+# 端级角色绑定（X-01 下沉落点，网关只校验登录态）：逗号分隔 OR 关系；
+# ADMIN 并入是因现网移动端测试账号多绑 ADMIN
+pinda:
+  auth:
+    required-roles: ROLE_COURIER,ADMIN
