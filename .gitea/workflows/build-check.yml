@@ -20,6 +20,18 @@ name: "CI-后端编译与测试门禁（push自动）"
 on:
   push:
     branches: [master]
+    # 只有前后端代码 / 构建编排提交才跑整条门禁 + 自动部署；纯文档、截图等非代码提交整轮跳过
+    # （2026-10-14 用户拍板：“必须是修改了 Java/Vue 前后端代码，提交了才构建，更新文档构建干嘛”）。
+    # 规则：混合提交里只要含一个非忽略路径仍会触发；手动 workflow_dispatch 不受 paths-ignore 影响，
+    # 任何时候都能在 Gitea UI 强制全量重跑。用黑名单而非白名单：漏配顶多白构建一次，
+    # 白名单漏配某类代码会导致“该部署的没部署”。
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'           # 含根目录 CLAUDE.md / README*.md
+      - 'LICENSE'
+      - '_shots/**'
+      - '**/_shots/**'
+      - '.gitignore'
   workflow_dispatch:
 
 concurrency:
@@ -208,6 +220,7 @@ jobs:
           done
 
       - name: 后端滚动部署 + 健康检查
+        id: be_deploy
         if: env.SERVICES != ''
         timeout-minutes: 40
         run: |
@@ -229,7 +242,8 @@ jobs:
           done
 
       - name: 后端失败自动回滚
-        if: ${{ failure() && env.SERVICES != '' }}
+        # 只认后端滚动这一步的成败：前端步骤失败（job 级 failure()）不得把已健康的后端整批回滚
+        if: ${{ env.SERVICES != '' && steps.be_deploy.outcome == 'failure' }}
         run: |
           if [ ! -f /tmp/prev-tags ]; then exit 0; fi
           rolled=""
@@ -246,7 +260,8 @@ jobs:
           echo "已回滚:${rolled:-无}"
 
       - name: 前端部署（构建+滚动+健康检查+失败回滚）
-        if: env.APPS != ''
+        # 后端已失败时不空跑 30 分钟前端构建；SERVICES 为空（纯前端变更）时 be_deploy 跳过、条件仍成立
+        if: ${{ env.APPS != '' && steps.be_deploy.outcome != 'failure' }}
         timeout-minutes: 30
         run: |
           set -e
