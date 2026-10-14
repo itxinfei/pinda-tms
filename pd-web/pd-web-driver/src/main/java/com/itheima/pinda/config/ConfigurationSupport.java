@@ -19,9 +19,11 @@ import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;
 import com.itheima.pinda.common.converter.EnumDeserializer;
 import com.itheima.pinda.common.interceptor.TokenAuthInterceptor;
+import com.itheima.pinda.common.satoken.RequiredRoleInterceptor;
 import com.itheima.pinda.common.json.BigDecimalSerializer;
 import com.itheima.pinda.common.utils.DatePatterns;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -51,6 +53,15 @@ import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKN
 @Slf4j
 @Configuration
 public class ConfigurationSupport extends WebMvcConfigurationSupport {
+
+    /**
+     * 端级角色绑定（X-01 下沉落点）：本类 extends WebMvcConfigurationSupport 使 Boot MVC
+     * 自动装配退避，pd-common 经 WebMvcConfigurer 注册的角色拦截器不被收集，须在此显式注册；
+     * 属性为空（未配置 pinda.auth.required-roles）时不注册。
+     */
+    @Value("${pinda.auth.required-roles:}")
+    private String requiredRoles;
+
     /**
      * LocalDateTime 反序列化兼容两种线上格式：
      * ① "yyyy-MM-dd HH:mm:ss"（全局 Jackson 输出）；② ISO "yyyy-MM-dd'T'HH:mm:ss"（pd-oms 默认输出）。
@@ -116,6 +127,8 @@ public class ConfigurationSupport extends WebMvcConfigurationSupport {
     protected void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(new TokenAuthInterceptor())
             .addPathPatterns("/**");
+        // 端级角色绑定（X-01）：属性空则不注册，actuator 探针在静态方法内已排除
+        RequiredRoleInterceptor.registerIfConfigured(registry, requiredRoles);
     }
 
     /**

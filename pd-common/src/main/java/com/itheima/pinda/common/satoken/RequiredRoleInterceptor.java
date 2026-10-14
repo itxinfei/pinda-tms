@@ -4,6 +4,9 @@ import cn.dev33.satoken.stp.StpUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+
+import java.util.Arrays;
 
 /**
  * 端级角色绑定拦截器（X-01 下沉落点，《12》§8.5）。
@@ -23,6 +26,25 @@ public class RequiredRoleInterceptor implements HandlerInterceptor {
 
     public RequiredRoleInterceptor(String... requiredRoles) {
         this.requiredRoles = requiredRoles;
+    }
+
+    /**
+     * 供 {@code extends WebMvcConfigurationSupport} 的服务在
+     * {@code addInterceptors} 中显式注册——WebMvcConfigurationSupport 会使 Boot MVC
+     * 自动装配退避，pd-common 经 {@code WebMvcConfigurer} 注册的本拦截器不被收集
+     * （driver/courier/customer 三端实测失效的根因）。属性空/空白则不注册。
+     */
+    public static void registerIfConfigured(InterceptorRegistry registry, String requiredRoles) {
+        if (requiredRoles == null || requiredRoles.isBlank()) {
+            return;
+        }
+        String[] roles = Arrays.stream(requiredRoles.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toArray(String[]::new);
+        registry.addInterceptor(new RequiredRoleInterceptor(roles))
+                .addPathPatterns("/**")
+                .excludePathPatterns("/actuator/**", "/favicon.ico");
     }
 
     @Override
