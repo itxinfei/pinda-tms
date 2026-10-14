@@ -1,4 +1,4 @@
-# 品达 TMS — Claude Code 项目入口（精简版）
+# 心飞 TMS — Claude Code 项目入口（精简版）
 
 > 本文件**每次会话自动加载**，只放"必须最先知道"的路由与硬事实；细节一律下沉到 `docs/需求文档/` 子文档，按下方顺序读，勿内联重复内容。
 > 最后更新：2026-10-13（挂接 D-63 文档五大真源锚点；§2 移动端口径按 D-62 订正）
@@ -60,7 +60,7 @@
 4. **新增对外接口仍须注册 `pd_auth.pd_auth_resource` 并绑角色**（RBAC/菜单基线，D-42 菜单下发依赖；无自动注册，须手工插表）。**2026-10-10 实测更新**：新 `pd-gateway`（Sa-Token）只校验登录态 + Same-Token 防直连，旧 AccessFilter"未知请求直接拒绝"机制已随 pd-authority 删除——未注册接口不再被网关拦截，但菜单/权限不可见，注册绑定仍是强制纪律。
 5. **网关鉴权（2026-10-10 更新）**：新 `pd-gateway`（Sa-Token+Redis）登录校验 + Same-Token 防直连；旧"j2cache 修复/菜单空清 redis"仅作历史。**菜单动态下发（D-42）尚未实现**（pd-auth 无 menu/router 端点），菜单空先确认功能未建、勿当缓存问题排查。
 6. **严禁新建/重写状态机**：`StateTransitionValidator` 已在用；真实缺口是跨端同步桥。
-7. **环境**：Docker 网 `172.21.0.x`；宿主 `192.168.20.130`；Nacos `8848`（ns `1cb93ce4…`，group `pinda-tms`）。**Nacos 鉴权 2026-10-11 起已开启**（无 token 访问 403）：dev 统一账号 `nacos/123456`（13 微服务+CI 全用它；yml 默认 `${NACOS_USERNAME:nacos}/${NACOS_PASSWORD:123456}`，compose 由 .env 强制注入）；`pinda/123456` 仅命名空间读写，保留备用。**密码勿入库**（🔴 2026-10-11 口径细化见 §5.2：dev 中间件统一口令 `123456` 允许写入 yml/compose 默认值；"勿入库"现仅约束真实第三方凭证）。
+7. **环境**：Docker 网 `172.21.0.x`；宿主 `192.168.20.130`；Nacos `8848`（ns `1cb93ce4…`，group `xinfei-tms`）。**Nacos 鉴权 2026-10-11 起已开启**（无 token 访问 403）：dev 统一账号 `nacos/123456`（13 微服务+CI 全用它；yml 默认 `${NACOS_USERNAME:nacos}/${NACOS_PASSWORD:123456}`，compose 由 .env 强制注入）；`pinda/123456` 仅命名空间读写，保留备用。**密码勿入库**（🔴 2026-10-11 口径细化见 §5.2：dev 中间件统一口令 `123456` 允许写入 yml/compose 默认值；"勿入库"现仅约束真实第三方凭证）。
 
 > ⚠️ 历史机制已删（2026-10-10）：旧网关 `AccessFilter` 资源清单关卡（`if (resourceNeed2Auth != null)` 整段放行）随 pd-authority 删除不复存在；新网关鉴权口径见硬事实 4——"返回 200"= 已过登录校验，权限粒度由资源/菜单绑定与下游校验承担。
 
@@ -84,15 +84,15 @@
 
 > 本节约 2026-10-10 由豆包助手（非 Claude Code）完成的前端工作，均为**已部署生效**的线上变更；如与你认领的任务冲突，先读《99-任务认领台账》确认归属，勿擅自回退。
 
-### A. 品达物流新 Logo 整套（提交 08c1b98/68165a3，已部署 4 端）
-- 定稿：红色货车图形 + 车厢白字"品达物流"；组合标（横版）用于登录/导航，图形标（1:1）用于 favicon/头像/侧边栏，App 图标圆角浅灰底。
+### A. 心飞物流新 Logo 整套（提交 08c1b98/68165a3，已部署 4 端）
+- 定稿：红色货车图形 + 车厢白字"心飞物流"；组合标（横版）用于登录/导航，图形标（1:1）用于 favicon/头像/侧边栏，App 图标圆角浅灰底。
 - 品牌资产库：`docs/brand/`（透明版/多尺寸/favicon/单色反白，4 端复用源）。
 - 4 端落地位置：
   - 管理端 `pd-admin-ui-vue3`：`public/favicon.ico`、`src/assets/images/logo-mark.png`（图形标）、`logo-full.png`（组合标）、`logo.png`（旧组合标，登录页已不再引用）。
   - 三端 `pd-mobile/*/src/static/`：`logo.png`（图形标）、`logo-full.png`（组合标）、`logo-app.png`（App 图标）、`favicon.ico`；登录页 `<image src="/static/logo-full.png">`；`manifest.json` 已配 android 5 档 + ios 4 档图标。
 
 ### B. 管理端登录页与国际化（提交 cd47b17 / e9e2d12 / 5d78f63，已部署）
-- 登录卡片品牌区：46px 图形标 + "品达物流" + "FASTER AND SAFER"（原 44×44 方框塞横版组合标导致变形不可见，已修复）。
+- 登录卡片品牌区：46px 图形标 + "心飞物流" + "FASTER AND SAFER"（原 44×44 方框塞横版组合标导致变形不可见，已修复）。
 - 侧边栏 `LayoutLogo.vue`：20px 图形标（原同样变形）。
 - 工具栏 `ThemeSwitcher` / `LangSelect`：**点击直接切换**（主题 亮→暗→自动 循环；语言 中↔英 toggle），去掉了下拉菜单——**全站生效**（LayoutToolbar 同款按钮行为一致）。
 - 登录页文案**全部接入 i18n**（`src/lang/package/zh-cn.json` / `en.json` 新增 `login.title/desc/*Placeholder/slogan/copyright/footer/accounts` key）；品牌名与 FASTER AND SAFER 不翻译。
@@ -120,7 +120,7 @@
 
 ### D. 前端工程规范待办（尚未执行，欢迎认领/推进，详见 `docs/前端工程优化与规范清单-2026-10-10.md`）
 1. **移动三端去重**（P1）：customer/courier/driver 的 `src/common` 重复且结构不一致（customer .js 17 文件 vs courier .ts 9 文件）。推荐抽 `pd-mobile-shared` 共享包；轻量方案先统一结构 + pd-mobile 根级 lint。
-2. **管理端 lint 落地**（P2）：`pnpm lint`（eslint/prettier/stylelint 已配）提交前跑通；`src/views/demo/` 模板示例页清理（需同步 router 引用）；~~`package.json` repository 指向品达仓库~~ **✅ 已改并推送（ac43192，`https://gitee.com/itxinfei/pinda-tms.git`）**。
+2. **管理端 lint 落地**（P2）：`pnpm lint`（eslint/prettier/stylelint 已配）提交前跑通；`src/views/demo/` 模板示例页清理（需同步 router 引用）；~~`package.json` repository 指向心飞仓库~~ **✅ 已改并推送（ac43192，`https://gitee.com/itxinfei/xinfei-tms.git`）**。
 3. **收尾**（P3）：三端 manifest `name/description` 已补、App 图标已配 9 档（见条目 K3，提交 84566a6），**仅剩 `appid` 未配置**（发布小程序前需真实 appid）；driver/courier pages.json tabBar 无 iconPath（App 端 tab 无图标，待设计 tab 图标）；根目录垃圾日志已清理（见 E）。
 
 ### E. 根目录垃圾文件清理（2026-10-10）
@@ -157,19 +157,19 @@
 
 ### I. 四端登录全链路体检与修复（2026-10-10，已部署生效）
 - **体检结论**：四端容器/页面/验证码接口全部在线；真实登录暴露 2 处阻塞，均已修复并验证通过。
-- **I1 后端根因（admin 登录 500"系统繁忙"）**：旧 `pd-auth-server` 镜像（5d78f63）application.yml 数据源指向 **`pd_auth` 库（不存在）**；代码基线改为连 `pinda_tms` 后，登录又报 **`Table 'pinda_tms.pd_auth_tenant' doesn't exist`**（HEAD 代码实体表名仍是 `pd_auth_tenant/pd_auth_user`，本地工作区 Claude 正改 `sys_` 版未提交）。
-  - **修复（服务器，不入代码）**：在 `pinda_tms` 库执行 `sql/auth/pd_auth_多租户重建_20261009.sql`（去掉 CREATE DATABASE/USE 的库内版）→ 建 `pd_auth_tenant/pd_auth_user/pd_core_org/pd_core_station/pd_area` + 种子（platform/pinda 租户、admin/pinda 账号，BCrypt=123456）；**补 pinda 租户 admin**（管理端固定 `tenantCode:pinda`）；补三端测试账号 `driver04/courier01/customer01`（同 BCrypt 123456）。
-  - **auth 重建部署**：服务器 `mvn -f pd-auth/pom.xml -am package`（ci/pinda-ci 容器）→ `docker build -t pinda/pd-auth:<short-sha>` → **compose 必须带 `TAG=<short-sha>` 环境变量**（compose image 用 `${TAG:-latest}`，不带会去拉 latest 失败）→ `docker compose up -d pd-auth`（旧名 pd-auth-server）。当前线上 `0ac2b3a` healthy。
-  - **验证**：验证码取 Redis 值（`pinda:captcha:<key>`，TTL 120s）后真实登录：admin → `{"code":0,"msg":"ok","data":{"token":...}}`。
-- **I2 三端登录缺 tenantCode（400"企业编码不能为空"）**：`customer/driver/courier` 的 `login/index.vue` 提交体只有 `{account,password,key,code}`，后端 `LoginParamDTO` 必填 `tenantCode`（三端 `config.ts` 已有 `TENANT_CODE='pinda'` 未用）。
+- **I1 后端根因（admin 登录 500"系统繁忙"）**：旧 `pd-auth-server` 镜像（5d78f63）application.yml 数据源指向 **`pd_auth` 库（不存在）**；代码基线改为连 `xinfei_tms` 后，登录又报 **`Table 'xinfei_tms.pd_auth_tenant' doesn't exist`**（HEAD 代码实体表名仍是 `pd_auth_tenant/pd_auth_user`，本地工作区 Claude 正改 `sys_` 版未提交）。
+  - **修复（服务器，不入代码）**：在 `xinfei_tms` 库执行 `sql/auth/pd_auth_多租户重建_20261009.sql`（去掉 CREATE DATABASE/USE 的库内版）→ 建 `pd_auth_tenant/pd_auth_user/pd_core_org/pd_core_station/pd_area` + 种子（platform/pinda 租户、admin/pinda 账号，BCrypt=123456）；**补 pinda 租户 admin**（管理端固定 `tenantCode:xinfei`）；补三端测试账号 `driver04/courier01/customer01`（同 BCrypt 123456）。
+  - **auth 重建部署**：服务器 `mvn -f pd-auth/pom.xml -am package`（ci/pinda-ci 容器）→ `docker build -t xinfei/pd-auth:<short-sha>` → **compose 必须带 `TAG=<short-sha>` 环境变量**（compose image 用 `${TAG:-latest}`，不带会去拉 latest 失败）→ `docker compose up -d pd-auth`（旧名 pd-auth-server）。当前线上 `0ac2b3a` healthy。
+  - **验证**：验证码取 Redis 值（`xinfei:captcha:<key>`，TTL 120s）后真实登录：admin → `{"code":0,"msg":"ok","data":{"token":...}}`。
+- **I2 三端登录缺 tenantCode（400"企业编码不能为空"）**：`customer/driver/courier` 的 `login/index.vue` 提交体只有 `{account,password,key,code}`，后端 `LoginParamDTO` 必填 `tenantCode`（三端 `config.ts` 已有 `TENANT_CODE='xinfei'` 未用）。
   - **修复（提交 `051ba07`，已推双远端）**：三端 `login/index.vue` 各补 `import { TENANT_CODE } from '@/common/config'`（customer 相对路径）+ 提交体加 `tenantCode: TENANT_CODE`。**移动三端登录必须带 tenantCode，与 admin 一致。**
   - **部署**：`bash /data/pinda-deploy/deploy-fe.sh driver|courier|customer`（当前 `manual-20261010200107/09/11` healthy）。
   - **验证**：driver04/courier01/customer01 + 验证码 → 三端均返回 token。
-- **线上登录账号（dev，密码均 123456）**：管理端 `admin`（tenantCode=pinda）；三端 `driver04` / `courier01` / `customer01`；**统一演示账号 `demo`（三端通用，同密码）**。`member_info`、`base_truck_driver` 仍为空——三端登录能过但业务数据（寄件/运单）尚无种子。
-- **数据库遗留（2026-10-12 已清理）**：面向旧分库（pd_auth/pd_base）的 7 个资源注册/角色授权类脚本已删除（`阻断C_三端接口注册与账号闭环`、`pd_auth_resource_注册模板_阻断C`、`三端异常上报接口_资源注册_20261008`、`客户订单轨迹_orderTrace_资源注册_20261009`、`管理端接口资源注册_20261007`、`资源注册路径修正_20261007`、`恢复_角色授权_20261007_2340`），旧 AccessFilter 资源表机制已随 pd-authority 移除；如需三端接口资源/角色授权，按 `pinda_tms` 单库 + 新表名另写。
+- **线上登录账号（dev，密码均 123456）**：管理端 `admin`（tenantCode=xinfei）；三端 `driver04` / `courier01` / `customer01`；**统一演示账号 `demo`（三端通用，同密码）**。`member_info`、`base_truck_driver` 仍为空——三端登录能过但业务数据（寄件/运单）尚无种子。
+- **数据库遗留（2026-10-12 已清理）**：面向旧分库（pd_auth/pd_base）的 7 个资源注册/角色授权类脚本已删除（`阻断C_三端接口注册与账号闭环`、`pd_auth_resource_注册模板_阻断C`、`三端异常上报接口_资源注册_20261008`、`客户订单轨迹_orderTrace_资源注册_20261009`、`管理端接口资源注册_20261007`、`资源注册路径修正_20261007`、`恢复_角色授权_20261007_2340`），旧 AccessFilter 资源表机制已随 pd-authority 移除；如需三端接口资源/角色授权，按 `xinfei_tms` 单库 + 新表名另写。
 
 ### J. 品牌色切换：神领物流配色（2026-10-10，用户定案，已提交 8675d94 待部署）
-- **决策**：移动端品牌主色由品达蓝 `#2B6CFF` 改为**神领物流橙红体系**（用户明确要求参考神领物流项目配色；神领仓库 gitee.com/giaqiqi/shenling-logistics-template-backup 源码统计：主色 `#E15536`、登录页深藏青 `#1A1C41`/`#283443`、浅橙 `#FFAB98`/`#FFEEEB`、辅助蓝 `#419EFF`、菜单激活 `#FF7A63`）。
+- **决策**：移动端品牌主色由心飞蓝 `#2B6CFF` 改为**神领物流橙红体系**（用户明确要求参考神领物流项目配色；神领仓库 gitee.com/giaqiqi/shenling-logistics-template-backup 源码统计：主色 `#E15536`、登录页深藏青 `#1A1C41`/`#283443`、浅橙 `#FFAB98`/`#FFEEEB`、辅助蓝 `#419EFF`、菜单激活 `#FF7A63`）。
 - **代码落地（提交 `8675d94`，已推双远端 gitea+gitee）**：
   1. 三端 `common/styles/variables.scss`：`--c-primary:#E15536; --c-primary-dark:#B53D22; --c-primary-light:#FFEEEB;`（原 `#2B6CFF/#1A4FD6/#E8F0FF`）
   2. 三端 `uni.scss`：`$u-primary:#E15536`
@@ -185,13 +185,13 @@
 - **联云风格要点**（抓官网 + App Store 截图归纳）：物流 TMS SaaS 同行；App 浅色清爽风——**顶部渐变头部**（个人中心为渐变蓝紫头+白底列表）、白色表单、**橙色强调按钮**（订单详情"添加评论"橙按钮）、司机端 tabBar=委托/接单/执行/历史/我的。
 - **落地（提交 `8087068`，已推双远端 gitea+gitee，三端已部署）**：三端 `login/index.vue` 重做为**联云式结构 × 神领配色**：
   1. 页面背景 `#f5f6f8` 浅灰白（联云浅色风）；
-  2. 顶部品牌头 `login-hero`：神领深藏青渐变 `#1A1C41→#283443→#2D3A4B` + 底部 48rpx 圆角，内居中 `logo-full.png`（240rpx）+ "品达物流"44rpx + 各端 slogan；神领橙系插画 `login-bg.png` 移入 hero 作底部装饰（opacity .5，深藏青底与渐变融合，不再全屏 cover）；
+  2. 顶部品牌头 `login-hero`：神领深藏青渐变 `#1A1C41→#283443→#2D3A4B` + 底部 48rpx 圆角，内居中 `logo-full.png`（240rpx）+ "心飞物流"44rpx + 各端 slogan；神领橙系插画 `login-bg.png` 移入 hero 作底部装饰（opacity .5，深藏青底与渐变融合，不再全屏 cover）；
   3. 白底表单卡 `login-card` 负边距上浮覆盖渐变头（-80rpx）、圆角 32rpx、轻阴影；输入框灰底 `#f5f6f8` 圆角 field（customer 用 u-input / driver·courier 用 u--input，保持各端既有组件与 script 逻辑、token 兼容写法）；
   4. 登录按钮神领橙渐变 `#E15536→#F1784F` 96rpx 大圆角 + loading 态（"登录中..."）；
   5. footer 版本文字改深灰（`--c-text-4`）。
 - **部署**：三端 `deploy-fe.sh driver|courier|customer` 已触发（手动部署，从 Gitea 拉 8087068 构建）。
 - **布局定案（追加，提交 `2980069` 已部署）**：用户对联云式布局仍不满意（"说不出哪里不好"），要求参考互联网案例。调研货拉拉司机端/斑马快跑/运满满司机端登录页后给三方案，**用户选定方案一「货拉拉式极简白底」**：纯白背景 + 顶部仅居中小 logo（logo-full.png 200rpx，去掉渐变头/插画/slogan 堆叠）+ 灰底描边圆角输入框（带 account/lock 图标）+ 橙色实心圆角按钮（#E15536，非渐变非全圆）+ 底部"登录即代表同意《用户协议》和《隐私政策》"+ 版本文字。`login-bg.png` 插画不再引用（文件保留于 static 供其他页面使用）。
-- **布局定案 2（追加，提交 `6cbdaf2` 已部署）**：用户要求"把我生成的插画放到登录页面当背景 + 表单美化 + logo 放大 + 加端名"。最终版（当前线上）：`login-bg.png`（神领橙系插画，三端各自图）**全屏 aspectFill 背景**（z-index 0，页面底色 #1a1c41）；品牌区 z-index 1 居中放大 logo-full.png **280rpx** + 其下"品达物流 · 司机端/快递员端/客户端"白字（30rpx/600/阴影）；白色圆角表单卡（rgba(255,255,255,.97)、圆角 32rpx、阴影 0 24rpx 60rpx）浮于插画上：卡内"欢迎回来"+ 副题 + 三个**等高输入框**（field 92rpx、灰底 #f7f8fa、描边 #e7e9ee、圆角 20rpx、图标、u--input height=88rpx）+ 验证码图 200x72 + 橙色按钮 92rpx/圆角 24rpx（:active 0.85）+ 协议小字；footer 白字带阴影。
+- **布局定案 2（追加，提交 `6cbdaf2` 已部署）**：用户要求"把我生成的插画放到登录页面当背景 + 表单美化 + logo 放大 + 加端名"。最终版（当前线上）：`login-bg.png`（神领橙系插画，三端各自图）**全屏 aspectFill 背景**（z-index 0，页面底色 #1a1c41）；品牌区 z-index 1 居中放大 logo-full.png **280rpx** + 其下"心飞物流 · 司机端/快递员端/客户端"白字（30rpx/600/阴影）；白色圆角表单卡（rgba(255,255,255,.97)、圆角 32rpx、阴影 0 24rpx 60rpx）浮于插画上：卡内"欢迎回来"+ 副题 + 三个**等高输入框**（field 92rpx、灰底 #f7f8fa、描边 #e7e9ee、圆角 20rpx、图标、u--input height=88rpx）+ 验证码图 200x72 + 橙色按钮 92rpx/圆角 24rpx（:active 0.85）+ 协议小字；footer 白字带阴影。
 - **文档**：本条目即记录；后续登录页再调整以本条为准。
 - **布局定案 3（追加，提交 `84566a6`，已推双远端并部署 202610102338+，三端 healthy/200）**：
   1. **登录页 logo 放大 3 倍**：`login-logo` width 280rpx → **840rpx** + `max-width:90vw`（防溢出），brand `padding-top` 130→96rpx；

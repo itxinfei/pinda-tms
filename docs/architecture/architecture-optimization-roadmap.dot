@@ -1,4 +1,4 @@
-// 品达TMS 架构优化路线图（先后依赖，不是甘特）
+// 心飞TMS 架构优化路线图（先后依赖，不是甘特）
 // 维护：与 tech-stack-and-system-architecture-review.md §3/§4/§5 的编号一一对应，改文必改图。
 // 读法：菱形=结构问题/未知，矩形=动作，圆角=外部前提；实线=必须先行，虚线=收益推断或待证前置。
 // 颜色：红=P0（升级前/期内）橙=P1（升级后立刻）灰=P2（功能稳定后）蓝=升级周计划既有阶段。
@@ -8,7 +8,7 @@ digraph architecture_optimization_roadmap {
   ranksep=0.62;
   fontname="Microsoft YaHei";
   labelloc=t;
-  label="品达TMS 架构优化顺序 2026-10-09\n核心逻辑：先让升级能被验证（R-1）与边界收口（S-4），再定归属（S-2/S-3），最后才动拓扑（S-1）\n红=P0  橙=P1  灰=P2  蓝=《29》周计划既有阶段  虚线=待证/收益推断";
+  label="心飞TMS 架构优化顺序 2026-10-09\n核心逻辑：先让升级能被验证（R-1）与边界收口（S-4），再定归属（S-2/S-3），最后才动拓扑（S-1）\n红=P0  橙=P1  灰=P2  蓝=《29》周计划既有阶段  虚线=待证/收益推断";
   compound=true;
 
   node [fontname="Microsoft YaHei", fontsize=10];
@@ -31,7 +31,7 @@ digraph architecture_optimization_roadmap {
   S4c [label="断源测试：停 auth-server\n调需鉴权接口须 401/503", shape=box, style="filled,dashed", fillcolor="#ffd9d9"];
 
   T3 [label="T-3 未知：feign.hystrix.enabled\n是否存在于 Nacos", shape=diamond, style="filled,dashed", fillcolor="#fff2cc"];
-  T3a [label="导出 pinda-tms group 全部 dataId\n→ 定性 B-17 是假成功还是抛异常", shape=box, style=filled, fillcolor="#ffd9d9"];
+  T3a [label="导出 xinfei-tms group 全部 dataId\n→ 定性 B-17 是假成功还是抛异常", shape=box, style=filled, fillcolor="#ffd9d9"];
   T3b [label="查清前不动 10 个 return null 的 Fallback", shape=box, style="filled,dashed", fillcolor="#eeeeee"];
 
   T2 [label="T-2 《08》漏列的第二个\nNetflix 硬阻断：Hystrix", shape=diamond, style=filled, fillcolor="#ffd9d9", color="#b00000"];

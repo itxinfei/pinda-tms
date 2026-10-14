@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🚚 Pinda Logistics TMS
+# 🚚 Xinfei Logistics TMS
 
 <p>
   <b>An Open-Source Transportation Management System (TMS) for carriers &amp; forwarders</b><br/>
@@ -42,9 +42,9 @@
 
 <p align="center"><a href="README.md">简体中文</a> · <b>English</b></p>
 
-> *Pinda TMS — Open-source Transportation Management System with 4-end synergy, powered by JDK 21 + Spring Boot 3.5 + Vue 3.5.*
+> *Xinfei TMS — Open-source Transportation Management System with 4-end synergy, powered by JDK 21 + Spring Boot 3.5 + Vue 3.5.*
 
-> **Pinda TMS** is a **4-end synergistic** (Admin + Customer + Courier + Driver) open-source Transportation Management System built on **JDK 21 + Spring Boot 3.5.7 + Vue 3.5**, covering the full chain: booking → order → intelligent dispatch → operations → tracking → proof of delivery. Drools rule engine drives intelligent dispatch, Netty powers self-built GPS tracking ingestion, Sa-Token provides multi-tenant SaaS readiness — order management, load planning, dispatch, driving management, GPS vehicle tracking and data reporting, all in one system for operational efficiency and cost control.
+> **Xinfei TMS** is a **4-end synergistic** (Admin + Customer + Courier + Driver) open-source Transportation Management System built on **JDK 21 + Spring Boot 3.5.7 + Vue 3.5**, covering the full chain: booking → order → intelligent dispatch → operations → tracking → proof of delivery. Drools rule engine drives intelligent dispatch, Netty powers self-built GPS tracking ingestion, Sa-Token provides multi-tenant SaaS readiness — order management, load planning, dispatch, driving management, GPS vehicle tracking and data reporting, all in one system for operational efficiency and cost control.
 
 <p align="center">
 <b><a href="#sec-tech"><code>13</code></a></b> microservices · <b><code>4</code></b> apps · <b><a href="docs/需求文档/01-业务需求全景.md"><code>101</code></a></b> functional requirements · <b><a href="sql/README.md"><code>54</code></a></b> database tables · <b><a href="docs/01-技术栈说明.md"><code>27</code></a></b> technologies · full business closed loop
@@ -83,9 +83,9 @@
 
 The four most common logistics business models are **express, less-than-truckload, dedicated lines and third-party logistics (3PL)**. Regardless of the model, the core pain points are the same: vehicles, drivers and routes are scattered and hard to manage; the transport process is opaque; dispatch and billing rely on manual work; cost and service-level performance cannot be evaluated.
 
-Pinda TMS was built to solve exactly this — it moves the whole chain of "resource preparation → ordering → dispatch → transport → delivery → POD → settlement" into one system, with comprehensive statistics and evaluation of vehicles, drivers and routes, helping enterprises **improve operational efficiency, reduce transport costs and stay ahead in a competitive market**.
+Xinfei TMS was built to solve exactly this — it moves the whole chain of "resource preparation → ordering → dispatch → transport → delivery → POD → settlement" into one system, with comprehensive statistics and evaluation of vehicles, drivers and routes, helping enterprises **improve operational efficiency, reduce transport costs and stay ahead in a competitive market**.
 
-> 💡 **Why this project?** Commercial TMS products are either **too expensive** (annual fees of ¥30K–300K), **too outdated** (JDK 8 + Vue 2), or **too heavy** (6-month implementation cycles). Pinda TMS aims to be the **third option**: open source and free, full-chain closed loop, cutting-edge stack, 4-end synergy — ready to run out of the box, friendly to secondary development.
+> 💡 **Why this project?** Commercial TMS products are either **too expensive** (annual fees of ¥30K–300K), **too outdated** (JDK 8 + Vue 2), or **too heavy** (6-month implementation cycles). Xinfei TMS aims to be the **third option**: open source and free, full-chain closed loop, cutting-edge stack, 4-end synergy — ready to run out of the box, friendly to secondary development.
 
 ---
 
@@ -113,7 +113,7 @@ Pinda TMS was built to solve exactly this — it moves the whole chain of "resou
 
 ### 2.3 Comparison
 
-| Capability | Pinda TMS | Similar open-source TMS | Commercial TMS |
+| Capability | Xinfei TMS | Similar open-source TMS | Commercial TMS |
 | --- | --- | --- | --- |
 | 4-end synergy (Admin+Customer+Courier+Driver) | ✅ | ❌ admin only | ✅ |
 | JDK 21 + Spring Boot 3.5 | ✅ | ❌ mostly JDK 8 | partially |
@@ -156,7 +156,7 @@ Pinda TMS was built to solve exactly this — it moves the whole chain of "resou
 
 ## 3. 🎯 Pain Points We Solve
 
-| Industry pain point | How Pinda TMS solves it |
+| Industry pain point | How Xinfei TMS solves it |
 | --- | --- |
 | Vehicles / drivers / routes scattered, hard to evaluate | Centralized master data + multi-dimensional reports |
 | Manual dispatch, experience-based load planning | Scheduled dispatch + route planning auto-generating transport tasks &amp; trips |
@@ -173,10 +173,10 @@ Pinda TMS was built to solve exactly this — it moves the whole chain of "resou
 
 | End | Name | Users | Core capabilities |
 | --- | --- | --- | --- |
-| Admin Console | Pinda TMS Admin | Internal admins | Master data, order management, waybill management |
-| Customer App | **Pinda Express** | External customers | Booking, shipment tracking |
-| Courier App | **Pinda Courier** | Internal couriers | Pickup &amp; delivery tasks |
-| Driver App | **Pinda Driver** | Internal drivers | Transport tasks, location reporting |
+| Admin Console | Xinfei TMS Admin | Internal admins | Master data, order management, waybill management |
+| Customer App | **Xinfei Express** | External customers | Booking, shipment tracking |
+| Courier App | **Xinfei Courier** | Internal couriers | Pickup &amp; delivery tasks |
+| Driver App | **Xinfei Driver** | Internal drivers | Transport tasks, location reporting |
 
 ---
 
@@ -219,7 +219,7 @@ Booking 📦 → Order creation 📋 → Intelligent dispatch 🤖 (Drools) → 
 ### 6.0 Project Structure
 
 ```
-pinda-tms/
+xinfei-tms/
 ├── Microservices (13)
 │   ├── pd-gateway/           # Unified gateway (Spring Cloud Gateway)
 │   ├── pd-auth/              # Auth center (Sa-Token + multi-tenant)
@@ -241,9 +241,9 @@ pinda-tms/
 ├── Frontend (4 ends)
 │   ├── pd-admin-ui-vue3/     # Admin (Vue3 + Element Plus)
 │   └── pd-mobile/            # Mobile 3 ends (uni-app Vue3)
-│       ├── customer/         #   Customer · Pinda Express
-│       ├── courier/          #   Courier · Pinda Courier
-│       └── driver/           #   Driver · Pinda Driver
+│       ├── customer/         #   Customer · Xinfei Express
+│       ├── courier/          #   Courier · Xinfei Courier
+│       └── driver/           #   Driver · Xinfei Driver
 ├── deploy/                   # Docker Compose orchestration & deployment scripts
 └── docs/                     # Docs + screenshots + badges
 ```
@@ -340,7 +340,7 @@ Reviewed and approved items, not yet landed; batched by priority (see the refact
 
 ### 6.5 Database Design
 
-After the full refactor the system converges to a **single MySQL database** (`pinda_tms`), table-prefixed by business domain, splittable per domain at scale:
+After the full refactor the system converges to a **single MySQL database** (`xinfei_tms`), table-prefixed by business domain, splittable per domain at scale:
 
 | Domain | Main tables |
 | --- | --- |
@@ -367,8 +367,8 @@ After the full refactor the system converges to a **single MySQL database** (`pi
 ### 7.2 Run in Five Minutes
 
 ```bash
-git clone https://gitee.com/itxinfei/pinda-tms.git
-cd pinda-tms
+git clone https://gitee.com/itxinfei/xinfei-tms.git
+cd xinfei-tms
 docker-compose up -d        # start middleware: MySQL / Redis / RabbitMQ / Nacos
 # ① run the SQL under sql/: authoritative DDL = sql/infra/00_create_database.sql → 01_sys … 08_iot → 09_seed.sql,
 #    the rest organized by domain; sql/ is not tracked by git (maintained manually, see sql/README.md)
@@ -416,15 +416,15 @@ docker-compose up -d        # start middleware: MySQL / Redis / RabbitMQ / Nacos
 
 <table>
 <tr>
-<td align="center" width="33%"><b>Customer · Pinda Express</b><br/><br/>
+<td align="center" width="33%"><b>Customer · Xinfei Express</b><br/><br/>
   <img src="docs/screenshots/mobile-customer.png" alt="Customer H5" style="max-width:180px;border-radius:8px;border:1px solid #e5e7eb;"/>
   <br/><sub>Booking / tracking · H5 (:8084)</sub>
 </td>
-<td align="center" width="33%"><b>Courier · Pinda Courier</b><br/><br/>
+<td align="center" width="33%"><b>Courier · Xinfei Courier</b><br/><br/>
   <img src="docs/screenshots/mobile-courier.png" alt="Courier H5" style="max-width:180px;border-radius:8px;border:1px solid #e5e7eb;"/>
   <br/><sub>Pickup/delivery tasks · H5 (:8083)</sub>
 </td>
-<td align="center" width="33%"><b>Driver · Pinda Driver</b><br/><br/>
+<td align="center" width="33%"><b>Driver · Xinfei Driver</b><br/><br/>
   <img src="docs/screenshots/mobile-driver.png" alt="Driver H5" style="max-width:180px;border-radius:8px;border:1px solid #e5e7eb;"/>
   <br/><sub>Transport tasks / location · H5 (:8082)</sub>
 </td>
@@ -467,7 +467,7 @@ docker-compose up -d        # start middleware: MySQL / Redis / RabbitMQ / Nacos
 <tr>
 <td align="center" width="50%">
   <img src="docs/screenshots/ops-mysql.png" alt="MySQL database"/>
-  <br/><sub><b>MySQL 8.0</b> · direct query · pinda_tms all 54 tables (InnoDB)</sub>
+  <br/><sub><b>MySQL 8.0</b> · direct query · xinfei_tms all 54 tables (InnoDB)</sub>
 </td>
 <td align="center" width="50%">
   <img src="docs/screenshots/ops-redis.png" alt="Redis keys"/>
@@ -493,7 +493,7 @@ All documents below are local files in the repo. **`docs/` and `docs/需求文�
 | [docs/03-功能规划与需求说明.md](docs/03-功能规划与需求说明.md) | Feature list &amp; requirements |
 | [docs/04-部署与二次开发指南.md](docs/04-部署与二次开发指南.md) | Deployment, initialization &amp; secondary development guide |
 | [docs/05-部署文档.md](docs/05-部署文档.md) | Middleware deployment manual |
-| [docs/06-品达TMS-开发测试环境手册.md](docs/06-品达TMS-开发测试环境手册.md) | Dev / test environment guide |
+| [docs/06-心飞TMS-开发测试环境手册.md](docs/06-心飞TMS-开发测试环境手册.md) | Dev / test environment guide |
 
 **② Requirements docs** (`docs/需求文档/`, independent numbering, authoritative entry: 00-索引):
 
@@ -548,7 +548,7 @@ This project is **fully open source &amp; free under Apache-2.0**. The author al
 
 <br>
 
-🔗 Repo: [gitee.com/itxinfei/pinda-tms](https://gitee.com/itxinfei/pinda-tms)
+🔗 Repo: [gitee.com/itxinfei/xinfei-tms](https://gitee.com/itxinfei/xinfei-tms)
 🏠 Author: [gitee.com/itxinfei](https://gitee.com/itxinfei)
 
 </td>
@@ -563,7 +563,7 @@ This project is **fully open source &amp; free under Apache-2.0**. The author al
 
 ### 11.4 ☕ Sponsorship
 
-> This project is **developed with AI assistance**, and continuous iteration requires significant time and AI tool costs. If Pinda TMS helps you, please consider sponsoring the author to keep it updated.
+> This project is **developed with AI assistance**, and continuous iteration requires significant time and AI tool costs. If Xinfei TMS helps you, please consider sponsoring the author to keep it updated.
 
 > 📌 **Sponsorship contact**: add **QQ: `747011882`** to discuss (sponsor list will be updated in this README); WeChat / Alipay QR-code entry coming soon.
 
@@ -607,8 +607,8 @@ A: uni-app 3-end architecture (App / H5 / Mini-Program); currently H5-first. A r
 
 <div align="center">
 
-<img src="https://gitee.com/itxinfei/pinda-tms/badge/star.svg" alt="Gitee Stars"/>
-<img src="https://gitee.com/itxinfei/pinda-tms/badge/fork.svg" alt="Gitee Forks"/>
+<img src="https://gitee.com/itxinfei/xinfei-tms/badge/star.svg" alt="Gitee Stars"/>
+<img src="https://gitee.com/itxinfei/xinfei-tms/badge/fork.svg" alt="Gitee Forks"/>
 
 </div>
 
@@ -626,4 +626,4 @@ Pull Requests are welcome! Please follow these conventions:
 
 <p align="center"><sub>Open-source TMS · Transportation Management System · Logistics · Fleet Management · Dispatch · Tracking · Spring Cloud Microservices · JDK 21 · Vue 3 · uni-app</sub></p>
 
-<p align="center"><sub>Pinda Logistics TMS · Open-Source Transportation Management System · Full Process · 4-End Synergy · Microservices</sub></p>
+<p align="center"><sub>Xinfei Logistics TMS · Open-Source Transportation Management System · Full Process · 4-End Synergy · Microservices</sub></p>

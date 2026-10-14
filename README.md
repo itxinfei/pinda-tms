@@ -43,7 +43,7 @@
 
 <p align="center"><b>简体中文</b> · <a href="README.en.md">English</a></p>
 
-> *Pinda TMS — Open-source Transportation Management System with 4-end synergy, powered by JDK 21 + Spring Boot 3.5 + Vue 3.5.*
+> *Xinfei TMS — Open-source Transportation Management System with 4-end synergy, powered by JDK 21 + Spring Boot 3.5 + Vue 3.5.*
 
 > **心飞 TMS** 是一款**四端协同**（管理端 + 客户端 + 快递员端 + 司机端）的开源运输管理系统，基于 **JDK 21 + Spring Boot 3.5.7 + Vue 3.5** 构建，覆盖寄件 → 订单 → 智能调度 → 作业 → 轨迹 → 回单全链路。Drools 规则引擎驱动智能调度，Netty 自建轨迹接入，Sa-Token 多租户 SaaS 就绪——覆盖订单管理、配载作业、调度分配、行车管理、GPS 车辆定位、数据报表全流程，让运输运作效率与成本管控一步到位。
 
@@ -235,7 +235,7 @@
 ### 6.0 项目结构
 
 ```
-pinda-tms/
+xinfei-tms/
 ├── 微服务（13 个）
 │   ├── pd-gateway/           # 统一网关（Spring Cloud Gateway）
 │   ├── pd-auth/              # 认证中心（Sa-Token + 多租户）
@@ -356,7 +356,7 @@ public class LocationServerHandler extends SimpleChannelInboundHandler<ByteBuf> 
 
 ### 6.5 数据库设计
 
-全量重构后系统收敛为**单库 MySQL**（`pinda_tms`），按业务域划分表前缀，规模化后可按域平滑拆分：
+全量重构后系统收敛为**单库 MySQL**（`xinfei_tms`），按业务域划分表前缀，规模化后可按域平滑拆分：
 
 | 业务域 | 主要表内容 |
 | --- | --- |
@@ -383,8 +383,8 @@ public class LocationServerHandler extends SimpleChannelInboundHandler<ByteBuf> 
 ### 7.2 五分钟跑起来
 
 ```bash
-git clone https://gitee.com/itxinfei/pinda-tms.git
-cd pinda-tms
+git clone https://gitee.com/itxinfei/xinfei-tms.git
+cd xinfei-tms
 docker-compose up -d        # 起中间件：MySQL / Redis / RabbitMQ / Nacos
 # ① 执行 sql/ 下的建库与种子脚本：权威 DDL = sql/infra/00_create_database.sql → 01_sys … 08_iot → 09_seed.sql，
 #    其余按业务域分目录；sql/ 不进 git，由本人手动维护（详见 sql/README.md）
@@ -483,7 +483,7 @@ docker-compose up -d        # 起中间件：MySQL / Redis / RabbitMQ / Nacos
 <tr>
 <td align="center" width="50%">
   <img src="docs/screenshots/ops-mysql.png" alt="MySQL 数据库"/>
-  <br/><sub><b>MySQL 8.0 数据库</b> · 终端直连查询 · pinda_tms 全部 54 张表（InnoDB）</sub>
+  <br/><sub><b>MySQL 8.0 数据库</b> · 终端直连查询 · xinfei_tms 全部 54 张表（InnoDB）</sub>
 </td>
 <td align="center" width="50%">
   <img src="docs/screenshots/ops-redis.png" alt="Redis 键管理"/>
@@ -509,7 +509,7 @@ docker-compose up -d        # 起中间件：MySQL / Redis / RabbitMQ / Nacos
 | [docs/03-功能规划与需求说明.md](docs/03-功能规划与需求说明.md) | 功能清单与需求说明 |
 | [docs/04-部署与二次开发指南.md](docs/04-部署与二次开发指南.md) | 部署、初始化与二次开发指引 |
 | [docs/05-部署文档.md](docs/05-部署文档.md) | 中间件部署手册 |
-| [docs/06-品达TMS-开发测试环境手册.md](docs/06-品达TMS-开发测试环境手册.md) | 开发 / 测试环境说明 |
+| [docs/06-心飞TMS-开发测试环境手册.md](docs/06-心飞TMS-开发测试环境手册.md) | 开发 / 测试环境说明 |
 
 **② 需求文档体系**（`docs/需求文档/`，编号独立，权威入口见 00-索引）：
 
@@ -564,7 +564,7 @@ docker-compose up -d        # 起中间件：MySQL / Redis / RabbitMQ / Nacos
 
 <br>
 
-🔗 仓库：[gitee.com/itxinfei/pinda-tms](https://gitee.com/itxinfei/pinda-tms)
+🔗 仓库：[gitee.com/itxinfei/xinfei-tms](https://gitee.com/itxinfei/xinfei-tms)
 🏠 作者主页：[gitee.com/itxinfei](https://gitee.com/itxinfei)
 
 </td>
@@ -623,8 +623,8 @@ A: uni-app 三端架构（App / H5 / 小程序），当前以 H5 为主，小程
 
 <div align="center">
 
-<img src="https://gitee.com/itxinfei/pinda-tms/badge/star.svg" alt="Gitee Stars"/>
-<img src="https://gitee.com/itxinfei/pinda-tms/badge/fork.svg" alt="Gitee Forks"/>
+<img src="https://gitee.com/itxinfei/xinfei-tms/badge/star.svg" alt="Gitee Stars"/>
+<img src="https://gitee.com/itxinfei/xinfei-tms/badge/fork.svg" alt="Gitee Forks"/>
 
 </div>
 
