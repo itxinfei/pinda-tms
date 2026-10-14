@@ -60,10 +60,23 @@ jobs:
       - name: Maven 测试门禁（ArchUnit 架构红线 + 各模块单测）
         # 曾经的盲区：push 只编译零测试。此步把《12》§8 横切红线（ArchUnit，如 pd-dispatch
         # ModuleArchitectureTest）与各模块单测接入 CI；install 已装好内部 SNAPSHOT，test 复用、无需 -am。
+        # 2026-10-14 提速：全 reactor `mvn test` 串行空转 13 个模块（实际仅 4 个有测试）是主要耗时。
+        #   ① 收窄到有测试的 4 个模块（pd-oms/pd-dispatch/pd-work/pd-netty），其余 9 个无测试模块不再空转；
+        #   ② 加 -T 1C 并行；
+        #   ③ 漏测兜底：一旦这 4 个模块之外出现新测试文件，自动回退全量 mvn test，不静默漏测。
         run: |
           set -e
           ls -ld /root/.m2 || { echo "::error::/root/.m2 未挂载，检查 act_runner container.options"; exit 1; }
-          mvn -B test -s /ci/maven-settings.xml
+          TEST_MODS="pd-oms,pd-dispatch,pd-work,pd-netty"
+          EXTRA=$(git ls-files 'Test*.java' '*Test.java' '*Tests.java' '*TestCase.java' | grep -vE '^pd-(oms|dispatch|work|netty)/' || true)
+          if [ -n "$EXTRA" ]; then
+            echo "::warning::检测到 4 个测试模块之外的测试文件，回退全量 mvn test（避免漏测）："
+            echo "$EXTRA"
+            mvn -B test -T 1C -s /ci/maven-settings.xml
+          else
+            echo ">> 收窄测试到有测试的模块: $TEST_MODS（-T 1C 并行）"
+            mvn -B test -T 1C -pl "$TEST_MODS" -s /ci/maven-settings.xml
+          fi
         timeout-minutes: 15
 
   auto-deploy:
