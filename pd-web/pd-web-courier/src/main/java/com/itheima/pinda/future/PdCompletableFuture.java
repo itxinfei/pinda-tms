@@ -27,6 +27,10 @@ import java.util.stream.Collectors;
 public class PdCompletableFuture {
 
     public static final CompletableFuture<Map<Long, AreaDTO>> areaMapFuture(AreaFeign api, Long parentId, Set<Long> areaSet) {
+        // D-02 空集守卫（《12》§8.1）：空集合打 Feign 会让下游 findAll 无 WHERE 条件全表扫描
+        if (areaSet == null || areaSet.isEmpty()) {
+            return CompletableFuture.completedFuture(new HashMap<>());
+        }
         return AsyncRequestHeaders.supplyAsync(() -> {
             // 修改点：远程调用结果可能为 null（fallback），统一通过 Rx 安全取值，避免 NPE
             List<AreaDTO> result = Rx.list(api.findAll(parentId, new ArrayList<>(areaSet)));

@@ -25,6 +25,10 @@ public class PdCompletableFuture {
 
 
     public static final CompletableFuture<Map<Long, AreaDTO>> areaMapFuture(AreaFeign api, Long parentId, Set<Long> areaSet) {
+        // D-02 空集守卫（《12》§8.1）：空集合打 Feign 会让下游 findAll 无 WHERE 条件全表扫描
+        if (areaSet == null || areaSet.isEmpty()) {
+            return CompletableFuture.completedFuture(new HashMap<>());
+        }
         // Feign 直接返回裸 List（无 R 包装），远程失败可能为 null，统一通过 Rx 安全取值
         List<AreaDTO> result = api.findAll(parentId, new ArrayList<>(areaSet));
         return AsyncRequestHeaders.supplyAsync(() ->

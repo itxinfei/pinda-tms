@@ -20,6 +20,7 @@ import com.itheima.pinda.vo.SysUserVo;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -69,6 +70,10 @@ public class PdCompletableFuture {
     }
 
     public static final CompletableFuture<Map> areaMapFuture(AreaFeign feign, Long parentId, Set<Long> areaSet) {
+        // D-02 空集守卫（《12》§8.1）：空集合打 Feign 会让下游 findAll 无 WHERE 条件全表扫描
+        if (areaSet == null || areaSet.isEmpty()) {
+            return CompletableFuture.completedFuture(new HashMap<>());
+        }
         List<AreaDTO> result = feign.findAll(parentId, new ArrayList<>(areaSet));
         // 远程调用结果可能为 null，统一通过 Rx 安全取值，避免 NPE
         return AsyncRequestHeaders.supplyAsync(() -> Rx.list(result).stream().map(BeanUtil::parseArea2Vo).collect(Collectors.toMap(AreaSimpleVo::getId, vo -> vo)));

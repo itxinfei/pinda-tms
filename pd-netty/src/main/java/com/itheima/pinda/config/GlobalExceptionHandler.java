@@ -4,6 +4,8 @@ import cn.dev33.satoken.exception.NotLoginException;
 import cn.dev33.satoken.exception.SameTokenInvalidException;
 import com.itheima.pinda.common.utils.Result;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -16,8 +18,12 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  * 若不处理会冒泡成 Tomcat 默认 500 白页。此处与 pd-auth 同一姿势，
  * 把 Same-Token / 未登录异常收口为 HTTP 401 + 统一 {@link Result} JSON，
  * 其余未捕获异常返回 500 JSON 且不外露堆栈。</p>
+ *
+ * <p>服务特有 advice 显式最高优先级，压过 pd-common 公共兜底
+ * （{@code com.itheima.pinda.common.advice.GlobalExceptionHandler}）。</p>
  */
 @Slf4j
+@Order(Ordered.HIGHEST_PRECEDENCE)
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 

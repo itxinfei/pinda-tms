@@ -7,6 +7,7 @@ import com.itheima.pinda.DTO.AreaDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,6 +32,10 @@ public class AreaQueryService {
      * 按父级ID或ID集合查询
      */
     public List<AreaDTO> findAll(Long parentId, List<Long> ids) {
+        // D-02 服务端兜底（《12》§8.1）：parentId 与 ids 均空时禁止无条件全表扫描（dict_area 66 万行）
+        if (parentId == null && (ids == null || ids.isEmpty())) {
+            return Collections.emptyList();
+        }
         List<Area> areas = areaMapper.selectList(Wrappers.<Area>lambdaQuery()
                 .eq(parentId != null, Area::getParentId, parentId)
                 .in(ids != null && !ids.isEmpty(), Area::getId, ids)

@@ -3,15 +3,19 @@ package com.itheima.pinda.web;
 import com.itheima.pinda.common.utils.Result;
 import com.itheima.pinda.component.MemberIdentityException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /**
  * 客户 BFF 异常处理：仅接管 {@link MemberIdentityException}，转统一 Result 响应。
  *
- * <p>其他异常维持各 Controller 既有 try/catch 行为，不在此扩大处理面（YAGNI）。</p>
+ * <p>其他异常维持各 Controller 既有 try/catch 行为，不在此扩大处理面（YAGNI）；
+ * 未捕获的公共异常由 pd-common 公共 advice 兜底，本类显式最高优先级压过它。</p>
  */
 @Slf4j
+@Order(Ordered.HIGHEST_PRECEDENCE)
 @RestControllerAdvice
 public class MemberIdentityExceptionHandler {
 
