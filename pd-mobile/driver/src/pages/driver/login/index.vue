@@ -6,7 +6,7 @@
     <!-- 品牌区：放大 logo + 端名 -->
     <view class="login-brand">
       <image class="login-logo" src="/static/logo-full-login.png" mode="widthFix" />
-      <view class="login-end">心飞物流 · 司机端</view>
+      <view class="login-end">心飞司机宝</view>
     </view>
 
     <!-- 表单卡 -->
@@ -32,7 +32,7 @@
       <view class="login-agree">登录即代表同意《用户协议》和《隐私政策》</view>
     </view>
 
-    <view class="login-footer">心飞物流TMS · 司机端</view>
+    <view class="login-footer">心飞司机宝</view>
   </view>
 </template>
 

@@ -1,7 +1,7 @@
 <template>
 	<view class="page">
 		<u-icon name="checkmark-circle-fill" color="#E15536" size="64"></u-icon>
-		<text class="title">心飞物流 · 客户端</text>
+		<text class="title">心飞速运</text>
 		<text class="desc">uview-plus + Pinia 已就绪</text>
 		<u-button type="primary" text="主要按钮" customStyle="margin-top: 24px"></u-button>
 		<u-button type="primary" plain text="次要按钮" customStyle="margin-top: 16px"></u-button>

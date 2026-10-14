@@ -11,7 +11,7 @@
 		{
 			"path": "pages/driver/home/index",
 			"style": {
-				"navigationBarTitleText": "心飞物流 · 司机端"
+				"navigationBarTitleText": "心飞司机宝"
 			}
 		},
 		{
@@ -110,7 +110,7 @@
 	},
 	"globalStyle": {
 		"navigationBarTextStyle": "white",
-		"navigationBarTitleText": "心飞物流 · 司机端",
+		"navigationBarTitleText": "心飞司机宝",
 		"navigationBarBackgroundColor": "#E15536",
 		"backgroundColor": "#F5F7FA"
 	},
