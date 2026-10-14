@@ -5,13 +5,13 @@
 import re, glob
 
 SERVICES = {
-    "pd-base": ("D:/MyCode/pinda-tms/pd-base/src/main/java", "base"),
-    "pd-web-manager": ("D:/MyCode/pinda-tms/pd-web/pd-web-manager/src/main/java", "web-manager"),
-    "pd-oms": ("D:/MyCode/pinda-tms/pd-oms/src/main/java", "oms"),
-    "pd-work": ("D:/MyCode/pinda-tms/pd-work/src/main/java", "work"),
-    "pd-dispatch": ("D:/MyCode/pinda-tms/pd-dispatch/src/main/java", "dispatch"),
-    "pd-user": ("D:/MyCode/pinda-tms/pd-user/src/main/java", "user"),
-    "pd-aggregation": ("D:/MyCode/pinda-tms/pd-aggregation/src/main/java", "aggregation"),
+    "xf-base": ("D:/MyCode/pinda-tms/xf-base/src/main/java", "base"),
+    "xf-web-manager": ("D:/MyCode/pinda-tms/xf-web/xf-web-manager/src/main/java", "web-manager"),
+    "xf-oms": ("D:/MyCode/pinda-tms/xf-oms/src/main/java", "oms"),
+    "xf-work": ("D:/MyCode/pinda-tms/xf-work/src/main/java", "work"),
+    "xf-dispatch": ("D:/MyCode/pinda-tms/xf-dispatch/src/main/java", "dispatch"),
+    "xf-user": ("D:/MyCode/pinda-tms/xf-user/src/main/java", "user"),
+    "xf-aggregation": ("D:/MyCode/pinda-tms/xf-aggregation/src/main/java", "aggregation"),
 }
 
 METHOD_ANN = {
