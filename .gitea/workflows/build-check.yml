@@ -219,49 +219,72 @@ jobs:
             docker build -f deploy/apps/Dockerfile -t "pinda/$s:${TAG}" ".ctx/$s"
           done
 
-      - name: 后端滚动部署 + 健康检查
+      - name: 后端滚动部署 + 健康检查（失败当场内联回滚）
         id: be_deploy
         if: env.SERVICES != ''
         timeout-minutes: 40
         run: |
-          set -e
+          # 不使用全局 set -e：失败分支必须把本轮已切换的服务逐个回滚完，不能被单条命令的非零码打断。
           source /tmp/svc.sh
           if [ "$SERVICES" = "ALL" ]; then SERVICES="$ORDER"; fi
+          COMPOSE="deploy/apps/docker-compose.app.yml"
+          tv_of() { echo "$(echo "$1" | tr 'a-z-' 'A-Z_')_TAG"; }
+          health_of() { docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$1" 2>/dev/null || echo missing; }
+
+          # 上一版本 tag 基线（镜像构建步骤写入 /tmp/prev-tags），形如 "<服务> <旧tag>"；首次部署旧 tag 为空
+          declare -A PREV=()
+          if [ -f /tmp/prev-tags ]; then
+            while read -r s p; do [ -n "$s" ] && PREV["$s"]="$p"; done < /tmp/prev-tags
+          fi
+          deployed=()   # 本轮已 compose up 切换到新 tag 的服务（按部署序）
+
+          # 逆序回滚本轮已部署服务。必须内联在同一 shell：run#287 实测后置独立回滚 step
+          # （if: steps.be_deploy.outcome=='failure'）在本 act_runner 失败路径被整体跳过、回滚不生效。
+          rollback_all() {
+            echo "::error::后端部署失败，按部署逆序回滚本轮已切换的 ${#deployed[@]} 个服务"
+            for ((idx=${#deployed[@]}-1; idx>=0; idx--)); do
+              s="${deployed[$idx]}"; tv=$(tv_of "$s"); prev="${PREV[$s]:-}"
+              if [ -z "$prev" ]; then echo ">> 回滚跳过 $s（首次部署无旧 tag），需人工处理"; continue; fi
+              echo ">> 回滚 $s -> $prev"
+              if env TAG="${TAG:-rollback}" "$tv=$prev" docker compose --env-file /ci/apps.env \
+                   -f "$COMPOSE" up -d "$s"; then
+                rb=0
+                for i in $(seq 1 24); do [ "$(health_of "$s")" = "healthy" ] && { rb=1; break; }; sleep 5; done
+                [ "$rb" = "1" ] && echo ">> $s 已回滚并 healthy" || echo "::warning::$s 已回滚到 $prev 但 2min 内未 healthy，需人工查看"
+              else
+                echo "::warning::$s 回滚命令失败，需人工处理"
+              fi
+            done
+          }
+
           for s in $SERVICES; do
-            tv="$(echo "$s" | tr 'a-z-' 'A-Z_')_TAG"
-            env TAG="$TAG" "$tv=$TAG" docker compose --env-file /ci/apps.env \
-              -f deploy/apps/docker-compose.app.yml up -d "$s"
+            tv=$(tv_of "$s")
+            if ! env TAG="$TAG" "$tv=$TAG" docker compose --env-file /ci/apps.env \
+                  -f "$COMPOSE" up -d "$s"; then
+              deployed+=("$s")
+              rollback_all
+              echo "::error::$s compose up 命令失败，已回滚，部署基线不刷新"
+              exit 1
+            fi
+            deployed+=("$s")
             ok=0
             for i in $(seq 1 48); do
-              st=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$s" 2>/dev/null || echo missing)
-              if [ "$st" = "healthy" ]; then ok=1; break; fi
+              [ "$(health_of "$s")" = "healthy" ] && { ok=1; break; }
               sleep 5
             done
-            echo "$s health=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$s" 2>/dev/null)"
-            if [ "$ok" != "1" ]; then echo "::error::$s 探活未过（将回滚）"; exit 1; fi
+            echo "$s health=$(health_of "$s")"
+            if [ "$ok" != "1" ]; then
+              rollback_all
+              echo "::error::$s 探活未过，已回滚，部署基线不刷新"
+              exit 1
+            fi
           done
 
-      - name: 后端失败自动回滚
-        # 只认后端滚动这一步的成败：前端步骤失败（job 级 failure()）不得把已健康的后端整批回滚
-        if: ${{ env.SERVICES != '' && steps.be_deploy.outcome == 'failure' }}
-        run: |
-          if [ ! -f /tmp/prev-tags ]; then exit 0; fi
-          rolled=""
-          while read -r s prev; do
-            if [ -z "$s" ]; then continue; fi
-            if [ -z "$prev" ]; then echo "跳过 $s（首次部署无基线）"; continue; fi
-            tv="$(echo "$s" | tr 'a-z-' 'A-Z_')_TAG"
-            echo ">> 回滚 $s -> $prev"
-            if env TAG="${TAG:-rollback}" "$tv=$prev" docker compose --env-file /ci/apps.env \
-                 -f deploy/apps/docker-compose.app.yml up -d "$s"; then
-              rolled="$rolled $s"
-            fi
-          done < <(tac /tmp/prev-tags)
-          echo "已回滚:${rolled:-无}"
-
       - name: 前端部署（构建+滚动+健康检查+失败回滚）
-        # 后端已失败时不空跑 30 分钟前端构建；SERVICES 为空（纯前端变更）时 be_deploy 跳过、条件仍成立
-        if: ${{ env.APPS != '' && steps.be_deploy.outcome != 'failure' }}
+        # 后端部署 step 失败时本 step 被 runner 默认跳过（前序 step 失败即不再执行后续成功态 step），
+        # 不再依赖 steps.be_deploy.outcome —— 该上下文在本 act_runner 失败路径不可靠（run#287 证伪）。
+        # SERVICES 为空（纯前端变更）时后端 step 是 skipped（非 failure），本步照常执行。
+        if: env.APPS != ''
         timeout-minutes: 30
         run: |
           set -e
