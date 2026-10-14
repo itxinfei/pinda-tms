@@ -25,7 +25,7 @@ import org.springframework.http.HttpStatus;
  * <p>基包 {@code com.xinfei} 的服务（四 BFF、dispatch、base、oms、work 等）
  * 经组件扫描自动生效，无需各服务自写 {@code GlobalExceptionHandler}。</p>
  *
- * <p>{@link Order#LOWEST_PRECEDENCE}：服务自有 advice（如 pd-netty 的
+ * <p>{@link Order#LOWEST_PRECEDENCE}：服务自有 advice（如 xf-netty 的
  * Same-Token/NotLogin 收口、customer 的会员身份处理）优先命中，
  * 本类只兜底未特化处理的公共异常。</p>
  *

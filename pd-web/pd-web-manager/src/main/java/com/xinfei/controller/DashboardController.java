@@ -38,8 +38,8 @@ import java.util.stream.Collectors;
 /**
  * 管理端工作台/大屏聚合接口（BFF，不连库）。
  *
- * <p>订单统计来自 pd-oms；运单/运输任务/车辆状态来自 pd-work（OPS-3：车辆状态由运输任务推导）；
- * 车辆总数来自 pd-base。异常告警与车辆 GPS 定位由前端直连 pd-netty，不经过本服务。
+ * <p>订单统计来自 xf-oms；运单/运输任务/车辆状态来自 xf-work（OPS-3：车辆状态由运输任务推导）；
+ * 车辆总数来自 xf-base。异常告警与车辆 GPS 定位由前端直连 xf-netty，不经过本服务。
  * 返回值由 GlobalResponseAdvice 统一包成 {code,msg,data}。</p>
  */
 @Slf4j

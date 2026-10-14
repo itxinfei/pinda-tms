@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * 会员内部端点：仅供微服务间 Feign 调用（客户 BFF 解析会员身份）。
  *
- * <p>路径 {@code /member/internal/**} 预留统一 Same-Token 入站加固；网关无 pd-user 路由，
+ * <p>路径 {@code /member/internal/**} 预留统一 Same-Token 入站加固；网关无 xf-user 路由，
  * 外部不可达。租户隔离由 TenantLineInnerInterceptor 按 tenantId 请求头自动处理。</p>
  */
 @Log4j2

@@ -9,7 +9,7 @@ import com.xinfei.entity.OrderClassifyOrderEntity;
 public interface IOrderClassifyOrderService extends IService<OrderClassifyOrderEntity> {
 
     /**
-     * 按订单ID（pd-oms String 边界）查分类ID
+     * 按订单ID（xf-oms String 边界）查分类ID
      */
     Long getClassifyId(String orderId);
 }

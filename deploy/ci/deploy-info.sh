@@ -12,7 +12,7 @@ OUT_DIR=${OUT_DIR:-/var/www/deployinfo}
 DEPLOY_TAG=${TAG:-${1:-}}
 # 没显式给 TAG 时，用运行中容器实际在用的镜像 tag 当"当前部署版本"
 if [ -z "$DEPLOY_TAG" ]; then
-  for c in pd-gateway pd-oms pd-admin-h5; do
+  for c in xf-gateway xf-oms pd-admin-h5; do
     t=$(docker inspect -f '{{.Config.Image}}' "$c" 2>/dev/null | awk -F: '{print $2}')
     [ -n "$t" ] && { DEPLOY_TAG="$t"; break; }
   done
@@ -33,7 +33,7 @@ now=$(date '+%F %T %Z')
 # ---------- 服务清单（镜像 tag / 资源上限 / 健康） ----------
 svc_rows=""
 svc_json=""
-for c in $(docker ps --format '{{.Names}}' | grep -E '^pd-' | sort); do
+for c in $(docker ps --format '{{.Names}}' | grep -E '^(pd|xf)-' | sort); do
   img=$(docker inspect -f '{{.Config.Image}}' "$c")
   m=$(docker inspect -f '{{.HostConfig.Memory}}' "$c")
   fd=$(docker inspect -f '{{range .HostConfig.Ulimits}}{{if eq .Name "nofile"}}{{.Hard}}{{end}}{{end}}' "$c")
@@ -101,7 +101,7 @@ fi
 commit_json="[${commit_json%,}]"
 
 # ---------- 前端与镜像 tag 是否一致 ----------
-img_tags=$(docker images --format '{{.Repository}}:{{.Tag}}' | grep '^xinfei/pd-' | awk -F: '{print $2}' | sort -u | tr '\n' ' ')
+img_tags=$(docker images --format '{{.Repository}}:{{.Tag}}' | grep -E '^xinfei/(pd|xf)-' | awk -F: '{print $2}' | sort -u | tr '\n' ' ')
 
 cat > "$OUT_DIR/deploy.html" <<HTML
 <!doctype html><html lang="zh"><head><meta charset="utf-8">

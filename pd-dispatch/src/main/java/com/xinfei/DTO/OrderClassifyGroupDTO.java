@@ -10,7 +10,7 @@ import java.util.Objects;
  *
  * <p>分组ID与机构ID为 Long；{@link #key} 为「起始机构#目的机构#当前机构」自产分组键，
  * 来源 {@link OrderClassifyDTO#groupBy()}（Long 拼串，数值完全可控，可安全拆回 Long）；
- * 订单ID集合保持 String，仅在落 disp_classify_order 时转 Long（pd-oms String 边界）。</p>
+ * 订单ID集合保持 String，仅在落 disp_classify_order 时转 Long（xf-oms String 边界）。</p>
  */
 @Data
 @Builder
@@ -64,7 +64,7 @@ public class OrderClassifyGroupDTO {
     }
 
     /**
-     * 原订单ID集合（pd-oms String 边界）
+     * 原订单ID集合（xf-oms String 边界）
      */
     private List<String> orders;
 

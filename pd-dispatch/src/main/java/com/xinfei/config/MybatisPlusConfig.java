@@ -54,7 +54,7 @@ public class MybatisPlusConfig {
     /**
      * 解析当前租户ID：
      * <ol>
-     *   <li>HTTP 请求头 tenantId（pd-gateway 登录后注入）；</li>
+     *   <li>HTTP 请求头 tenantId（xf-gateway 登录后注入）；</li>
      *   <li>系统态线程上下文 {@link TenantContextHolder}（调度线程在落库前 set）；</li>
      *   <li>回落 0。</li>
      * </ol>

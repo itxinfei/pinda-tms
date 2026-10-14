@@ -11,8 +11,8 @@ import java.util.Set;
  *
  * <p>disp_ 新表外键全部落 BIGINT（Long），而跨域 Feign 边界协议存在两种口径：
  * <ul>
- *   <li>pd-auth（机构/用户）、pd-work（运单/任务/司机作业）已 Long 化；</li>
- *   <li>pd-oms（订单）、pd-base（线路/车次/车辆）仍以 String 协议交互。</li>
+ *   <li>xf-auth（机构/用户）、xf-work（运单/任务/司机作业）已 Long 化；</li>
+ *   <li>xf-oms（订单）、xf-base（线路/车次/车辆）仍以 String 协议交互。</li>
  * </ul>
  * 本工具负责落库点与 Feign 调用边界的 String ↔ Long 转换，空白/非法值返回 null，不抛异常。</p>
  */

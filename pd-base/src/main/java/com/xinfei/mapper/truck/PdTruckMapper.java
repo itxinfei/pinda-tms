@@ -18,7 +18,7 @@ public interface PdTruckMapper extends BaseMapper<PdTruck> {
     /**
      * 更新车辆在线状态与心跳时间。
      *
-     * <p>由 pd-netty 收到 GPS 上报后经 Feign 调用。businessId 语义为车辆主键 id
+     * <p>由 xf-netty 收到 GPS 上报后经 Feign 调用。businessId 语义为车辆主键 id
      * （种子数据 device_gps_id 全为 NULL，旧 SQL 按 device_gps_id 匹配永远命中 0 行）。
      * 走当前租户隔离，租户插件自动追加 tenant_id 条件。</p>
      *
@@ -34,7 +34,7 @@ public interface PdTruckMapper extends BaseMapper<PdTruck> {
     /**
      * 批量将心跳超时车辆置为离线。
      *
-     * <p>由 pd-netty 定时任务经 Feign 调用，需跨所有租户扫描，故用
+     * <p>由 xf-netty 定时任务经 Feign 调用，需跨所有租户扫描，故用
      * {@link InterceptorIgnore} 关闭租户条件；只处理未删除的正常车辆。</p>
      *
      * @param threshold 心跳超时阈值

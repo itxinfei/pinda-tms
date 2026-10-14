@@ -16,8 +16,8 @@ import org.springframework.web.context.request.ServletRequestAttributes;
  * 会员身份解析器：把网关注入的认证账号 ID（userid 请求头 = sys_user.id）
  * 解析为会员雪花 ID（member_info.id）。
  *
- * <p>解析链路：authUserId → pd-auth {@code /internal/user/{id}} 查账号取手机号 →
- * pd-user {@code /member/internal/get-or-create} 按 (租户,手机号) 查建会员。
+ * <p>解析链路：authUserId → xf-auth {@code /internal/user/{id}} 查账号取手机号 →
+ * xf-user {@code /member/internal/get-or-create} 按 (租户,手机号) 查建会员。
  * 结果在单次 HTTP 请求内缓存（request attribute），同一次请求里下单/地址簿/越权校验
  * 等多个调用只解析一次。</p>
  *

@@ -198,7 +198,7 @@ public class ScheduleJobServiceImpl extends ServiceImpl<ScheduleJobMapper, Sched
      */
     private void executeWithRetry(ScheduleJobEntity scheduleJob) {
         // 系统态租户绑定：调度线程无登录态与请求头，按机构ID反查租户并写入当前线程上下文，
-        // 供出站 Feign 拦截器读取透传给 pd-auth；执行结束在 finally 中清理，避免线程复用串租户。
+        // 供出站 Feign 拦截器读取透传给 xf-auth；执行结束在 finally 中清理，避免线程复用串租户。
         Long tenantId = 0L;
         Long businessId = scheduleJob.getBusinessId();
         if (businessId != null) {

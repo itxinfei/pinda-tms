@@ -779,10 +779,10 @@ public class CourierController {
     /**
      * 配送环节异常上报（D-41 · 定案 T-3 · 2026-10-08 新增）
      *
-     * <p>快递员在App 上主动上报破损/拒收/地址错误，<b>落库复用 pd-netty 的
+     * <p>快递员在App 上主动上报破损/拒收/地址错误，<b>落库复用 xf-netty 的
      * {@code pd_alarm_record}</b>——与 GPS 自动告警同表，按 alarmType 区分来源。</p>
      *
-     * <p><b>入参遵循 D-46「类型 + 照片 + 备注」三要素</b>，由 pd-netty 侧统一校验；
+     * <p><b>入参遵循 D-46「类型 + 照片 + 备注」三要素</b>，由 xf-netty 侧统一校验；
      * 无照片凭证的异常不予受理。</p>
      *
      * <p><b>上报人ID 由服务端从 token 取</b>（{@link RequestContext#getUserId()}），

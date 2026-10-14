@@ -17,7 +17,7 @@ public class RoleFeignFallback implements RoleFeign {
 
     @Override
     public List<RoleDTO> list(Long userId) {
-        log.warn("远程调用 pd-auth 失败: RoleFeign.list({}), 返回空列表", userId);
+        log.warn("远程调用 xf-auth 失败: RoleFeign.list({}), 返回空列表", userId);
         return Collections.emptyList();
     }
 }

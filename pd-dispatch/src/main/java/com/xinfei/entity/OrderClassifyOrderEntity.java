@@ -10,7 +10,7 @@ import java.io.Serializable;
 /**
  * 分类-订单关联表（disp_classify_order）
  *
- * <p>订单ID（orderId）落库为 BIGINT；pd-oms 侧以 String 协议交互，落库点完成转换。
+ * <p>订单ID（orderId）落库为 BIGINT；xf-oms 侧以 String 协议交互，落库点完成转换。
  * 主键雪花 Long；tenant_id 由 TenantLineInnerInterceptor 自动填充。</p>
  */
 @Data

@@ -10,7 +10,7 @@ server:
 
 spring:
   application:
-    name: pd-web-courier
+    name: xf-web-courier
   # 环境 dev|test|prod
   profiles:
     active: prod

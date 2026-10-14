@@ -14,10 +14,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
 /**
- * 参数配置内部 Feign（CFG-01），对接 pd-auth /internal/config。
+ * 参数配置内部 Feign（CFG-01），对接 xf-auth /internal/config。
  * 不要在接口上加类级 @RequestMapping，路径前缀下沉到方法，避免被本地 MVC 注册冲突。
  */
-@FeignClient(value = "pd-auth", fallback = ConfigFeignFallback.class)
+@FeignClient(value = "xf-auth", fallback = ConfigFeignFallback.class)
 public interface ConfigFeign {
 
     /**

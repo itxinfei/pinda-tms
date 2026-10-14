@@ -27,37 +27,37 @@ public class OrderFeignFallback implements OrderFeign {
 
     @Override
     public OrderDTO save(OrderDTO orderDTO) {
-        log.warn("远程调用 pd-oms 失败: save({}), 返回null", orderDTO);
+        log.warn("远程调用 xf-oms 失败: save({}), 返回null", orderDTO);
         return null;
     }
 
     @Override
     public OrderDTO updateById(String id, OrderDTO orderDTO) {
-        log.warn("远程调用 pd-oms 失败: updateById({}), 返回null", id);
+        log.warn("远程调用 xf-oms 失败: updateById({}), 返回null", id);
         return null;
     }
 
     @Override
     public Result pay(String id) {
-        log.warn("远程调用 pd-oms 失败: pay({}), 返回error", id);
+        log.warn("远程调用 xf-oms 失败: pay({}), 返回error", id);
         return Result.error(500, "支付服务不可用");
     }
 
     @Override
     public Result reprice(String id, OrderDTO orderDTO) {
-        log.warn("远程调用 pd-oms 失败: reprice({}), 返回error", id);
+        log.warn("远程调用 xf-oms 失败: reprice({}), 返回error", id);
         return Result.error(500, "改价服务不可用");
     }
 
     @Override
     public Result cancel(String id, OrderCancelDTO cancelDTO) {
-        log.warn("远程调用 pd-oms 失败: cancel({}), 返回error", id);
+        log.warn("远程调用 xf-oms 失败: cancel({}), 返回error", id);
         return Result.error(500, "取消订单服务不可用");
     }
 
     @Override
     public PageResponse<OrderDTO> findByPage(OrderDTO orderDTO) {
-        log.warn("远程调用 pd-oms 失败: findByPage({}), 返回空分页", orderDTO);
+        log.warn("远程调用 xf-oms 失败: findByPage({}), 返回空分页", orderDTO);
         PageResponse<OrderDTO> result = new PageResponse<>();
         result.setCounts(0L);
         result.setPagesize(orderDTO != null ? orderDTO.getPageSize() : 10);
@@ -69,13 +69,13 @@ public class OrderFeignFallback implements OrderFeign {
 
     @Override
     public OrderDTO findById(String id) {
-        log.warn("远程调用 pd-oms 失败: findById({}), 返回null", id);
+        log.warn("远程调用 xf-oms 失败: findById({}), 返回null", id);
         return null;
     }
 
     @Override
     public PageResponse<OrderDTO> pageLikeForCustomer(OrderSearchDTO orderSearchDTO) {
-        log.warn("远程调用 pd-oms 失败: pageLikeForCustomer({}), 返回空分页", orderSearchDTO);
+        log.warn("远程调用 xf-oms 失败: pageLikeForCustomer({}), 返回空分页", orderSearchDTO);
         PageResponse<OrderDTO> result = new PageResponse<>();
         result.setCounts(0L);
         result.setPagesize(orderSearchDTO != null ? orderSearchDTO.getPageSize() : 10);
@@ -87,43 +87,43 @@ public class OrderFeignFallback implements OrderFeign {
 
     @Override
     public List<OrderDTO> findByIds(List<String> ids) {
-        log.warn("远程调用 pd-oms 失败: findByIds({}), 返回空列表", ids);
+        log.warn("远程调用 xf-oms 失败: findByIds({}), 返回空列表", ids);
         return Collections.emptyList();
     }
 
     @Override
     public List<OrderDTO> list(OrderSearchDTO orderSearchDTO) {
-        log.warn("远程调用 pd-oms 失败: list({}), 返回空列表", orderSearchDTO);
+        log.warn("远程调用 xf-oms 失败: list({}), 返回空列表", orderSearchDTO);
         return Collections.emptyList();
     }
 
     @Override
     public Map getOrderMsg(OrderDTO orderAddDto) {
-        log.warn("远程调用 pd-oms 失败: getOrderMsg({}), 返回null", orderAddDto);
+        log.warn("远程调用 xf-oms 失败: getOrderMsg({}), 返回null", orderAddDto);
         return null;
     }
 
     @Override
     public OrderLocationDto saveOrUpdateLoccation(OrderLocationDto orderLocationDto) {
-        log.warn("远程调用 pd-oms 失败: saveOrUpdateLoccation({}), 返回null", orderLocationDto);
+        log.warn("远程调用 xf-oms 失败: saveOrUpdateLoccation({}), 返回null", orderLocationDto);
         return null;
     }
 
     @Override
     public OrderLocationDto selectByOrderId(String orderId) {
-        log.warn("远程调用 pd-oms 失败: selectByOrderId({}), 返回null", orderId);
+        log.warn("远程调用 xf-oms 失败: selectByOrderId({}), 返回null", orderId);
         return null;
     }
 
     @Override
     public int deleteOrderLocation(OrderLocationDto orderLocationDto) {
-        log.warn("远程调用 pd-oms 失败: deleteOrderLocation({}), 返回0", orderLocationDto);
+        log.warn("远程调用 xf-oms 失败: deleteOrderLocation({}), 返回0", orderLocationDto);
         return 0;
     }
 
     @Override
     public OrderOverviewDTO dashboardOverview() {
-        log.warn("远程调用 pd-oms 失败: dashboardOverview(), 返回全0总览");
+        log.warn("远程调用 xf-oms 失败: dashboardOverview(), 返回全0总览");
         OrderOverviewDTO dto = new OrderOverviewDTO();
         dto.setTodayCount(0L);
         dto.setPendingCount(0L);
@@ -134,13 +134,13 @@ public class OrderFeignFallback implements OrderFeign {
 
     @Override
     public List<OrderTrendDTO> dashboardTrend(Integer days) {
-        log.warn("远程调用 pd-oms 失败: dashboardTrend({}), 返回空列表", days);
+        log.warn("远程调用 xf-oms 失败: dashboardTrend({}), 返回空列表", days);
         return Collections.emptyList();
     }
 
     @Override
     public List<PendingOrderDTO> dashboardPending(Integer limit) {
-        log.warn("远程调用 pd-oms 失败: dashboardPending({}), 返回空列表", limit);
+        log.warn("远程调用 xf-oms 失败: dashboardPending({}), 返回空列表", limit);
         return Collections.emptyList();
     }
 }

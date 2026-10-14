@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: pd-web-manager
+    name: xf-web-manager
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
   main:
@@ -16,7 +16,7 @@ spring:
   # 远程配置改由 config.import 接入，姿势对齐已上线的 pd-oms/pd-auth。optional = 远程缺失不阻断启动。
   config:
     import:
-      - optional:nacos:pd-web-manager.yml
+      - optional:nacos:xf-web-manager.yml
   cloud:
     nacos:
       # 服务注册

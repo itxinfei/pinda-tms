@@ -13,7 +13,7 @@ import java.util.List;
 
 // 注意：不要在接口上加类级 @RequestMapping，否则 Feign 代理与 fallback @Component 会注册相同路径，
 // 启动报 Ambiguous mapping。路径前缀下沉到每个方法。
-@FeignClient(value = "pd-auth", fallback = OrgFeignFallback.class)
+@FeignClient(value = "xf-auth", fallback = OrgFeignFallback.class)
 public interface OrgFeign {
 
     /**

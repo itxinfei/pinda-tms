@@ -60,8 +60,8 @@ public class WebManagerApplication {
     /**
      * LocalDateTime 反序列化：兼容两种线上格式——
      * ① "yyyy-MM-dd HH:mm:ss"（pd-work/pd-base 等全局 Jackson 输出）；
-     * ② ISO "yyyy-MM-dd'T'HH:mm:ss"（pd-oms 的 LocalDateTime 字段经 JavaTimeModule 默认序列化输出）。
-     * 只认①时，pd-oms 订单分页响应（含 estimatedArrivalTime）解码失败被 fallback 吞成空页。
+     * ② ISO "yyyy-MM-dd'T'HH:mm:ss"（xf-oms 的 LocalDateTime 字段经 JavaTimeModule 默认序列化输出）。
+     * 只认①时，xf-oms 订单分页响应（含 estimatedArrivalTime）解码失败被 fallback 吞成空页。
      */
     private static final JsonDeserializer<LocalDateTime> FLEXIBLE_LOCAL_DATE_TIME_DESERIALIZER =
             new JsonDeserializer<LocalDateTime>() {
@@ -86,8 +86,8 @@ public class WebManagerApplication {
         // 日期时间序列化契约（沿用旧 DateUtils 常量：date-time / date / time）
         // LocalDateTime 反序列化必须同时兼容两种线上格式：
         //   ① "yyyy-MM-dd HH:mm:ss"（pd-work/pd-base 等经全局 Jackson 序列化输出）；
-        //   ② ISO "yyyy-MM-dd'T'HH:mm:ss"（pd-oms 的 LocalDateTime 字段经 JavaTimeModule 默认序列化输出，
-        //      如 OrderDTO.estimatedArrivalTime）。只认①时，pd-oms 分页响应解码失败被 fallback 吞成空页。
+        //   ② ISO "yyyy-MM-dd'T'HH:mm:ss"（xf-oms 的 LocalDateTime 字段经 JavaTimeModule 默认序列化输出，
+        //      如 OrderDTO.estimatedArrivalTime）。只认①时，xf-oms 分页响应解码失败被 fallback 吞成空页。
         DateTimeFormatter spaceDateTime = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         return builder -> builder
                 .serializerByType(LocalDateTime.class, new LocalDateTimeSerializer(spaceDateTime))

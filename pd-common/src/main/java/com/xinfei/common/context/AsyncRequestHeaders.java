@@ -17,7 +17,7 @@ import java.util.function.Supplier;
  * 于是异步线程内发起的 Feign 调用：
  * <ol>
  *   <li>{@code RequestHeaderInterceptor} 取不到当前请求，无法透传 {@code userid}/{@code tenantId} 头；</li>
- *   <li>下游（如 pd-base）多租户插件收不到 {@code tenantId}，回落租户 0，字典/档案查询恒空，
+ *   <li>下游（如 xf-base）多租户插件收不到 {@code tenantId}，回落租户 0，字典/档案查询恒空，
  *       BFF 富化出来的关联名称全部为 {@code null}（车型关联货型、车辆车型/车队列名等）。</li>
  * </ol>
  *

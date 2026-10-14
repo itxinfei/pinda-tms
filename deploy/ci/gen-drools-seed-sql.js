@@ -31,8 +31,8 @@ const sql = `-- 运价规则种子：把仓库里的 Drools 规则灌进 pd_oms.
 -- 单一真源是 pd-oms/src/main/resources/rules/orderAmountCalc.drl；改价后重新生成：
 --   node deploy/ci/gen-drools-seed-sql.js
 -- 灌完必须让每个运行中的实例重载（规则装在单 JVM 内存里，多实例要逐台刷）：
---   curl -X POST http://<pd-oms 实例>:8186/rules/reload
--- 只灌 pd_oms：pd-oms 的 datasource 实测就是 pd_oms（Nacos pd-oms-prod.yml:14），
+--   curl -X POST http://<xf-oms 实例>:8186/rules/reload
+-- 只灌 pd_oms：xf-oms 的 datasource 实测就是 pd_oms（Nacos 云端旧 dataId pd-oms-prod.yml:14），
 -- xinfei_tms 里的同名 rule 表是历史副本，不喂代码。
 --
 -- ⚠️ 重构/删码提示（2026-10-09）：本 content 里三条续重规则调用

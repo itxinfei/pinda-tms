@@ -55,7 +55,7 @@ public class AlarmController {
     private static final int HANDLE_REMARK_MAX_LENGTH = 500;
 
     /**
-     * token-session 中处理人名称的键，由 pd-auth 登录时写入（AuthLoginService）
+     * token-session 中处理人名称的键，由 xf-auth 登录时写入（AuthLoginService）
      */
     private static final String SESSION_HANDLER_NAME = "name";
 
@@ -119,7 +119,7 @@ public class AlarmController {
     /**
      * 标记告警已处理，并写入处置留痕（R6-3：处理人/时间/说明，保留 ≥6 月）
      *
-     * <p>处理人取自登录态（Sa-Token loginId = sys_user.id，name 由 pd-auth 登录时写入 token-session），
+     * <p>处理人取自登录态（Sa-Token loginId = sys_user.id，name 由 xf-auth 登录时写入 token-session），
      * 不接受前端传入，避免冒充他人处置。</p>
      *
      * @param id    告警记录ID

@@ -10,7 +10,7 @@ server:
 
 spring:
   application:
-    name: pd-web-driver
+    name: xf-web-driver
   # 环境 dev|test|prod
   profiles:
     active: prod

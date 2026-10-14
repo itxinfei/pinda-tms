@@ -14,8 +14,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 /**
  * 全局异常处理（2026-10-11）。
  *
- * <p>pd-netty 接入 Sa-Token 后，绕过网关直连 8192、或匿名访问受保护接口，
- * 若不处理会冒泡成 Tomcat 默认 500 白页。此处与 pd-auth 同一姿势，
+ * <p>xf-netty 接入 Sa-Token 后，绕过网关直连 8192、或匿名访问受保护接口，
+ * 若不处理会冒泡成 Tomcat 默认 500 白页。此处与 xf-auth 同一姿势，
  * 把 Same-Token / 未登录异常收口为 HTTP 401 + 统一 {@link Result} JSON，
  * 其余未捕获异常返回 500 JSON 且不外露堆栈。</p>
  *
@@ -45,7 +45,7 @@ public class SaTokenExceptionHandler {
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Result handleException(Exception e) {
-        log.error("pd-netty 未捕获异常", e);
+        log.error("xf-netty 未捕获异常", e);
         return Result.error(HttpStatus.INTERNAL_SERVER_ERROR.value(), "系统繁忙，请稍后再试");
     }
 }

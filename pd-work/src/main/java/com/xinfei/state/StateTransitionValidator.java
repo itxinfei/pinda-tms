@@ -17,7 +17,7 @@ import java.util.*;
  * 优势：无额外依赖、性能好、易维护
  *
  * 校验规则：
- * 1. 订单状态流转 —— 规则单源化至共享类 {@link OrderStatusTransitions}（pd-oms 同源），本类仅负责校验与日志
+ * 1. 订单状态流转 —— 规则单源化至共享类 {@link OrderStatusTransitions}（xf-oms 同源），本类仅负责校验与日志
  * 2. 运单状态流转（status / schedulingStatus 双维度）
  * 3. 运输任务状态流转
  *

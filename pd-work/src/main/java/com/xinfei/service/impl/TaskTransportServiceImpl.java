@@ -381,7 +381,7 @@ public class TaskTransportServiceImpl extends
                 }
             });
 
-            // ② 订单状态 → 网点出库(7)。pd-oms 尚未切库，OrderFeign/OrderDTO 仍是 String id 契约，
+            // ② 订单状态 → 网点出库(7)。xf-oms 尚未切库，OrderFeign/OrderDTO 仍是 String id 契约，
             //    故此处把 Long 订单ID转成 String 再调用；最终签收/拒收由快递员妥投确认。
             int successCount = 0;
             int failCount = 0;

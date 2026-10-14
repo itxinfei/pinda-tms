@@ -6,7 +6,7 @@ import lombok.Data;
 /**
  * 封装原始订单信息（调度内部分组模型）
  *
- * <p>机构ID为 disp 内部 Long 口径；订单（OrderDTO）仍走 pd-oms String 边界。</p>
+ * <p>机构ID为 disp 内部 Long 口径；订单（OrderDTO）仍走 xf-oms String 边界。</p>
  */
 @Data
 @Builder

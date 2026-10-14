@@ -321,13 +321,13 @@ public class RabbitGpsTraceConsumer {
 
     @Scheduled(fixedDelayString = "${gps.alert.offline-scan-interval-ms:60000}")
     public void scanOfflineTrucks() {
-        // 系统级扫描（非某消息触发），用默认租户上下文后再调 pd-base 与落离线告警
+        // 系统级扫描（非某消息触发），用默认租户上下文后再调 xf-base 与落离线告警
         TenantContextHolder.setTenantId(defaultTenantId);
         try {
             LocalDateTime threshold = LocalDateTime.now().minusMinutes(heartbeatTimeoutMinutes);
             int affected = truckBaseClient.markOffline(threshold);
             if (affected < 0) {
-                log.debug("[GPS心跳扫描] 调用 pd-base 失败（已降级）");
+                log.debug("[GPS心跳扫描] 调用 xf-base 失败（已降级）");
             } else if (affected > 0) {
                 log.info("[GPS心跳扫描] 离线车辆更新: {} 辆", affected);
                 // P0-5 新增规则：心跳超时置离线落告警记录（无具体车辆明细，按批量记一条；

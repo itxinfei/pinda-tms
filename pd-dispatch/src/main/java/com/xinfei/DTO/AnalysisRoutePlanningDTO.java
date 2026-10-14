@@ -14,7 +14,7 @@ import java.util.*;
  * 线路规划结果分析模型：把 {@link RoutePlanningDTO} 递归树拆解、聚合为可落库的
  * 缓存线路（CacheLineEntity + 明细 CacheLineDetailEntity）。
  *
- * <p>机构/线路ID在实体侧为 Long；pd-base 线路 Feign（{@link TransportLineDto}）仍为 String 边界，
+ * <p>机构/线路ID在实体侧为 Long；xf-base 线路 Feign（{@link TransportLineDto}）仍为 String 边界，
  * 构造明细时在本模型内完成转换。缓存线路主键不预生成，交由 MyBatis-Plus ASSIGN_ID 在 insert 时回填，
  * 明细的 cacheLineId 在 {@code TaskRoutePlanningServiceImpl.mergeLine} 新线落库后补齐。</p>
  */
@@ -43,7 +43,7 @@ public class AnalysisRoutePlanningDTO {
             for (int i = 0; i < value.size(); i++) {
                 CacheLineDetailEntity cacheLineDetailEntity = value.get(i);
                 cacheLineDetailEntity.setSort(i + 1);
-                // 实体 transportLineId 为 Long，线路 Map 以 pd-base 的 String ID 为键
+                // 实体 transportLineId 为 Long，线路 Map 以 xf-base 的 String ID 为键
                 TransportLineDto transportLineDto = transportLineDtoMap.get(IdConvert.toStr(cacheLineDetailEntity.getTransportLineId()));
                 if (transportLineDto != null) {
                     if (transportLineDto.getDistance() != null) {

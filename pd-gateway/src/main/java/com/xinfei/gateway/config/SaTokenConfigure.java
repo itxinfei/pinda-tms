@@ -46,10 +46,10 @@ public class SaTokenConfigure {
                     // 其余路径一律要求登录
                     SaRouter.match("/**", r -> StpUtil.checkLogin());
                     // 网关只做登录态校验（认证 Authentication），不在此做角色鉴权（Authorization）：
-                    // pd-gateway 不依赖 pd-common，classpath 没有 SharedSessionStpInterface，此处若调
+                    // xf-gateway 不依赖 pd-common，classpath 没有 SharedSessionStpInterface，此处若调
                     // StpUtil.checkRole(...) 会落到 Sa-Token 默认空实现（角色恒为空），把所有用户
                     // （含 ADMIN）一律打成 403、后台全锁。X-01 各端角色绑定必须下沉到有角色数据的下游：
-                    // pd-auth 的 StpInterfaceImpl（查库）与各 pd-web-* BFF（SharedSessionStpInterface 读会话）。
+                    // xf-auth 的 StpInterfaceImpl（查库）与各 pd-web-* BFF（SharedSessionStpInterface 读会话）。
                 })
                 .setError(e -> {
                     ServerWebExchange exchange = SaReactorSyncHolder.getExchange();

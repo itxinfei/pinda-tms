@@ -8,7 +8,7 @@ import java.io.Serializable;
 /**
  * 管理端工作台-订单总览统计。
  *
- * <p>状态归并口径（依据《07-数据字典与枚举口径》OrderStatus 1~12，归并逻辑在 pd-oms 域完成，
+ * <p>状态归并口径（依据《07-数据字典与枚举口径》OrderStatus 1~12，归并逻辑在 xf-oms 域完成，
  * 前端不做状态码判断）：</p>
  * <ul>
  *   <li>待处理 pendingCount：1 待取件 / 2 已取件 / 3 网点自寄 / 4 网点入库 / 5 待装车；</li>

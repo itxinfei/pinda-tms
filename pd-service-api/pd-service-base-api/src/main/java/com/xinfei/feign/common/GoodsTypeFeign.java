@@ -10,7 +10,7 @@ import io.swagger.v3.oas.annotations.Hidden;
 
 import java.util.List;
 
-@FeignClient(value = "pd-base", fallback = GoodsTypeFeignFallback.class, path = "/base/goodsType")
+@FeignClient(value = "xf-base", fallback = GoodsTypeFeignFallback.class, path = "/base/goodsType")
 @Hidden
 public interface GoodsTypeFeign {
     /**

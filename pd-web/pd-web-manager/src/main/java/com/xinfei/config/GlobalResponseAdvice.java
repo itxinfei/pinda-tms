@@ -15,7 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * 管理端 BFF（pd-web-manager）统一响应壳。
+ * 管理端 BFF（xf-web-manager）统一响应壳。
  *
  * 背景：本服务大量读接口直接返回 PageResponse / VO / DTO / List（响应体无 code 字段），
  * 而管理端 request 拦截器约定 code===0 才算成功并取 data，裸返回会被误判

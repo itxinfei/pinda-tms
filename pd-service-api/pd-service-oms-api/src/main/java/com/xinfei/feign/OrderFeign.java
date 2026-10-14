@@ -21,11 +21,11 @@ import java.util.Map;
 /**
  * 订单 Feign 契约
  *
- * <p>⚠️ 过渡契约：订单主键为 String（pd-oms 尚未切库），全部 {@code String id}
+ * <p>⚠️ 过渡契约：订单主键为 String（xf-oms 尚未切库），全部 {@code String id}
  * 入参/OrderDTO.id 均属遗留口径。String → Long 的统一收敛跟随
  * 《53-全量重构总体规划》执行，禁止单独改动类型（会造成跨服务反序列化不兼容）。</p>
  */
-@FeignClient(value = "pd-oms", fallback = OrderFeignFallback.class, path = "/order")
+@FeignClient(value = "xf-oms", fallback = OrderFeignFallback.class, path = "/order")
 @Hidden
 public interface OrderFeign {
     /**
@@ -67,7 +67,7 @@ public interface OrderFeign {
     Result reprice(@PathVariable(name = "id") String id, @RequestBody OrderDTO orderDTO);
 
     /**
-     * 订单取消（专用端点，原因必填，状态矩阵由 pd-oms 校验）
+     * 订单取消（专用端点，原因必填，状态矩阵由 xf-oms 校验）
      *
      * @param id        订单id
      * @param cancelDTO 取消入参

@@ -46,7 +46,7 @@ public class ScheduleExceptionOrderController {
      * @param page     页码
      * @param pageSize 每页条数
      * @param status   状态筛选（可选：0-待处理 1-已处理）
-     * @param orderId  订单ID筛选（可选，精确匹配，pd-oms String 边界转 Long）
+     * @param orderId  订单ID筛选（可选，精确匹配，xf-oms String 边界转 Long）
      * @return 分页结果
      */
     @Operation(summary = "分页查询异常调度订单")

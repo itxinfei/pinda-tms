@@ -3,14 +3,14 @@ server:
 
 spring:
   application:
-    name: pd-gateway
+    name: xf-gateway
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
   # Spring Cloud 标准接入方式（取代旧 bootstrap.yml）；optional 表示远程配置缺失不阻断启动。
   # 2026-10-10 修复：dataId 扩展名与 Nacos 实际配置对齐（pd-gateway.yml，原 .yaml 不匹配导致远程配置未被加载）
   config:
     import:
-      - optional:nacos:pd-gateway.yml
+      - optional:nacos:xf-gateway.yml
   cloud:
     nacos:
       # 服务注册
@@ -37,7 +37,7 @@ spring:
       routes:
         # 认证服务：/api/auth/** -> pd-auth，去掉 /api/auth 两段前缀（/api/auth/anno/login -> /anno/login）
         - id: pd-auth
-          uri: lb://pd-auth
+          uri: lb://xf-auth
           predicates:
             - Path=/api/auth/**
           filters:
@@ -46,14 +46,14 @@ spring:
         # （/api/v1/users -> /users；/api/v1/menus/routes -> /menus/routes）。
         # 同样过网关登录态校验并由网关注入 Same-Token；pd-auth 侧放 controller.v1 包。
         - id: pd-auth-v1
-          uri: lb://pd-auth
+          uri: lb://xf-auth
           predicates:
             - Path=/api/v1/**
           filters:
             - StripPrefix=2
         # 管理端 BFF：/api/manager/** -> pd-web-manager，去掉 /api/manager 两段前缀
         - id: pd-web-manager
-          uri: lb://pd-web-manager
+          uri: lb://xf-web-manager
           predicates:
             - Path=/api/manager/**
           filters:
@@ -61,19 +61,19 @@ spring:
         # 移动三端 BFF：/api/web-{driver,courier,customer}/** -> 对应 pd-web-*，去掉 /api/web-* 两段前缀
         # 前端 H5 走 /prod-api/web-*（容器 nginx rewrite 成网关 /api/web-*），App/小程序直连 :8760/api/web-*
         - id: pd-web-driver
-          uri: lb://pd-web-driver
+          uri: lb://xf-web-driver
           predicates:
             - Path=/api/web-driver/**
           filters:
             - StripPrefix=2
         - id: pd-web-courier
-          uri: lb://pd-web-courier
+          uri: lb://xf-web-courier
           predicates:
             - Path=/api/web-courier/**
           filters:
             - StripPrefix=2
         - id: pd-web-customer
-          uri: lb://pd-web-customer
+          uri: lb://xf-web-customer
           predicates:
             - Path=/api/web-customer/**
           filters:
@@ -81,7 +81,7 @@ spring:
         # 轨迹/定位服务：/api/netty-service/** -> pd-netty，去掉 /api/netty-service 两段前缀
         # （/api/netty-service/trace/replay -> /trace/replay；/api/netty-service/netty/push -> /netty/push）
         - id: pd-netty
-          uri: lb://pd-netty
+          uri: lb://xf-netty
           predicates:
             - Path=/api/netty-service/**
           filters:

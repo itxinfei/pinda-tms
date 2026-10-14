@@ -4,7 +4,7 @@ package com.xinfei.enums;
  * 坐标系类型枚举（P0-4 北斗字段最小改造 · D-13）
  *
  * <p>用于标识 GPS 上报数据所属的坐标参照系，便于后续坐标转换与合规追溯。
- * 默认 BD09，与后端 {@code BaiduMapUtils}（pd-oms 模块）保持一致——
+ * 默认 BD09，与后端 {@code BaiduMapUtils}（xf-oms 模块）保持一致——
  * 管理端轨迹回放直接渲染，无需前端做坐标转换。</p>
  */
 public enum CoordSystem {

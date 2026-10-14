@@ -86,7 +86,7 @@ export const appConfig = {
   tenantEnabled: envBool(env.VITE_TENANT_ENABLED, false),
   aiEnabled: envBool(env.VITE_AI_ENABLED, false),
 
-  // D-42 用户信息端点（/api/v1/users/me）已落地（pd-auth v1，已实测返回
+  // D-42 用户信息端点（/api/v1/users/me）已落地（xf-auth v1，已实测返回
   // roles/perms）。置 true：守卫拉取真实身份驱动 v-hasPerm；失败仍降级临时身份。
   userInfoEndpointEnabled: true,
 } as const;

@@ -7,9 +7,9 @@ import java.io.Serializable;
 
 /**
  * 会员自动建档入参：客户 BFF 在下单/首次访问时，
- * 按认证账号手机号在 pd-user 侧 get-or-create 会员。
+ * 按认证账号手机号在 xf-user 侧 get-or-create 会员。
  *
- * <p>租户不进 DTO：Feign 出站拦截器透传 tenantId 头，pd-user 侧
+ * <p>租户不进 DTO：Feign 出站拦截器透传 tenantId 头，xf-user 侧
  * TenantLineInnerInterceptor 自动按租户隔离（uk_tenant_phone 租户内唯一）。</p>
  */
 @Data

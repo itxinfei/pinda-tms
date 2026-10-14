@@ -11,7 +11,7 @@ import java.util.Date;
 /**
  * 分类-派配关联表（disp_classify_attach）：车次/车辆/司机
  *
- * <p>车次/车辆/司机ID 落库为 BIGINT；pd-base 车次车辆 Feign 以 String 协议交互，
+ * <p>车次/车辆/司机ID 落库为 BIGINT；xf-base 车次车辆 Feign 以 String 协议交互，
  * 落库点完成转换。主键雪花 Long；tenant_id 由 TenantLineInnerInterceptor 自动填充。</p>
  */
 @Data
@@ -42,7 +42,7 @@ public class OrderClassifyAttachEntity implements Serializable {
     private Long truckId;
 
     /**
-     * 司机ID（base_truck_driver.id / pd-auth 用户ID）
+     * 司机ID（base_truck_driver.id / xf-auth 用户ID）
      */
     private Long driverId;
 

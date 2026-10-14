@@ -20,7 +20,7 @@ public class ConfigFeignFallback implements ConfigFeign {
 
     @Override
     public PageResponse<SysConfigDTO> page(Integer page, Integer pageSize, String keywords, Integer status) {
-        log.warn("远程调用 pd-auth 失败: ConfigFeign.page, 返回空分页");
+        log.warn("远程调用 xf-auth 失败: ConfigFeign.page, 返回空分页");
         return PageResponse.<SysConfigDTO>builder()
                 .counts(0L)
                 .pagesize(pageSize)
@@ -32,25 +32,25 @@ public class ConfigFeignFallback implements ConfigFeign {
 
     @Override
     public SysConfigDTO detail(Long id) {
-        log.warn("远程调用 pd-auth 失败: ConfigFeign.detail({}), 返回 null", id);
+        log.warn("远程调用 xf-auth 失败: ConfigFeign.detail({}), 返回 null", id);
         return null;
     }
 
     @Override
     public Result save(SysConfigDTO dto) {
-        log.warn("远程调用 pd-auth 失败: ConfigFeign.save");
+        log.warn("远程调用 xf-auth 失败: ConfigFeign.save");
         return Result.error(UNAVAILABLE);
     }
 
     @Override
     public Result update(Long id, SysConfigDTO dto) {
-        log.warn("远程调用 pd-auth 失败: ConfigFeign.update({})", id);
+        log.warn("远程调用 xf-auth 失败: ConfigFeign.update({})", id);
         return Result.error(UNAVAILABLE);
     }
 
     @Override
     public Result remove(Long id) {
-        log.warn("远程调用 pd-auth 失败: ConfigFeign.remove({})", id);
+        log.warn("远程调用 xf-auth 失败: ConfigFeign.remove({})", id);
         return Result.error(UNAVAILABLE);
     }
 }

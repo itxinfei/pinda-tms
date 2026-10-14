@@ -11,7 +11,7 @@ import java.util.Date;
 /**
  * 算路缓存明细表（disp_cache_line_detail）：各段实际线路
  *
- * <p>业务线路ID（transportLineId）落库为 BIGINT；pd-base 线路 Feign 以 String 协议交互，
+ * <p>业务线路ID（transportLineId）落库为 BIGINT；xf-base 线路 Feign 以 String 协议交互，
  * 落库点完成转换。主键雪花 Long；tenant_id 由 TenantLineInnerInterceptor 自动填充。</p>
  */
 @Data

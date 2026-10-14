@@ -8,7 +8,7 @@ server:
 
 spring:
   application:
-    name: pd-base
+    name: xf-base
   # 环境 dev|test|prod|docker；容器镜像由 src/main/docker/Dockerfile 的 CMD 显式指定 docker
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
@@ -18,7 +18,7 @@ spring:
   # 远程配置改由 config.import 接入，姿势对齐已上线的 pd-auth。optional = 远程缺失不阻断启动。
   config:
     import:
-      - optional:nacos:pd-base.yml
+      - optional:nacos:xf-base.yml
   cloud:
     nacos:
       # 服务注册

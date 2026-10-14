@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * 参数配置内部端点（CFG-01）：仅供 BFF（pd-web-manager）经 Same-Token 调用，路径与 ConfigFeign 对齐。
+ * 参数配置内部端点（CFG-01）：仅供 BFF（xf-web-manager）经 Same-Token 调用，路径与 ConfigFeign 对齐。
  * 读端点裸返回 DTO / PageResponse；写端点返回 Result，业务校验失败转 Result.error（HTTP 200）。
  */
 @RestController

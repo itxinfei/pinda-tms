@@ -17,7 +17,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 /**
  * MyBatis-Plus 配置类
  *
- * <p>pd-netty 原先未注册任何 MP 拦截器（分页、多租户均未生效）。
+ * <p>xf-netty 原先未注册任何 MP 拦截器（分页、多租户均未生效）。
  * iot_ 三表全部带 tenant_id，这里补齐“多租户 + 分页”，且多租户插件必须排在分页之前。</p>
  */
 @Configuration
@@ -55,7 +55,7 @@ public class MybatisPlusConfig {
     /**
      * 解析当前租户ID：
      * <ol>
-     *   <li>HTTP 请求头 tenantId（pd-gateway 登录后注入）；</li>
+     *   <li>HTTP 请求头 tenantId（xf-gateway 登录后注入）；</li>
      *   <li>系统态线程上下文 {@link TenantContextHolder}（MQ 消费/定时线程在落库前 set）；</li>
      *   <li>回落 0。</li>
      * </ol>

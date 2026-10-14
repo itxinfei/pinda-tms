@@ -4,7 +4,7 @@ import type { PageResponse } from "@/api/common";
 /**
  * 会员管理（USR-01）
  *
- * BFF pd-web-manager 薄转发至 pd-user，网关前缀 /api/manager。
+ * BFF xf-web-manager 薄转发至 xf-user，网关前缀 /api/manager。
  * 分页结构与其他管理端档案一致：PageResponse（counts）。
  */
 const MEMBER_BASE_URL = "/api/manager/user-center/member";

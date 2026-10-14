@@ -64,10 +64,10 @@ public class ConfigurationSupport extends WebMvcConfigurationSupport {
 
     /**
      * LocalDateTime 反序列化兼容两种线上格式：
-     * ① "yyyy-MM-dd HH:mm:ss"（全局 Jackson 输出）；② ISO "yyyy-MM-dd'T'HH:mm:ss"（pd-oms 默认输出）。
-     * 只认①时，pd-oms 订单保存响应（含 estimatedArrivalTime）在 Feign 解码层失败走 fallback，下单被误报失败。
+     * ① "yyyy-MM-dd HH:mm:ss"（全局 Jackson 输出）；② ISO "yyyy-MM-dd'T'HH:mm:ss"（xf-oms 默认输出）。
+     * 只认①时，xf-oms 订单保存响应（含 estimatedArrivalTime）在 Feign 解码层失败走 fallback，下单被误报失败。
      * 注意：customizer Bean（Feign SpringDecoder 走容器 ObjectMapper）与下方 MVC 内部类
-     * 是两条 ObjectMapper 构建路径，必须两处同时注册，写法对齐 pd-web-manager。
+     * 是两条 ObjectMapper 构建路径，必须两处同时注册，写法对齐 xf-web-manager。
      */
     private static final JsonDeserializer<LocalDateTime> FLEXIBLE_LOCAL_DATE_TIME_DESERIALIZER =
             new JsonDeserializer<LocalDateTime>() {
@@ -89,7 +89,7 @@ public class ConfigurationSupport extends WebMvcConfigurationSupport {
 
     /**
      * deserializerByType 解决string类型入参转为 LocalDateTime 格式问题
-     * 本 Bean 定制容器自动配置的 ObjectMapper，Feign 的 SpringDecoder 解码 pd-oms 响应走的就是这条路径
+     * 本 Bean 定制容器自动配置的 ObjectMapper，Feign 的 SpringDecoder 解码 xf-oms 响应走的就是这条路径
      *
      * @return
      */

@@ -7,9 +7,9 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
 // 不要在接口上加类级 @RequestMapping；路径前缀下沉到方法，避免被 MVC 注册与本地 Controller 冲突。
-// 全部为 pd-user 内部端点：会员雪花 ID（member_info.id）由客户 BFF 从认证账号解析后显式传入，
-// pd-user 不再读 userid 请求头——认证账号 ID 与会员 ID 已不是同一个键。
-@FeignClient(name = "pd-user")
+// 全部为 xf-user 内部端点：会员雪花 ID（member_info.id）由客户 BFF 从认证账号解析后显式传入，
+// xf-user 不再读 userid 请求头——认证账号 ID 与会员 ID 已不是同一个键。
+@FeignClient(name = "xf-user")
 public interface AddressBookFeign {
 
     /**

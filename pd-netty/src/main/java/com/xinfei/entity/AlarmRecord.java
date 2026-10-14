@@ -79,7 +79,7 @@ public class AlarmRecord implements Serializable {
     private Long handlerId;
 
     /**
-     * 处理人名称（取自 pd-auth 登录时写入的 token-session name）
+     * 处理人名称（取自 xf-auth 登录时写入的 token-session name）
      */
     private String handlerName;
 

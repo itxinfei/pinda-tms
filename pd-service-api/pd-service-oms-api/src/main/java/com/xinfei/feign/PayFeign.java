@@ -11,9 +11,9 @@ import io.swagger.v3.oas.annotations.Hidden;
 /**
  * 统一支付 Feign 客户端
  *
- * <p>对接 pd-oms 的 /pay 接口（创建支付/查询支付/退款）。</p>
+ * <p>对接 xf-oms 的 /pay 接口（创建支付/查询支付/退款）。</p>
  */
-@FeignClient(value = "pd-oms", fallback = PayFeignFallback.class, path = "/pay")
+@FeignClient(value = "xf-oms", fallback = PayFeignFallback.class, path = "/pay")
 @Hidden
 public interface PayFeign {
 

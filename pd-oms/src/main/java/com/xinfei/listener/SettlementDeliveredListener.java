@@ -14,25 +14,25 @@ import org.springframework.stereotype.Component;
 /**
  * 订单交付事件结算监听器
  *
- * <p>消费 pd-web-courier 在签收时发布的 ORDER_DELIVERED 事件，
- * 触发运费明细与结算单生成。pd-dispatch 中原有 {@code OrderEventListener#handleOrderDelivered}
+ * <p>消费 xf-web-courier 在签收时发布的 ORDER_DELIVERED 事件，
+ * 触发运费明细与结算单生成。xf-dispatch 中原有 {@code OrderEventListener#handleOrderDelivered}
  * 的结算调用（settlementService.settle）被注释且结算服务缺失，
- * 因边界约定不改动 pd-dispatch，故在 pd-oms 以独立队列消费同一事件，语义等价。</p>
+ * 因边界约定不改动 xf-dispatch，故在 xf-oms 以独立队列消费同一事件，语义等价。</p>
  *
- * <p>队列/绑定由注解在 pd-oms 启动时经 RabbitAdmin 自动声明，
- * 不依赖额外 yml 配置，也不影响 pd-dispatch 既有队列（消息按队列各存一份）。</p>
+ * <p>队列/绑定由注解在 xf-oms 启动时经 RabbitAdmin 自动声明，
+ * 不依赖额外 yml 配置，也不影响 xf-dispatch 既有队列（消息按队列各存一份）。</p>
  */
 @Slf4j
 @Component
 public class SettlementDeliveredListener {
 
     /**
-     * pd-oms 专属交付事件队列
+     * xf-oms 专属交付事件队列
      */
     public static final String OMS_ORDER_DELIVERED_QUEUE = "xinfei.oms.queue.order.delivered";
 
     /**
-     * 领域事件交换机（与 EventPublisher / pd-dispatch RabbitMQConfig 一致）
+     * 领域事件交换机（与 EventPublisher / xf-dispatch RabbitMQConfig 一致）
      */
     public static final String DOMAIN_EVENT_EXCHANGE = "xinfei.domain.event.exchange";
 

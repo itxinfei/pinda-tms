@@ -78,7 +78,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
             return false;
         }
 
-        // 状态维度校验（仅在 status 发生变化时校验；流转规则单源化至 OrderStatusTransitions，与 pd-work 同源）
+        // 状态维度校验（仅在 status 发生变化时校验；流转规则单源化至 OrderStatusTransitions，与 xf-work 同源）
         Integer newStatus = order.getStatus();
         if (newStatus != null && !newStatus.equals(existing.getStatus())) {
             if (!OrderStatusTransitions.canTransition(existing.getStatus(), newStatus)) {

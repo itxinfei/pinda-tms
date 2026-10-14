@@ -240,7 +240,7 @@ public class OrderController {
      *
      * <p>非终态订单（状态 1~9）可取消，状态合法性由 OrderServiceImpl 状态矩阵校验；
      * 取消原因必填（≤200 字），取消时间由服务端生成。取派件任务、订单位置的联动处理
-     * 由管理端 BFF（pd-web-manager）编排，本端点只负责订单本体落库。</p>
+     * 由管理端 BFF（xf-web-manager）编排，本端点只负责订单本体落库。</p>
      *
      * @param id        订单id
      * @param cancelDTO 取消入参（reason 必填）

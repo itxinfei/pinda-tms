@@ -11,7 +11,7 @@ import java.util.Arrays;
 /**
  * 端级角色绑定拦截器（X-01 下沉落点，《12》§8.5）。
  *
- * <p>角色校验必须在<b>持有角色数据的下游</b>做：角色来自 pd-auth 登录时写入
+ * <p>角色校验必须在<b>持有角色数据的下游</b>做：角色来自 xf-auth 登录时写入
  * token-session 的 {@code roles}（同一 Redis），本拦截器经
  * {@link SharedSessionStpInterface} 零查库读取。网关只做登录态校验（d6c2a08 教训：
  * 网关 classpath 无 StpInterface，checkRole 恒空、全员 403）。</p>

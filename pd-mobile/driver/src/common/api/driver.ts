@@ -13,7 +13,7 @@ import {
 import { get, post, put } from '../request'
 import { enqueueOffline } from '../utils/offline'
 
-// ============ 鉴权（三端共用 pd-auth）============
+// ============ 鉴权（三端共用 xf-auth）============
 export function captchaSrc(key: string): string {
   return CAPTCHA_URL + '?key=' + key
 }

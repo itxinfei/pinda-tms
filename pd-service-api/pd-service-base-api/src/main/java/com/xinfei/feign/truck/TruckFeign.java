@@ -11,7 +11,7 @@ import io.swagger.v3.oas.annotations.Hidden;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@FeignClient(value = "pd-base", fallback = TruckFeignFallback.class, path = "/base/truck")
+@FeignClient(value = "xf-base", fallback = TruckFeignFallback.class, path = "/base/truck")
 @Hidden
 public interface TruckFeign {
     /**
@@ -89,7 +89,7 @@ public interface TruckFeign {
     /**
      * 更新车辆在线状态与心跳时间（P0-4 北斗字段最小改造 · D-13）
      *
-     * <p>由 pd-netty GpsTraceConsumer 收到 GPS 上报后调用：
+     * <p>由 xf-netty GpsTraceConsumer 收到 GPS 上报后调用：
      * online_status=1 并刷新 last_heartbeat_time。</p>
      *
      * @param deviceGpsId GPS 设备 id

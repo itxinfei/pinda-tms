@@ -96,7 +96,7 @@ import BottomLists from "./components/bottom-lists.vue";
 
 const router = useRouter();
 
-// ---- 总览 KPI + 订单三桶（pd-oms 订单统计 + pd-work 任务/车辆聚合） ----
+// ---- 总览 KPI + 订单三桶（xf-oms 订单统计 + xf-work 任务/车辆聚合） ----
 const overviewLoading = ref(false);
 /** 总览接口失败：数字统一显 "--"，绝不静默显 0 误导判断 */
 const overviewError = ref(false);

@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Hidden;
 
 // 不要在接口上加类级 @RequestMapping；路径前缀下沉到方法，避免被 MVC 注册与本地 Controller 冲突。
-@FeignClient(name = "pd-user")
+@FeignClient(name = "xf-user")
 @Hidden
 public interface MemberFeign {
     /**

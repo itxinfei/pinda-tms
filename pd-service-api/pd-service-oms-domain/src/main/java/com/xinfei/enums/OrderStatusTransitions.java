@@ -10,8 +10,8 @@ import java.util.Set;
 /**
  * 订单状态流转规则（单一事实源）
  *
- * <p>订单状态流转图唯一定义处，pd-work 的 {@code StateTransitionValidator} 与
- * pd-oms 的 {@code OrderServiceImpl} 均委托本类校验，杜绝双份副本漂移。
+ * <p>订单状态流转图唯一定义处，xf-work 的 {@code StateTransitionValidator} 与
+ * xf-oms 的 {@code OrderServiceImpl} 均委托本类校验，杜绝双份副本漂移。
  * 修改流转规则只改本类，两侧立即同步生效。</p>
  *
  * <p>流转规则（与 OrderStatus 紧凑码 1~12 一致）：</p>

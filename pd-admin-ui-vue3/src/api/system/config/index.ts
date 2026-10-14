@@ -5,7 +5,7 @@ import type { ConfigQueryParams, ConfigForm, ConfigItem } from "./types";
 /**
  * 参数配置（CFG-01）
  *
- * BFF pd-web-manager 薄转发至 pd-auth，网关前缀 /api/manager。
+ * BFF xf-web-manager 薄转发至 xf-auth，网关前缀 /api/manager。
  * 后端分页为 PageResponse（counts/items，参数 page），在此适配为
  * 列表页通用的 PageResult（list/total，参数 pageNum），供 usePageTable 直接消费。
  */

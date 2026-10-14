@@ -22,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li>Spring {@link Environment}（yml / 环境变量 / {@code -D} 启动参数）。</li>
  * </ol>
  *
- * <p>不依赖 Redis / MQ：pd-oms 等未引 redis 的服务也可用。后台修改后最长 TTL 秒数全网生效；
+ * <p>不依赖 Redis / MQ：xf-oms 等未引 redis 的服务也可用。后台修改后最长 TTL 秒数全网生效；
  * 第三方凭据调用失败（如 AK 失效）时业务侧应调用 {@link #evict(String)} 立即丢弃缓存重读。
  * 数据库不可用时告警并回落 Environment，不阻断业务。</p>
  */

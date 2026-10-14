@@ -14,19 +14,19 @@ public class PayFeignFallback implements PayFeign {
 
     @Override
     public Result createPayment(String orderId) {
-        log.warn("远程调用 pd-oms 支付创建失败: orderId={}", orderId);
+        log.warn("远程调用 xf-oms 支付创建失败: orderId={}", orderId);
         return Result.error(500, "支付服务不可用");
     }
 
     @Override
     public Result queryPayment(String orderId) {
-        log.warn("远程调用 pd-oms 支付查询失败: orderId={}", orderId);
+        log.warn("远程调用 xf-oms 支付查询失败: orderId={}", orderId);
         return Result.error(500, "支付服务不可用");
     }
 
     @Override
     public Result refund(String orderId) {
-        log.warn("远程调用 pd-oms 退款失败: orderId={}", orderId);
+        log.warn("远程调用 xf-oms 退款失败: orderId={}", orderId);
         return Result.error(500, "支付服务不可用");
     }
 }

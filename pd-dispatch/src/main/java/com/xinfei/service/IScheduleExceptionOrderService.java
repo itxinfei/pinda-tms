@@ -13,7 +13,7 @@ public interface IScheduleExceptionOrderService extends IService<ScheduleExcepti
     /**
      * 登记无法调度的订单（幂等：同一订单存在待处理记录时不重复登记）
      *
-     * @param orderId 订单ID（pd-oms String 边界）
+     * @param orderId 订单ID（xf-oms String 边界）
      * @param orgId   当前机构ID
      * @param reason  异常原因
      * @return 是否新增登记

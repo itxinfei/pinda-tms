@@ -132,7 +132,7 @@ public class OrderController {
     /**
      * 取消订单（BFF 编排）
      *
-     * <p>主动作：调 pd-oms /order/{id}/cancel 完成订单本体状态流转（1~9 → 12）并持久化取消原因/时间；
+     * <p>主动作：调 xf-oms /order/{id}/cancel 完成订单本体状态流转（1~9 → 12）并持久化取消原因/时间；
      * 主动作失败时原样透传远端 Result（含 code/msg），前端拦截器统一提示，不执行任何联动。</p>
      *
      * <p>主动作成功后编排下游（无分布式事务，任一步失败只收集进 warnings，不回滚订单取消）：

@@ -5,7 +5,7 @@ import lombok.Data;
 /**
  * 车次-车辆-司机组合（调度内部模型）
  *
- * <p>tripsId/truckId 为 pd-base String 边界；driverId 已 Long 化（pd-auth 用户ID）。</p>
+ * <p>tripsId/truckId 为 xf-base String 边界；driverId 已 Long 化（xf-auth 用户ID）。</p>
  */
 @Data
 public class TripsTruckDriverDTO {

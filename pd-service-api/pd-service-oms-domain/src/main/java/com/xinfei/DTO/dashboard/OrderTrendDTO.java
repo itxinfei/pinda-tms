@@ -10,7 +10,7 @@ import java.io.Serializable;
  *
  * <p>口径说明：oms_order 无独立签收完成时间列，故运单量按 create_time 归属日期，
  * 完成量按 update_time + status=10(已签收) 归属日期，后者为近似值（签收后其他字段更新会刷新
- * update_time）。缺日期由 pd-oms 补 0，序列连续，前端直接绘图。</p>
+ * update_time）。缺日期由 xf-oms 补 0，序列连续，前端直接绘图。</p>
  */
 @Data
 @Schema(description = "工作台运输量趋势点")

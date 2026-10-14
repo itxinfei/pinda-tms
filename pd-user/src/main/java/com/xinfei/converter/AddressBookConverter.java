@@ -13,12 +13,12 @@ import java.util.List;
  *
  * <p>对外 DTO 字段名与类型保持不变（id/userId 为 String）；memberId ↔ userId、
  * contactName ↔ name 为改名映射；行政区划 Integer 实体 ↔ Long DTO。
- * province/city/county/fullAddress 四个展示字段由 pd-web-customer 聚合层用 AreaFeign 填充。</p>
+ * province/city/county/fullAddress 四个展示字段由 xf-web-customer 聚合层用 AreaFeign 填充。</p>
  */
 @Mapper(componentModel = "spring")
 public interface AddressBookConverter {
 
-    /** 实体转 DTO（province/city/county/fullAddress 由 pd-web-customer 聚合层用 AreaFeign 填充） */
+    /** 实体转 DTO（province/city/county/fullAddress 由 xf-web-customer 聚合层用 AreaFeign 填充） */
     @Mapping(source = "memberId", target = "userId")
     @Mapping(source = "contactName", target = "name")
     @Mapping(target = "province", ignore = true)

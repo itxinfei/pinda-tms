@@ -8,7 +8,7 @@ import java.io.Serializable;
 /**
  * 按车次统计的运输任务量（大屏「各线路运量」柱状图的中间数据）。
  *
- * <p>pd-work 只掌握任务与车次(base_transport_trips)的关联，线路名称由 BFF
+ * <p>xf-work 只掌握任务与车次(base_transport_trips)的关联，线路名称由 BFF
  * 经 TransportTripsFeign + TransportLineFeign 补全，本类不带线路名。</p>
  */
 @Data

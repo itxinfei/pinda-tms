@@ -78,7 +78,7 @@ const TruckTypeAPI = {
       data,
     });
   },
-  /** 停用车辆类型（软停用；关联校验在 pd-base 侧实现） */
+  /** 停用车辆类型（软停用；关联校验在 xf-base 侧实现） */
   disable(id: string) {
     return request<unknown, unknown>({
       url: `${TRUCK_TYPE_BASE_URL}/${id}`,

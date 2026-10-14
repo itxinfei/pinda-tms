@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * 行政区划内部 Feign。
  */
-@FeignClient(value = "pd-auth", fallback = AreaFeignFallback.class)
+@FeignClient(value = "xf-auth", fallback = AreaFeignFallback.class)
 public interface AreaFeign {
 
     /**

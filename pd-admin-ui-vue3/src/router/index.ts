@@ -225,7 +225,7 @@ export const constantRoutes: RouteRecordRaw[] = [
     redirect: "/org",
     meta: { title: "系统管理", icon: "el-icon-Setting" },
     children: [
-      // —— 以下 RBAC/系统页后端尚未提供（新 pd-auth 无对应 CRUD，/api/v1 为模板残留 404）。
+      // —— 以下 RBAC/系统页后端尚未提供（新 xf-auth 无对应 CRUD，/api/v1 为模板残留 404）。
       // 路由与页面文件保留（《59》预置技术栈不删），暂 hidden 不入菜单，待后端落地后放开。 ——
       {
         path: "/user",

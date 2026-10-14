@@ -69,10 +69,10 @@ public class BusinessOperationServiceImpl implements IBusinessOperationService {
             log.info("当前线路：{} ,分组订单：{}", cacheLineDetail, orderClassifys);
             // 用 Set 去重：新订单分类在下面 isNew() 分支内经 findByOrderId 收集一次，
             // 循环外又经 findByOrderIds 批量收集一次，同一运单会出现两次；不去重则
-            // pd-work 批量插入 work_transport_order_task 产生两行相同关联，撞
+            // xf-work 批量插入 work_transport_order_task 产生两行相同关联，撞
             // uk_order_task(tenant_id, transport_order_id, task_id) 唯一键，整批事务回滚。
             Set<Long> transportOrderIds = new LinkedHashSet<>();
-            // 本线待推进状态的新订单（pd-oms String 边界）。
+            // 本线待推进状态的新订单（xf-oms String 边界）。
             // 关键顺序：先收集、先建运输任务，任务创建成功后再把订单 网点入库(4)→待装车(5)，
             // 否则建任务失败时订单已停在 5 且无任务关联——状态机没有 5→4 回退边，
             // 下轮分类只查状态 4，该单永久漏调度（无补偿）。建任务在前，失败则什么都没改，
@@ -83,7 +83,7 @@ public class BusinessOperationServiceImpl implements IBusinessOperationService {
                     // 新订单 收集运单信息
                     for (String orderId : orderClassify.getOrders()) {
                         // 【P0优化】查询运单（下单时已预生成，理论上应该存在）
-                        // 订单ID为 pd-oms String 边界，调 pd-work Feign 前转 Long
+                        // 订单ID为 xf-oms String 边界，调 xf-work Feign 前转 Long
                         TransportOrderDTO transportOrderDto = transportOrderFeign.findByOrderId(IdConvert.toLong(orderId));
                         if (transportOrderDto == null) {
                             // 【健壮性】单个订单缺失运单不应中断整轮调度，
@@ -139,7 +139,7 @@ public class BusinessOperationServiceImpl implements IBusinessOperationService {
                 throw new PdException("运输任务已创建但订单状态更新失败，已复位待下轮重试，请关注");
             }
 
-            // 线路管理运输任务 并返回（transportLineId 为 pd-base String 边界，作为 Map key 保持 String）
+            // 线路管理运输任务 并返回（transportLineId 为 xf-base String 边界，作为 Map key 保持 String）
             result.put(IdConvert.toStr(cacheLineDetail.getTransportLineId()), taskTranSportDto);
 
         });
@@ -159,8 +159,8 @@ public class BusinessOperationServiceImpl implements IBusinessOperationService {
             orderDto.setStatus(OrderStatus.FOR_LOADING.getCode());
             OrderDTO updated = orderFeign.updateById(orderId, orderDto);
             if (updated == null) {
-                // Feign fallback：远程调用 pd-oms 失败（断网/熔断/实例不可用）
-                throw new PdException("订单状态推进失败（pd-oms 不可用）: orderId=" + orderId);
+                // Feign fallback：远程调用 xf-oms 失败（断网/熔断/实例不可用）
+                throw new PdException("订单状态推进失败（xf-oms 不可用）: orderId=" + orderId);
             }
             log.info("更新订单状态为待装车: {}", orderId);
         }
@@ -181,7 +181,7 @@ public class BusinessOperationServiceImpl implements IBusinessOperationService {
             if (updated == null) {
                 // Feign fallback 吞错返回 null：显式转错，进入上方补偿复位，
                 // 避免运单 schedulingStatus 静默停留在待调度、任务却已建的不一致
-                throw new PdException("运单调度状态回写失败（pd-work 不可用）: transportOrderId=" + transportOrderId);
+                throw new PdException("运单调度状态回写失败（xf-work 不可用）: transportOrderId=" + transportOrderId);
             }
         }
     }
@@ -199,7 +199,7 @@ public class BusinessOperationServiceImpl implements IBusinessOperationService {
                 reset.setSchedulingStatus(TransportOrderSchedulingStatus.TO_BE_SCHEDULED.getCode());
                 TransportOrderDTO reseted = transportOrderFeign.updateById(transportOrderId, reset);
                 if (reseted == null) {
-                    log.error("补偿复位运单[{}]失败（pd-work 不可用，fallback 返回 null），需人工核查", transportOrderId);
+                    log.error("补偿复位运单[{}]失败（xf-work 不可用，fallback 返回 null），需人工核查", transportOrderId);
                 } else {
                     log.warn("补偿复位运单[{}] schedulingStatus=待调度", transportOrderId);
                 }
@@ -256,7 +256,7 @@ public class BusinessOperationServiceImpl implements IBusinessOperationService {
                 throw new PdException("司机作业单创建失败，请稍后重试");
             }
             log.info("创建司机任务:{}", savedDriverJob);
-            // 更新运输任务信息（车次/车辆ID为 pd-base String 边界，落 pd-work BIGINT 列前转换）
+            // 更新运输任务信息（车次/车辆ID为 xf-base String 边界，落 xf-work BIGINT 列前转换）
             TaskTransportDTO taskTransportDTOUpdate = new TaskTransportDTO();
             taskTransportDTOUpdate.setTransportOrderIds(taskTransportDTO.getTransportOrderIds());
             taskTransportDTOUpdate.setAssignedStatus(TransportTaskAssignedStatus.DISTRIBUTED.getCode());

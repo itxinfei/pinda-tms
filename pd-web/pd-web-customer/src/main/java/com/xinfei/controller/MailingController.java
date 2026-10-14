@@ -130,7 +130,7 @@ public class MailingController {
 
         orderAddDto.setOrderType(orderAddDto.getReceiverCityId().equals(orderAddDto.getSenderCityId()) ? OrderType.INCITY.getCode() : OrderType.OUTCITY.getCode());
         orderAddDto.setPickupType(entity.getPickupType());
-        // 预估价也必须带货物信息：pd-oms orderMsg 契约要求 orderCargoDto 非空且重量>0，
+        // 预估价也必须带货物信息：xf-oms orderMsg 契约要求 orderCargoDto 非空且重量>0，
         // 否则返回空 map，BFF 端 getOrDefault("amount","23") 恒落兜底价，预估价失去意义
         orderAddDto.setOrderCargoDto(buildOrderCargo(entity));
         Map map = orderFeign.getOrderMsg(orderAddDto);
@@ -144,7 +144,7 @@ public class MailingController {
         OrderCargoDto cargoDto = new OrderCargoDto();
         cargoDto.setName(entity.getGoodsName());
         // 前端传的是货物类型名称（如"日用品"），goodsTypeId 需为数字字典 id——
-        // 直接把名称塞给 goodsTypeId 会让 pd-oms 解析 Long 抛 NumberFormatException，
+        // 直接把名称塞给 goodsTypeId 会让 xf-oms 解析 Long 抛 NumberFormatException，
         // 订单已入库但货物行保存失败（整单被 fallback 误报失败）。此处按名称换 id。
         String goodsTypeId = resolveGoodsTypeId(entity.getGoodsType());
         if (goodsTypeId != null) {
@@ -157,7 +157,7 @@ public class MailingController {
     }
 
     /**
-     * 按货物类型名称解析字典 id；未知名称返回 null（pd-oms 对空 goodsTypeId 容错，货物明细仍落库）
+     * 按货物类型名称解析字典 id；未知名称返回 null（xf-oms 对空 goodsTypeId 容错，货物明细仍落库）
      */
     private String resolveGoodsTypeId(String goodsTypeName) {
         if (StringUtils.isBlank(goodsTypeName)) {
@@ -264,7 +264,7 @@ public class MailingController {
             return Result.error("发货地址不存在,请输入真实地址便于计算距离");
         }
 
-        // 货物明细不再在此重复保存：pd-oms OrderController.save 已内置"订单入库后同步保存货物明细"，
+        // 货物明细不再在此重复保存：xf-oms OrderController.save 已内置"订单入库后同步保存货物明细"，
         // BFF 再 cargoFeign.save 一遍会产生重复货物行（E2E 实测 2 条）。
 
         // 【P0优化】订单确认时预生成运单，参考大厂标准流程
@@ -853,7 +853,7 @@ public class MailingController {
                 log.warn("[订单] 越权取消被拒绝: id={}, memberId={}, existing.getMemberId={}", id, memberId, existing.getMemberId());
                 return Result.error(403, "无权操作他人订单");
             }
-            // 调 pd-oms 专用取消端点：cancel_reason/cancel_time 持久化，状态合法性由订单状态矩阵统一校验
+            // 调 xf-oms 专用取消端点：cancel_reason/cancel_time 持久化，状态合法性由订单状态矩阵统一校验
             // 客户 App 无取消原因输入框，固定记"客户取消"（与下方取件任务 mark 文案一致）
             OrderCancelDTO orderCancelDTO = new OrderCancelDTO();
             orderCancelDTO.setReason("客户取消");

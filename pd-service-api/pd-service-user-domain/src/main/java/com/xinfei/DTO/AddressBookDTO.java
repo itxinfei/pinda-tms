@@ -10,7 +10,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 地址簿跨服务传输模型（R2④：不再继承 entity 副本，字段内联；与 pd-user 内部实体字段保持一致）。
+ * 地址簿跨服务传输模型（R2④：不再继承 entity 副本，字段内联；与 xf-user 内部实体字段保持一致）。
  *
  * @author diesel
  * @since 2020-3-30

@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * 在途异常上报入参（司机端 · D-57）
  *
- * <p>本类仅为 Feign 传输载体，与 pd-netty 侧的
+ * <p>本类仅为 Feign 传输载体，与 xf-netty 侧的
  * {@code com.xinfei.DTO.ExceptionReportDTO} 字段一一对应。</p>
  *
  * <p>司机在运输途中上报车辆故障/货物损失/延误，落库复用

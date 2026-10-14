@@ -8,7 +8,7 @@ import java.io.Serializable;
 /**
  * 管理端工作台-待处理运单列表项（轻量投影，区别于字段庞大的 OrderDTO）。
  *
- * <p>statusText 中文状态由 pd-oms 依据《07》权威映射直接给出，前端零状态码映射，
+ * <p>statusText 中文状态由 xf-oms 依据《07》权威映射直接给出，前端零状态码映射，
  * 规避管理端旧五位码 enum 与新紧凑码不一致的问题。</p>
  */
 @Data

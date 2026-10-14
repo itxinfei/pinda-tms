@@ -5,7 +5,7 @@ import lombok.Data;
 
 /**
  * 行政区划 DTO：供微服务间 Feign 调用。
- * 字段按 pd-web / pd-dispatch 实际访问裁剪（仅 id、name）。
+ * 字段按 pd-web / xf-dispatch 实际访问裁剪（仅 id、name）。
  */
 @Data
 @Schema(description = "行政区划信息")

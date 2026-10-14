@@ -7,7 +7,7 @@
 #
 # 能力：
 #   - inputs.services 必填：选择本次发布的后端服务（逗号分隔，不默认任何服务，防误触 auth/网关；all=全部 14 个）
-#   - 固定部署顺序：基础/业务服务先上，pd-gateway 始终最后切（见解析步骤 ORDER）
+#   - 固定部署顺序：基础/业务服务先上，xf-gateway 始终最后切（见解析步骤 ORDER）
 #   - Maven 构建（2026-10-12 提速）：单服务默认只 package 目标模块，上游 SNAPSHOT 取自
 #     build-check 预热的持久 /data/m2；基线之后改过的内部模块先 install 刷新；
 #     无基线 / 命中 pom.xml 变更 / 直接打包失败，三种情况自动回退 -am 全链构建（旧行为，稳妥兜底）。
@@ -20,13 +20,13 @@
 #   - /data/ci/maven-settings.xml = 阿里云 Maven settings（挂为 /ci，只读）
 #   - /data/ci/apps.env           = 密钥（NACOS_*/REDIS_PASSWORD/XXL_JOB_ACCESS_TOKEN，0600）
 #   - xinfei/jre21-fontconfig:1    = 后端运行时基础镜像
-#   - compose 顶层 name: xinfei-apps；镜像 tag 支持 PD_<SVC>_TAG 逐服务覆盖
+#   - compose 顶层 name: xinfei-apps；镜像 tag 支持 XF_<SVC>_TAG 逐服务覆盖
 #
 # 13 个可部署后端（compose 服务名 = 容器名 = 镜像名 xinfei/<svc>）：
-#   pd-auth(9000) pd-base(8185) pd-oms(8186) pd-work(8187) pd-user(8189)
-#   pd-dispatch(8190) pd-aggregation(8191) pd-netty(8192)
-#   pd-web-manager(8161) pd-web-driver(8162) pd-web-courier(8163) pd-web-customer(8164)
-#   pd-gateway(8760)
+#   xf-auth(9000) xf-base(8185) xf-oms(8186) xf-work(8187) xf-user(8189)
+#   xf-dispatch(8190) xf-aggregation(8191) xf-netty(8192)
+#   xf-web-manager(8161) xf-web-driver(8162) xf-web-courier(8163) xf-web-customer(8164)
+#   xf-gateway(8760)
 # ============================================
 name: "部署-后端微服务（手动·下拉选服务或全部）"
 
@@ -38,19 +38,19 @@ on:
         type: choice
         options:
           - all
-          - pd-auth
-          - pd-base
-          - pd-oms
-          - pd-work
-          - pd-user
-          - pd-dispatch
-          - pd-aggregation
-          - pd-netty
-          - pd-web-manager
-          - pd-web-driver
-          - pd-web-courier
-          - pd-web-customer
-          - pd-gateway
+          - xf-auth
+          - xf-base
+          - xf-oms
+          - xf-work
+          - xf-user
+          - xf-dispatch
+          - xf-aggregation
+          - xf-netty
+          - xf-web-manager
+          - xf-web-driver
+          - xf-web-courier
+          - xf-web-customer
+          - xf-gateway
         default: all
       db_approved:
         description: "DB 变更门禁放行（diff 含 *.sql 时须人工审核后置 true）"
@@ -115,21 +115,21 @@ jobs:
           set -e
           {
             echo 'declare -A MOD_OF=('
-            echo '  [pd-auth]=pd-auth'
-            echo '  [pd-base]=pd-base'
-            echo '  [pd-oms]=pd-oms'
-            echo '  [pd-work]=pd-work'
-            echo '  [pd-user]=pd-user'
-            echo '  [pd-dispatch]=pd-dispatch'
-            echo '  [pd-aggregation]=pd-aggregation'
-            echo '  [pd-netty]=pd-netty'
-            echo '  [pd-web-manager]=pd-web/pd-web-manager'
-            echo '  [pd-web-driver]=pd-web/pd-web-driver'
-            echo '  [pd-web-courier]=pd-web/pd-web-courier'
-            echo '  [pd-web-customer]=pd-web/pd-web-customer'
-            echo '  [pd-gateway]=pd-gateway'
+            echo '  [xf-auth]=pd-auth'
+            echo '  [xf-base]=pd-base'
+            echo '  [xf-oms]=pd-oms'
+            echo '  [xf-work]=pd-work'
+            echo '  [xf-user]=pd-user'
+            echo '  [xf-dispatch]=pd-dispatch'
+            echo '  [xf-aggregation]=pd-aggregation'
+            echo '  [xf-netty]=pd-netty'
+            echo '  [xf-web-manager]=pd-web/pd-web-manager'
+            echo '  [xf-web-driver]=pd-web/pd-web-driver'
+            echo '  [xf-web-courier]=pd-web/pd-web-courier'
+            echo '  [xf-web-customer]=pd-web/pd-web-customer'
+            echo '  [xf-gateway]=pd-gateway'
             echo ')'
-            echo 'ORDER="pd-auth pd-base pd-oms pd-work pd-user pd-dispatch pd-aggregation pd-netty pd-web-manager pd-web-driver pd-web-courier pd-web-customer pd-gateway"'
+            echo 'ORDER="xf-auth xf-base xf-oms xf-work xf-user xf-dispatch xf-aggregation xf-netty xf-web-manager xf-web-driver xf-web-courier xf-web-customer xf-gateway"'
           } > /tmp/xinfei-svc.sh
           source /tmp/xinfei-svc.sh
 
@@ -328,7 +328,7 @@ jobs:
 
       - name: 按序部署并逐服务健康检查（网关最后切）
         if: ${{ github.event.inputs.check_only != 'true' }}
-        # PD_<SVC>_TAG 逐服务覆盖 compose 的 ${PD_<SVC>_TAG:-${TAG:-latest}}。
+        # XF_<SVC>_TAG 逐服务覆盖 compose 的 ${XF_<SVC>_TAG:-${TAG:-latest}}。
         # 健康检查走 docker.sock 的 docker inspect（job 容器独立网络，curl 宿主不可靠）。
         run: |
           set -e

@@ -3,8 +3,8 @@ import request from "@/utils/request";
 /**
  * 管理端工作台（dashboard）
  *
- * 聚合接口由 pd-web-manager 提供（经网关 /api/manager 前缀）。
- * 订单统计源自 pd-oms，在途车辆源自 pd-work；异常告警走独立的 netty 接口（见 @/api/alarm）。
+ * 聚合接口由 xf-web-manager 提供（经网关 /api/manager 前缀）。
+ * 订单统计源自 xf-oms，在途车辆源自 xf-work；异常告警走独立的 netty 接口（见 @/api/alarm）。
  */
 const DASHBOARD_BASE_URL = "/api/manager/dashboard";
 

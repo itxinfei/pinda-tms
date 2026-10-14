@@ -6,7 +6,7 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
- * pd-netty 轨迹服务启动类
+ * xf-netty 轨迹服务启动类
  *
  * <p>P0-4 北斗字段最小改造（D-13）启用 @EnableScheduling，
  * 供 GpsTraceConsumer 中 @Scheduled 心跳超时扫描任务使用（每 60s 一次）。

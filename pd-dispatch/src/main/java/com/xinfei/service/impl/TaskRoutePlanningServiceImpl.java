@@ -65,7 +65,7 @@ public class TaskRoutePlanningServiceImpl implements ITaskRoutePlanningService {
         orderClassifyGroupDTOS.stream().filter(item -> (item.isNew() && !"ERROR".equals(item.getKey()))).forEach(item -> {
             log.info("开始计算线路 {} -> {}", item.getStartOrgId(), item.getEndOrgId());
             // 查找到所有相关线路 （存在无法通行的情况，）
-            // findLine 递归内部全程走 pd-base String 边界，仅在入口把 disp 内部 Long 机构转 String
+            // findLine 递归内部全程走 xf-base String 边界，仅在入口把 disp 内部 Long 机构转 String
             RoutePlanningDTO routePlanningDTO = findLine(0, IdConvert.toStr(orgId), IdConvert.toStr(item.getStartOrgId()), IdConvert.toStr(item.getEndOrgId()), new ArrayList<>());
             log.info("RoutePlanningDTO:{}", JSON.toJSONString(routePlanningDTO));
             // 查找到的线路分析，拆分，聚合。

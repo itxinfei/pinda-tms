@@ -12,7 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * 管理端会员管理（USR-01）：薄转发至 pd-user，网关前缀 /api/manager。
+ * 管理端会员管理（USR-01）：薄转发至 xf-user，网关前缀 /api/manager。
  * 会员档案不做 VO 二次转换，直接透传共享契约 MemberDTO。
  */
 @RestController

@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
  * 异常调度订单登记实体（disp_exception_order）
  *
  * <p>记录调度过程中无法完成线路规划（ERROR 分组，如起始/目的机构信息缺失）的订单，
- * 供运营人员查询并人工处理。订单ID落库为 BIGINT，pd-oms 侧以 String 协议交互。
+ * 供运营人员查询并人工处理。订单ID落库为 BIGINT，xf-oms 侧以 String 协议交互。
  * 主键雪花 Long；tenant_id 由 TenantLineInnerInterceptor 自动填充。</p>
  */
 @Data

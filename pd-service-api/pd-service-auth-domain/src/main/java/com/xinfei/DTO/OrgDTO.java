@@ -5,7 +5,7 @@ import lombok.Data;
 
 /**
  * 组织（机构）DTO：供微服务间 Feign 调用。
- * 字段按 pd-web / pd-dispatch 实际访问裁剪；manager 为负责人姓名，由服务端按 managerId 装配。
+ * 字段按 pd-web / xf-dispatch 实际访问裁剪；manager 为负责人姓名，由服务端按 managerId 装配。
  */
 @Data
 @Schema(description = "组织信息")

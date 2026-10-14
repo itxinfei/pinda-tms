@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
  * <p>与旧 {@code /addressBook/**} 的区别：会员归属键改为显式 memberId 入参（会员雪花 ID
  * 由客户 BFF 从认证账号解析得到），不再读 userid 请求头——认证账号 ID 与会员 ID 已不是
  * 同一个键。路径 {@code /addressBook/internal/**} 预留统一 Same-Token 入站加固；
- * 网关无 pd-user 路由，外部不可达。</p>
+ * 网关无 xf-user 路由，外部不可达。</p>
  *
  * <p>安全语义与旧端点完全一致：page 按 memberId 过滤；save/update 丢弃请求体 userId
  * 强制回填归属；isDefault 先清零同会员旧默认；detail/update/del 做行级归属校验。</p>

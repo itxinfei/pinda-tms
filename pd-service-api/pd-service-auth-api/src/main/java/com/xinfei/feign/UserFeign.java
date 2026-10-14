@@ -13,7 +13,7 @@ import java.util.List;
 /**
  * 用户（账号）内部 Feign。
  */
-@FeignClient(value = "pd-auth", fallback = UserFeignFallback.class)
+@FeignClient(value = "xf-auth", fallback = UserFeignFallback.class)
 public interface UserFeign {
 
     /**

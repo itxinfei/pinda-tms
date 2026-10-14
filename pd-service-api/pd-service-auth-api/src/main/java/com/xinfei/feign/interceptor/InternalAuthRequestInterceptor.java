@@ -13,8 +13,8 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 /**
  * 服务间 Feign 出站拦截器：
  * <ol>
- *   <li>注入 Same-Token，使对 pd-auth 的内部调用通过其 Same-Token 校验（其它服务不校验，多注入无害）；</li>
- *   <li>透传 tenantId 头，供 pd-auth 内部端点在免登录场景下解析租户。</li>
+ *   <li>注入 Same-Token，使对 xf-auth 的内部调用通过其 Same-Token 校验（其它服务不校验，多注入无害）；</li>
+ *   <li>透传 tenantId 头，供 xf-auth 内部端点在免登录场景下解析租户。</li>
  * </ol>
  *
  * 仅依赖 sa-token-core；Same-Token 的 Redis 共享由调用方引入 sa-token starter + redis-jackson
@@ -32,7 +32,7 @@ public class InternalAuthRequestInterceptor implements RequestInterceptor {
         try {
             template.header(SaSameUtil.SAME_TOKEN, SaSameUtil.getToken());
         } catch (Exception e) {
-            // Redis 暂不可用不阻断请求构造；pd-auth 强校验失败会以 401 触发 fallback，可被感知
+            // Redis 暂不可用不阻断请求构造；xf-auth 强校验失败会以 401 触发 fallback，可被感知
             log.debug("注入 Same-Token 失败: {}", e.getMessage());
         }
         // 2. 透传租户ID

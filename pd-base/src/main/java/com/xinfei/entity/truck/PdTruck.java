@@ -58,7 +58,7 @@ public class PdTruck {
     /** 1正常 0禁用 */
     private Integer status;
 
-    /** 在线状态 1在线 0离线（pd-netty 心跳维护，VEHICLE_OFFLINE 告警依赖） */
+    /** 在线状态 1在线 0离线（xf-netty 心跳维护，VEHICLE_OFFLINE 告警依赖） */
     private Integer onlineStatus;
 
     /** 最后心跳时间 */

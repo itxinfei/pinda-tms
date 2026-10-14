@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 管理端参数配置（CFG-01）：薄转发至 pd-auth，网关前缀 /api/manager。
+ * 管理端参数配置（CFG-01）：薄转发至 xf-auth，网关前缀 /api/manager。
  *
  * <p>面向前端统一包 {@code {code,msg,data}} 外壳（读端点 data 为分页/详情），
  * 以契合前端 request 拦截器 {@code code===0} 的成功判定；写操作直接透传下游 Result。</p>

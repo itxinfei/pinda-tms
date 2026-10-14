@@ -1,7 +1,7 @@
 import request from "@/utils/request";
 
 /**
- * 车辆轨迹/定位（pd-netty）
+ * 车辆轨迹/定位（xf-netty）
  *
  * 经网关 /api/netty-service 前缀访问；分页壳与 BFF 不同：
  * Result.data = { items, total, pages, page, pageSize }。

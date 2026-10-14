@@ -9,7 +9,7 @@ import io.swagger.v3.oas.annotations.Hidden;
 
 import java.util.List;
 
-@FeignClient(value = "pd-oms", fallback = CargoFeignFallback.class, path = "/cargo")
+@FeignClient(value = "xf-oms", fallback = CargoFeignFallback.class, path = "/cargo")
 @Hidden
 public interface CargoFeign {
     /**

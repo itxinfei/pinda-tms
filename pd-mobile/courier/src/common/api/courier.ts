@@ -14,7 +14,7 @@ import { get, post, put } from '../request'
 // 签收二态 / 异常类型常量（定义在 constants.ts，便于页面从本模块统一引入）
 export { DELIVERED_SIGN, DELIVERED_REJECT, COURIER_EXCEPTION_TYPES } from '../constants'
 
-// ============ 鉴权（三端共用 pd-auth）============
+// ============ 鉴权（三端共用 xf-auth）============
 export function captchaSrc(key: string): string {
   return CAPTCHA_URL + '?key=' + key
 }

@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 // 不要在接口上加类级 @RequestMapping（会与 fallback 同时被 MVC 注册，报 Ambiguous mapping）。
-@FeignClient(value = "pd-work", fallback = PickupDispatchTaskFeignFallback.class)
+@FeignClient(value = "xf-work", fallback = PickupDispatchTaskFeignFallback.class)
 public interface PickupDispatchTaskFeign {
     /**
      * 新增取派件任务

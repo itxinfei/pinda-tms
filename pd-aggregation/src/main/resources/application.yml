@@ -8,7 +8,7 @@ server:
 
 spring:
   application:
-    name: pd-aggregation
+    name: xf-aggregation
   # 环境 dev|test|prod|docker
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
@@ -19,7 +19,7 @@ spring:
   # optional 表示远程配置缺失不阻断启动。
   config:
     import:
-      - optional:nacos:pd-aggregation.yml
+      - optional:nacos:xf-aggregation.yml
   cloud:
     nacos:
       # 服务注册

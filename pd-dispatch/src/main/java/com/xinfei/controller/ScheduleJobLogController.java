@@ -168,7 +168,7 @@ public class ScheduleJobLogController {
         wrapper.orderByAsc(OrderClassifyAttachEntity::getCreateTime);
         List<OrderClassifyAttachEntity> orderClassifyAttachs = orderClassifyAttachService.list(wrapper);
 
-        // 车次/车辆为 pd-base String 边界，转 String 集合后远程查询；司机内部即 Long
+        // 车次/车辆为 xf-base String 边界，转 String 集合后远程查询；司机内部即 Long
         Set<String> tripsIdSet = IdConvert.toStrSet(orderClassifyAttachs.stream().map(OrderClassifyAttachEntity::getTripsId).collect(Collectors.toSet()));
         Set<String> truckIdSet = IdConvert.toStrSet(orderClassifyAttachs.stream().map(OrderClassifyAttachEntity::getTruckId).collect(Collectors.toSet()));
         Set<Long> driverIdSet = orderClassifyAttachs.stream().map(OrderClassifyAttachEntity::getDriverId).collect(Collectors.toSet());
@@ -207,7 +207,7 @@ public class ScheduleJobLogController {
         if (cacheLineUseEntity != null) {
             CacheLineEntity cacheLineEntity = cacheLineService.getById(cacheLineUseEntity.getCacheLineId());
             List<CacheLineDetailEntity> cacheLineDetailEntities = cacheLineDetailService.findByCacheLineId(cacheLineUseEntity.getCacheLineId());
-            // 线路ID为 pd-base String 边界，转 String 集合后远程查询
+            // 线路ID为 xf-base String 边界，转 String 集合后远程查询
             Set<String> transportLineIdSet = IdConvert.toStrSet(cacheLineDetailEntities.stream().map(CacheLineDetailEntity::getTransportLineId).collect(Collectors.toSet()));
             CompletableFuture<Map<String, TransportLineDto>> transportLineMapFuture = PdCompletableFuture.transportLineIdMapFuture(transportLineFeign, transportLineIdSet);
 

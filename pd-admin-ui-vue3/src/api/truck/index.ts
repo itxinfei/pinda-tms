@@ -44,7 +44,7 @@ export interface TruckLicenseRecord {
   picture?: string;
 }
 
-/** 车辆保存入参：车型/车队为选填嵌套对象，清空时传 null（pd-base 实体配 FieldStrategy.ALWAYS 落 null） */
+/** 车辆保存入参：车型/车队为选填嵌套对象，清空时传 null（xf-base 实体配 FieldStrategy.ALWAYS 落 null） */
 export interface TruckSavePayload {
   id?: string;
   /** 品牌（选填） */

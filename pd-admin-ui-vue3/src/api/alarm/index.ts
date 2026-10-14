@@ -3,7 +3,7 @@ import request from "@/utils/request";
 /**
  * 告警中心（TRK-02）
  *
- * 接口由 pd-netty 提供（iot_alarm_record 表），经网关 /api/netty-service 前缀访问，
+ * 接口由 xf-netty 提供（iot_alarm_record 表），经网关 /api/netty-service 前缀访问，
  * 与 BFF 分页结构不同：netty 返回 total，BFF 返回 counts。
  */
 const ALARM_BASE_URL = "/api/netty-service/alarm";

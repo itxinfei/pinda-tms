@@ -27,7 +27,7 @@ public class OrgTenantResolver {
      * 按机构ID解析租户ID。
      *
      * @param orgId 机构ID
-     * @return 租户ID；机构ID为空、远程失败或查无数据时返回 0（与 pd-auth 安全回落一致，不泄露租户数据）
+     * @return 租户ID；机构ID为空、远程失败或查无数据时返回 0（与 xf-auth 安全回落一致，不泄露租户数据）
      */
     public Long resolve(Long orgId) {
         if (orgId == null) {

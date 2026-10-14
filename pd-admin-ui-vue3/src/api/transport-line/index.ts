@@ -25,7 +25,7 @@ export interface TransportLineRecord {
   estimatedTime?: number;
 }
 
-/** 线路保存入参：机构/类型均为选填嵌套对象，清空时传 null（pd-base 实体配 FieldStrategy.ALWAYS 落 null） */
+/** 线路保存入参：机构/类型均为选填嵌套对象，清空时传 null（xf-base 实体配 FieldStrategy.ALWAYS 落 null） */
 export interface TransportLineSavePayload {
   id?: string;
   /** 线路名称（必填） */

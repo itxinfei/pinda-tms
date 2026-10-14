@@ -15,7 +15,7 @@ import java.util.List;
  * @author jpfss
  */
 // 不要在接口上加类级 @RequestMapping（会与 fallback 同时被 MVC 注册，报 Ambiguous mapping）。
-@FeignClient(value = "pd-work", fallback = TransportOrderFeignFallback.class)
+@FeignClient(value = "xf-work", fallback = TransportOrderFeignFallback.class)
 public interface TransportOrderFeign {
     /**
      * 新增运单

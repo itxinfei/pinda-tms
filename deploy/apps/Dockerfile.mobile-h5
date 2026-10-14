@@ -65,6 +65,6 @@ COPY --from=builder /build/${APP_SUBDIR}/dist/build/h5/ /usr/share/nginx/html/
 COPY deploy/apps/nginx/mobile-h5.conf /etc/nginx/templates/default.conf.template
 
 ENV NGINX_HOST=192.168.20.130 \
-    DOCKER_REQUEST_DOMAIN_PREFIX=http://pd-gateway:8760
+    DOCKER_REQUEST_DOMAIN_PREFIX=http://xf-gateway:8760
 
 EXPOSE 80

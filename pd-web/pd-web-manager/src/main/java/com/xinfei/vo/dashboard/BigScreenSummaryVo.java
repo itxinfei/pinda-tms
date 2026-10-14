@@ -10,9 +10,9 @@ import java.util.List;
 /**
  * 运营可视化大屏汇总聚合（BFF，不连库）。
  *
- * <p>订单来自 pd-oms；运单/任务/车辆状态/车次运量来自 pd-work；车辆总数来自 pd-base，
- * 空闲车辆 = 总数 - 在途 - 待执行（下限 0）。告警数由前端直连 pd-netty /alarm 取分页 total，
- * 车辆定位散点由前端直连 pd-netty /trace/page 获取，均不经本服务。</p>
+ * <p>订单来自 xf-oms；运单/任务/车辆状态/车次运量来自 xf-work；车辆总数来自 xf-base，
+ * 空闲车辆 = 总数 - 在途 - 待执行（下限 0）。告警数由前端直连 xf-netty /alarm 取分页 total，
+ * 车辆定位散点由前端直连 xf-netty /trace/page 获取，均不经本服务。</p>
  */
 @Data
 @Schema(description = "运营大屏汇总聚合")

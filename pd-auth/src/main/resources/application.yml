@@ -3,13 +3,13 @@ server:
 
 spring:
   application:
-    name: pd-auth
+    name: xf-auth
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
   # Spring Cloud 2023 标准接入方式（取代旧 bootstrap.yml）；optional 表示远程配置缺失不阻断启动
   config:
     import:
-      - optional:nacos:pd-auth.yaml
+      - optional:nacos:xf-auth.yaml
   cloud:
     nacos:
       # 服务注册

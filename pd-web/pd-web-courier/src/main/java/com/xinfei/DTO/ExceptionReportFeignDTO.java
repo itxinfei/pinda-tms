@@ -8,9 +8,9 @@ import java.util.List;
 /**
  * 异常上报入参（快递员端 · D-41）
  *
- * <p>本类仅为 Feign 传输载体，与 pd-netty 侧的
+ * <p>本类仅为 Feign 传输载体，与 xf-netty 侧的
  * {@code com.xinfei.DTO.ExceptionReportDTO} 字段一一对应。
- * <b>不复用 pd-netty 的类</b>：web端不应依赖内部服务模块的实体类
+ * <b>不复用 xf-netty 的类</b>：web端不应依赖内部服务模块的实体类
  * （与现有 {@code TraceFeign} 用通用 Map 回参的做法一致）。</p>
  *
  * <p>定案 <b>D-46「类型 + 照片 + 备注」三要素</b>，三者缺一不可。</p>

@@ -11,7 +11,7 @@ import jakarta.servlet.http.HttpServletResponse;
 /**
  * Web 端 Token 鉴权拦截器（轻量，依赖网关透传身份）
  *
- * <p>网关（pd-gateway）在校验 JWT 后将用户ID写入 {@code userid} 请求头并向下游透传。
+ * <p>网关（xf-gateway）在校验 JWT 后将用户ID写入 {@code userid} 请求头并向下游透传。
  * 本拦截器作为服务端兜底校验：业务接口（HandlerMethod）缺少 userid 头时直接拒绝，
  * 防止绕过网关直连端口访问。静态资源与 Swagger 文档放行。</p>
  */

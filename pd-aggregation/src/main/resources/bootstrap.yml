@@ -9,7 +9,7 @@ server:
 #    context-path: /
 spring:
   application:
-    name: pd-aggregation
+    name: xf-aggregation
   # 环境 dev|test|prod
   profiles:
     active: prod

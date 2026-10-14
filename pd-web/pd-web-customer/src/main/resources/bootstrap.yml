@@ -10,7 +10,7 @@ server:
 
 spring:
   application:
-    name: pd-web-customer
+    name: xf-web-customer
   # 环境 dev|test|prod
   profiles:
     active: prod

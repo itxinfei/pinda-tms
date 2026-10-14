@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * 角色内部 Feign。
  */
-@FeignClient(value = "pd-auth", fallback = RoleFeignFallback.class)
+@FeignClient(value = "xf-auth", fallback = RoleFeignFallback.class)
 public interface RoleFeign {
 
     /**

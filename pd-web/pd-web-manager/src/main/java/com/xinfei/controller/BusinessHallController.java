@@ -166,7 +166,7 @@ public class BusinessHallController {
     @DeleteMapping("/goodsType/{id}")
     @SaCheckPermission("goodsType:delete")
     public Result deleteGoodsType(@PathVariable(name = "id") String id) {
-        // 说明：货物类型关联校验（已被车辆类型关联时禁止删除）已在 pd-base disable 侧实现
+        // 说明：货物类型关联校验（已被车辆类型关联时禁止删除）已在 xf-base disable 侧实现
         goodsTypeFeign.disable(id);
         return Result.ok();
     }

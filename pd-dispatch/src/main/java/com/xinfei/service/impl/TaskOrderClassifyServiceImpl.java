@@ -113,7 +113,7 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
 
                 List<OrderClassifyOrderEntity> orderClassifyOrders = item.getOrders().stream().map((orderId) -> {
                     OrderClassifyOrderEntity orderClassifyOrderEntity = new OrderClassifyOrderEntity();
-                    // 订单ID为 pd-oms String 边界，落库 BIGINT 前转换
+                    // 订单ID为 xf-oms String 边界，落库 BIGINT 前转换
                     orderClassifyOrderEntity.setOrderId(IdConvert.toLong(orderId));
                     orderClassifyOrderEntity.setClassifyId(entity.getId());
                     return orderClassifyOrderEntity;

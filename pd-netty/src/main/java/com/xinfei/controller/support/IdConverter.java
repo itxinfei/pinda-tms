@@ -8,7 +8,7 @@ import java.util.List;
  *
  * <p>设备上报协议模型（{@code LocationEntity}）对外仍使用 String 类型 ID，
  * 而 iot_ 新表实体已改为雪花 Long 主键。本工具负责 String ↔ Long 边界转换。
- * pd-netty 不依赖 pd-base，故在本模块单独维护一份。</p>
+ * xf-netty 不依赖 xf-base，故在本模块单独维护一份。</p>
  */
 public final class IdConverter {
 

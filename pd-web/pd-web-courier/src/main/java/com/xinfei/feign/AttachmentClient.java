@@ -11,11 +11,11 @@ import org.springframework.web.multipart.MultipartFile;
  * 文件上传 Feign 客户端（指向 pd-file-server）。
  *
  * <p>快递员端原本缺少附件上传通道，POD 签收照片无法独立留证；
- * 依据《全局定案与待确认项清单》D-07，在 pd-web-courier 独立补建，
+ * 依据《全局定案与待确认项清单》D-07，在 xf-web-courier 独立补建，
  * 与 driver/customer 端保持一致，业务标识使用 courier。</p>
  */
 @FeignClient(
-        name = "${xinfei.feign.authority-server:pd-file-server}",
+        name = "${xinfei.feign.authority-server:xf-file-server}",
         path = "/attachment"
 )
 public interface AttachmentClient {

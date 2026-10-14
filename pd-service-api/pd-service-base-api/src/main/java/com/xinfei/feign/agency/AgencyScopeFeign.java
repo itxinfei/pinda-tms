@@ -9,7 +9,7 @@ import io.swagger.v3.oas.annotations.Hidden;
 
 import java.util.List;
 
-@FeignClient(value = "pd-base", fallback = AgencyScopeFeignFallback.class, path = "/scope")
+@FeignClient(value = "xf-base", fallback = AgencyScopeFeignFallback.class, path = "/scope")
 @Hidden
 public interface AgencyScopeFeign {
     /**

@@ -176,7 +176,7 @@ public class PayServiceImpl implements IPayService {
         }
         // 外部渠道（微信/支付宝）服务器回调无登录态、网关注入不了 tenantId 头，多租户插件会给
         // 支付单/订单的查询与更新追加 tenant_id=0，回调必然落空。这里按全局唯一的 pay_no 反查
-        // 真实租户并临时建立系统态上下文（与 pd-netty MQ 消费端同模式），finally 清理防线程复用串租户。
+        // 真实租户并临时建立系统态上下文（与 xf-netty MQ 消费端同模式），finally 清理防线程复用串租户。
         // mock 渠道的回调发生在创建支付单的 HTTP 线程内（请求头已带租户），不会进入该分支。
         boolean systemContext = false;
         if (currentTenantAbsent()) {
@@ -247,7 +247,7 @@ public class PayServiceImpl implements IPayService {
     /**
      * 判断当前线程是否缺少有效租户上下文。
      *
-     * <p>判定口径与 pd-oms 的 TenantLineHandler 保持一致：HTTP 请求头 tenantId（网关注入）
+     * <p>判定口径与 xf-oms 的 TenantLineHandler 保持一致：HTTP 请求头 tenantId（网关注入）
      * 优先，其次系统态 {@link TenantContextHolder}，两级都缺失时由外部回调反查租户补上下文。</p>
      */
     private boolean currentTenantAbsent() {

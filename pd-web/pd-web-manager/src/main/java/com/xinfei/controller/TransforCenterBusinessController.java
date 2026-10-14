@@ -193,7 +193,7 @@ public class TransforCenterBusinessController {
     @DeleteMapping("/truckType/{id}")
     @SaCheckPermission("truckType:delete")
     public Result deleteTruckType(@PathVariable(name = "id") String id) {
-        // 说明：车辆类型关联校验（存在关联车辆/货物类型时禁止删除）已在 pd-base disable 侧实现
+        // 说明：车辆类型关联校验（存在关联车辆/货物类型时禁止删除）已在 xf-base disable 侧实现
         truckTypeFeign.disable(id);
         return Result.ok();
     }
@@ -388,7 +388,7 @@ public class TransforCenterBusinessController {
     @DeleteMapping("/transportLineType/{id}")
     @SaCheckPermission("transportLineType:delete")
     public Result deleteTransportLineType(@PathVariable(name = "id") String id) {
-        // 说明：线路类型关联校验（存在关联线路时禁止删除）已在 pd-base disable 侧实现
+        // 说明：线路类型关联校验（存在关联线路时禁止删除）已在 xf-base disable 侧实现
         transportLineTypeFeign.disable(id);
         return Result.ok();
     }

@@ -8,7 +8,7 @@ import com.tngtech.archunit.lang.ArchRule;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
 /**
- * pd-dispatch 架构守护测试
+ * xf-dispatch 架构守护测试
  * 把 CLAUDE.md /《12-开发纪律与红线》中的分层红线固化为 CI 可执行规则：
  * mvn test 即校验，违反直接构建失败。
  *

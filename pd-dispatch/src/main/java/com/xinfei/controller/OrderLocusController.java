@@ -53,7 +53,7 @@ public class OrderLocusController {
 
         LinkedHashSet<OrderPointDTO> OrderPointDTOs = new LinkedHashSet<>();
 
-        // 入参 id 为订单号（pd-oms String 边界），返回分类ID为内部 Long
+        // 入参 id 为订单号（xf-oms String 边界），返回分类ID为内部 Long
         Long orderClassifyId = orderClassifyOrderService.getClassifyId(id);
 
         CacheLineUseEntity cacheLineUseEntity = cacheLineUseService.getByClassifyId(orderClassifyId);

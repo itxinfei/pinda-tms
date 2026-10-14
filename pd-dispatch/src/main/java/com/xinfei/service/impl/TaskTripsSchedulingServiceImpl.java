@@ -64,7 +64,7 @@ public class TaskTripsSchedulingServiceImpl implements ITaskTripsSchedulingServi
             CacheLineDetailEntity cacheLineDetailEntity = orderLineSimpleDTO.getCacheLineDetailEntity();
 
 
-            // 根据线路获取车次（pd-base 边界：transportLineId 为 String）
+            // 根据线路获取车次（xf-base 边界：transportLineId 为 String）
             List<TransportTripsDto> transportTripsDtos = transportTripsFeign.findAll(IdConvert.toStr(cacheLineDetailEntity.getTransportLineId()), null);
             if (CollectionUtils.isEmpty(transportTripsDtos)) {
                 return;
@@ -114,7 +114,7 @@ public class TaskTripsSchedulingServiceImpl implements ITaskTripsSchedulingServi
         orderClassifyGroupDTOS.forEach(orderClassifyGroupDTO -> {
             OrderClassifyAttachEntity orderClassifyAttachEntity = new OrderClassifyAttachEntity();
             orderClassifyAttachEntity.setClassifyId(orderClassifyGroupDTO.getId());
-            // 车次/车辆ID为 pd-base String 边界，落库 BIGINT 前转换；司机ID内部即 Long
+            // 车次/车辆ID为 xf-base String 边界，落库 BIGINT 前转换；司机ID内部即 Long
             orderClassifyAttachEntity.setTripsId(IdConvert.toLong(tripsTruckDriverDTO.getTripsId()));
             orderClassifyAttachEntity.setTruckId(IdConvert.toLong(tripsTruckDriverDTO.getTruckId()));
             orderClassifyAttachEntity.setDriverId(tripsTruckDriverDTO.getDriverId());
@@ -191,7 +191,7 @@ public class TaskTripsSchedulingServiceImpl implements ITaskTripsSchedulingServi
             // 获取状态正常的车辆id
             List<String> truckIds = truckDtos.stream().filter(item -> item.getStatus() == 1).map(item -> item.getId()).collect(Collectors.toList());
 
-            // 获取全部司机id（pd-base 边界 userId 为 String，调 pd-auth 前转 Long）
+            // 获取全部司机id（xf-base 边界 userId 为 String，调 xf-auth 前转 Long）
             List<Long> driverIds = transportTripsTruckDriverDtoList.stream()
                 .filter(item -> StringUtils.isNotBlank(item.getUserId()))
                 .map(item -> IdConvert.toLong(item.getUserId()))
@@ -207,7 +207,7 @@ public class TaskTripsSchedulingServiceImpl implements ITaskTripsSchedulingServi
 
             transportTripsTruckDriverDtoList.forEach(item -> {
                 if (userIds.contains(item.getUserId()) && truckIds.contains(item.getTruckId())) {
-                    // 可用车次 车辆  司机  添加到模型中（tripsId/truckId 保持 pd-base String，driverId 内部 Long）
+                    // 可用车次 车辆  司机  添加到模型中（tripsId/truckId 保持 xf-base String，driverId 内部 Long）
                     TripsTruckDriverDTO tripsTruckDriverDTO = new TripsTruckDriverDTO(tripsId, item.getTruckId(), IdConvert.toLong(item.getUserId()));
                     tripsTruckDriverDTOS.add(tripsTruckDriverDTO);
                 }

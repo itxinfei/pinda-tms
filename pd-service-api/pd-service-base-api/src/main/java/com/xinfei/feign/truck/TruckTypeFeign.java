@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 
-@FeignClient(name = "pd-base")
+@FeignClient(name = "xf-base")
 // 2026-10-10：Spring Cloud 2025 OpenFeign 禁止接口级 @RequestMapping，前缀下沉到各方法路径（URL 不变）
 @Hidden
 public interface TruckTypeFeign {
