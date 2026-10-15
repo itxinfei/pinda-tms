@@ -95,14 +95,6 @@ jobs:
     #   - rabbit 健康指标：默认关（仅 oms/dispatch/netty 显式开），见 compose 锚点注释
     # ============================================================
     needs: [compile]
-    # 🔴 临时关闭自动部署（2026-10-14，pd→xf 改名过渡期，仅用于验证编译门禁）：
-    #   clone 源新仓库 xinfei/xinfei-tms 同步到全套 xf 代码后，auto-deploy 编译一过即部署；
-    #   但部署基线 .xinfei-deploy.revision(20d960c8) 已超出 --depth 100 浅克隆窗口，必判
-    #   SERVICES=ALL 全量收敛，而停机迁移前置（xinfei/jre21 基镜像、xinfei_tms 库、Nacos
-    #   xf-* dataId、RabbitMQ xinfei 账号、sys_tenant 改码、停旧 pd-apps）均未就绪，
-    #   全量部署必失败且有半切换风险。本阶段只保留 compile / fe-compile 编译门禁。
-    #   恢复：停机窗口迁移完成后，删除本注释与下一行 if: false 即恢复 push 自动部署。
-    if: false
     runs-on: ubuntu-latest
     steps:
       - name: 检出代码（内网 Gitea）
