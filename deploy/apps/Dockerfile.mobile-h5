@@ -47,8 +47,17 @@ COPY ${APP_PATH}/customer/package.json ./customer/package.json
 # cache 固定 id=pnpm-mobile + sharing=locked：driver/courier/customer 三端同 lockfile 共享同一持久 store，
 # 第一端装好后另两端直接命中；sharing=locked 保证并行构建写 store 串行安全。
 # 配套要求清理只能 `docker builder prune -f`（不带 -a），-a 会把该 cache mount 一起清空
+# 外层整命令重试 3 次（同 admin）：抵御整段 EAI_AGAIN，已下载包走共享 cache mount 不重下；
+# --network-concurrency=8 降低瞬时 DNS 请求密度（默认 16 易在抖动窗口并发解析同时失败）。
 RUN --mount=type=cache,id=pnpm-mobile,sharing=locked,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile --fetch-retries=5 --fetch-retry-factor=2 --fetch-retry-mintimeout=20000 --fetch-timeout=120000
+    set -eu; \
+    for i in 1 2 3; do \
+      pnpm install --frozen-lockfile --network-concurrency=8 \
+        --fetch-retries=5 --fetch-retry-factor=2 --fetch-retry-mintimeout=20000 --fetch-timeout=120000 && break; \
+      echo ">>> pnpm install 第 $i 次失败（常见为外网 DNS 瞬态 EAI_AGAIN），10s 后重试，已下载包走 cache mount"; \
+      [ "$i" = 3 ] && { echo ">>> pnpm install 连续 3 次失败，放弃构建"; exit 1; }; \
+      sleep 10; \
+    done
 
 # 再拷整个 workspace 源码（node_modules 由 .dockerignore 排除）
 COPY ${APP_PATH}/ ./

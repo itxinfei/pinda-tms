@@ -34,8 +34,18 @@ COPY xf-admin-ui-vue3/package.json xf-admin-ui-vue3/pnpm-lock.yaml ./
 # 默认重试 2 次不够，放宽到 5 次 + 更长超时
 # cache 固定 id=pnpm-admin + sharing=locked：让 pnpm store 在多次构建间持久复用、并行构建写 store 串行安全；
 # 配套要求清理只能 `docker builder prune -f`（不带 -a），-a 会把该 cache mount 一起清空
+# 整命令级重试 3 次：内网出外网 DNS 偶发整段 EAI_AGAIN（run360 admin 冷装曾踩中），
+# pnpm 自带 fetch-retries 跨不出较长故障窗；整轮重试跨更长时间窗，已进 cache mount 的包不重下。
+# --network-concurrency=8（默认 16）：降低瞬时 DNS 请求密度，缓解抖动窗口并发解析同时失败。
 RUN --mount=type=cache,id=pnpm-admin,sharing=locked,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile --fetch-retries=5 --fetch-retry-factor=2 --fetch-retry-mintimeout=20000 --fetch-timeout=120000
+    set -eu; \
+    for i in 1 2 3; do \
+      pnpm install --frozen-lockfile --network-concurrency=8 \
+        --fetch-retries=5 --fetch-retry-factor=2 --fetch-retry-mintimeout=20000 --fetch-timeout=120000 && break; \
+      echo ">>> pnpm install 第 $i 次失败（常见为外网 DNS 瞬态 EAI_AGAIN），10s 后重试，已下载包走 cache mount"; \
+      [ "$i" = 3 ] && { echo ">>> pnpm install 连续 3 次失败，放弃构建"; exit 1; }; \
+      sleep 10; \
+    done
 
 # 再拷源码并构建
 COPY xf-admin-ui-vue3/ ./
