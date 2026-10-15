@@ -35,6 +35,11 @@
         <view class="entry-name">网点查询</view>
         <view class="entry-desc">附近网点自寄参考</view>
       </view>
+      <view class="entry-card" @click="goPriceQuery">
+        <view class="entry-icon"><u-icon name="rmb" color="#E15536" size="40" /></view>
+        <view class="entry-name">运费查询</view>
+        <view class="entry-desc">快速估算寄递费用</view>
+      </view>
     </view>
 
     <u-tabbar :value="0" :fixed="true" :placeholder="true" :safeAreaInsetBottom="true">
@@ -67,6 +72,7 @@ const goMailing = () => uni.navigateTo({ url: '/pages/customer/mailing/create' }
 const goList = () => uni.reLaunch({ url: '/pages/customer/mailing/list' });
 const goAddress = () => uni.navigateTo({ url: '/pages/customer/address/list' });
 const goAgency = () => uni.navigateTo({ url: '/pages/customer/agency/list' });
+const goPriceQuery = () => uni.navigateTo({ url: '/pages/customer/price/query' });
 const goHome = () => uni.reLaunch({ url: '/pages/customer/home/index' });
 const goProfile = () => uni.reLaunch({ url: '/pages/customer/profile/index' });
 

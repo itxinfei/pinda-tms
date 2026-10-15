@@ -44,6 +44,10 @@
         <u-icon name="grid" size="44" color="#E15536"></u-icon>
         <text class="entry-text">车辆信息</text>
       </view>
+      <view class="entry" @click="goHistory">
+        <u-icon name="clock" size="44" color="#E15536"></u-icon>
+        <text class="entry-text">历史任务</text>
+      </view>
     </view>
   </view>
 </template>
@@ -122,6 +126,11 @@ function goWait() {
 function goOnTheWay() {
   uni.navigateTo({ url: '/pages/driver/task/onTheWay' })
 }
+
+function goHistory() {
+  uni.navigateTo({ url: '/pages/driver/task/history' })
+}
+
 function goCar() {
   uni.navigateTo({ url: '/pages/driver/car/info' })
 }

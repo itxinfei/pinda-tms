@@ -24,6 +24,10 @@ export const TASK_TYPE_MAP: Record<number, { text: string }> = {
   1: { text: '取件' },
   2: { text: '派件' },
 }
+// 枚举码常量（绩效统计等场景按码查询用，禁在页面散写数字）
+export const TASK_TYPE_PICKUP = 1 // PickupDispatchTaskType.PICKUP
+export const TASK_TYPE_DISPATCH = 2 // PickupDispatchTaskType.DISPATCH
+export const TASK_STATUS_COMPLETED = 4 // PickupDispatchTaskStatus.COMPLETED
 export function taskTypeView(type?: number) {
   return (type != null && TASK_TYPE_MAP[type]) || { text: '未知' }
 }

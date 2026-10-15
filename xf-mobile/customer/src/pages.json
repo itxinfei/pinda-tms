@@ -62,6 +62,12 @@
 			}
 		},
 		{
+			"path": "pages/customer/price/query",
+			"style": {
+				"navigationBarTitleText": "运费查询"
+			}
+		},
+		{
 			"path": "pages/customer/profile/index",
 			"style": {
 				"navigationBarTitleText": "我的"

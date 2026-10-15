@@ -44,6 +44,14 @@
       shape="circle"
       @click="goTab('pages/courier/task/list')"
     ></u-button>
+    <u-gap height="16"></u-gap>
+    <u-button
+      type="primary"
+      :plain="true"
+      text="绩效统计"
+      shape="circle"
+      @click="goTab('pages/courier/stats/index')"
+    ></u-button>
   </view>
 </template>
 

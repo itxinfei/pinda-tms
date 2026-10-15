@@ -63,6 +63,12 @@
 			}
 		},
 		{
+			"path": "pages/courier/stats/index",
+			"style": {
+				"navigationBarTitleText": "绩效统计"
+			}
+		},
+		{
 			"path": "pages/courier/profile/index",
 			"style": {
 				"navigationBarTitleText": "个人中心"
