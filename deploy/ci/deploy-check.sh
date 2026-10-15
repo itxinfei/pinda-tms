@@ -71,7 +71,7 @@ echo "=== 7. Nacos dataId 是否齐备（缺配置的服务起不来） ==="
 NS=${NS:-1cb93ce4-dc0e-4730-b759-d35fd7ed93c3}
 NACOS=${NACOS:-http://127.0.0.1:8848}
 # 2026-10-11 起 Nacos 已开启鉴权，2026-10-15 起默认用命名空间级账号 xinfei/123456
-# （角色 ns-pinda-tms，对 1cb93ce4-... 读写；超管 nacos 仍可用），查配置必须带 accessToken，
+# （角色 ns-xinfei-tms，对 1cb93ce4-... 读写；超管 nacos 仍可用），查配置必须带 accessToken，
 # 否则一律 403，dataId 是否存在就无从判断。
 TOKEN=$(curl -s -m 5 -X POST "$NACOS/nacos/v1/auth/login" \
   -d "username=${NACOS_USER:-xinfei}&password=${NACOS_PASS:-123456}" \

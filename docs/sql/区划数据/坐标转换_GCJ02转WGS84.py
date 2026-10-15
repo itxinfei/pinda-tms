@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 GCJ02 -> WGS84 坐标转换
-用途：pd_area.lng/lat 现存高德 GCJ02，需转为 WGS84（项目约定统一存 WGS84 北斗原始坐标）
+用途：dict_area.lng/lat 现存高德 GCJ02，需转为 WGS84（项目约定统一存 WGS84 北斗原始坐标）
 算法：逆向单步迭代逼近（近似解 + 3 次迭代收敛，精度 < 1m）
 
 参考：

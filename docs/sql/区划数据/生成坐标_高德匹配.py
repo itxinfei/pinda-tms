@@ -1,12 +1,18 @@
 # -*- coding: utf-8 -*-
-"""按 6 位区划码匹配高德坐标，写入 pd_area.lng/lat
+"""⛔ 已作废（2026-10-15），仅作方法留档，禁止重跑：
+本脚本 SELECT 的 `pd_auth.pd_area` 已不存在——架构重置后区划真源是单库
+`xinfei_tms.dict_area`（国标 int 主键，longitude/latitude 存 WGS84，口径见《45》§三），
+坐标已导入完毕，重跑会毁主数据。
+按 6 位区划码匹配高德坐标，写入目标表.lng/lat
 坐标源：高德开放平台行政区划查询（GCJ02）
 本项目 area_code：2位省 / 4位市 / 6位县 / 9位镇
 """
-import json, io, csv, sys, subprocess
+import os, json, io, csv, sys, subprocess
 
-GEO = r"D:/MyCode/pinda-tms/.tmp_geo/xzqh.json"
-OUT = r"D:/MyCode/pinda-tms/.tmp_geo/geo.csv"
+# 相对仓库根定位，不写死本机绝对路径（仓库目录改名后仍可用）
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+GEO = os.path.join(REPO_ROOT, ".tmp_geo", "xzqh.json")
+OUT = os.path.join(REPO_ROOT, ".tmp_geo", "geo.csv")
 
 tree = json.load(open(GEO, encoding="utf-8"))
 
@@ -32,7 +38,6 @@ matched = 0
 # 口令不写进脚本：由环境变量 MYSQL_PWD 提供（mysql 客户端原生识别该变量）
 #   Git Bash:  export MYSQL_PWD="$(sed -n 's/^MYSQL_ROOT_PASSWORD=//p' /path/to/.env)"
 #   PowerShell: $env:MYSQL_PWD = "<root口令>"
-import os
 DB_HOST = os.environ.get("PD_DB_HOST", "192.168.20.130")
 if not os.environ.get("MYSQL_PWD"):
     sys.exit("缺少环境变量 MYSQL_PWD（MySQL root 口令）；请在机器上的 .env 里取，不要写进本脚本")
