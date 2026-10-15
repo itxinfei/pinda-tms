@@ -55,7 +55,8 @@ COPY --from=builder /build/dist /usr/share/nginx/html/
 COPY deploy/apps/nginx/admin-h5.conf /etc/nginx/templates/default.conf.template
 
 # 环境变量占位符，nginx 官方镜像的 docker-entrypoint 会自动替换
-ENV NGINX_HOST=192.168.20.130 \
+ARG NGINX_HOST=192.168.20.130
+ENV NGINX_HOST=${NGINX_HOST} \
     DOCKER_REQUEST_DOMAIN_PREFIX=http://xf-gateway:8760
 
 EXPOSE 80

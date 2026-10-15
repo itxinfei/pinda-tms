@@ -65,6 +65,9 @@ on:
         type: boolean
         default: false
 
+env:
+  DEPLOY_HOST: "192.168.20.130" # 内网 Gitea/部署宿主机，换机器只改这里
+
 jobs:
   deploy-backend:
     runs-on: ubuntu-latest
@@ -74,7 +77,7 @@ jobs:
         run: |
           rm -rf ./* ./.??*
           git clone --depth 50 -b "${GITHUB_REF_NAME:-master}" \
-            "http://192.168.20.130:3000/xinfei/xinfei-tms.git" .
+            "http://${DEPLOY_HOST}:3000/xinfei/xinfei-tms.git" .
 
       - name: DB 变更脚本门禁
         # diff 含 *.sql（排除 codeback 备份区）= DDL 变更：未经人工审核不进部署。

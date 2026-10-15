@@ -38,6 +38,9 @@ concurrency:
   group: build-check-master
   cancel-in-progress: true
 
+env:
+  DEPLOY_HOST: "192.168.20.130" # 内网 Gitea/部署宿主机，换机器只改这里
+
 jobs:
   compile:
     runs-on: ubuntu-latest
@@ -46,7 +49,7 @@ jobs:
         run: |
           rm -rf ./* ./.??*
           git clone --depth 50 -b "${GITHUB_REF_NAME:-master}" \
-            "http://192.168.20.130:3000/xinfei/xinfei-tms.git" .
+            "http://${DEPLOY_HOST}:3000/xinfei/xinfei-tms.git" .
 
       - name: Maven 全量 install（JDK21，编译门禁 + 刷新单服务发布的 m2 基线）
         run: |
@@ -101,7 +104,7 @@ jobs:
         run: |
           rm -rf ./* ./.??*
           git clone --depth 100 -b "${GITHUB_REF_NAME:-master}" \
-            "http://192.168.20.130:3000/xinfei/xinfei-tms.git" .
+            "http://${DEPLOY_HOST}:3000/xinfei/xinfei-tms.git" .
 
       - name: DB 变更门禁（diff 含 *.sql 即中止转人工）
         run: |
