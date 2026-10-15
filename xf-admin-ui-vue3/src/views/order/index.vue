@@ -50,6 +50,7 @@
         <el-form-item>
           <el-button type="primary" :loading="loading" @click="handleSearch">查询</el-button>
           <el-button @click="handleReset">重置</el-button>
+          <el-button type="danger" plain @click="openCreate">新建订单</el-button>
         </el-form-item>
       </el-form>
 
@@ -263,6 +264,140 @@
         </div>
       </template>
     </el-drawer>
+
+    <!-- 新建订单（B 端录单，复用客户端 Drools 试算契约） -->
+    <el-dialog v-model="createVisible" title="新建订单" width="720px" :close-on-click-modal="false" @closed="resetCreateForm">
+      <el-form ref="createFormRef" :model="createForm" label-width="90px">
+        <div class="order-detail__title">发件人</div>
+        <el-row :gutter="12">
+          <el-col :span="12">
+            <el-form-item label="发件人" required>
+              <el-input v-model="createForm.senderName" placeholder="姓名" maxlength="20" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="电话" required>
+              <el-input v-model="createForm.senderPhone" placeholder="手机号" maxlength="20" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="24">
+            <el-form-item label="所在地区" required>
+              <el-cascader
+                v-model="senderAreaPath"
+                :props="areaCascaderProps"
+                placeholder="省 / 市 / 区县"
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="24">
+            <el-form-item label="详细地址" required>
+              <el-input v-model="createForm.senderAddress" placeholder="街道门牌（用于地图算距与计费，请填真实地址）" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <div class="order-detail__title">收件人</div>
+        <el-row :gutter="12">
+          <el-col :span="12">
+            <el-form-item label="收件人" required>
+              <el-input v-model="createForm.receiverName" placeholder="姓名" maxlength="20" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="电话" required>
+              <el-input v-model="createForm.receiverPhone" placeholder="手机号" maxlength="20" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="24">
+            <el-form-item label="所在地区" required>
+              <el-cascader
+                v-model="receiverAreaPath"
+                :props="areaCascaderProps"
+                placeholder="省 / 市 / 区县"
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="24">
+            <el-form-item label="详细地址" required>
+              <el-input v-model="createForm.receiverAddress" placeholder="街道门牌（用于地图算距与计费，请填真实地址）" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <div class="order-detail__title">货物信息</div>
+        <el-row :gutter="12">
+          <el-col :span="12">
+            <el-form-item label="货物类型" required>
+              <el-select v-model="createForm.orderCargoDto.goodsTypeId" placeholder="请选择" style="width: 100%">
+                <el-option
+                  v-for="g in goodsTypeOptions"
+                  :key="g.id"
+                  :value="g.id"
+                  :label="g.name"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="货物名称">
+              <el-input v-model="createForm.orderCargoDto.name" placeholder="选填" maxlength="50" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="件数" required>
+              <el-input-number v-model="createForm.orderCargoDto.quantity" :min="1" :max="9999" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="单件重量" required>
+              <el-input-number
+                v-model="createForm.orderCargoDto.weight"
+                :min="0.01"
+                :precision="2"
+                :step="1"
+                style="width: 100%"
+                @change="recalcTotalWeight"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="单件体积">
+              <el-input-number v-model="createForm.orderCargoDto.volume" :min="0" :precision="2" :step="0.1" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="12">
+          <el-col :span="12">
+            <el-form-item label="取件方式" required>
+              <el-radio-group v-model="createForm.pickupType">
+                <el-radio :value="2">上门取件</el-radio>
+                <el-radio :value="1">网点自寄</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="付款方式" required>
+              <el-radio-group v-model="createForm.paymentMethod">
+                <el-radio :value="1">预结</el-radio>
+                <el-radio :value="2">到付</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-alert v-if="createPriceHint" :title="createPriceHint" :type="createPriceType" show-icon :closable="false" class="order-create__price" />
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <span v-if="createAmount" class="order-create__amount">运费：¥{{ createAmount }}</span>
+          <el-button :loading="estimating" @click="handleEstimate">试算运费</el-button>
+          <el-button type="primary" :loading="creating" @click="handleCreateSubmit">提交订单</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -270,8 +405,19 @@
 import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
+import type { CascaderProps } from "element-plus";
 import OrderAPI from "@/api/order";
-import { OrderStatus, type OrderRecord, type OrderDetail, type OrderPageQuery, type PickupDispatchTask } from "@/api/order";
+import {
+  OrderStatus,
+  type OrderRecord,
+  type OrderDetail,
+  type OrderPageQuery,
+  type PickupDispatchTask,
+  type OrderCreateParams,
+  type OrderCargo,
+} from "@/api/order";
+import AreaAPI, { type Area } from "@/api/area";
+import CommonSimpleAPI, { type GoodsTypeSimple } from "@/api/common-simple";
 import { TransportOrderStatus, SchedulingStatus } from "@/api/transport-order";
 import {
   OrderType,
@@ -472,6 +618,180 @@ async function handleCancel(row: OrderRecord) {
 
 /** 取消中订单 id：列表行与抽屉底部按钮共用防重 */
 const cancellingId = ref<string>();
+
+// ===== 新建订单（B 端录单） =====
+const createVisible = ref(false);
+const creating = ref(false);
+const estimating = ref(false);
+const createAmount = ref("");
+const createPriceHint = ref("");
+const createPriceType = ref<"info" | "warning" | "success">("info");
+const goodsTypeOptions = ref<GoodsTypeSimple[]>([]);
+const senderAreaPath = ref<number[]>([]);
+const receiverAreaPath = ref<number[]>([]);
+
+const emptyCargo = (): OrderCargo => ({
+  goodsTypeId: "",
+  quantity: 1,
+  weight: 1,
+  totalWeight: 1,
+});
+
+const createForm = ref<OrderCreateParams>({
+  pickupType: 2,
+  paymentMethod: 1,
+  senderName: "",
+  senderPhone: "",
+  senderAddress: "",
+  receiverName: "",
+  receiverPhone: "",
+  receiverAddress: "",
+  orderCargoDto: emptyCargo(),
+});
+
+/** 省/市/县三级懒加载（国标区划，全局共享） */
+const areaCascaderProps: CascaderProps = {
+  lazy: true,
+  lazyLoad: async (node, resolve) => {
+    try {
+      const children: Area[] = await AreaAPI.children(node.level === 0 ? undefined : Number(node.value));
+      resolve(children.map((a) => ({ value: a.id, label: a.name, leaf: node.level >= 2 })));
+    } catch {
+      resolve([]);
+    }
+  },
+};
+
+function openCreate() {
+  createVisible.value = true;
+  createPriceHint.value = "";
+  createAmount.value = "";
+  if (goodsTypeOptions.value.length === 0) {
+    CommonSimpleAPI.goodsTypeOptions()
+      .then((list) => {
+        goodsTypeOptions.value = list ?? [];
+      })
+      .catch(() => {
+        ElMessage.error("货物类型加载失败，请稍后重试");
+      });
+  }
+}
+
+function resetCreateForm() {
+  createForm.value = {
+    pickupType: 2,
+    paymentMethod: 1,
+    senderName: "",
+    senderPhone: "",
+    senderAddress: "",
+    receiverName: "",
+    receiverPhone: "",
+    receiverAddress: "",
+    orderCargoDto: emptyCargo(),
+  };
+  senderAreaPath.value = [];
+  receiverAreaPath.value = [];
+  createAmount.value = "";
+  createPriceHint.value = "";
+}
+
+function recalcTotalWeight() {
+  const q = createForm.value.orderCargoDto.quantity ?? 0;
+  const w = createForm.value.orderCargoDto.weight ?? 0;
+  createForm.value.orderCargoDto.totalWeight = Number((q * w).toFixed(2));
+}
+
+/** 组装请求体（区划 id 从级联取，金额/状态由服务端回填） */
+function buildCreatePayload(): OrderCreateParams | null {
+  recalcTotalWeight();
+  const f = createForm.value;
+  const missing: string[] = [];
+  if (!f.senderName) missing.push("发件人");
+  if (!f.senderPhone) missing.push("发件人电话");
+  if (senderAreaPath.value.length < 3) missing.push("发件地区");
+  if (!f.senderAddress) missing.push("发件详细地址");
+  if (!f.receiverName) missing.push("收件人");
+  if (!f.receiverPhone) missing.push("收件人电话");
+  if (receiverAreaPath.value.length < 3) missing.push("收件地区");
+  if (!f.receiverAddress) missing.push("收件详细地址");
+  if (!f.orderCargoDto.goodsTypeId) missing.push("货物类型");
+  if (!f.orderCargoDto.totalWeight || f.orderCargoDto.totalWeight <= 0) missing.push("货物重量");
+  if (missing.length > 0) {
+    ElMessage.warning(`请填写：${missing.join("、")}`);
+    return null;
+  }
+  return {
+    pickupType: f.pickupType,
+    paymentMethod: f.paymentMethod,
+    senderProvinceId: String(senderAreaPath.value[0]),
+    senderCityId: String(senderAreaPath.value[1]),
+    senderCountyId: String(senderAreaPath.value[2]),
+    senderAddress: f.senderAddress,
+    senderName: f.senderName,
+    senderPhone: f.senderPhone,
+    receiverProvinceId: String(receiverAreaPath.value[0]),
+    receiverCityId: String(receiverAreaPath.value[1]),
+    receiverCountyId: String(receiverAreaPath.value[2]),
+    receiverAddress: f.receiverAddress,
+    receiverName: f.receiverName,
+    receiverPhone: f.receiverPhone,
+    orderCargoDto: { ...f.orderCargoDto },
+  };
+}
+
+async function handleEstimate() {
+  const payload = buildCreatePayload();
+  if (!payload) return;
+  estimating.value = true;
+  try {
+    const msg = await OrderAPI.estimate(payload);
+    // xf-oms 契约：参数不全返回 null（响应空）、货物缺失返回空 Map、地址解析失败 amount="0"+errorMsg
+    if (msg == null || typeof msg !== "object" || Object.keys(msg).length === 0) {
+      createAmount.value = "";
+      createPriceHint.value = "运费试算失败：请确认货物类型与重量已填写完整";
+      createPriceType.value = "warning";
+      return;
+    }
+    if (msg.errorMsg || msg.amount === "0") {
+      createAmount.value = "";
+      createPriceHint.value = msg.errorMsg || "无法计算运费：请检查地址是否真实有效";
+      createPriceType.value = "warning";
+      return;
+    }
+    if (msg.amount) {
+      createAmount.value = msg.amount;
+      createPriceHint.value = "";
+      createPriceType.value = "success";
+    }
+  } catch {
+    createAmount.value = "";
+    createPriceHint.value = "运费试算请求失败，请稍后重试";
+    createPriceType.value = "warning";
+  } finally {
+    estimating.value = false;
+  }
+}
+
+async function handleCreateSubmit() {
+  const payload = buildCreatePayload();
+  if (!payload) return;
+  creating.value = true;
+  try {
+    const created = await OrderAPI.create(payload);
+    if (!created || !created.id) {
+      ElMessage.error("订单创建失败：请核对必填信息后重试（货物明细与地址必填）");
+      return;
+    }
+    ElMessage.success(`订单创建成功：${created.id}`);
+    createVisible.value = false;
+    handleSearch();
+  } catch {
+    ElMessage.error("订单创建请求失败，请稍后重试");
+  } finally {
+    creating.value = false;
+  }
+}
+// ===== 新建订单 end =====
 
 /** 详情 */
 const detailVisible = ref(false);
@@ -678,5 +998,17 @@ onMounted(loadList);
   :deep(.el-timeline-item__content) {
     font-size: 14px;
   }
+}
+
+/* 新建订单弹窗：运费金额强调展示，与 footer 按钮同行 */
+.order-create__amount {
+  margin-right: auto;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--el-color-danger);
+}
+
+.order-create__price {
+  margin-bottom: 12px;
 }
 </style>

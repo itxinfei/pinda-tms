@@ -63,9 +63,18 @@
           <el-table-column label="预计时间" min-width="170">
             <template #default="scope">{{ estimatedRange(scope.row as PickupDispatchRecord) }}</template>
           </el-table-column>
-          <el-table-column label="操作" fixed="right" width="90" align="center">
+          <el-table-column label="操作" fixed="right" width="140" align="center">
             <template #default="scope">
               <el-button type="primary" link size="small" @click="openDetail(scope.row as PickupDispatchRecord)">详情</el-button>
+              <el-button
+                v-if="canAssign(scope.row as PickupDispatchRecord)"
+                type="primary"
+                link
+                size="small"
+                @click="openAssign(scope.row as PickupDispatchRecord)"
+              >
+                指派
+              </el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -157,11 +166,42 @@
         </el-descriptions>
       </template>
     </el-drawer>
+
+    <!-- 指派/改派快递员（D-43 手动派为主路径） -->
+    <el-dialog v-model="assignVisible" title="指派快递员" width="480px" :close-on-click-modal="false">
+      <div v-if="assignRow" class="assign-task-brief">
+        <div>任务号：{{ assignRow.id }}（{{ taskTypeLabel(assignRow.taskType) }}）</div>
+        <div>当前快递员：{{ assignRow.courier?.name || "未指派" }}</div>
+      </div>
+      <el-select
+        v-model="assignCourierId"
+        filterable
+        remote
+        :remote-method="searchCouriers"
+        :loading="courierLoading"
+        placeholder="输入姓名搜索快递员"
+        style="width: 100%"
+      >
+        <el-option
+          v-for="c in courierOptions"
+          :key="c.userId"
+          :value="c.userId"
+          :label="`${c.name || c.username || c.userId}${c.mobile ? '（' + c.mobile + '）' : ''}`"
+        />
+      </el-select>
+      <template #footer>
+        <el-button @click="assignVisible = false">取消</el-button>
+        <el-button type="primary" :loading="assigning" :disabled="!assignCourierId" @click="handleAssign">
+          确认指派
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
+import { ElMessage } from "element-plus";
 import PickupDispatchAPI from "@/api/pickup-dispatch";
 import {
   PickupDispatchTaskType,
@@ -169,6 +209,7 @@ import {
   type PickupDispatchRecord,
   type PickupDispatchPageQuery,
 } from "@/api/pickup-dispatch";
+import type { SysUser } from "@/api/transport-task";
 
 type TagType = "primary" | "success" | "info" | "warning" | "danger";
 
@@ -264,6 +305,62 @@ function openDetail(row: PickupDispatchRecord) {
   detailVisible.value = true;
 }
 
+// ===== 指派/改派快递员（D-43 手动派为主路径） =====
+const assignVisible = ref(false);
+const assigning = ref(false);
+const assignRow = ref<PickupDispatchRecord>();
+const assignCourierId = ref("");
+const courierOptions = ref<SysUser[]>([]);
+const courierLoading = ref(false);
+
+/** 仅 1待执行/3待确认 可指派/改派；4已完成/5已取消不可改 */
+function canAssign(row: PickupDispatchRecord) {
+  return row.status === PickupDispatchStatus.PENDING || row.status === PickupDispatchStatus.TO_CONFIRM;
+}
+
+async function searchCouriers(name?: string) {
+  courierLoading.value = true;
+  try {
+    const res = await PickupDispatchAPI.courierPage({ page: 1, pageSize: 50, name: name || undefined });
+    courierOptions.value = res?.items ?? [];
+  } catch {
+    // 静默失败时保留下拉可再试，不打断弹窗
+    courierOptions.value = [];
+  } finally {
+    courierLoading.value = false;
+  }
+}
+
+function openAssign(row: PickupDispatchRecord) {
+  assignRow.value = row;
+  assignCourierId.value = row.courier?.userId || "";
+  assignVisible.value = true;
+  if (courierOptions.value.length === 0) {
+    searchCouriers();
+  }
+}
+
+async function handleAssign() {
+  if (!assignRow.value || !assignCourierId.value) return;
+  assigning.value = true;
+  try {
+    const updated = await PickupDispatchAPI.assignCourier(assignRow.value.id, assignCourierId.value);
+    if (!updated) {
+      ElMessage.error("指派失败：任务可能已完结或已取消，请刷新列表后重试");
+      return;
+    }
+    const picked = courierOptions.value.find((c) => c.userId === assignCourierId.value);
+    ElMessage.success(`已指派给 ${picked?.name || picked?.username || assignCourierId.value}`);
+    assignVisible.value = false;
+    loadList();
+  } catch {
+    ElMessage.error("指派请求失败，请稍后重试");
+  } finally {
+    assigning.value = false;
+  }
+}
+// ===== 指派 end =====
+
 /** 任务进度步骤条（T-046 同系列）：4 个主节点按既有时间字段推进；已取消时流程终止（顶部 alert 提示，步骤停驻） */
 type PickupTaskStep = { label: string; time: string; status: "success" | "process" | "wait" };
 
@@ -328,5 +425,13 @@ onMounted(loadList);
 
 .pickup-dispatch-detail__cancel-alert {
   margin-bottom: 8px;
+}
+
+/* 指派弹窗：任务概要两行小字 */
+.assign-task-brief {
+  margin-bottom: 12px;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--el-text-color-secondary);
 }
 </style>

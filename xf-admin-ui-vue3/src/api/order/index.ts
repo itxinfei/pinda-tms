@@ -123,6 +123,47 @@ export interface OrderPageQuery extends Partial<OrderRecord> {
   endTime?: string;
 }
 
+/** 货物明细（创建/试算必填，totalWeight>0 才能算价） */
+export interface OrderCargo {
+  goodsTypeId: string;
+  name?: string;
+  unit?: string;
+  cargoValue?: number;
+  quantity?: number;
+  weight?: number;
+  volume?: number;
+  totalWeight: number;
+  totalVolume?: number;
+  remark?: string;
+}
+
+/** 创建订单入参（字段实名对齐 xf-oms OrderDTO，金额/距离/状态由服务端回填，勿传） */
+export interface OrderCreateParams {
+  pickupType: number;
+  paymentMethod: number;
+  senderProvinceId?: string;
+  senderCityId?: string;
+  senderCountyId?: string;
+  senderAddress: string;
+  senderName: string;
+  senderPhone: string;
+  receiverProvinceId?: string;
+  receiverCityId?: string;
+  receiverCountyId?: string;
+  receiverAddress: string;
+  receiverName: string;
+  receiverPhone: string;
+  currentAgencyId?: string;
+  orderCargoDto: OrderCargo;
+}
+
+/** 试算返回：amount 字符串价格；地址解析失败时 amount="0" + errorMsg；参数不全时整个为 null */
+export interface OrderPriceMsg {
+  amount?: string;
+  errorMsg?: string;
+  orderDto?: OrderRecord & { orderCargoDto?: OrderCargo };
+}
+
 const OrderAPI = {
   /** 订单分页（POST body 提交查询条件） */
   page(data: OrderPageQuery) {
@@ -156,6 +197,22 @@ const OrderAPI = {
       url: `${ORDER_BASE_URL}/${id}/cancel`,
       method: "put",
       data: { reason },
+    });
+  },
+  /** 运费试算（Drools 计费；失败/参数不全时静默返回空，前端须显式判空） */
+  estimate(data: OrderCreateParams) {
+    return request<unknown, OrderPriceMsg | null>({
+      url: `${ORDER_BASE_URL}/orderMsg`,
+      method: "post",
+      data,
+    });
+  },
+  /** 新建订单（B 端录单；货物明细由 xf-oms save 内部保存） */
+  create(data: OrderCreateParams) {
+    return request<unknown, OrderDetail | null>({
+      url: `${ORDER_BASE_URL}/create`,
+      method: "post",
+      data,
     });
   },
 };

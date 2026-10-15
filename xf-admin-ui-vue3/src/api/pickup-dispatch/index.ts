@@ -85,6 +85,25 @@ const PickupDispatchAPI = {
       data,
     });
   },
+  /**
+   * 指派/改派快递员（BFF 透传 xf-work updateById，courier.userId → courierId）
+   * 仅 1待执行/3待确认 任务可指派；4已完成/5已取消不可改
+   */
+  assignCourier(id: string, courierUserId: string) {
+    return request<unknown, PickupDispatchRecord | null>({
+      url: `${PICKUP_DISPATCH_BASE_URL}/${id}`,
+      method: "put",
+      data: { courier: { userId: courierUserId } },
+    });
+  },
+  /** 快递员分页（business-hall 侧，按岗位=快递员过滤；name/mobile 可选） */
+  courierPage(params: { page: number; pageSize: number; name?: string }) {
+    return request<unknown, PageResponse<SysUser>>({
+      url: "/api/manager/business-hall/courier/page",
+      method: "get",
+      params,
+    });
+  },
 };
 
 export default PickupDispatchAPI;

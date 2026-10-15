@@ -60,6 +60,22 @@ public class OrderController {
     @Autowired
     private TransportOrderFeign transportOrderFeign;
 
+    @Operation(summary = "运费试算（透传 xf-oms Drools 计费）")
+    @PostMapping("/orderMsg")
+    @SaCheckPermission("order:list")
+    public Map<String, Object> getOrderMsg(@RequestBody OrderDTO dto) {
+        // xf-oms 契约：orderCargoDto 为空或 totalWeight<=0 时返回空 Map；地址解析失败返回 amount="0"+errorMsg；参数不全返回 null
+        return orderFeign.getOrderMsg(dto);
+    }
+
+    @Operation(summary = "新建订单（透传 xf-oms，含货物明细；save 内已保存货物，勿重复调 cargo save）")
+    @PostMapping("/create")
+    @SaCheckPermission("order:create")
+    public OrderDTO create(@RequestBody OrderDTO dto) {
+        // 失败（货物缺失/地址哨兵）时远端返回 null，由全局响应壳处理
+        return orderFeign.save(dto);
+    }
+
     @Operation(summary = "获取订单分页数据")
     @PostMapping("/page")
     @SaCheckPermission("order:list")
