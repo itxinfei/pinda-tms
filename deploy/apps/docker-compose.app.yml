@@ -405,6 +405,25 @@ services:
       JAVA_OPTS: "-Xms96m -Xmx192m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:MaxMetaspaceSize=192m -XX:MaxDirectMemorySize=256m -Xss512k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -Dmybatis-plus.mapper-locations=classpath*:/mapper/**/*.xml -Dmybatis-plus.typeAliasesPackage=com.xinfei.entity -Dmybatis-plus.configuration.map-underscore-to-camel-case=true -Dmybatis-plus.configuration.cache-enabled=true -Dmybatis-plus.configuration.call-setters-on-nulls=false -Dmybatis-plus.configuration.jdbc-type-for-null=NULL -Dmybatis-plus.global-config.db-config.id-type=ASSIGN_ID -Dmybatis-plus.global-config.banner=false"
       # 单库 xinfei_tms 后 netty 的 iot_alarm_record/iot_truck_location* 与其他表同库，URL 由 jar 内 application.yml 给出
 
+  # ---------- 附件服务（POD 照片，无数据库） ----------
+  # 落盘目录与宿主同路径挂载，容器重建/换镜像不丢已上传文件。
+  # 查看 URL 走网关匿名白名单 /api/file/view/**（前端 <img src> 不带 token），故不做鉴权。
+  xf-file-server:
+    <<: *app-small
+    image: xinfei/xf-file-server:${XF_FILE_SERVER_TAG:-${TAG:?TAG_not_set}}
+    container_name: xf-file-server
+    restart: unless-stopped
+    ports: ["8195:8195"]
+    volumes:
+      - /data/attachments:/data/attachments
+    healthcheck:
+      <<: *hc-common
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8195; printf \"GET /actuator/health HTTP/1.0\\r\\n\\r\\n\">&3; read -r L<&3; [[ $$L == *200* ]]' || exit 1"]
+    environment:
+      <<: [*jvm-small, *nacos-env, *redis-env]
+      # 查看 URL 前缀随部署宿主 IP 变化（Spring 松弛绑定 -> xinfei.file.public-base-url）
+      XINFEI_FILE_PUBLIC_BASE_URL: http://${DEPLOY_HOST:-192.168.20.130}:8760/api/file/view
+
   # ---------- Web 聚合层 ----------
   xf-web-manager:
     <<: *app-small

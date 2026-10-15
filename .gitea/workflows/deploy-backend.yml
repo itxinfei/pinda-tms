@@ -22,8 +22,8 @@
 #   - xinfei/jre21-fontconfig:1    = 后端运行时基础镜像
 #   - compose 顶层 name: xinfei-apps；镜像 tag 支持 XF_<SVC>_TAG 逐服务覆盖
 #
-# 13 个可部署后端（compose 服务名 = 容器名 = 镜像名 xinfei/<svc>）：
-#   xf-auth(9000) xf-base(8185) xf-oms(8186) xf-work(8187) xf-user(8189)
+# 14 个可部署后端（compose 服务名 = 容器名 = 镜像名 xinfei/<svc>）：
+#   xf-auth(9000) xf-base(8185) xf-oms(8186) xf-work(8187) xf-user(8189) xf-file-server(8195)
 #   xf-dispatch(8190) xf-aggregation(8191) xf-netty(8192)
 #   xf-web-manager(8161) xf-web-driver(8162) xf-web-courier(8163) xf-web-customer(8164)
 #   xf-gateway(8760)
@@ -34,7 +34,7 @@ on:
   workflow_dispatch:
     inputs:
       services:
-        description: "选择要部署的后端服务（all=全部 13 个；单选，多服务组合用服务器 deploy.sh be a,b）"
+        description: "选择要部署的后端服务（all=全部 14 个；单选，多服务组合用服务器 deploy.sh be a,b）"
         type: choice
         options:
           - all
@@ -43,6 +43,7 @@ on:
           - xf-oms
           - xf-work
           - xf-user
+          - xf-file-server
           - xf-dispatch
           - xf-aggregation
           - xf-netty
@@ -123,6 +124,7 @@ jobs:
             echo '  [xf-oms]=xf-oms'
             echo '  [xf-work]=xf-work'
             echo '  [xf-user]=xf-user'
+            echo '  [xf-file-server]=xf-file-server'
             echo '  [xf-dispatch]=xf-dispatch'
             echo '  [xf-aggregation]=xf-aggregation'
             echo '  [xf-netty]=xf-netty'
@@ -132,7 +134,7 @@ jobs:
             echo '  [xf-web-customer]=xf-web/xf-web-customer'
             echo '  [xf-gateway]=xf-gateway'
             echo ')'
-            echo 'ORDER="xf-auth xf-base xf-oms xf-work xf-user xf-dispatch xf-aggregation xf-netty xf-web-manager xf-web-driver xf-web-courier xf-web-customer xf-gateway"'
+            echo 'ORDER="xf-auth xf-base xf-oms xf-work xf-user xf-file-server xf-dispatch xf-aggregation xf-netty xf-web-manager xf-web-driver xf-web-courier xf-web-customer xf-gateway"'
           } > /tmp/xinfei-svc.sh
           source /tmp/xinfei-svc.sh
 

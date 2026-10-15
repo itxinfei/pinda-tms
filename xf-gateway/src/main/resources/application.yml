@@ -86,6 +86,15 @@ spring:
             - Path=/api/netty-service/**
           filters:
             - StripPrefix=2
+        # 文件服务：/api/file/** -> xf-file-server，去掉 /api/file 两段前缀
+        # （查看图片 /api/file/view/{bizType}/{yyyyMM}/{uuid}.jpg -> /view/...；img src 无法带
+        #  token，匿名放行仅限 /api/file/view/**，见 SaTokenConfigure 白名单）
+        - id: xf-file-server
+          uri: lb://xf-file-server
+          predicates:
+            - Path=/api/file/**
+          filters:
+            - StripPrefix=2
   # Redis（Sa-Token 会话 + Same-Token 读取）
   data:
     redis:

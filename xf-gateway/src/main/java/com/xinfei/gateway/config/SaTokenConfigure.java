@@ -43,6 +43,8 @@ public class SaTokenConfigure {
                     }
                     // 白名单：认证服务匿名接口（验证码 / 登录）
                     SaRouter.match("/api/auth/anno/**").stop();
+                    // 白名单：附件图片查看（<img src> 无法携带 token；URL 末段为随机 uuid，不可枚举）
+                    SaRouter.match("/api/file/view/**").stop();
                     // 其余路径一律要求登录
                     SaRouter.match("/**", r -> StpUtil.checkLogin());
                     // 网关只做登录态校验（认证 Authentication），不在此做角色鉴权（Authorization）：

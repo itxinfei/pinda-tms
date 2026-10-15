@@ -218,7 +218,7 @@
 
 ```
 xinfei-tms/
-├── 微服务（13 个）
+├── 微服务（14 个）
 │   ├── xf-gateway/           # 统一网关（Spring Cloud Gateway）
 │   ├── xf-auth/              # 认证中心（Sa-Token + 多租户）
 │   ├── xf-base/              # 基础数据（机构 / 车辆 / 线路 / 货物）
@@ -226,6 +226,7 @@ xinfei-tms/
 │   ├── xf-dispatch/          # 智能调度（Drools + XXL-Job）
 │   ├── xf-work/              # 作业管理（取派件 / 运输任务）
 │   ├── xf-user/              # 用户与会员
+│   ├── xf-file-server/       # 附件服务（POD 照片上传/查看，无数据库）
 │   ├── xf-netty/             # 轨迹接入（Netty TCP）
 │   ├── xf-aggregation/       # 数据聚合
 │   └── xf-web/               # BFF 聚合层（四端接口）
@@ -250,7 +251,7 @@ xinfei-tms/
 
 ![系统架构](docs/system-arch.png)
 
-> 系统分四层：**展示层**（管理端 Vue3 + 移动三端 uni-app）→ **网关层**（Spring Cloud Gateway，Sa-Token 鉴权 + Same-Token 防直连）→ **服务层**（13 个业务微服务，Nacos 注册/配置中心）→ **数据层**（MySQL 单库分域 + Redis + RabbitMQ）。
+> 系统分四层：**展示层**（管理端 Vue3 + 移动三端 uni-app）→ **网关层**（Spring Cloud Gateway，Sa-Token 鉴权 + Same-Token 防直连）→ **服务层**（14 个业务微服务，Nacos 注册/配置中心）→ **数据层**（MySQL 单库分域 + Redis + RabbitMQ）。
 
 ### 6.2 微服务架构
 

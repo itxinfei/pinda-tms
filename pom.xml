@@ -21,6 +21,7 @@
         <module>xf-oms</module>
         <module>xf-work</module>
         <module>xf-user</module>
+        <module>xf-file-server</module>
         <module>xf-service-api</module>
         <module>xf-web</module>
         <module>xf-dispatch</module>

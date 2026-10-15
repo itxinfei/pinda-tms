@@ -139,12 +139,12 @@ jobs:
           {
             echo 'declare -A MOD_OF=('
             echo '  [xf-auth]=xf-auth [xf-base]=xf-base [xf-oms]=xf-oms [xf-work]=xf-work'
-            echo '  [xf-user]=xf-user [xf-dispatch]=xf-dispatch [xf-aggregation]=xf-aggregation [xf-netty]=xf-netty'
+            echo '  [xf-user]=xf-user [xf-file-server]=xf-file-server [xf-dispatch]=xf-dispatch [xf-aggregation]=xf-aggregation [xf-netty]=xf-netty'
             echo '  [xf-web-manager]=xf-web/xf-web-manager [xf-web-driver]=xf-web/xf-web-driver'
             echo '  [xf-web-courier]=xf-web/xf-web-courier [xf-web-customer]=xf-web/xf-web-customer'
             echo '  [xf-gateway]=xf-gateway'
             echo ')'
-            echo 'ORDER="xf-auth xf-base xf-oms xf-work xf-user xf-dispatch xf-aggregation xf-netty xf-web-manager xf-web-driver xf-web-courier xf-web-customer xf-gateway"'
+            echo 'ORDER="xf-auth xf-base xf-oms xf-work xf-user xf-file-server xf-dispatch xf-aggregation xf-netty xf-web-manager xf-web-driver xf-web-courier xf-web-customer xf-gateway"'
           } > /tmp/svc.sh
           source /tmp/svc.sh
           BASE=$(cat /root/.m2/.xinfei-deploy.revision 2>/dev/null || true)

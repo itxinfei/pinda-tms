@@ -15,7 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
  * 与 driver/customer 端保持一致，业务标识使用 courier。</p>
  */
 @FeignClient(
-        name = "${xinfei.feign.authority-server:xf-file-server}",
+        name = "${xinfei.feign.file-server:xf-file-server}",
         path = "/attachment"
 )
 public interface AttachmentClient {

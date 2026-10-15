@@ -11,10 +11,10 @@ help() {
 心飞物流TMS 统一部署入口
 用法: bash deploy.sh <命令> [参数]
 
-后端微服务（13 个，失败自动回滚）:
+后端微服务（14 个，失败自动回滚）:
   deploy.sh be <服务>          例: deploy.sh be xf-base
   deploy.sh be <服务,服务>     例: deploy.sh be xf-base,xf-oms （逗号分隔多服务）
-  deploy.sh be all             全部 13 个后端
+  deploy.sh be all             全部 14 个后端
 
 前端 H5（4 端，失败自动回滚）:
   deploy.sh fe admin           管理端  (http://192.168.20.130:8081)
@@ -24,13 +24,13 @@ help() {
   deploy.sh fe all             全部 4 端
 
 全部一次性部署:
-  deploy.sh all                后端 13 个 + 前端 4 端（顺序: 先后端后前端）
+  deploy.sh all                后端 14 个 + 前端 4 端（顺序: 先后端后前端）
 
 其他:
   deploy.sh help               本帮助
 
 后端可选服务清单:
-  xf-auth xf-base xf-oms xf-work xf-user xf-dispatch xf-aggregation xf-netty
+  xf-auth xf-base xf-oms xf-work xf-user xf-file-server xf-dispatch xf-aggregation xf-netty
   xf-web-manager xf-web-driver xf-web-courier xf-web-customer xf-gateway
 
 也可在 Gitea UI 下拉选择部署（免记命令）:
@@ -55,7 +55,7 @@ case "${1:-help}" in
     exec bash "$DIR/deploy-fe.sh" "$2"
     ;;
   all)
-    echo "==> [1/2] 后端全部（13 个）"
+    echo "==> [1/2] 后端全部（14 个）"
     bash "$DIR/deploy-be.sh" all
     echo "==> [2/2] 前端全部（4 端）"
     bash "$DIR/deploy-fe.sh" all

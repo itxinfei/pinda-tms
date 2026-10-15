@@ -40,11 +40,11 @@ CTX_ROOT=$REPO_DIR/.ctx
 HEALTH_TRIES=48   # 每 5s 一次，最长 4 分钟
 
 # 固定部署顺序：基础/业务先上，网关 xf-gateway 始终最后切
-ORDER=(xf-auth xf-base xf-oms xf-work xf-user xf-dispatch xf-aggregation xf-netty \
+ORDER=(xf-auth xf-base xf-oms xf-work xf-user xf-file-server xf-dispatch xf-aggregation xf-netty \
        xf-web-manager xf-web-driver xf-web-courier xf-web-customer xf-gateway)
 declare -A MOD_OF=(
   [xf-auth]=xf-auth [xf-base]=xf-base [xf-oms]=xf-oms [xf-work]=xf-work
-  [xf-user]=xf-user [xf-dispatch]=xf-dispatch [xf-aggregation]=xf-aggregation
+  [xf-user]=xf-user [xf-file-server]=xf-file-server [xf-dispatch]=xf-dispatch [xf-aggregation]=xf-aggregation
   [xf-netty]=xf-netty
   [xf-web-manager]=xf-web/xf-web-manager [xf-web-driver]=xf-web/xf-web-driver
   [xf-web-courier]=xf-web/xf-web-courier [xf-web-customer]=xf-web/xf-web-customer
