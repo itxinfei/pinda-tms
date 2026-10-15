@@ -47,13 +47,11 @@
 > **Xinfei TMS** is a **4-end synergistic** (Admin + Customer + Courier + Driver) open-source Transportation Management System built on **JDK 21 + Spring Boot 3.5.7 + Vue 3.5**, covering the full chain: booking → order → intelligent dispatch → operations → tracking → proof of delivery. Drools rule engine drives intelligent dispatch, Netty powers self-built GPS tracking ingestion, Sa-Token provides multi-tenant SaaS readiness — order management, load planning, dispatch, driving management, GPS vehicle tracking and data reporting, all in one system for operational efficiency and cost control.
 
 <p align="center">
-<b><a href="#sec-tech"><code>13</code></a></b> microservices · <b><code>4</code></b> apps · <b><a href="docs/需求文档/01-业务需求全景.md"><code>101</code></a></b> functional requirements · <b><a href="sql/README.md"><code>54</code></a></b> database tables · <b><a href="docs/01-技术栈说明.md"><code>27</code></a></b> technologies · full business closed loop
+<b><a href="#sec-tech"><code>13</code></a></b> microservices · <b><code>4</code></b> apps · <b><code>101</code></b> functional requirements · <b><code>54</code></b> database tables · <b><code>27</code></b> technologies · full business closed loop
 </p>
 
 <p align="center">
 🔗 <b>Live demo</b>: <code>http://&lt;server-ip&gt;</code> (replace after deployment; public demo planned) ｜ Account <code>admin / 123456</code>
-
-> 🗄️ **SQL script location convention (2026-10-13)**: all DDL / migration / seed / patch SQL live in the repo-root **`sql/`** directory, organized by domain into `auth/ base/ oms/ dispatch/ work/ member/ iot/ settlement/ seed/ infra/ patch/`. **This directory is NOT tracked by git** (listed in `.gitignore`; maintained manually). Do not add git-tracked `.sql` files under `docs/`, `codeback/`, or elsewhere — doing so trips the CI **DB gate** (any `*.sql` diff requires `db_approved=true`). New online migrations go through `.claude/skills/create-migration`, output to `sql/<domain>/`. See `sql/README.md`.
 </p>
 
 ---
@@ -370,8 +368,8 @@ After the full refactor the system converges to a **single MySQL database** (`xi
 git clone https://gitee.com/itxinfei/xinfei-tms.git
 cd xinfei-tms
 docker-compose up -d        # start middleware: MySQL / Redis / RabbitMQ / Nacos
-# ① run the SQL under sql/: authoritative DDL = sql/infra/00_create_database.sql → 01_sys … 08_iot → 09_seed.sql,
-#    the rest organized by domain; sql/ is not tracked by git (maintained manually, see sql/README.md)
+# ① Initialize the database: DDL & seed scripts are bundled in the pre-built VM image (see "10. Pre-built VM Image");
+#    the sql/ directory is not distributed with this repo — contact the author if needed
 # ② start xf-auth → xf-gateway → business microservices (mvn spring-boot:run or deploy scripts)
 # ③ start admin (pnpm i && pnpm dev) and mobile (run uni-app in HBuilderX)
 ```
@@ -482,25 +480,15 @@ docker-compose up -d        # start middleware: MySQL / Redis / RabbitMQ / Nacos
 
 ## 9. 📚 Documents
 
-All documents below are local files in the repo. **`docs/` and `docs/需求文档/` are two independent numbering systems**.
+In-repo resources you can browse directly; internal design documents (requirements, API contracts, data dictionary) are **not distributed with the source repo** — contact the author if needed:
 
-**① Root docs** (`docs/`, deployment / architecture / stack / environment):
-
-| Document | Description |
+| Resource | Description |
 | --- | --- |
-| [docs/01-技术栈说明.md](docs/01-技术栈说明.md) | Technology stack overview &amp; verification |
-| [docs/02-架构设计.md](docs/02-架构设计.md) | System architecture, services, call graph, deployment topology |
-| [docs/03-功能规划与需求说明.md](docs/03-功能规划与需求说明.md) | Feature list &amp; requirements |
-| [docs/04-部署与二次开发指南.md](docs/04-部署与二次开发指南.md) | Deployment, initialization &amp; secondary development guide |
-| [docs/05-部署文档.md](docs/05-部署文档.md) | Middleware deployment manual |
-| [docs/06-心飞物流TMS-开发测试环境手册.md](docs/06-心飞物流TMS-开发测试环境手册.md) | Dev / test environment guide |
-
-**② Requirements docs** (`docs/需求文档/`, independent numbering, authoritative entry: 00-索引):
-
-| Document | Description |
-| --- | --- |
-| [docs/需求文档/00-索引.md](docs/需求文档/00-索引.md) | Requirements index |
-| [docs/需求文档/01-业务需求全景.md](docs/需求文档/01-业务需求全景.md) | Business requirements overview |
+| [docs/architecture/](docs/architecture/) | Architecture view sources (business flow / runtime topology / data ownership / order lifecycle .dot diagrams & scripts) |
+| [deploy/](deploy/) | One-stop deployment assets: middleware & app Docker Compose, CI/CD workflows, deploy scripts, sanitized .env example |
+| [docs/sql/区划数据/](docs/sql/区划数据/) | 4-level administrative division data (CSV) with coordinate / pinyin generation toolchain |
+| [docs/brand/](docs/brand/) | Brand assets (full-size logos / favicon) |
+| [LICENSE](LICENSE) | BUSL-1.1 license (free for personal study & research; commercial use requires authorization) |
 
 **Design diagrams** (in `docs/`): `system-arch.png` (system), `microservice-arch.png` (microservices), `tech-arch.png` (technology), `business-flow.png` (business flow).
 

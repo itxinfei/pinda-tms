@@ -42,12 +42,10 @@
 
 <p align="center"><b>简体中文</b> · <a href="README.en.md">English</a></p>
 
-> *Xinfei Logistics TMS — Open-source Transportation Management System with 4-end synergy, powered by JDK 21 + Spring Boot 3.5 + Vue 3.5.*
-
-> **心飞 TMS** 是一款**四端协同**（管理端 + 客户端 + 快递员端 + 司机端）的开源运输管理系统，基于 **JDK 21 + Spring Boot 3.5.7 + Vue 3.5** 构建，覆盖寄件 → 订单 → 智能调度 → 作业 → 轨迹 → 回单全链路。Drools 规则引擎驱动智能调度，Netty 自建轨迹接入，Sa-Token 多租户 SaaS 就绪——覆盖订单管理、配载作业、调度分配、行车管理、GPS 车辆定位、数据报表全流程，让运输运作效率与成本管控一步到位。
+> **心飞 TMS** 是一款**四端协同**（管理端 + 客户端 + 快递员端 + 司机端）的开源运输管理系统，基于 **JDK 21 + Spring Boot 3.5.7 + Vue 3.5** 构建，覆盖寄件 → 订单 → 智能调度 → 作业 → 轨迹 → 回单全链路。Drools 规则引擎驱动智能调度，Netty 自建轨迹接入，Sa-Token 多租户 SaaS 就绪。
 
 <p align="center">  
-<b><a href="#sec-tech"><code>13</code></a></b> 个微服务 · <b><code>4</code></b> 端协同 · <b><a href="docs/需求文档/01-业务需求全景.md"><code>101</code></a></b> 条功能需求 · <b><a href="sql/README.md"><code>54</code></a></b> 张数据表 · <b><a href="docs/01-技术栈说明.md"><code>27</code></a></b> 项技术栈 · 全链路业务闭环  
+<b><a href="#sec-tech"><code>13</code></a></b> 个微服务 · <b><code>4</code></b> 端协同 · <b><code>101</code></b> 条功能需求 · <b><code>54</code></b> 张数据表 · <b><code>27</code></b> 项技术栈 · 全链路业务闭环  
 </p>
 
 <p align="center">  
@@ -55,8 +53,6 @@
 </p>
 
 ---
-
-> 🗄️ **SQL 脚本位置约定（2026-10-13）**：所有建库 / 迁移 / 种子 / 补丁 SQL **统一放在仓库根 `sql/` 目录**，并按业务域分 `auth/ base/ oms/ dispatch/ work/ member/ iot/ settlement/ seed/ infra/ patch/` 子目录；**该目录不进 git（已写入 `.gitignore`，由本人手动维护）**。禁止在 `docs/`、`codeback/` 或仓库其它位置新增被 git 跟踪的 `.sql` 文件——否则会触发 CI 的 **DB 门禁**（diff 含 `*.sql` 须 `db_approved=true` 人工放行）。新增上线迁移请走 `.claude/skills/create-migration` 工作流，产出落到 `sql/<对应业务域>/`。详见 `sql/README.md`。
 
 ## 📑 目录
 
@@ -93,25 +89,14 @@
 
 ## 二、✨ 核心优势
 
-### 2.1 六大差异化亮点
-
-| # | 亮点                              | 为什么别家没有                                                  |
-| - | ------------------------------- | -------------------------------------------------------- |
-| 1 | **四端协同**                        | 管理端 + 客户端 + 快递员端 + 司机端，覆盖全角色——多数开源 TMS 只有管理端             |
-| 2 | **JDK 21 + SB 3.5.7 + Vue 3.5** | 同类开源 TMS 中最前沿的栈，多数仍在 JDK 8 + SB 2.x + Vue 2              |
-| 3 | **Drools + XXL-Job 智能调度**       | 规则引擎驱动调度与运费计算，非 if-else 硬编码；分布式任务调度替代 Quartz             |
-| 4 | **Netty 自建轨迹接入**                | 不依赖第三方 SDK，`xf-netty` 独立微服务，支撑高并发终端接入                    |
-| 5 | **Sa-Token 多租户**                | SaaS 化就绪，一套代码服务多个租户——多数开源 TMS 单租户                        |
-| 6 | **清晰的演进路线**                     | Kafka → TDengine/鹰眼 → OR-Tools → Spring AI 规划中，不是做完就停的项目 |
-
-### 2.2 谁适合用心飞？
+### 2.1 谁适合用心飞？
 
 - 🚛 **中小微车队**（10-50 辆）：想数字化，但买不起年费 3-30 万的商业 TMS
 - 🚀 **物流初创团队**：需要一个功能全、栈新、能跑的四端 TMS 做 MVP
 - 📚 **Java 学习者**：一套代码学微服务 + 规则引擎 + Netty + 多租户实战
 - 🔧 **二次开发商**：给客户做定制交付，省 3 个月底子工程
 
-### 2.3 与同类方案对比
+### 2.2 与同类方案对比
 
 | 能力                       | 心飞 TMS            | 同类开源 TMS      | 商业 TMS     |
 | ------------------------ | ----------------- | ------------- | ---------- |
@@ -125,7 +110,7 @@
 
 > 「同类开源」泛指 Gitee/GitHub 上主流开源 TMS 项目，不针对特定项目；如有不准确欢迎 Issue 纠正。
 
-### 2.4 眼见为实
+### 2.3 眼见为实
 
 <table>  
 <tr>  
@@ -144,7 +129,7 @@
 
 ![大屏演示动画](docs/screenshots/demo-bigscreen.gif)
 
-### 2.5 功能进度矩阵
+### 2.4 功能进度矩阵
 
 |                     |                   |                |                |
 | ------------------- | ----------------- | -------------- | -------------- |
@@ -191,8 +176,6 @@
 ### 5.1 整体业务流程
 
 ![整体业务流程](docs/business-flow.png)
-
-从寄件人下单到收件人签收，心飞 TMS 覆盖完整业务链路：
 
 ```
 寄件下单 📦 → 订单创建 📋 → 智能调度 🤖（Drools）→ 司机接单 🚚
@@ -306,53 +289,11 @@ xinfei-tms/
 | **单库分域** 而非 8 分库            | dev / 中小规模运维成本低，规模化再演进时序库                |
 | **Resilience4j** 而非 Hystrix | Hystrix 停更，R4 是 Spring Cloud 官方容错方向（规划中） |
 
-#### 6.4.3 代码片段
+#### 6.4.3 技术演进路线（规划中）
 
-**Drools 调度规则**（`xf-dispatch`）——规则即配置，热更新不发版：
-
-```java
-rule "同城订单优先分配"
-when
-    $order : Order(distanceType == "LOCAL", priority >= 5)
-    $driver : Driver(status == "IDLE", city == $order.pickupCity)
-then
-    $order.assignTo($driver);
-end
-```
-
-
-**Netty 轨迹接入**（`xf-netty`）——自建 TCP 通道，不依赖第三方 SDK：
-
-```java
-@ChannelHandler.Sharable
-public class LocationServerHandler extends SimpleChannelInboundHandler<ByteBuf> {
-    @Override
-    protected void channelRead0(ChannelHandlerContext ctx, ByteBuf in) {
-        // 解析位置上报协议 → 轨迹入库 → 推送调度 / 监控
-    }
-}
-```
-
-#### 6.4.4 技术演进路线（规划中）
-
-以下为技术演进评审通过的规划项，尚未落地，按优先级分批实施（见《全量重构总体规划》与《53》R2）：
-
-| 技术                       | 用途                                          | 优先级   |
-| ------------------------ | ------------------------------------------- | ----- |
-| **MinIO 对象存储**           | 回单、签收照片等非结构化数据存储（S3 协议）                     | P1 近期 |
-| **Zipkin 链路追踪**          | Micrometer Tracing + Zipkin 微服务调用链监控        | P1 近期 |
-| **Resilience4j 服务容错**    | 熔断、降级与限流（Spring Cloud CircuitBreaker）       | P1 近期 |
-| **MapStruct 对象映射**       | 替代反射拷贝，编译期生成类型安全转换                          | P1 近期 |
-| **Kafka 消息流**            | 轨迹流管线（Netty → Kafka → 时序存储），高吞吐解耦           | P2 中期 |
-| **Debezium CDC 数据同步**    | binlog 变更捕获，MySQL → Kafka → ES / Doris 实时同步 | P2 中期 |
-| **Elasticsearch 检索**     | 运单多条件与地址模糊查询、运营聚合统计                         | P2 中期 |
-| **Google OR-Tools 智能排线** | VRP 组合优化求解（CVRP / VRPTW），辅助调度配载             | P2 中期 |
-| **Apache Doris OLAP**    | 报表与经营分析，湖仓一体，MySQL 协议兼容                     | P2 中期 |
-| **百度鹰眼轨迹服务**             | 轨迹纠偏与电子围栏                                   | P2 中期 |
-| **Spring AI 2.0 智能应用框架** | 大模型对话 / RAG / Agent 编排，支撑智能客服与查件 Agent      | P3 远期 |
-| **快递100 开放平台**           | 多承运商轨迹查询与推送、电子面单打印、寄递下单                     | P3 远期 |
-| **Flowable 工作流引擎**       | 异常件审批、赔付改派、对账等人工审批流编排                       | P3 远期 |
-| **积木报表 JimuReport**      | 数据可视化报表与大屏仪表盘，在线设计                          | P3 远期 |
+- **P1 近期**：MinIO 对象存储（回单/签收文件）· Zipkin 链路追踪 · Resilience4j 容错 · MapStruct 对象映射
+- **P2 中期**：Kafka 消息流 · Debezium CDC · Elasticsearch 检索 · OR-Tools 智能排线 · Doris OLAP · 百度鹰眼
+- **P3 远期**：Spring AI 智能客服 · 快递100 开放平台 · Flowable 工作流 · 积木报表
 
 ### 6.5 数据库设计
 
@@ -373,21 +314,14 @@ public class LocationServerHandler extends SimpleChannelInboundHandler<ByteBuf> 
 
 ## 七、🚀 快速了解
 
-### 7.1 环境与技术栈
-
-- **后端**：JDK 21 + Spring Boot 3.5.7 + Spring Cloud 2025.0.0（Spring Cloud Alibaba 2025.0.0.0）微服务架构，Nacos 注册 / 配置中心，OpenFeign 服务调用，Spring Cloud Gateway 统一网关鉴权，Sa-Token 多租户认证，XXL-Job 分布式任务调度，Drools 规则引擎。
-- **前端**：管理端 `xf-admin-ui-vue3`（Vue 3 + Vite + Element Plus + Pinia + ECharts）；移动端 uni-app（Vue 3 / Vite + uview-plus）三端 App（客户端 / 快递员端 / 司机端）。
-- **存储与中间件**：MySQL（单库分域）、Redis 缓存、RabbitMQ 消息队列、Druid 连接池；MinIO 对象存储与 Elasticsearch 检索为规划项（见 §6.4）。
-- **支撑服务**：统一认证中心（Sa-Token 多租户 + 验证码）、网关防直连、Netty 轨迹接入。
-
-### 7.2 五分钟跑起来
+### 7.1 五分钟跑起来
 
 ```bash
 git clone https://gitee.com/itxinfei/xinfei-tms.git
 cd xinfei-tms
 docker-compose up -d        # 起中间件：MySQL / Redis / RabbitMQ / Nacos
-# ① 执行 sql/ 下的建库与种子脚本：权威 DDL = sql/infra/00_create_database.sql → 01_sys … 08_iot → 09_seed.sql，
-#    其余按业务域分目录；sql/ 不进 git，由本人手动维护（详见 sql/README.md）
+# ① 初始化数据库：建库与种子脚本随配套虚拟机镜像内置（见「10. 配套虚拟机」）；
+#    sql/ 脚本目录不随本仓库分发，需要可联系作者索取
 # ② 启动 xf-auth → xf-gateway → 业务微服务（mvn spring-boot:run 或部署脚本）
 # ③ 启动管理端（pnpm i && pnpm dev）与移动端（HBuilderX 运行 uni-app）
 ```
@@ -505,27 +439,17 @@ docker-compose up -d        # 起中间件：MySQL / Redis / RabbitMQ / Nacos
 
 ## 九、📚 相关资料
 
-以下文档均为仓库内本地文件。**根目录 `docs/` 与 `docs/需求文档/` 编号独立、互不相关**：
+仓库内可直接查阅的资料如下；需求、接口与数据字典等内部设计文档**不随源码分发**，需要可联系作者：
 
-**① 根目录文档**（`docs/`，部署 / 架构 / 技术栈 / 环境）：
+| 资料                                                         | 说明                                                     |
+| ------------------------------------------------------------ | -------------------------------------------------------- |
+| [docs/architecture/](docs/architecture/)                     | 架构视图源文件（业务流程 / 运行时拓扑 / 数据归属 / 订单生命周期等 .dot 图与配套脚本） |
+| [deploy/](deploy/)                                           | 一键部署资产：中间件与应用 Docker Compose、CI/CD workflow、前后端部署脚本、.env 脱敏示例 |
+| [docs/sql/区划数据/](docs/sql/区划数据/)                     | 行政区划四级数据（CSV）与坐标 / 拼音生成工具链，初始化区划种子参考 |
+| [docs/brand/](docs/brand/)                                   | 品牌资产库（Logo 全尺寸 / favicon）                       |
+| [LICENSE](LICENSE)                                           | BUSL-1.1 协议全文（个人学习研究免费，企业商用需授权）     |
 
-| 文档                                                     | 说明                  |
-| ------------------------------------------------------ | ------------------- |
-| [docs/01-技术栈说明.md](docs/01-技术栈说明.md)                   | 技术栈说明与核对            |
-| [docs/02-架构设计.md](docs/02-架构设计.md)                     | 系统架构、服务划分、调用关系与部署拓扑 |
-| [docs/03-功能规划与需求说明.md](docs/03-功能规划与需求说明.md)           | 功能清单与需求说明           |
-| [docs/04-部署与二次开发指南.md](docs/04-部署与二次开发指南.md)           | 部署、初始化与二次开发指引       |
-| [docs/05-部署文档.md](docs/05-部署文档.md)                     | 中间件部署手册             |
-| [docs/06-心飞物流TMS-开发测试环境手册.md](docs/06-心飞物流TMS-开发测试环境手册.md) | 开发 / 测试环境说明         |
-
-**② 需求文档体系**（`docs/需求文档/`，编号独立，权威入口见 00-索引）：
-
-| 文档                                               | 说明      |
-| ------------------------------------------------ | ------- |
-| [docs/需求文档/00-索引.md](docs/需求文档/00-索引.md)         | 需求文档总索引 |
-| [docs/需求文档/01-业务需求全景.md](docs/需求文档/01-业务需求全景.md) | 业务需求全景  |
-
-**设计图**（位于 `docs/`）：`system-arch.png`（系统架构）、`microservice-arch.png`（微服务架构）、`tech-arch.png`（技术架构）、`business-flow.png`（整体业务流程）、`软件架构体系.png`、`服务列表.png`。
+**设计图**（位于 `docs/`）：`system-arch.png`（系统架构）、`microservice-arch.png`（微服务架构）、`tech-arch.png`（技术架构）、`business-flow.png`（整体业务流程）。
 
 ---
 
@@ -648,6 +572,4 @@ A: uni-app 三端架构（App / H5 / 小程序），当前以 H5 为主，小程
 
 ---
 
-<p align="center"><sub>TMS 开源 · 运输管理系统 · 物流系统 · 车队管理 · 调度系统 · 轨迹追踪 · Spring Cloud 微服务 · JDK 21 · Vue 3 · uni-app</sub></p>
-
-<p align="center"><sub>心飞物流 TMS · 开源运输管理系统 · 全流程 · 四端协同 · 微服务架构</sub></p>
+<p align="center"><sub>心飞物流 TMS · 开源运输管理系统 · 全流程 · 四端协同 · 微服务架构 · Spring Cloud · JDK 21 · Vue 3 · uni-app</sub></p>
