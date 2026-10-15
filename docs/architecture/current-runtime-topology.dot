@@ -1,4 +1,4 @@
-// 🔴 2026-10-10 已过时：本图为重构前（2026-10-09 HEAD）快照。数据库已由"7 库同 1 实例"重构为【单一物理库 xinfei_tms（51 表）+ 业务表 tenant_id 多租户】，认证 = xf-auth(Sa-Token)、网关 = xf-gateway。现行口径见 docs/02-架构设计.md、《需求文档/45》。图内"7 库 / pd_oms / pd_auth ..."仅作历史问题留痕，禁止当现状。
+// 🔴 2026-10-10 已过时：本图为重构前（2026-10-09 HEAD）快照。数据库已由"7 库同 1 实例"重构为【单一物理库 xinfei_tms（55 表）+ 业务表 tenant_id 多租户】，认证 = xf-auth(Sa-Token)、网关 = xf-gateway。现行口径见 docs/02-架构设计.md、《需求文档/45》。图内"7 库 / pd_oms / pd_auth ..."仅作历史问题留痕，禁止当现状。
 // 心飞物流TMS 当前运行时拓扑 + 信任边界（技术栈与系统架构体检配图）· 历史快照
 // 维护：本图与 tech-stack-and-system-architecture-review.md 的编号（T-x/S-x）一一对应，改文必改图。
 // 读法：实线=代码/配置双证；虚线=推断或本次未取证；红=边界违规；黄=归属漂移；灰=未开工。
@@ -20,7 +20,7 @@ digraph current_runtime_topology {
 
   // ---------- 宿主机边界 ----------
   subgraph cluster_host {
-    label="宿主 192.168.20.130（Docker Compose，非K8s；15G RAM，load≈15属CI构建期）\nrestart=unless-stopped，数据卷全 bind（重启不丢）";
+    label="宿主 192.168.20.130（内网部署服务器，仅内网可访问、外网不可达；Docker Compose，非K8s；15G RAM，load≈15属CI构建期）\nrestart=unless-stopped，数据卷全 bind（重启不丢）";
     style=rounded; color="#666666"; fontsize=11;
 
     // ----- 前端 -----

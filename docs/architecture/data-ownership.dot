@@ -1,4 +1,4 @@
-// 🔴 2026-10-10 已过时：本图为重构前快照。数据库已由"8 库"重构为【单一物理库 xinfei_tms（51 表）+ tenant_id 多租户】，表按 sys_/dict_/base_/oms_/disp_/work_/member_/iot_ 八域前缀归属（写严格归属、读可适度跨域）。现行口径见 docs/02、《需求文档/45》。图内 pd_oms/pd_auth 等旧库名仅作历史问题留痕。
+// 🔴 2026-10-10 已过时：本图为重构前快照。数据库已由"8 库"重构为【单一物理库 xinfei_tms（55 表）+ tenant_id 多租户】，表按 sys_/dict_/base_/oms_/disp_/work_/member_/iot_ 八域前缀归属（写严格归属、读可适度跨域）。现行口径见 docs/02、《需求文档/45》。图内 pd_oms/pd_auth 等旧库名仅作历史问题留痕。
 // 数据归属与服务边界 current-state（重构前快照；证据：Nacos datasource 实测 + information_schema 实测 + mapper/Feign 代码）
 digraph data_ownership {
   rankdir=TB; nodesep=0.4; ranksep=0.8;
@@ -14,7 +14,7 @@ digraph data_ownership {
   webm [label="xf-web-manager"]; webc [label="xf-web-courier"]; webd [label="xf-web-driver"]; webu [label="xf-web-customer"];
 
   // 库（红色对象为实测问题）
-  subgraph cluster_dbs { label="MySQL 192.168.20.130（实测 8 库）"; style=dashed; color="#9aa0a6";
+  subgraph cluster_dbs { label="MySQL 192.168.20.130（内网部署服务器，外网不可达；实测 8 库）"; style=dashed; color="#9aa0a6";
     dpdoms [label="pd_oms\npd_order(3行,status=1)\npd_truck_location / _archive", shape=cylinder];
     dpmom [label="pd_oms ❌缺表\npd_settlement_order\npd_freight_detail\npd_payment_order", shape=cylinder, fillcolor="#fce8e6"];
     dpwork [label="pd_work\npd_transport_order(3)\npd_task_pickup_dispatch(0)\npd_driver_job(0)", shape=cylinder];
