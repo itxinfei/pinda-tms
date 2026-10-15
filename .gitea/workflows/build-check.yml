@@ -230,11 +230,29 @@ jobs:
           echo "前端变更端:${apps:-（无）}"
           echo "APPS=$apps" >> "$GITHUB_ENV"
 
-      - name: 后端 Maven 构建（变更服务，-am 全链）
+      - name: 后端 Maven 构建（优先复用 compile 全量 install 的 m2 fat jar，未命中再 -am package）
         if: env.SERVICES != ''
         timeout-minutes: 30
         run: |
           set -e
+          # 向后端共享脚本追加 m2 复用函数（本 step 与下一步「镜像构建」都会 source /tmp/svc.sh）。
+          # 背景：compile job 已对当前 HEAD 全量 clean install，14 个 fat jar 都持久化在挂载的 /root/.m2；
+          # 两个 job 同一台 runner、同一 /data/m2，正常同一次 push clone 到同一 HEAD，可直接复用、省掉整轮重复打包。
+          {
+            echo 'm2_jar_of() { echo "/root/.m2/repository/com/xinfei/$(basename "$1")/1.0.0-SNAPSHOT/$(basename "$1")-1.0.0-SNAPSHOT.jar"; }'
+            echo 'm2_cache_hit() {'
+            echo '  local b cur s j'
+            echo '  b=$(cat /root/.m2/.xinfei-baseline.revision 2>/dev/null || true)   # compile 全量 install 时写入的源码 SHA'
+            echo '  cur=$(git rev-parse HEAD 2>/dev/null || true)'
+            echo '  [ -n "$b" ] && [ "$b" = "$cur" ] || return 1                       # 基线!=当前 HEAD（reran 跨越新 push）一律不复用'
+            echo '  for s in $1; do'
+            echo '    j=$(m2_jar_of "${MOD_OF[$s]}")'
+            echo '    [ -f "$j" ] || return 1'
+            echo '    jar tf "$j" 2>/dev/null | grep -q "^BOOT-INF/" || return 1       # 必须确为 Spring Boot fat jar，防止拿 thin jar 打出跑不起来的镜像'
+            echo '  done'
+            echo '  return 0'
+            echo '}'
+          } >> /tmp/svc.sh
           source /tmp/svc.sh
           if [ "$SERVICES" = "ALL" ]; then SERVICES="$ORDER"; fi
           MODS=""
@@ -243,8 +261,12 @@ jobs:
           TAG="auto-$(echo "${GITHUB_SHA}" | cut -c1-7)-$(date +%Y%m%d%H%M)"
           echo "TAG=$TAG" >> "$GITHUB_ENV"
           echo ">> 自动部署后端:$SERVICES"
-          echo ">> Maven -pl $MODS -am clean package"
-          mvn -B -Dmaven.test.skip=true -s /ci/maven-settings.xml -pl "$MODS" -am clean package
+          if m2_cache_hit "$SERVICES"; then
+            echo "::notice::m2 命中：compile 全量 install 的 fat jar 即当前 HEAD $(git rev-parse HEAD | cut -c1-7)，跳过 -am clean package"
+          else
+            echo ">> m2 未命中（基线不一致 / 坐标版本变更 / jar 缺失或非 fat），回退 Maven -pl $MODS -am clean package（-T 1C）"
+            mvn -B -Dmaven.test.skip=true -T 1C -s /ci/maven-settings.xml -pl "$MODS" -am clean package
+          fi
 
       - name: 后端镜像构建 + 记录回滚基线
         if: env.SERVICES != ''
@@ -254,11 +276,23 @@ jobs:
           source /tmp/svc.sh
           if [ "$SERVICES" = "ALL" ]; then SERVICES="$ORDER"; fi
           : > /tmp/prev-tags
+          # m2 复用判定（与上一步同一把尺：compile 基线==当前 HEAD 且 jar 存在且为 fat）。
+          # 命中时 jar 在挂载卷 /root/.m2，与工作区 .ctx 分属不同文件系统，硬链接会报 Invalid cross-device，故用 cp；
+          # 未命中走 target 产物（与 .ctx 同一工作区文件系统），沿用原硬链接不额外占盘。
+          CUR_HEAD=$(git rev-parse HEAD)
+          M2_HEAD=$(cat /root/.m2/.xinfei-baseline.revision 2>/dev/null || true)
           for s in $SERVICES; do
             m="${MOD_OF[$s]}"
-            jar=$(find "$m/target" -maxdepth 1 -type f -name '*.jar' ! -name '*sources*' ! -name '*javadoc*' ! -name '*.original' | head -1)
-            if [ -z "$jar" ]; then echo "::error::未找到 $s 的 fat jar"; exit 1; fi
-            mkdir -p ".ctx/$s"; ln -f "$jar" ".ctx/$s/app.jar"
+            m2j="$(m2_jar_of "$m")"
+            if [ "$M2_HEAD" = "$CUR_HEAD" ] && [ -f "$m2j" ] && jar tf "$m2j" 2>/dev/null | grep -q "^BOOT-INF/"; then
+              jar="$m2j"; linkit="cp -f"
+              echo ">> $s 复用 m2 fat jar: ${m2j##*/}"
+            else
+              jar=$(find "$m/target" -maxdepth 1 -type f -name '*.jar' ! -name '*sources*' ! -name '*javadoc*' ! -name '*.original' | head -1)
+              linkit="ln -f"
+            fi
+            if [ -z "$jar" ]; then echo "::error::未找到 $s 的 fat jar（m2 与 target 均无）"; exit 1; fi
+            mkdir -p ".ctx/$s"; $linkit "$jar" ".ctx/$s/app.jar"
             img=$(docker inspect -f '{{.Config.Image}}' "$s" 2>/dev/null || true)
             if [ -n "$img" ]; then echo "$s ${img##*:}" >> /tmp/prev-tags; else echo "$s " >> /tmp/prev-tags; fi
             echo ">> docker build xinfei/$s:${TAG}"
@@ -279,7 +313,8 @@ jobs:
         run: |
           # 不使用全局 set -e：失败分支必须把本轮已切换的服务逐个回滚完，不能被单条命令的非零码打断。
           source /tmp/svc.sh
-          if [ "$SERVICES" = "ALL" ]; then SERVICES="$ORDER"; fi
+          # FULL=1 表示本轮为全量收敛（原始 SERVICES=ALL / 对账自愈或编排变更触发）；只有全量才启用分批并行滚动
+          if [ "$SERVICES" = "ALL" ]; then FULL=1; SERVICES="$ORDER"; else FULL=0; fi
           COMPOSE="deploy/apps/docker-compose.app.yml"
           tv_of() { echo "$(echo "$1" | tr 'a-z-' 'A-Z_')_TAG"; }
           health_of() { docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$1" 2>/dev/null || echo missing; }
@@ -311,6 +346,73 @@ jobs:
             done
           }
 
+          # ===== 全量分批并行（仅 FULL=1；增量子集仍走本文件末尾原串行循环，逻辑零改动）=====
+          # 波次按依赖划分、成员显式列出并以 ORDER 保序：
+          #   W1 认证/基础(2) → W2 核心业务上(4) → W3 核心业务下(3) → W4 四个 BFF/web(4) → W5 网关独占(1)。
+          # 波内：compose up 快速“串行发出”（本地镜像只 recreate、秒级，且避免同一 compose project 并发调 CLI 的竞态），
+          #       随后“并行等待健康”——探活等待（每服务常 30~60s）才是串行滚动的耗时大头，并行后一波只等最慢的一个；
+          # 波间：严格串行，保证依赖方向；单服务探活上限仍是 48×5s=240s，不放松。
+          # 保护：5 波并集必须恰好覆盖整个 ORDER，否则（如以后新增服务忘记归波）自动回退原串行路径，绝不漏部署。
+          W1=$(for s in $ORDER; do case "$s" in xf-auth|xf-base) echo "$s";; esac; done)
+          W2=$(for s in $ORDER; do case "$s" in xf-oms|xf-work|xf-user|xf-file-server) echo "$s";; esac; done)
+          W3=$(for s in $ORDER; do case "$s" in xf-dispatch|xf-aggregation|xf-netty) echo "$s";; esac; done)
+          W4=$(for s in $ORDER; do case "$s" in xf-web-manager|xf-web-driver|xf-web-courier|xf-web-customer) echo "$s";; esac; done)
+          W5=xf-gateway
+          WAVES_OK=1
+          for s in $ORDER; do
+            flat=" $(echo "$W1 $W2 $W3 $W4 $W5" | tr '\n' ' ') "
+            case "$flat" in *" $s "*) ;; *) echo "::warning::$s 未归入任何部署波次，分批保护失败，本轮回退串行"; WAVES_OK=0;; esac
+          done
+
+          deploy_wave() {
+            local wave="$1" td s tv pids st
+            td=$(mktemp -d)
+            echo ">> 波次部署: $(echo "$wave" | tr '\n' ' ')"
+            # 1) 串行快速发出本波所有 compose up（up 仅 recreate，耗时在后续探活）
+            for s in $wave; do
+              tv=$(tv_of "$s")
+              if env TAG="$TAG" "$tv=$TAG" docker compose --env-file /ci/apps.env -f "$COMPOSE" up -d "$s" >"/tmp/wave-up-$s.log" 2>&1; then
+                echo upok > "$td/$s"
+              else
+                echo upfail > "$td/$s"
+              fi
+            done
+            # 2) 对 up 成功的服务并行健康等待（各自独立轮询，互不影响）
+            pids=""
+            for s in $wave; do
+              [ "$(cat "$td/$s" 2>/dev/null)" = upok ] || continue
+              (
+                for i in $(seq 1 48); do [ "$(health_of "$s")" = "healthy" ] && { echo healthy > "$td/$s"; exit 0; }; sleep 5; done
+                echo unhealthy > "$td/$s"
+              ) &
+              pids="$pids $!"
+            done
+            for p in $pids; do wait "$p" || true; done
+            # 3) 汇总：本波全部 healthy 才返回；任一失败则把本波容器纳入回滚清单并整体逆序回滚
+            local bad=""
+            for s in $wave; do
+              st=$(cat "$td/$s" 2>/dev/null || echo missing)
+              echo "$s wave=$st"
+              if [ "$st" = healthy ]; then deployed+=("$s"); else bad="$bad $s"; fi
+            done
+            rm -rf "$td"
+            if [ -n "$bad" ]; then
+              # upfail/未healthy 的容器可能已切到新镜像，统一纳入逆序回滚
+              for s in $bad; do case " ${deployed[*]} " in *" $s "*) ;; *) deployed+=("$s");; esac; done
+              echo "::error::波次失败服务:$bad（up 日志见 /tmp/wave-up-<服务>.log）"
+              rollback_all
+              [ "$rb_fail" = "0" ] && rm -f /root/.m2/.xinfei-deploy.inprogress
+              echo "::error::全量分批部署失败，已按依赖逆序回滚本轮服务，部署基线不刷新"
+              exit 1
+            fi
+          }
+
+          if [ "$FULL" = "1" ] && [ "$WAVES_OK" = "1" ]; then
+            echo ">> 全量收敛：14 服务分 5 波滚动（2/4/3/4/1，波内探活并行），网关最后"
+            deploy_wave "$W1"; deploy_wave "$W2"; deploy_wave "$W3"; deploy_wave "$W4"; deploy_wave "$W5"
+          else
+            [ "$FULL" = "1" ] && echo ">> 全量但分批保护未通过，改用严格串行"
+            echo ">> 增量/串行部署：逐个 compose up + 健康检查 + 失败即回滚"
           for s in $SERVICES; do
             tv=$(tv_of "$s")
             if ! env TAG="$TAG" "$tv=$TAG" docker compose --env-file /ci/apps.env \
@@ -335,6 +437,7 @@ jobs:
               exit 1
             fi
           done
+          fi
 
       - name: 前端部署（并行构建 + 串行滚动/健康检查/失败回滚）
         # 后端部署 step 失败时本 step 被 runner 默认跳过（前序 step 失败即不再执行后续成功态 step），
