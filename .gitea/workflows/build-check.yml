@@ -51,6 +51,24 @@ jobs:
           git clone --depth 50 -b "${GITHUB_REF_NAME:-master}" \
             "http://${DEPLOY_HOST}:3000/xinfei/xinfei-tms.git" .
 
+      - name: 密钥扫描（防私钥/敏感文件再入库，A-1 复发卡点）
+        # 轻量卡点：检出后、构建前扫描私钥文件与私钥头。命中即失败，阻断含密钥的提交进入主干。
+        # 强信号扫描（私钥文件后缀 + PEM 私钥头），误报率极低；当前仓库已验证通过（见 docs/安全加固清单.md §四）。
+        # 升级为官方 gitleaks（runner 预装或能联网拉镜像时）：改用 gitleaks/gitleaks-action。
+        run: |
+          set -e
+          echo ">> 扫描私钥文件与私钥头..."
+          FILES=$(git ls-files | grep -iE '\.(pri\.key|key$|pem|p12|jks|pfx)$' || true)
+          HEAD=$(git grep -IlE '-----BEGIN (RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----' -- './*' ':(exclude).gitea/**' || true)
+          if [ -n "$FILES" ] || [ -n "$HEAD" ]; then
+            echo "::error::检出疑似私钥，已阻断："
+            [ -n "$FILES" ] && echo "$FILES"
+            [ -n "$HEAD" ] && echo "$HEAD"
+            echo "::error::请改用仓外注入（见 docs/安全加固清单.md A-1），勿将密钥提交进仓库"
+            exit 1
+          fi
+          echo "::notice::密钥扫描通过（无私钥文件/私钥头）"
+
       - name: Maven 全量 install（JDK21，编译门禁 + 刷新单服务发布的 m2 基线）
         run: |
           set -e
