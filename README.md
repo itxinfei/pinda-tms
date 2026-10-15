@@ -2,8 +2,6 @@
 
 # 🚚 心飞物流 TMS
 
-![心飞物流 TMS](docs/brand/logo-mark.png)
-
 <p>  
   <b>面向运输企业与承运商的开源运输管理系统（TMS）</b>  
   
