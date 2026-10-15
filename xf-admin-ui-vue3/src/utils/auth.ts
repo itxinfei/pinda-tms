@@ -72,8 +72,8 @@ export function hasPerm(value: string | string[]): boolean {
 
   const requiredPerms = Array.isArray(value) ? value : [value];
 
-  // 超级管理员或通配权限直接放行
-  if (roles.includes(ROLE_ROOT) || requiredPerms.includes("*:*:*")) {
+  // 超管角色、被授予 "*"（xf-auth StpInterfaceImpl.ALL_PERMISSION）或模板的 "*:*:*" 均直接放行
+  if (roles.includes(ROLE_ROOT) || perms.includes("*") || requiredPerms.includes("*:*:*")) {
     return true;
   }
 

@@ -175,7 +175,7 @@
                     删除
                   </el-button>
                   <el-button
-                    v-hasPerm="'sys:user:reset-password'"
+                    v-hasPerm="'sys:user:reset'"
                     type="primary"
                     size="small"
                     link

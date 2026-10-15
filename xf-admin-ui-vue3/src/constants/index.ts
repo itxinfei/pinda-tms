@@ -7,9 +7,11 @@ export const APP_PREFIX = "vea";
  * 超级管理员角色标识
  *
  * @description
- * 拥有系统最高权限，可以访问所有资源
+ * 拥有系统最高权限，可以访问所有资源。
+ * 必须等于后端 sys_role.code（xf-auth StpInterfaceImpl.SUPER_ROLE = "ADMIN"），
+ * 模板原值 "ROOT" 在本项目无对应角色，会让超管走不进下面的短路分支。
  */
-export const ROLE_ROOT = "ROOT";
+export const ROLE_ROOT = "ADMIN";
 
 /**
  * 平台租户 ID
