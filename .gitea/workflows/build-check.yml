@@ -109,11 +109,24 @@ jobs:
       - name: DB 变更门禁（diff 含 *.sql 即中止转人工）
         run: |
           BASE=$(cat /root/.m2/.xinfei-deploy.revision 2>/dev/null || true)
+          # 浅克隆（--depth 100）可能够不到基线 commit：先尝试按 SHA 取回，保证跨提交 SQL 审计不丢。
+          # 同一 job 后续「计算变更目标」step 共享本工作区，取回的 BASE 也让其在“仅超出浅克隆窗口”时走精确增量。
+          if [ -n "$BASE" ] && ! git cat-file -e "${BASE}^{commit}" 2>/dev/null; then
+            echo "基线 $BASE 不在浅克隆窗口，尝试按需取回..."
+            git fetch --depth 1 origin "$BASE" >/dev/null 2>&1 \
+              || echo "::warning::基线 $BASE 取回失败（首次部署 / 历史被重写后旧 SHA 消失），SQL 审计退化为仅本次提交"
+          fi
           if [ -n "$BASE" ] && git cat-file -e "${BASE}^{commit}" 2>/dev/null; then
+            echo "按部署基线 $BASE 审计 SQL 变更"
             SQL=$(git diff --name-only "$BASE" HEAD -- '*.sql' ':(exclude)codeback' 2>/dev/null || true)
           else
-            FIRST=$(git rev-list --max-parents=0 HEAD)
-            SQL=$(git diff --name-only "$FIRST" HEAD -- '*.sql' ':(exclude)codeback' 2>/dev/null || true)
+            # 基线真不可达（首次部署 / 历史重写后旧 SHA 消失）时的兜底：
+            # 浅克隆里 `git rev-list --max-parents=0 HEAD` 取到的是“浅历史边界提交”而非仓库根，
+            # 用它做全历史 diff 会把窗口内历史遗留 docs/*.sql 误判为待审 DDL（2026-10-15 曾因此误拦 auto-deploy）。
+            # 故退化为只审本次提交（HEAD~1..HEAD），与 deploy-backend.yml 的兜底口径一致；
+            # 是否需要全量收敛由下一步「计算变更目标」按“基线不可用→全量”处理。
+            echo "::warning::部署基线不可达，SQL 门禁退化为仅审计本次提交（HEAD~1..HEAD）"
+            SQL=$(git diff --name-only HEAD~1 HEAD -- '*.sql' ':(exclude)codeback' 2>/dev/null || true)
           fi
           if [ -n "$SQL" ]; then
             echo "::error::diff 含 *.sql，自动部署中止；请人工审核后以 db_approved=true 手动部署（或勾 check_only 清基线）"
