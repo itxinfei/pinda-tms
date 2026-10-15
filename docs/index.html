@@ -714,7 +714,7 @@ table.cmp .price{color:var(--red);font-weight:900}
     </div>
     <figure class="arch-fig">
       <img src="system-arch.png" alt="心飞物流TMS 系统架构图（2026-10-12 实测版）">
-      <figcaption>系统架构实测版 · 服务 13 个 · 中间件 8 + 4 规划 · 依据《60-技术栈评估与演进路线》</figcaption>
+      <figcaption>系统架构实测版 · 服务 14 个 · 中间件 8 + 4 规划 · 依据《60-技术栈评估与演进路线》</figcaption>
     </figure>
     <div class="arch-layers">
       <div class="layer">
@@ -803,9 +803,9 @@ table.cmp .price{color:var(--red);font-weight:900}
             <div class="frame"><img src="screenshots/ops-docker.png" alt="Docker 容器总览截图"></div>
             <figcaption><b>Docker 容器总览</b>容器健康状态</figcaption>
           </figure>
-          <figure class="shot" data-cap="MySQL 8.0 数据库 · xinfei_tms 全部 54 张表（InnoDB）">
+          <figure class="shot" data-cap="MySQL 8.0 数据库 · xinfei_tms 全部 55 张表（InnoDB）">
             <div class="frame"><img src="screenshots/ops-mysql.png" alt="MySQL 数据库截图"></div>
-            <figcaption><b>MySQL 8.0 数据库</b>xinfei_tms 54 张表</figcaption>
+            <figcaption><b>MySQL 8.0 数据库</b>xinfei_tms 55 张表</figcaption>
           </figure>
         </div>
       </div>
@@ -847,7 +847,7 @@ table.cmp .price{color:var(--red);font-weight:900}
       <div class="card stack-card">
         <h3><span class="dot"></span>存储与中间件</h3>
         <ul>
-          <li>MySQL 8.0 单库分域（54 张表）</li>
+          <li>MySQL 8.0 单库分域（55 张表）</li>
           <li>Redis 7 缓存 · RabbitMQ 消息解耦</li>
           <li>Docker Compose 容器编排</li>
           <li>Gitea + Actions CI/CD 自动构建</li>
@@ -924,7 +924,7 @@ docker-compose up -d</code>
         <span class="n">3</span>
         <div>
           <h4>初始化数据库</h4>
-          <p>执行 <code class="inline">docs/sql</code> 建库脚本，一键得到 xinfei_tms 单库 + 种子数据（54 张表）。</p>
+          <p>执行 <code class="inline">docs/sql</code> 建库脚本，一键得到 xinfei_tms 单库 + 种子数据（55 张表）。</p>
           <code class="k"><span class="c"># 建库脚本在 docs/sql 目录（重构v2 全量脚本 + 演示种子数据）</span>
 mysql -u root -p &lt; docs/sql/重构v2/00_create_database.sql</code>
         </div>

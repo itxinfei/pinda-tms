@@ -466,7 +466,7 @@ docker-compose up -d        # 起中间件：MySQL / Redis / RabbitMQ / Nacos
 <tr>  
 <td align="center" width="50%">  
   <img src="docs/screenshots/ops-mysql.png" alt="MySQL 数据库"/>  
-     <sub><b>MySQL 8.0 数据库</b> · 终端直连查询 · xinfei_tms 全部 54 张表（InnoDB）</sub>  
+     <sub><b>MySQL 8.0 数据库</b> · 终端直连查询 · xinfei_tms 全部 55 张表（InnoDB）</sub>  
 </td>  
 <td align="center" width="50%">  
   <img src="docs/screenshots/ops-redis.png" alt="Redis 键管理"/>  
