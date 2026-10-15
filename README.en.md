@@ -600,15 +600,7 @@ A: uni-app 3-end architecture (App / H5 / Mini-Program); currently H5-first. A r
 
 </div>
 
-Pull Requests are welcome! Please follow these conventions:
-
-- **Code style**: backend follows 《Alibaba Java Development Manual》; frontend follows ESLint + Prettier + Stylelint
-- **Commit format**: `type(scope): description` (e.g. `feat(oms): add split-order API` / `fix(dispatch): fix NPE in route planning`)
-- **No over-engineering**: build only what is directly needed; no speculative features
-- **No hard-coding**: cron / thresholds / map keys / status numbers must be externalized as config
-- **All requests go through the gateway**: `http://<host>:8760/api` + end prefix; direct microservice access is forbidden
-
-> Discuss the direction in an Issue before submitting a PR.
+Issues and Pull Requests are welcome! For environment setup, commit conventions, development rules and the PR workflow, see [CONTRIBUTING.md](CONTRIBUTING.md). Please discuss the direction in an Issue before submitting a PR.
 
 ---
 

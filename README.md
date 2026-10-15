@@ -560,15 +560,7 @@ A: uni-app 三端架构（App / H5 / 小程序），当前以 H5 为主，小程
 
 </div>
 
-欢迎提交 Pull Request！提交前请遵守以下约定：
-
-- **代码规范**：后端遵循《阿里巴巴 Java 开发手册》，前端遵循 ESLint + Prettier + Stylelint 约束
-- **提交格式**：`type(scope): description`（如 `feat(oms): 新增拆单接口` / `fix(dispatch): 修复路线规划空指针`）
-- **不过度设计**：只做直接需要的事，不加未来"可能用到"的功能
-- **禁止硬编码**：cron / 阈值 / 地图 Key / 状态数字一律外部化配置
-- **所有请求走网关**：`http://<host>:8760/api` + 端前缀，禁止直连微服务
-
-> 提交 PR 前建议先在 Issue 中发起讨论，确认方向一致后再动手。
+欢迎提交 Issue 与 Pull Request！环境准备、提交规范、开发红线与 PR 流程详见 [CONTRIBUTING.md](CONTRIBUTING.md)；提交 PR 前建议先在 Issue 中发起讨论，确认方向一致后再动手。
 
 ---
 
