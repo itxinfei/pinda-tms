@@ -210,7 +210,7 @@ x-nacos-env: &nacos-env
   # 开启后服务必须带合法账号口令，否则拉配置 403、启动失败。
   # dev 统一口径（CLAUDE.md §5.2）：口令在服务器 apps/.env(0600)，不进 Git。
   # 2026-10-15 起 /data/ci/apps.env 注入的账号＝命名空间级应用账号 xinfei/123456
-  # （角色 ns-pinda-tms，仅有 1cb93ce4-... 的 READ,WRITE 权限），不再是超管 nacos。
+  # （角色 ns-xinfei-tms，仅有 1cb93ce4-... 的 READ,WRITE 权限），不再是超管 nacos。
   NACOS_USERNAME: ${NACOS_USERNAME:?缺少 .env 里的 NACOS_USERNAME}
   NACOS_PASSWORD: ${NACOS_PASSWORD:?缺少 .env 里的 NACOS_PASSWORD}
 
