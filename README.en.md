@@ -537,6 +537,7 @@ In-repo resources you can browse directly; internal design documents (requiremen
 | [deploy/](deploy/) | One-stop deployment assets: middleware & app Docker Compose, CI/CD workflows, deploy scripts, sanitized .env example |
 | [docs/sql/区划数据/](docs/sql/区划数据/) | 4-level administrative division data (CSV) with coordinate / pinyin generation toolchain |
 | [docs/brand/](docs/brand/) | Brand assets (full-size logos / favicon) |
+| [SECURITY.md](SECURITY.md) · [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) · [CONTRIBUTING.md](CONTRIBUTING.md) | Community files: vulnerability disclosure / code of conduct / contribution guide |
 | [LICENSE](LICENSE) | BUSL-1.1 license (free for personal study & research; commercial use requires authorization) |
 
 **Design diagrams** (in `docs/`): `system-arch.png` (system), `microservice-arch.png` (microservices), `tech-arch.png` (technology), `business-flow.png` (business flow).
@@ -627,6 +628,9 @@ This project is licensed under **BUSL-1.1**: free for personal learning, researc
 **Q: Can I use it commercially?**
 A: Free for personal learning, research, teaching and graduation projects; commercial use by enterprises (production environment, private deployment, providing services, etc.) requires a commercial license from the author (BUSL-1.1).
 
+**Q: Why does Gitee show "Unknown license"?**
+A: BUSL-1.1 is a newer license not yet indexed by Gitee's badge catalog — a platform limitation. The authoritative text is the [LICENSE](LICENSE) file in this repo, which remains fully effective.
+
 **Q: Why such a modern stack (JDK 21 + Spring Boot 3.5)?**
 A: A new project in 2026 carries no legacy baggage; we adopt the latest LTS to avoid forced upgrades later.
 
@@ -649,7 +653,7 @@ A: uni-app 3-end architecture (App / H5 / Mini-Program); currently H5-first. A r
 
 </div>
 
-Issues and Pull Requests are welcome! For environment setup, commit conventions, development rules and the PR workflow, see [CONTRIBUTING.md](CONTRIBUTING.md). Please discuss the direction in an Issue before submitting a PR.
+Issues and Pull Requests are welcome! For environment setup, commit conventions, development rules and the PR workflow, see [CONTRIBUTING.md](CONTRIBUTING.md). Please discuss the direction in an Issue before submitting a PR. **Do NOT report security vulnerabilities via public Issues** — see [SECURITY.md](SECURITY.md) for the disclosure channel; community standards: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
 ---
 

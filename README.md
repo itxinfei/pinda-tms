@@ -489,6 +489,7 @@ docker-compose up -d        # 起中间件：MySQL / Redis / RabbitMQ / Nacos
 | [deploy/](deploy/)                                           | 一键部署资产：中间件与应用 Docker Compose、CI/CD workflow、前后端部署脚本、.env 脱敏示例 |
 | [docs/sql/区划数据/](docs/sql/区划数据/)                     | 行政区划四级数据（CSV）与坐标 / 拼音生成工具链，初始化区划种子参考 |
 | [docs/brand/](docs/brand/)                                   | 品牌资产库（Logo 全尺寸 / favicon）                       |
+| [SECURITY.md](SECURITY.md) · [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) · [CONTRIBUTING.md](CONTRIBUTING.md) | 开源社区文件：安全漏洞披露渠道 / 行为准则 / 贡献指南 |
 | [LICENSE](LICENSE)                                           | BUSL-1.1 协议全文（个人学习研究免费，企业商用需授权）     |
 
 **设计图**（位于 `docs/`）：`system-arch.png`（系统架构）、`microservice-arch.png`（微服务架构）、`tech-arch.png`（技术架构）、`business-flow.png`（整体业务流程）。
@@ -581,6 +582,9 @@ docker-compose up -d        # 起中间件：MySQL / Redis / RabbitMQ / Nacos
 **Q: 能商用吗？**  
 A: 个人学习、研究、教学、毕设免费；企业商用（生产环境、私有化部署、对外提供服务等）需联系作者获取商业授权（BUSL-1.1）。
 
+**Q: Gitee 仓库页为什么显示"未知许可证"？**  
+A: BUSL-1.1 是较新的协议，暂未被 Gitee 平台的许可证徽章收录，属平台限制；协议全文以仓库 [LICENSE](LICENSE) 文件为准，不影响授权效力。
+
 **Q: 技术栈为什么这么新（JDK 21 + Spring Boot 3.5）？**  
 A: 2026 年的新项目没有历史包袱，直接采用最新 LTS，避免日后被迫升级。
 
@@ -602,7 +606,7 @@ A: uni-app 三端架构（App / H5 / 小程序），当前以 H5 为主，小程
 
 </div>
 
-欢迎提交 Issue 与 Pull Request！环境准备、提交规范、开发红线与 PR 流程详见 [CONTRIBUTING.md](CONTRIBUTING.md)；提交 PR 前建议先在 Issue 中发起讨论，确认方向一致后再动手。
+欢迎提交 Issue 与 Pull Request！环境准备、提交规范、开发红线与 PR 流程详见 [CONTRIBUTING.md](CONTRIBUTING.md)；提交 PR 前建议先在 Issue 中发起讨论，确认方向一致后再动手。**安全漏洞请勿通过公开 Issue 报告**，披露渠道见 [SECURITY.md](SECURITY.md)；社区行为规范见 [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)。
 
 ---
 
