@@ -45,7 +45,7 @@
 > **心飞 TMS** 是一款**四端协同**（管理端 + 客户端 + 快递员端 + 司机端）的开源运输管理系统，基于 **JDK 21 + Spring Boot 3.5.7 + Vue 3.5** 构建，覆盖寄件 → 订单 → 智能调度 → 作业 → 轨迹 → 回单全链路。Drools 规则引擎驱动智能调度，Netty 自建轨迹接入，Sa-Token 多租户 SaaS 就绪。
 
 <p align="center">  
-<b><a href="#sec-tech"><code>13</code></a></b> 个微服务 · <b><code>4</code></b> 端协同 · <b><code>101</code></b> 条功能需求 · <b><code>54</code></b> 张数据表 · <b><code>27</code></b> 项技术栈 · 全链路业务闭环  
+<b><a href="#sec-tech"><code>14</code></a></b> 个微服务 · <b><code>4</code></b> 端协同 · <b><code>101</code></b> 条功能需求 · <b><code>55</code></b> 张数据表 · <b><code>27</code></b> 项技术栈 · 全链路业务闭环  
 </p>
 
 <p align="center">  
@@ -335,58 +335,99 @@ docker-compose up -d        # 起中间件：MySQL / Redis / RabbitMQ / Nacos
 
 ## 八、📸 系统截图
 
-> 以下截图来自真实运行环境（2026-10-12 更新）。管理端核心业务页与移动三端均已补充截图。
+> 以下截图来自真实运行环境（2026-10-15 更新）。管理端核心业务页与移动三端均已补充截图。
 
 ### 8.1 后台管理端
 
-<table>  
-<tr>  
-<td align="center" width="50%">  
-  <img src="docs/screenshots/admin-login.png" alt="管理端登录"/>  
-     <sub><b>管理端登录</b> · 统一账号 + 验证码校验</sub>  
-</td>  
-<td align="center" width="50%">  
-  <img src="docs/screenshots/admin-dashboard.png" alt="管理端仪表盘"/>  
-     <sub><b>工作台仪表盘</b> · 订单 / 告警 / 待办与图表统计</sub>  
-</td>  
-</tr>  
-<tr>  
-<td align="center" width="50%">  
-  <img src="docs/screenshots/admin-order.png" alt="订单管理"/>  
-     <sub><b>订单管理</b> · 状态筛选 / 分页列表（真实数据）</sub>  
-</td>  
-<td align="center" width="50%">  
-  <div style="border:2px dashed #d0d7de;border-radius:8px;padding:52px 12px;color:#8b949e;background:#fafbfc;">  
-    📷 待补充   <sub>调度管理 / 运单管理等业务页面  
-（项目运行后截图替换）</sub>  
-  </div>  
-</td>  
-</tr>  
+<table>
+<tr>
+<td align="center" width="50%">
+  <img src="docs/screenshots/admin-login.png" alt="管理端登录"/>
+     <sub><b>管理端登录</b> · 统一账号 + 多租户 + 验证码校验</sub>
+</td>
+<td align="center" width="50%">
+  <img src="docs/screenshots/admin-dashboard.png" alt="管理端仪表盘"/>
+     <sub><b>工作台仪表盘</b> · 订单 / 告警 / 待办与图表统计</sub>
+</td>
+</tr>
+<tr>
+<td align="center" width="50%">
+  <img src="docs/screenshots/admin-order.png" alt="订单管理"/>
+     <sub><b>订单管理</b> · 状态筛选 / 分页列表（60 条真实数据）</sub>
+</td>
+<td align="center" width="50%">
+  <img src="docs/screenshots/admin-waybill.png" alt="运单管理"/>
+     <sub><b>运单管理</b> · 运单状态 / 干线运输（45 条）</sub>
+</td>
+</tr>
+<tr>
+<td align="center" width="50%">
+  <img src="docs/screenshots/admin-dispatch.png" alt="运输任务"/>
+     <sub><b>运输任务</b> · 智能调度生成的运输任务（33 条）</sub>
+</td>
+<td align="center" width="50%">
+  <img src="docs/screenshots/admin-pickup.png" alt="取派件任务"/>
+     <sub><b>取派件任务</b> · 取件 / 派件任务（44 条）</sub>
+</td>
+</tr>
+<tr>
+<td align="center" width="50%">
+  <img src="docs/screenshots/admin-driver-job.png" alt="司机作业单"/>
+     <sub><b>司机作业单</b> · 司机提货 / 卸货作业（13 条）</sub>
+</td>
+<td align="center" width="50%">
+  <img src="docs/screenshots/admin-alarm.png" alt="告警中心"/>
+     <sub><b>告警中心</b> · 车辆偏离 / 超速 / 离线告警（22 条，未处理 14）</sub>
+</td>
+</tr>
+<tr>
+<td align="center" width="50%">
+  <img src="docs/screenshots/admin-truck.png" alt="车辆管理"/>
+     <sub><b>车辆管理</b> · 车辆档案与状态（22 条）</sub>
+</td>
+<td align="center" width="50%">
+  <img src="docs/screenshots/admin-driver.png" alt="司机管理"/>
+     <sub><b>司机管理</b> · 司机档案 / 心飞自营车队（10 条）</sub>
+</td>
+</tr>
+<tr>
+<td align="center" width="50%">
+  <img src="docs/screenshots/admin-line.png" alt="线路管理"/>
+     <sub><b>线路管理</b> · 干线 / 接驳线路（22 条）</sub>
+</td>
+<td align="center" width="50%"></td>
+</tr>
 </table>
 
 ### 8.2 移动端 App
 
-<table>  
-<tr>  
-<td align="center" width="33%"><b>客户端 · 心飞速运</b>  
-  
-
-  <img src="docs/screenshots/mobile-customer.png" alt="客户端 H5" style="max-width:180px;border-radius:8px;border:1px solid #e5e7eb;"/>  
-     <sub>寄件 / 查物流 · H5（:8084）</sub>  
-</td>  
-<td align="center" width="33%"><b>快递员端 · 心飞快递员</b>  
-
-
-  <img src="docs/screenshots/mobile-courier.png" alt="快递员端 H5" style="max-width:180px;border-radius:8px;border:1px solid #e5e7eb;"/>  
-     <sub>取派件任务 · H5（:8083）</sub>  
-</td>  
-<td align="center" width="33%"><b>司机端 · 心飞司机宝</b>  
-
-
-  <img src="docs/screenshots/mobile-driver.png" alt="司机端 H5" style="max-width:180px;border-radius:8px;border:1px solid #e5e7eb;"/>  
-     <sub>运输任务 / 位置上报 · H5（:8082）</sub>  
-</td>  
-</tr>  
+<table>
+<tr>
+<td align="center" width="100%">
+<b>客户端 · 心飞速运</b>（H5，:8084）<br/><br/>
+<img src="docs/screenshots/mobile-customer-home.png" alt="客户端首页" style="width:23%;margin:0 4px;border:1px solid #e5e7eb;border-radius:6px;"/>
+<img src="docs/screenshots/mobile-customer-order.png" alt="我要寄件" style="width:23%;margin:0 4px;border:1px solid #e5e7eb;border-radius:6px;"/>
+<img src="docs/screenshots/mobile-customer-list.png" alt="我的运单" style="width:23%;margin:0 4px;border:1px solid #e5e7eb;border-radius:6px;"/>
+<img src="docs/screenshots/mobile-customer-track.png" alt="运单详情" style="width:23%;margin:0 4px;border:1px solid #e5e7eb;border-radius:6px;"/>
+<br/><sub>首页（进行中订单）· 我要寄件下单 · 我的运单 · 运单详情 / 物流动态</sub>
+</td>
+</tr>
+<tr>
+<td align="center" width="100%">
+<b>快递员端 · 心飞快递员</b>（H5，:8083）<br/><br/>
+<img src="docs/screenshots/mobile-courier-list.png" alt="取派任务列表" style="width:23%;margin:0 4px;border:1px solid #e5e7eb;border-radius:6px;"/>
+<img src="docs/screenshots/mobile-courier-detail.png" alt="任务详情" style="width:23%;margin:0 4px;border:1px solid #e5e7eb;border-radius:6px;"/>
+<br/><sub>取派任务列表 · 任务详情（去签收 / 入库 / 交接 / 核验）</sub>
+</td>
+</tr>
+<tr>
+<td align="center" width="100%">
+<b>司机端 · 心飞司机宝</b>（H5，:8082）<br/><br/>
+<img src="docs/screenshots/mobile-driver-home.png" alt="司机宝首页" style="width:23%;margin:0 4px;border:1px solid #e5e7eb;border-radius:6px;"/>
+<img src="docs/screenshots/mobile-driver-location.png" alt="位置上报" style="width:23%;margin:0 4px;border:1px solid #e5e7eb;border-radius:6px;"/>
+<br/><sub>首页 / 运输任务 · 位置上报开关（已开启）</sub>
+</td>
+</tr>
 </table>
 
 ### 8.3 运维与中间件

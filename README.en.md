@@ -47,7 +47,7 @@
 > **Xinfei TMS** is a **4-end synergistic** (Admin + Customer + Courier + Driver) open-source Transportation Management System built on **JDK 21 + Spring Boot 3.5.7 + Vue 3.5**, covering the full chain: booking → order → intelligent dispatch → operations → tracking → proof of delivery. Drools rule engine drives intelligent dispatch, Netty powers self-built GPS tracking ingestion, Sa-Token provides multi-tenant SaaS readiness — order management, load planning, dispatch, driving management, GPS vehicle tracking and data reporting, all in one system for operational efficiency and cost control.
 
 <p align="center">
-<b><a href="#sec-tech"><code>13</code></a></b> microservices · <b><code>4</code></b> apps · <b><code>101</code></b> functional requirements · <b><code>54</code></b> database tables · <b><code>27</code></b> technologies · full business closed loop
+<b><a href="#sec-tech"><code>14</code></a></b> microservices · <b><code>4</code></b> apps · <b><code>101</code></b> functional requirements · <b><code>55</code></b> database tables · <b><code>27</code></b> technologies · full business closed loop
 </p>
 
 <p align="center">
@@ -218,7 +218,7 @@ Booking 📦 → Order creation 📋 → Intelligent dispatch 🤖 (Drools) → 
 
 ```
 xinfei-tms/
-├── Microservices (13)
+├── Microservices (14)
 │   ├── xf-gateway/           # Unified gateway (Spring Cloud Gateway)
 │   ├── xf-auth/              # Auth center (Sa-Token + multi-tenant)
 │   ├── xf-base/              # Master data (org / vehicle / line / cargo)
@@ -226,6 +226,7 @@ xinfei-tms/
 │   ├── xf-dispatch/          # Intelligent dispatch (Drools + XXL-Job)
 │   ├── xf-work/              # Operations (pickup/delivery & transport tasks)
 │   ├── xf-user/              # Users & members
+│   ├── xf-file-server/       # Attachments (POD photos upload/view, no DB)
 │   ├── xf-netty/             # Tracking ingestion (Netty TCP)
 │   ├── xf-aggregation/       # Data aggregation
 │   └── xf-web/               # BFF layer (4-end APIs)
@@ -250,7 +251,7 @@ xinfei-tms/
 
 ![System architecture](docs/system-arch.png)
 
-> Four layers: **Presentation** (Admin Vue3 + mobile uni-app) → **Gateway** (Spring Cloud Gateway, Sa-Token auth + Same-Token anti-direct-access) → **Service** (13 business microservices, Nacos registry/config) → **Data** (MySQL single-db-by-domain + Redis + RabbitMQ).
+> Four layers: **Presentation** (Admin Vue3 + mobile uni-app) → **Gateway** (Spring Cloud Gateway, Sa-Token auth + Same-Token anti-direct-access) → **Service** (14 business microservices, Nacos registry/config) → **Data** (MySQL single-db-by-domain + Redis + RabbitMQ).
 
 ### 6.2 Microservice Architecture
 
@@ -382,7 +383,7 @@ docker-compose up -d        # start middleware: MySQL / Redis / RabbitMQ / Nacos
 
 ## 8. 📸 Screenshots
 
-> Screenshots are from a real running environment (updated 2026-10-12). Admin core business pages and the 3 mobile apps are all captured.
+> Screenshots are from a real running environment (updated 2026-10-15). Admin core business pages and the 3 mobile apps are all captured.
 
 ### 8.1 Admin Console
 
@@ -390,7 +391,7 @@ docker-compose up -d        # start middleware: MySQL / Redis / RabbitMQ / Nacos
 <tr>
 <td align="center" width="50%">
   <img src="docs/screenshots/admin-login.png" alt="Admin login"/>
-  <br/><sub><b>Admin Login</b> · unified account + captcha</sub>
+  <br/><sub><b>Admin Login</b> · unified account + tenant + captcha</sub>
 </td>
 <td align="center" width="50%">
   <img src="docs/screenshots/admin-dashboard.png" alt="Admin dashboard"/>
@@ -400,13 +401,49 @@ docker-compose up -d        # start middleware: MySQL / Redis / RabbitMQ / Nacos
 <tr>
 <td align="center" width="50%">
   <img src="docs/screenshots/admin-order.png" alt="Order management"/>
-  <br/><sub><b>Order Management</b> · status filter / paginated list (real data)</sub>
+  <br/><sub><b>Order Management</b> · status filter / paginated list (60 records)</sub>
 </td>
 <td align="center" width="50%">
-  <div style="border:2px dashed #d0d7de;border-radius:8px;padding:52px 12px;color:#8b949e;background:#fafbfc;">
-    📷 To be added<br/><sub>Dispatch / waybill pages<br/>(replace with screenshots after running)</sub>
-  </div>
+  <img src="docs/screenshots/admin-waybill.png" alt="Waybill management"/>
+  <br/><sub><b>Waybill Management</b> · waybill status / line haul (45 records)</sub>
 </td>
+</tr>
+<tr>
+<td align="center" width="50%">
+  <img src="docs/screenshots/admin-dispatch.png" alt="Transport tasks"/>
+  <br/><sub><b>Transport Tasks</b> · dispatch-generated tasks (33 records)</sub>
+</td>
+<td align="center" width="50%">
+  <img src="docs/screenshots/admin-pickup.png" alt="Pickup/delivery tasks"/>
+  <br/><sub><b>Pickup/Delivery Tasks</b> · pickup &amp; delivery (44 records)</sub>
+</td>
+</tr>
+<tr>
+<td align="center" width="50%">
+  <img src="docs/screenshots/admin-driver-job.png" alt="Driver jobs"/>
+  <br/><sub><b>Driver Jobs</b> · driver pickup / unloading (13 records)</sub>
+</td>
+<td align="center" width="50%">
+  <img src="docs/screenshots/admin-alarm.png" alt="Alarm center"/>
+  <br/><sub><b>Alarm Center</b> · deviation / overspeed / offline alarms (22, 14 open)</sub>
+</td>
+</tr>
+<tr>
+<td align="center" width="50%">
+  <img src="docs/screenshots/admin-truck.png" alt="Truck management"/>
+  <br/><sub><b>Truck Management</b> · vehicle profiles &amp; status (22 records)</sub>
+</td>
+<td align="center" width="50%">
+  <img src="docs/screenshots/admin-driver.png" alt="Driver management"/>
+  <br/><sub><b>Driver Management</b> · driver profiles / Xinfei fleet (10 records)</sub>
+</td>
+</tr>
+<tr>
+<td align="center" width="50%">
+  <img src="docs/screenshots/admin-line.png" alt="Line management"/>
+  <br/><sub><b>Line Management</b> · trunk / feeder lines (22 records)</sub>
+</td>
+<td align="center" width="50%"></td>
 </tr>
 </table>
 
@@ -414,17 +451,29 @@ docker-compose up -d        # start middleware: MySQL / Redis / RabbitMQ / Nacos
 
 <table>
 <tr>
-<td align="center" width="33%"><b>Customer · Xinfei Express</b><br/><br/>
-  <img src="docs/screenshots/mobile-customer.png" alt="Customer H5" style="max-width:180px;border-radius:8px;border:1px solid #e5e7eb;"/>
-  <br/><sub>Booking / tracking · H5 (:8084)</sub>
+<td align="center" width="100%">
+<b>Customer · Xinfei Express</b> (H5, :8084)<br/><br/>
+<img src="docs/screenshots/mobile-customer-home.png" alt="Customer home" style="width:23%;margin:0 4px;border:1px solid #e5e7eb;border-radius:6px;"/>
+<img src="docs/screenshots/mobile-customer-order.png" alt="Book order" style="width:23%;margin:0 4px;border:1px solid #e5e7eb;border-radius:6px;"/>
+<img src="docs/screenshots/mobile-customer-list.png" alt="My waybills" style="width:23%;margin:0 4px;border:1px solid #e5e7eb;border-radius:6px;"/>
+<img src="docs/screenshots/mobile-customer-track.png" alt="Waybill detail" style="width:23%;margin:0 4px;border:1px solid #e5e7eb;border-radius:6px;"/>
+<br/><sub>Home (in-progress orders) · Book a shipment · My waybills · Waybill detail / tracking</sub>
 </td>
-<td align="center" width="33%"><b>Courier · Xinfei Courier</b><br/><br/>
-  <img src="docs/screenshots/mobile-courier.png" alt="Courier H5" style="max-width:180px;border-radius:8px;border:1px solid #e5e7eb;"/>
-  <br/><sub>Pickup/delivery tasks · H5 (:8083)</sub>
+</tr>
+<tr>
+<td align="center" width="100%">
+<b>Courier · Xinfei Courier</b> (H5, :8083)<br/><br/>
+<img src="docs/screenshots/mobile-courier-list.png" alt="Task list" style="width:23%;margin:0 4px;border:1px solid #e5e7eb;border-radius:6px;"/>
+<img src="docs/screenshots/mobile-courier-detail.png" alt="Task detail" style="width:23%;margin:0 4px;border:1px solid #e5e7eb;border-radius:6px;"/>
+<br/><sub>Pickup/delivery task list · Task detail (sign / inbound / handover / verify)</sub>
 </td>
-<td align="center" width="33%"><b>Driver · Xinfei Driver</b><br/><br/>
-  <img src="docs/screenshots/mobile-driver.png" alt="Driver H5" style="max-width:180px;border-radius:8px;border:1px solid #e5e7eb;"/>
-  <br/><sub>Transport tasks / location · H5 (:8082)</sub>
+</tr>
+<tr>
+<td align="center" width="100%">
+<b>Driver · Xinfei Driver</b> (H5, :8082)<br/><br/>
+<img src="docs/screenshots/mobile-driver-home.png" alt="Driver home" style="width:23%;margin:0 4px;border:1px solid #e5e7eb;border-radius:6px;"/>
+<img src="docs/screenshots/mobile-driver-location.png" alt="Location report" style="width:23%;margin:0 4px;border:1px solid #e5e7eb;border-radius:6px;"/>
+<br/><sub>Home / transport tasks · Location reporting toggle (enabled)</sub>
 </td>
 </tr>
 </table>
