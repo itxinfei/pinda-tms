@@ -227,7 +227,8 @@ jobs:
         run: |
           set -e
           BASELINE_FILE=/root/.m2/.xinfei-baseline.revision
-          MVN_COMMON="-B -Dmaven.test.skip=true -s /ci/maven-settings.xml"
+          # -T 1C：按 CPU 核数并行构建（16 核 runner），全量打包提速明显
+          MVN_COMMON="-B -Dmaven.test.skip=true -T 1C -s /ci/maven-settings.xml"
 
           fallback_build() {
             echo "::warning::回退 -am 全链构建（目标模块：$MODS）"
@@ -287,7 +288,7 @@ jobs:
 
           if [ -n "$install_mods" ]; then
             echo "基线后变更的上游模块，先 install：$install_mods"
-            if ! mvn $MVN_COMMON -pl "$install_mods" clean install -T 1C; then
+            if ! mvn $MVN_COMMON -pl "$install_mods" clean install; then
               echo "::warning::变更上游模块 install 失败"
               fallback_build
               exit 0
@@ -411,7 +412,9 @@ jobs:
         #   1. 悬空层直接清；
         #   2. xinfei/xf-* 与遗留 xinfei/pd-* 应用镜像删除所有未被运行容器引用的 tag（当前版本、回滚基线自动受 docker ps 检查保护；
         #      基础镜像 xinfei/jre21-fontconfig 不匹配 xinfei/[xf|pd]-* 前缀，天然不受影响）；
-        #   3. 构建缓存全清——Maven 依赖缓存在 /data/m2 持久共享，不受影响，仅 docker 层重建略慢。
+        #   3. 仅清悬空构建层（builder prune 不带 -a）——保留 BuildKit cache mount（pnpm store，id=pnpm-admin/pnpm-mobile）：
+        #      带 -a 会把未被镜像引用的缓存连同 cache mount 一起删，下次 h5 构建冷装依赖约 5min 且更易撞外网 DNS 抖动（EAI_AGAIN）；
+        #      Maven 依赖缓存在 /data/m2 持久共享，本来就不在 docker build cache 内，不受影响。
         if: always()
         run: |
           docker image prune -f
@@ -422,7 +425,8 @@ jobs:
               docker rmi "$img" 2>/dev/null || true
             fi
           done
-          docker builder prune -a -f
+          # 不带 -a：只删悬空层，保留 pnpm store 等 cache mount（-a 会连持久 pnpm store 一起清空）
+          docker builder prune -f
 
       # ============================================================
       # 【预留·暂未启用】部署结果通知（企业微信 / 邮件 / 通用 webhook）
