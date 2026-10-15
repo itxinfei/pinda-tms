@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""列出 pinda namespace 下所有 Nacos 配置，并抓取含 zuul 路由的那个。"""
+"""列出 xinfei namespace 下所有 Nacos 配置，并抓取含 zuul 路由的那个。"""
 import json
 import urllib.parse
 import urllib.request
 
 NACOS = "http://192.168.20.130:8848"
-GROUP = "pinda-tms"
+GROUP = "xinfei-tms"
 NS = "1cb93ce4-dc0e-4730-b759-d35fd7ed93c3"
 
 

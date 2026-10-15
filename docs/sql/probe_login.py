@@ -45,7 +45,7 @@ def main():
     # j2cache 会把字符串序列化成带引号的 JSON，需要去掉
     val = val.strip().strip('"')
 
-    account = sys.argv[1] if len(sys.argv) > 1 else "pinda"
+    account = sys.argv[1] if len(sys.argv) > 1 else "xinfei"
     password = sys.argv[2] if len(sys.argv) > 2 else "123456"
     payload = json.dumps({"account": account, "password": password, "key": key, "code": val}).encode()
     for name, base in (("direct:9000", AUTH_DIRECT), ("gateway:8080", GATEWAY_API)):

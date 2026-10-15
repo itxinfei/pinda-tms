@@ -33,7 +33,7 @@ key = "api" + uuid.uuid4().hex[:8]
 http("GET", f"{BASE}/authority/anno/captcha?key={key}")
 code = (r.get(f"captcha:{key}") or "").strip().strip('"')
 st, body = http("POST", f"{BASE}/authority/anno/login",
-                data=json.dumps({"account": "pinda", "password": "123456", "key": key, "code": code}).encode(),
+                data=json.dumps({"account": "xinfei", "password": "123456", "key": key, "code": code}).encode(),
                 headers={"Content-Type": "application/json"})
 if st != 200 or json.loads(body).get("code") != 0:
     print("登录失败:", st, body[:200]); sys.exit(1)

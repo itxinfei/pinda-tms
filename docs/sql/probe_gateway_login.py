@@ -27,7 +27,7 @@ def http(url, data=None, headers=None, timeout=60):
         return e.code, body.decode("utf-8", "replace"), time.time() - t0
 
 
-account = sys.argv[1] if len(sys.argv) > 1 else "pinda"
+account = sys.argv[1] if len(sys.argv) > 1 else "xinfei"
 password = sys.argv[2] if len(sys.argv) > 2 else "123456"
 n = int(sys.argv[3]) if len(sys.argv) > 3 else 5
 

@@ -39,7 +39,7 @@ def fresh_captcha():
     return key, val, st
 
 
-account = sys.argv[1] if len(sys.argv) > 1 else "pinda"
+account = sys.argv[1] if len(sys.argv) > 1 else "xinfei"
 password = sys.argv[2] if len(sys.argv) > 2 else "123456"
 
 print("=" * 78)

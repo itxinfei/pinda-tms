@@ -5,8 +5,8 @@ import urllib.parse
 import urllib.request
 
 NACOS = "http://192.168.20.130:8848"
-GROUP = "pinda-tms"
-NAMESPACE_NAME = "pinda-tms"
+GROUP = "xinfei-tms"
+NAMESPACE_NAME = "xinfei-tms"
 
 
 def http(url, data=None, headers=None, method="GET", timeout=15):
@@ -35,7 +35,7 @@ except Exception:
     token = None
 print("token present:", bool(token))
 
-# 2) 列出 namespace，找到 pinda-tms 的 ID
+# 2) 列出 namespace，找到 xinfei-tms 的 ID
 st, body = http(f"{NACOS}/nacos/v1/console/namespaces",
                 headers={"Authorization": f"Bearer {token}"} if token else {})
 print("\n=== namespaces ===")

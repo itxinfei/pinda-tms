@@ -19,7 +19,7 @@ def http(url, data=None, headers=None, timeout=20):
 
 def main():
     n = int(sys.argv[1]) if len(sys.argv) > 1 else 20
-    acct = sys.argv[2] if len(sys.argv) > 2 else "pinda"
+    acct = sys.argv[2] if len(sys.argv) > 2 else "xinfei"
     pwd = sys.argv[3] if len(sys.argv) > 3 else "123456"
     fail = 0
     codes = {}

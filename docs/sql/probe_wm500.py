@@ -17,7 +17,7 @@ def http(method, url, data=None, headers=None, timeout=30):
         return e.code, e.read().decode("utf-8", "replace")
 
 
-account = sys.argv[1] if len(sys.argv) > 1 else "pinda"
+account = sys.argv[1] if len(sys.argv) > 1 else "xinfei"
 password = sys.argv[2] if len(sys.argv) > 2 else "123456"
 
 key = "e2e" + uuid.uuid4().hex[:8]

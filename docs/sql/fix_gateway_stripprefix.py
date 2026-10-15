@@ -6,7 +6,7 @@
 import json, urllib.parse, urllib.request
 
 NACOS = "http://192.168.20.130:8848"
-GROUP = "pinda-tms"
+GROUP = "xinfei-tms"
 NS = "1cb93ce4-dc0e-4730-b759-d35fd7ed93c3"
 DATA_ID = "pd-gateway-prod.yml"
 
