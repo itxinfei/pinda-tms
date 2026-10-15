@@ -1,7 +1,5 @@
 <div align="center">
 
-# 🚚 心飞物流 TMS
-
 <p align="center"><img src="docs/brand/logo-full-nav.png" alt="心飞物流 TMS" width="240"/></p>
 
 <p>  
