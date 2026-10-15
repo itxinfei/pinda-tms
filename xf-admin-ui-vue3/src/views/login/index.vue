@@ -237,7 +237,7 @@ $text-primary: #273248;
 $text-secondary: #667085;
 $text-muted: #98a2b3;
 $input-h: 44px;
-$brand-red: #d7000f; // 心飞品牌红：登录按钮、书法标语（参考原版登录页）
+$brand-red: #FF0033; // 心飞品牌主色 #FF0033：登录按钮、书法标语
 
 .login-page {
   // 品牌色阶：从运行时主题色派生，切换主题色板（ArcoD/AntD/ElementD）时整页跟随
