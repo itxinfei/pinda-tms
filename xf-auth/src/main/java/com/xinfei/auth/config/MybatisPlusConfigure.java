@@ -41,7 +41,10 @@ public class MybatisPlusConfigure {
             // 参数配置为平台全局数据（CFG-01），一期只使用 tenant_id=0
             "sys_config",
             // 行政区划为国家标准全局数据，所有租户共享
-            "dict_area"
+            "dict_area",
+            // 租户菜单池由平台侧跨租户维护，TenantService 每条语句显式 eq(tenantId)；
+            // 若不放行，插件注入的 tenant_id 会与显式条件相与，非当前租户恒查空
+            "sys_tenant_menu"
     );
 
     @Bean

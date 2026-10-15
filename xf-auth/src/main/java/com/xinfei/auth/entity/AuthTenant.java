@@ -33,14 +33,26 @@ public class AuthTenant {
     /** 联系人 */
     private String contactName;
 
+    /** 联系邮箱 */
+    private String contactEmail;
+
     /** 联系电话 */
     private String contactPhone;
+
+    /** 域名（登录标识，可选） */
+    private String domain;
 
     /** logo URL */
     private String logo;
 
     /** 企业简介 */
     private String description;
+
+    /** 租户套餐ID（关联租户套餐，可为空） */
+    private Long planId;
+
+    /** 备注 */
+    private String remark;
 
     private Long createBy;
     private LocalDateTime createTime;
