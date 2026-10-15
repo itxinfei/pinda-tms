@@ -336,10 +336,14 @@ jobs:
             fi
           done
 
-      - name: 前端部署（构建+滚动+健康检查+失败回滚）
+      - name: 前端部署（并行构建 + 串行滚动/健康检查/失败回滚）
         # 后端部署 step 失败时本 step 被 runner 默认跳过（前序 step 失败即不再执行后续成功态 step），
         # 不再依赖 steps.be_deploy.outcome —— 该上下文在本 act_runner 失败路径不可靠（run#287 证伪）。
         # SERVICES 为空（纯前端变更）时后端 step 是 skipped（非 failure），本步照常执行。
+        # 2026-10-15 提速：阶段 A 把 4 端镜像 build（pnpm/vite，CPU 密集且互不影响）并行，
+        #   由原来 4 端串行 build（约 8~12min）压到约等于最慢一端（约 3~5min）；
+        #   并行只发生在“不碰任何运行容器”的 build 阶段，任一 build 失败直接退出、零回滚负担。
+        #   阶段 B 容器切换（up+健康检查+回滚+清旧 tag）仍逐端串行，部署/回滚语义与原先完全一致。
         if: env.APPS != ''
         timeout-minutes: 30
         run: |
@@ -355,11 +359,34 @@ jobs:
                    --build-arg APP_NAME="xf-mobile-$1" -t "xinfei/xf-${1}-h5:${FE_TAG}" . ;;
             esac
           }
+
+          # ---- 阶段 A：4 端并行构建镜像（后台各写独立日志，只 build 不切换容器）----
+          echo ">> 并行构建前端镜像: $APPS"
+          pids=""
+          for app in $APPS; do
+            ( build_one "$app" ) > "/tmp/fe-build-${app}.log" 2>&1 &
+            pids="$pids $!"
+          done
+          build_fail=0
+          for pid in $pids; do
+            wait "$pid" || build_fail=1
+          done
+          if [ "$build_fail" != "0" ]; then
+            for app in $APPS; do
+              echo "==================== [$app] 构建日志（尾部 40 行）===================="
+              tail -n 40 "/tmp/fe-build-${app}.log" 2>/dev/null || true
+            done
+            # 此时尚未 compose up 任何容器，运行面零改动、无需回滚
+            echo "::error::一个或多个前端镜像构建失败（未改动任何运行容器，无需回滚）"
+            exit 1
+          fi
+          echo ">> 全部前端镜像并行构建完成: $APPS"
+
+          # ---- 阶段 B：逐端串行切换容器 + 健康检查 + 失败当场回滚（逻辑同改造前）----
           for app in $APPS; do
             img="xf-${app}-h5"; tv="$(echo "$img" | tr 'a-z-' 'A-Z_')_TAG"
             prev=$(docker inspect -f '{{.Config.Image}}' "$img" 2>/dev/null | sed -n 's/.*://p' || true)
             echo ">> [$app] 回滚基线 PREV=${prev:-（首次部署）}"
-            build_one "$app"
             proj=$(docker inspect -f '{{index .Config.Labels "com.docker.compose.project"}}' "$img" 2>/dev/null || echo "")
             if [ "$proj" != "xinfei-apps" ]; then docker rm -f "$img" 2>/dev/null || true; fi
             env TAG="$FE_TAG" "$tv=$FE_TAG" docker compose --env-file /ci/apps.env -f "$COMPOSE" up -d "$img"
