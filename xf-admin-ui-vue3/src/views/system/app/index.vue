@@ -105,7 +105,7 @@
             show-overflow-tooltip
           />
           <el-table-column key="createTime" label="创建时间" prop="createTime" width="160" />
-          <el-table-column fixed="right" label="操作" width="180">
+          <el-table-column fixed="right" label="操作" width="180" align="center">
             <template #default="scope">
               <el-button
                 v-hasPerm="['sys:app:update']"

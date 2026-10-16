@@ -97,7 +97,7 @@
           </el-table-column>
           <el-table-column label="过期时间" prop="expireTime" width="160" />
           <el-table-column label="创建时间" prop="createTime" width="160" />
-          <el-table-column fixed="right" label="操作" width="320">
+          <el-table-column fixed="right" label="操作" width="320" align="center">
             <template #default="scope">
               <el-tooltip
                 v-if="!isPlatformTenantId(scope.row.id)"

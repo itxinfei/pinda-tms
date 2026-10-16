@@ -49,7 +49,7 @@
               <el-tag v-else type="info">停用</el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="操作" fixed="right" align="left" width="210">
+          <el-table-column label="操作" fixed="right" align="center" width="210">
             <template #default="scope">
               <el-button
                 v-hasPerm="['sys:org:create']"

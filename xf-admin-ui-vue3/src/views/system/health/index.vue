@@ -45,9 +45,9 @@
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="实例数" prop="instances" width="90" align="center" />
+          <el-table-column label="实例数" prop="instances" width="90" align="right" />
           <el-table-column label="实例地址" prop="instanceList" min-width="220" show-overflow-tooltip />
-          <el-table-column label="探测耗时(ms)" width="120" align="center">
+          <el-table-column label="探测耗时(ms)" width="120" align="right">
             <template #default="{ row }">
               {{ row.latency ?? "-" }}
             </template>

@@ -157,7 +157,7 @@
             <el-table-column label="手机号码" prop="mobile" width="130" />
             <el-table-column label="邮箱" prop="email" min-width="180" show-overflow-tooltip />
             <el-table-column label="创建时间" prop="createTime" width="160" show-overflow-tooltip />
-            <el-table-column label="操作" fixed="right" width="200">
+            <el-table-column label="操作" fixed="right" align="center" width="200">
               <template #default="scope">
                 <div>
                   <el-button

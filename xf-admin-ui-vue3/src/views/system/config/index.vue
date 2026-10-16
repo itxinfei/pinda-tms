@@ -71,7 +71,7 @@
               <span v-else>{{ row.configValue ?? "" }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="类型" width="90">
+          <el-table-column label="类型" width="90" align="center">
             <template #default="{ row }">
               <el-tag size="small" type="info">{{ row.valueType }}</el-tag>
             </template>
@@ -83,7 +83,7 @@
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="状态" width="80">
+          <el-table-column label="状态" width="80" align="center">
             <template #default="{ row }">
               <el-tag size="small" :type="row.status === 1 ? 'success' : 'warning'">
                 {{ row.status === 1 ? "启用" : "停用" }}
@@ -91,7 +91,7 @@
             </template>
           </el-table-column>
           <el-table-column key="remark" label="备注" prop="remark" min-width="120" />
-          <el-table-column fixed="right" label="操作" width="160">
+          <el-table-column fixed="right" label="操作" width="160" align="center">
             <template #default="scope">
               <el-button
                 v-hasPerm="['sys:config:update']"

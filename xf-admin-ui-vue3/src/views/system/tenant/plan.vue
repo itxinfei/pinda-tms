@@ -71,7 +71,7 @@
           <el-table-column label="排序" prop="sort" width="80" align="center" />
           <el-table-column label="备注" prop="remark" min-width="140" />
           <el-table-column label="创建时间" prop="createTime" width="180" />
-          <el-table-column fixed="right" label="操作" width="240">
+          <el-table-column fixed="right" label="操作" width="240" align="center">
             <template #default="scope">
               <el-button
                 v-hasPerm="['sys:tenant:plan-assign']"
