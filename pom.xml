@@ -63,6 +63,8 @@
         <httpclient.version>4.5.11</httpclient.version>
         <!-- MapStruct：编译期 DTO/Entity 映射，替代 BeanUtils.copyProperties（全栈 238 处，逐步迁移） -->
         <mapstruct.version>1.6.3</mapstruct.version>
+        <!-- Lombok（annotationProcessorPaths 引用；缺失会导致注解处理器不加载、全仓编译失败） -->
+        <lombok.version>1.18.42</lombok.version>
         <!-- Lombok ↔ MapStruct 协作绑定（必须，保证 getter 先生成再被 MapStruct 读取） -->
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
         <!-- ArchUnit：模块边界守护（test 作用域，红线"严禁跨模块写业务"可执行化） -->
