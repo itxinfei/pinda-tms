@@ -3,6 +3,8 @@ package com.xinfei.DTO.webManager;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class TransportOrderQueryDTO {
     @Schema(description = "当前页数")
@@ -13,6 +15,10 @@ public class TransportOrderQueryDTO {
     private String id;
     @Schema(description = "运单状态(1.新建 2.已装车，发往x转运中心 3.到达 4.到达终端网点)")
     private Integer status;
+    @Schema(description = "调度状态(1.待调度 2.未匹配线路 3.已调度)")
+    private Integer schedulingStatus;
+    @Schema(description = "运单状态列表（IN 查询，看板到达阶段下钻用；与 status 二选一）")
+    private List<Integer> statusList;
     @Schema(description = "发件人省份id")
     private String senderProvinceId;
     @Schema(description = "发件人城市id")

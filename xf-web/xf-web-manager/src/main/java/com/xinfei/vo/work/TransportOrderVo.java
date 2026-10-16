@@ -25,6 +25,9 @@ public class TransportOrderVo implements Serializable {
     @Schema(description = "调度状态调度状态(1.待调度2.未匹配线路3.已调度)")
     private Integer schedulingStatus;
 
+    @Schema(description = "运单状态列表（IN 查询，看板到达阶段下钻用；与 status 二选一）")
+    private List<Integer> statusList;
+
     @Schema(description = "创建时间")
     @JsonFormat(
             pattern = "yyyy-MM-dd HH:mm:ss"

@@ -136,6 +136,13 @@ export const constantRoutes: RouteRecordRaw[] = [
         component: () => import("@/views/driver-job/index.vue"),
         meta: { title: "司机作业单", icon: "el-icon-Avatar", keepAlive: true },
       },
+      {
+        // 运输闭环看板（DSP-01）：调度→分配→发车→在途→到达→交付全链路可视化
+        path: "/transport-board",
+        name: "TransportBoard",
+        component: () => import("@/views/transport-board/index.vue"),
+        meta: { title: "运输闭环看板", icon: "el-icon-DataAnalysis", keepAlive: true },
+      },
       pendingRoute("/dispatch", "Dispatch", "调度一张图", "el-icon-LocationFilled"),
     ],
   },

@@ -89,6 +89,10 @@ export interface TransportOrderPageQuery {
   pageSize: number;
   id?: string;
   status?: number;
+  /** 调度状态过滤（看板调度阶段下钻用） */
+  schedulingStatus?: number;
+  /** 运单状态列表 IN 过滤（看板到达阶段下钻用，与 status 二选一） */
+  statusList?: number[];
   order?: TransportOrderOrderFilter;
 }
 

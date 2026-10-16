@@ -4,6 +4,7 @@ import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.xinfei.DTO.OrgDTO;
 import com.xinfei.DTO.TaskTransportDTO;
 import com.xinfei.DTO.webManager.TaskTransportQueryDTO;
+import com.xinfei.DTO.webManager.TransportBoardDTO;
 import com.xinfei.common.utils.PageResponse;
 import com.xinfei.feign.AreaFeign;
 import com.xinfei.feign.OrderFeign;
@@ -122,6 +123,15 @@ public class TransportTaskController {
         pointDTO2.setMarkerPoints(endOrg.getLongitude(), endOrg.getLatitude());
         pointDTOS.add(pointDTO2);
         return pointDTOS;
+    }
+
+    @Operation(summary = "运输闭环看板聚合数据（DSP-01：六阶段计数+任务/运单状态分布）")
+    @GetMapping("/board")
+    @SaCheckPermission("task:list")
+    public TransportBoardDTO board() {
+        // 远程调用可能返回 null，统一空对象防御，前端按空数据处理
+        TransportBoardDTO board = webManagerFeign.findTransportBoard();
+        return board != null ? board : new TransportBoardDTO();
     }
 
     @Operation(summary = "更新运输任务")

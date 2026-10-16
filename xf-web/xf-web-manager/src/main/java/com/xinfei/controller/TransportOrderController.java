@@ -75,6 +75,8 @@ public class TransportOrderController {
             dto.setPage(vo.getPage());
             dto.setPageSize(vo.getPageSize());
             dto.setStatus(vo.getStatus());
+            dto.setSchedulingStatus(vo.getSchedulingStatus());
+            dto.setStatusList(vo.getStatusList());
             dto.setId(vo.getId());
             if (vo.getOrder() != null) {
                 dto.setSenderName(vo.getOrder().getSenderName());

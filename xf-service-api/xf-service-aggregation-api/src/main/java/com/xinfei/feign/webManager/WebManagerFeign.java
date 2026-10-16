@@ -7,6 +7,7 @@ import com.xinfei.DTO.TransportOrderDTO;
 import com.xinfei.DTO.webManager.DriverJobQueryDTO;
 import com.xinfei.DTO.webManager.TaskPickupDispatchQueryDTO;
 import com.xinfei.DTO.webManager.TaskTransportQueryDTO;
+import com.xinfei.DTO.webManager.TransportBoardDTO;
 import com.xinfei.DTO.webManager.TransportOrderQueryDTO;
 import com.xinfei.common.utils.PageResponse;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -54,4 +55,12 @@ public interface WebManagerFeign {
      */
     @PostMapping("webManager/taskTransport/page")
     PageResponse<TaskTransportDTO> findTaskTransportByPage(@RequestBody TaskTransportQueryDTO dto);
+
+    /**
+     * 运输闭环看板聚合（DSP-01）：六阶段计数 + 任务/运单状态分布
+     *
+     * @return 看板聚合数据
+     */
+    @PostMapping("webManager/transportBoard")
+    TransportBoardDTO findTransportBoard();
 }

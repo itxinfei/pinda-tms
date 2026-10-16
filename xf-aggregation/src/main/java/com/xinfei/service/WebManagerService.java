@@ -8,6 +8,7 @@ import com.xinfei.DTO.webManager.DriverJobQueryDTO;
 import com.xinfei.DTO.webManager.TaskPickupDispatchQueryDTO;
 import com.xinfei.DTO.webManager.TaskTransportQueryDTO;
 import com.xinfei.DTO.webManager.TransportOrderQueryDTO;
+import com.xinfei.DTO.webManager.TransportBoardDTO;
 import com.xinfei.common.utils.PageResponse;
 
 public interface WebManagerService {
@@ -42,4 +43,11 @@ public interface WebManagerService {
      * @return 运输任务分页数据
      */
     PageResponse<TaskTransportDTO> findTaskTransportByPage(TaskTransportQueryDTO dto);
+
+    /**
+     * 运输闭环看板聚合（DSP-01）：六阶段计数 + 任务/运单状态分布。
+     *
+     * @return 看板聚合数据
+     */
+    TransportBoardDTO findTransportBoard();
 }

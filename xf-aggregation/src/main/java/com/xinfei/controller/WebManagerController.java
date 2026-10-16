@@ -7,6 +7,7 @@ import com.xinfei.DTO.TransportOrderDTO;
 import com.xinfei.DTO.webManager.DriverJobQueryDTO;
 import com.xinfei.DTO.webManager.TaskPickupDispatchQueryDTO;
 import com.xinfei.DTO.webManager.TaskTransportQueryDTO;
+import com.xinfei.DTO.webManager.TransportBoardDTO;
 import com.xinfei.DTO.webManager.TransportOrderQueryDTO;
 import com.xinfei.common.utils.PageResponse;
 import com.xinfei.service.WebManagerService;
@@ -44,5 +45,10 @@ public class WebManagerController {
     @PostMapping("taskTransport/page")
     PageResponse<TaskTransportDTO> findTransportOrderByPage(@RequestBody TaskTransportQueryDTO dto) {
         return webManagerService.findTaskTransportByPage(dto);
+    }
+
+    @PostMapping("transportBoard")
+    TransportBoardDTO transportBoard() {
+        return webManagerService.findTransportBoard();
     }
 }

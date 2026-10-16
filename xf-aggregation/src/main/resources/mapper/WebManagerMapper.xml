@@ -76,6 +76,15 @@
             <if test="params.status != null">
                 AND transport_order.status = #{params.status}
             </if>
+            <if test="params.statusList != null and params.statusList.size() > 0">
+                AND transport_order.status IN
+                <foreach collection="params.statusList" item="s" open="(" separator="," close=")">
+                    #{s}
+                </foreach>
+            </if>
+            <if test="params.schedulingStatus != null">
+                AND transport_order.scheduling_status = #{params.schedulingStatus}
+            </if>
             <if test="params.senderName != null and params.senderName != ''">
                 AND pdorder.sender_name LIKE CONCAT('%',#{params.senderName},'%')
             </if>
@@ -126,5 +135,25 @@
             </if>
         </where>
         order by task_transport.create_time desc
+    </select>
+
+    <!-- 运输闭环看板（DSP-01）：三组状态聚合，name 返回状态码字符串，中文由 Service 按枚举真源映射 -->
+    <select id="countTaskTransportByStatus" resultType="com.xinfei.DTO.dashboard.NameValueDTO">
+        SELECT CAST(status AS CHAR) AS name, COUNT(*) AS value
+        FROM work_task_transport
+        GROUP BY status
+    </select>
+
+    <select id="countTransportOrderByStatus" resultType="com.xinfei.DTO.dashboard.NameValueDTO">
+        SELECT CAST(status AS CHAR) AS name, COUNT(*) AS value
+        FROM work_transport_order
+        GROUP BY status
+    </select>
+
+    <select id="countTransportOrderBySchedulingStatus" resultType="com.xinfei.DTO.dashboard.NameValueDTO">
+        SELECT CAST(scheduling_status AS CHAR) AS name, COUNT(*) AS value
+        FROM work_transport_order
+        WHERE scheduling_status IS NOT NULL
+        GROUP BY scheduling_status
     </select>
 </mapper>
