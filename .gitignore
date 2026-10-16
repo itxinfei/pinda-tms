@@ -162,3 +162,7 @@ docs/测试/
 *.p12
 *.pfx
 *.jks
+
+# ===== 短视频推广产物（分镜合成脚本入库，视频/中间产物不进 git）=====
+docs/promo-video/work/
+docs/promo-video/*.mp4
