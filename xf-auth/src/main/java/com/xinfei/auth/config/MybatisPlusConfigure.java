@@ -36,6 +36,9 @@ public class MybatisPlusConfigure {
     /** 平台级共享表（不带租户隔离） */
     private static final Set<String> IGNORE_TABLES = Set.of(
             "sys_tenant",
+            // 套餐为平台级定价/功能定义，所有租户共享（表无 tenant_id 列，
+            // 不放行会被租户插件注入 WHERE tenant_id 导致 BadSqlGrammar，冒烟发现 2026-10-16）
+            "sys_tenant_plan",
             "sys_menu",
             "sys_resource",
             // 参数配置为平台全局数据（CFG-01），一期只使用 tenant_id=0
