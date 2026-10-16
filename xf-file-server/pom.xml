@@ -24,6 +24,16 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
+		<!-- Sa-Token：Same-Token 入站校验（T-SEC-04）需经 starter 装配 Redis Dao，读取与 xf-auth
+		     同一共享存储的令牌；spring-boot-starter-data-redis 由 sa-token-redis-template 传递引入 -->
+		<dependency>
+			<groupId>cn.dev33</groupId>
+			<artifactId>sa-token-spring-boot3-starter</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>cn.dev33</groupId>
+			<artifactId>sa-token-redis-jackson</artifactId>
+		</dependency>
 		<!-- Nacos 注册/配置（版本由 Spring Cloud Alibaba BOM 托管） -->
 		<dependency>
 			<groupId>com.alibaba.cloud</groupId>

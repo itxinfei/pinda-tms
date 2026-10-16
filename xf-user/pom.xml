@@ -83,6 +83,16 @@
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 		</dependency>
+		<!-- Sa-Token：Same-Token 入站校验（T-SEC-04）需经 starter 装配 Redis Dao，读取与 xf-auth
+		     同一共享存储的令牌；spring-boot-starter-data-redis 由 sa-token-redis-template 传递引入 -->
+		<dependency>
+			<groupId>cn.dev33</groupId>
+			<artifactId>sa-token-spring-boot3-starter</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>cn.dev33</groupId>
+			<artifactId>sa-token-redis-jackson</artifactId>
+		</dependency>
 		<!-- J2Cache 已移除（2026-10-10 R3）：Boot3 下官方 boot2 starter 自动装配失效、
 		     CacheChannel 无 Bean；原二级缓存仅课程演示用途，主键查询代价低，不再保留。 -->
 	</dependencies>
