@@ -14,7 +14,8 @@ const Layout = () => import("../layouts/index.vue");
 export const usePermissionStore = defineStore("permission", () => {
   const routes = ref<RouteRecordRaw[]>(constantRoutes);
   const mixLayoutSideMenus = ref<RouteRecordRaw[]>([]);
-  const isRouteGenerated = ref(true); // 临时方案：默认已生成，用静态路由
+  // D-42 动态菜单：初值 false，守卫在首次导航/刷新时经 generateRoutes 从后端拉取并注册
+  const isRouteGenerated = ref(false);
 
   /**
    * 生成动态路由
@@ -154,6 +155,9 @@ function buildTopLevelRoute(menu: RouteItem): RouteRecordRaw {
   const path = joinRoutePath("", menu.path);
 
   const meta = { ...menu.meta };
+
+  // 首页标签固定（对齐原静态 Dashboard 的 affix）：动态菜单契约不携带 affix，此处特判补齐
+  if (menu.name === "Dashboard") meta.affix = true;
 
   // 目录：自身就是侧边栏分组，标题与图标保留在壳层
   if (isContainer(menu)) {

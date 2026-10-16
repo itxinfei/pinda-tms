@@ -72,10 +72,10 @@ export function setupPermissionGuard() {
         }
       }
 
-      // 动态路由生成（定案 D-42 落地后恢复：改为 !isRouteGenerated 时 generateRoutes()）
+      // 动态路由生成（D-42）：登录后首次导航与每次刷新都经此后端拉取菜单并注册路由，
+      // 完成后 replace 重放当前目标（此时 matched 才完整）。失败会 throw 进入 catch 重置会话回登录页。
       if (!permissionStore.isRouteGenerated) {
-        permissionStore.isRouteGenerated = true;
-
+        await permissionStore.reloadRoutes();
         return { ...to, replace: true };
       }
 

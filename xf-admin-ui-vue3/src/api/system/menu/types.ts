@@ -150,4 +150,6 @@ export interface Meta {
   roles?: string[];
   /** 路由 title */
   title?: string;
+  /** 标签页固定（首页用，动态契约缺省由前端补齐） */
+  affix?: boolean;
 }
