@@ -1,8 +1,10 @@
 package com.xinfei.controller;
 
+import com.xinfei.common.config.dynamic.DynamicConfigService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -11,11 +13,13 @@ import org.springframework.web.bind.annotation.RestController;
 import java.io.Serializable;
 
 /**
- * 地图配置 API（DSP-02 在途监控）
+ * 地图配置 API（DSP-02 在途监控 / DSP-03 调度一张图）
  *
  * <p>百度地图 AK 属第三方凭证，禁止写进前端环境变量/仓库；由后端统一持有，
- * 管理端地图页在登录态下经本接口获取。读取链与部署注入对齐：
- * JVM 参数 -Dbaidu.map.ak（compose JAVA_TOOL_OPTIONS 统一注入）→ 环境变量 BAIDU_MAP_AK。</p>
+ * 管理端地图页在登录态下经本接口获取。读取链与算价侧 {@code BaiduMapUtils} 同键同源，
+ * 统一走 {@link DynamicConfigService}：sys_config（键 {@code baidu.map.ak}，敏感项
+ * AES 解密 + 30s 本地缓存）→ {@code -Dbaidu.map.ak} → 环境变量 {@code BAIDU_MAP_AK}
+ * （后两级由 Environment 回落覆盖，SystemEnvironmentPropertySource 松弛匹配）。</p>
  *
  * <p>⚠️ 返回类型必须声明为 POJO 而非 {@code Map<String,String>}：
  * {@link GlobalResponseAdvice} 会把响应包装成 {@code {code:0,msg,data}} 壳，
@@ -24,15 +28,15 @@ import java.io.Serializable;
  */
 @Slf4j
 @RestController
+@RequiredArgsConstructor
 @Tag(name = "地图配置API")
 @RequestMapping("map-config-manager")
 public class MapConfigController {
 
-    /** JVM 系统属性键（与 BaiduMapUtils/LocationUtil 同键，同源注入） */
-    private static final String SYS_PROP_KEY = "baidu.map.ak";
+    /** sys_config 配置键（与 BaiduMapUtils.CONFIG_KEY_BAIDU_AK 同键，同源读取） */
+    private static final String CONFIG_KEY = "baidu.map.ak";
 
-    /** 环境变量键（compose .env 注入 BAIDU_MAP_AK） */
-    private static final String ENV_KEY = "BAIDU_MAP_AK";
+    private final DynamicConfigService dynamicConfig;
 
     /** 出参 VO（ak 为空串表示未配置，前端据此提示"地图未配置"，不报 500） */
     @Data
@@ -44,10 +48,7 @@ public class MapConfigController {
     @Operation(summary = "获取前端地图配置（百度地图 AK）")
     @GetMapping
     public MapConfigVO get() {
-        String ak = System.getProperty(SYS_PROP_KEY);
-        if (ak == null || ak.trim().isEmpty()) {
-            ak = System.getenv(ENV_KEY);
-        }
+        String ak = dynamicConfig.get(CONFIG_KEY, "");
         MapConfigVO vo = new MapConfigVO();
         vo.setAk(ak == null ? "" : ak.trim());
         return vo;
