@@ -434,6 +434,10 @@ public class MailingController {
         try {
             for (CourierScopeDto courierScopeDto : courierScopeDtoList) {
                 List<List<Map>> mutiPoints = courierScopeDto.getMutiPoints();
+                // 修改点：作业范围可能为空，判空跳过避免 NPE（原 NPE 被 catch 后只能兜底取首个快递员）
+                if (mutiPoints == null || mutiPoints.isEmpty()) {
+                    continue;
+                }
                 for (List<Map> list : mutiPoints) {
                     String[] originArray = location.split(",");
                     boolean flag = EntCoordSyncJob.isInScope(list, Double.parseDouble(originArray[0]), Double.parseDouble(originArray[1]));
@@ -588,6 +592,10 @@ public class MailingController {
         try {
             for (AgencyScopeDto agencyScopeDto : agencyScopes) {
                 List<List<Map>> mutiPoints = agencyScopeDto.getMutiPoints();
+                // 修改点：作业范围可能为空，判空跳过避免 NPE
+                if (mutiPoints == null || mutiPoints.isEmpty()) {
+                    continue;
+                }
                 for (List<Map> list : mutiPoints) {
                     String[] originArray = location.split(",");
                     boolean flag = EntCoordSyncJob.isInScope(list, Double.parseDouble(originArray[0]), Double.parseDouble(originArray[1]));
