@@ -257,6 +257,17 @@ public class BeanUtil {
         return single && areaFeign != null ? areaFeign.get(areaId) : null;
     }
 
+    /** 机构查询：优先取 EnrichContext 批量预置，未预取才回退逐行远程查 */
+    private static OrgDTO lookupOrg(EnrichContext ctx, Long orgId) {
+        if (orgId == null || ctx == null) {
+            return null;
+        }
+        if (ctx.orgMap != null) {
+            return ctx.orgMap.get(orgId);
+        }
+        return ctx.orgFeign != null ? ctx.orgFeign.get(orgId) : null;
+    }
+
     /**
      * 批量取一页订单涉及的区划（省/市/区去重后一次查询）。
      *
@@ -396,6 +407,25 @@ public class BeanUtil {
         return vo;
     }
 
+    /**
+     * 运单 DTO → VO（经 EnrichContext 预取，分页批量富化场景用）。
+     */
+    public static TransportOrderVo parseTransportOrderDTO2Vo(TransportOrderDTO dto, EnrichContext ctx) {
+        TransportOrderVo vo = new TransportOrderVo();
+        BeanUtils.copyProperties(dto, vo);
+        vo.setId(toStr(dto.getId()));
+        if (dto.getOrderId() != null && ctx != null) {
+            OrderDTO orderDTO = ctx.orderMap != null ? ctx.orderMap.get(toStr(dto.getOrderId())) : null;
+            if (orderDTO == null && ctx.orderFeign != null) {
+                orderDTO = ctx.orderFeign.findById(toStr(dto.getOrderId()));
+            }
+            if (orderDTO != null) {
+                vo.setOrder(parseOrderDTO2Vo(orderDTO, ctx.areaFeign, ctx.areaMap));
+            }
+        }
+        return vo;
+    }
+
     public static TaskTransportDTO parseTaskTransportVo2DTO(TaskTransportVo vo) {
         TaskTransportDTO dto = new TaskTransportDTO();
         BeanUtils.copyProperties(vo, dto);
@@ -513,6 +543,83 @@ public class BeanUtil {
         vo.setDrivers(drivers);
         // 运单数量：聚合层 SQL 不返回该列，直接由关联运单数推导，
         // 否则详情页「运单数量」恒显-（与「司机信息恒空」同类问题）
+        vo.setTransportOrderCount(dto.getTransportOrderIds() == null ? 0 : dto.getTransportOrderIds().size());
+        return vo;
+    }
+
+    /**
+     * 运输任务 DTO → VO（经 EnrichContext 预取，消除嵌套 N+1）。
+     *
+     * <p>与 10 参重载等价，但车次/机构/车辆/运单/订单/区划/司机均优先取 ctx 批量预置的 Map，
+     * 仅在未预取时回退逐行远程查，从而把列表分页的远程调用从「每任务 N+1」压成「整页几次批量」。
+     * 司机信息由 {@code ctx.driversByTaskId} 承载（调用方一次性批量反查）。</p>
+     */
+    public static TaskTransportVo parseTaskTransportDTO2Vo(TaskTransportDTO dto, EnrichContext ctx) {
+        TaskTransportVo vo = new TaskTransportVo();
+        BeanUtils.copyProperties(dto, vo);
+        vo.setId(toStr(dto.getId()));
+        // 车次
+        if (dto.getTripsId() != null && ctx != null) {
+            TransportTripsDto transportTripsDto = ctx.tripsMap != null ? ctx.tripsMap.get(toStr(dto.getTripsId()))
+                    : (ctx.transportTripsFeign != null ? ctx.transportTripsFeign.fineById(toStr(dto.getTripsId())) : null);
+            if (transportTripsDto != null) {
+                TransportTripsVo transportTripsVo = new TransportTripsVo();
+                BeanUtils.copyProperties(transportTripsDto, transportTripsVo);
+                vo.setTransportTrips(transportTripsVo);
+            }
+        }
+        // 起止机构
+        OrgDTO startOrg = lookupOrg(ctx, dto.getStartOrgId());
+        if (startOrg != null) {
+            vo.setStartAgency(parseOrg2SimpleVo(startOrg));
+        }
+        OrgDTO endOrg = lookupOrg(ctx, dto.getEndOrgId());
+        if (endOrg != null) {
+            vo.setEndAgency(parseOrg2SimpleVo(endOrg));
+        }
+        // 车辆
+        if (dto.getTruckId() != null && ctx != null) {
+            TruckDto truckDto = ctx.truckMap != null ? ctx.truckMap.get(toStr(dto.getTruckId()))
+                    : (ctx.truckFeign != null ? ctx.truckFeign.fineById(toStr(dto.getTruckId())) : null);
+            if (truckDto != null) {
+                TruckVo truckVo = new TruckVo();
+                BeanUtils.copyProperties(truckDto, truckVo);
+                vo.setTruck(truckVo);
+            }
+        }
+        // 旧 VO 字段名对齐 work DTO 新字段名
+        vo.setCargoPickUpPicture(dto.getPickupPicture());
+        vo.setTransportCertificate(dto.getCertificatePicture());
+        vo.setPlanPickUpGoodsTime(dto.getPlanPickUpTime());
+        vo.setActualPickUpGoodsTime(dto.getActualPickUpTime());
+        vo.setDeliveryLatitude(toStr(dto.getPickupLatitude()));
+        vo.setDeliveryLongitude(toStr(dto.getPickupLongitude()));
+        vo.setDeliverLatitude(toStr(dto.getDeliverLatitude()));
+        vo.setDeliverLongitude(toStr(dto.getDeliverLongitude()));
+        // 运单列表（整页批量预取）
+        List<TransportOrderVo> transportOrderVoList = new ArrayList<>();
+        if (dto.getTransportOrderIds() != null && !dto.getTransportOrderIds().isEmpty() && ctx != null
+                && ctx.transportOrderFeign != null) {
+            for (Long transportOrderId : dto.getTransportOrderIds()) {
+                if (transportOrderId == null) {
+                    continue;
+                }
+                TransportOrderDTO transportOrderDTO = ctx.transportOrderMap != null ? ctx.transportOrderMap.get(transportOrderId) : null;
+                if (transportOrderDTO == null) {
+                    transportOrderDTO = ctx.transportOrderFeign.findById(transportOrderId);
+                }
+                if (transportOrderDTO != null) {
+                    transportOrderVoList.add(parseTransportOrderDTO2Vo(transportOrderDTO, ctx));
+                }
+            }
+        }
+        vo.setTransportOrders(transportOrderVoList);
+        // 司机（整页批量预取）
+        List<SysUserVo> drivers = ctx != null && ctx.driversByTaskId != null
+                ? ctx.driversByTaskId.getOrDefault(dto.getId(), new ArrayList<>())
+                : parseTaskDrivers(dto.getId(), ctx != null ? ctx.driverJobFeign : null, ctx != null ? ctx.userFeign : null);
+        vo.setDrivers(drivers);
+        // 运单数量：聚合层 SQL 不返回该列，直接由关联运单数推导
         vo.setTransportOrderCount(dto.getTransportOrderIds() == null ? 0 : dto.getTransportOrderIds().size());
         return vo;
     }
@@ -638,6 +745,38 @@ public class BeanUtil {
             if (taskTransportDTO != null) {
                 vo.setTaskTransport(parseTaskTransportDTO2Vo(taskTransportDTO, transportTripsFeign, orgFeign, userFeign, truckFeign, transportOrderFeign, orderFeign, areaFeign));
             }
+        }
+        return vo;
+    }
+
+    /**
+     * 司机作业单 DTO → VO（经 EnrichContext 预取 + 调用方已预取的运输任务，消除三重嵌套 N+1）。
+     *
+     * @param taskTransport 调用方已批量预取的运输任务；为 null 时任务体留空（前端按需另查详情）
+     */
+    public static DriverJobVo parseDriverJobDTO2Vo(DriverJobDTO dto, TaskTransportDTO taskTransport, EnrichContext ctx) {
+        DriverJobVo vo = new DriverJobVo();
+        BeanUtils.copyProperties(dto, vo);
+        vo.setId(toStr(dto.getId()));
+        OrgDTO startOrg = lookupOrg(ctx, dto.getStartOrgId());
+        if (startOrg != null) {
+            vo.setStartAgency(parseOrg2SimpleVo(startOrg));
+        }
+        OrgDTO endOrg = lookupOrg(ctx, dto.getEndOrgId());
+        if (endOrg != null) {
+            vo.setEndAgency(parseOrg2SimpleVo(endOrg));
+        }
+        if (dto.getDriverId() != null && ctx != null) {
+            UserDTO user = ctx.userMap != null ? ctx.userMap.get(dto.getDriverId()) : null;
+            if (user == null && ctx.userFeign != null) {
+                user = ctx.userFeign.get(dto.getDriverId());
+            }
+            if (user != null) {
+                vo.setDriver(parseUser2Vo(user, null, null));
+            }
+        }
+        if (taskTransport != null && ctx != null) {
+            vo.setTaskTransport(parseTaskTransportDTO2Vo(taskTransport, ctx));
         }
         return vo;
     }
