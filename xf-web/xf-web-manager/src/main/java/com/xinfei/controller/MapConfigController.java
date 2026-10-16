@@ -33,8 +33,15 @@ import java.io.Serializable;
 @RequestMapping("map-config-manager")
 public class MapConfigController {
 
-    /** sys_config 配置键（与 BaiduMapUtils.CONFIG_KEY_BAIDU_AK 同键，同源读取） */
-    private static final String CONFIG_KEY = "baidu.map.ak";
+    /**
+     * sys_config 配置键（与 BaiduMapUtils.CONFIG_KEY_BAIDU_AK 同键，同源读取）。
+     * <p>⚠️ 百度 AK 分类型：后端 REST（geocoding/directionlite）必须用<b>服务端</b>类型 AK；
+     * 前端 BMapGL JS API 必须<b>浏览器端</b>类型 AK，一把不能两用。故本控制器优先读
+     * {@link #CONFIG_KEY_BROWSER}（浏览器端键），未配置时回落到服务端键（兼容仅配一把的场景，
+     * 但此时若类型是服务端，浏览器加载 JS API 会被百度拒绝，反之亦然——建议两把分别配置）。</p>
+     */
+    private static final String CONFIG_KEY_SERVER = "baidu.map.ak";
+    private static final String CONFIG_KEY_BROWSER = "baidu.map.ak.web";
 
     private final DynamicConfigService dynamicConfig;
 
@@ -45,10 +52,14 @@ public class MapConfigController {
         private String ak;
     }
 
-    @Operation(summary = "获取前端地图配置（百度地图 AK）")
+    @Operation(summary = "获取前端地图配置（浏览器端类型百度地图 AK）")
     @GetMapping
     public MapConfigVO get() {
-        String ak = dynamicConfig.get(CONFIG_KEY, "");
+        // 浏览器端 JS API 必须用浏览器端类型 AK：优先 baidu.map.ak.web，未配置回落服务端键
+        String ak = dynamicConfig.get(CONFIG_KEY_BROWSER, "");
+        if (ak == null || ak.isBlank()) {
+            ak = dynamicConfig.get(CONFIG_KEY_SERVER, "");
+        }
         MapConfigVO vo = new MapConfigVO();
         vo.setAk(ak == null ? "" : ak.trim());
         return vo;
