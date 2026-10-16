@@ -88,7 +88,7 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
       {
         name: "dist-version",
         closeBundle() {
-          const distDir = resolve(__dirname, "dist");
+          const distDir = resolve(import.meta.dirname, "dist");
           if (!existsSync(distDir)) {
             mkdirSync(distDir, { recursive: true });
           }
