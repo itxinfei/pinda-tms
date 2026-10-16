@@ -663,7 +663,7 @@ public class MailingController {
         // 避免改价失败时主字段已持久化而留下"半更新"的不一致状态
         Result repriceResult;
         try {
-            repriceResult = orderFeign.reprice(order.getId(), orderDTOForReprice);
+            repriceResult = orderFeign.reprice(order.getId(), orderDTOForReprice, null);
             if (repriceResult == null || !"0".equals(String.valueOf(repriceResult.get("code")))) {
                 log.error("订单改价未生效: id={}, result={}", order.getId(), repriceResult);
                 return repriceResult != null ? repriceResult : Result.error(500, "订单改价失败");

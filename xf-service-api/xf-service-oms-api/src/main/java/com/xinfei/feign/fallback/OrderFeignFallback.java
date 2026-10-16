@@ -44,7 +44,7 @@ public class OrderFeignFallback implements OrderFeign {
     }
 
     @Override
-    public Result reprice(String id, OrderDTO orderDTO) {
+    public Result reprice(String id, OrderDTO orderDTO, String reasonEnum) {
         log.warn("远程调用 xf-oms 失败: reprice({}), 返回error", id);
         return Result.error(500, "改价服务不可用");
     }

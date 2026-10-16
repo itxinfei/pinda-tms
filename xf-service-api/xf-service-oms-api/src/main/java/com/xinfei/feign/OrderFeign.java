@@ -64,7 +64,8 @@ public interface OrderFeign {
      * @return 改价结果
      */
     @PutMapping("/{id}/reprice")
-    Result reprice(@PathVariable(name = "id") String id, @RequestBody OrderDTO orderDTO);
+    Result reprice(@PathVariable(name = "id") String id, @RequestBody OrderDTO orderDTO,
+                   @RequestParam(value = "reasonEnum", required = false) String reasonEnum);
 
     /**
      * 订单取消（专用端点，原因必填，状态矩阵由 xf-oms 校验）
