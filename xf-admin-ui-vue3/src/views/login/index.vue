@@ -297,10 +297,10 @@ $text-muted: #98a2b3;
 $input-h: 44px;
 // 品牌主色：跟随主题色板运行时变量（切换配色体系时登录页同步变色）
 $brand-red: var(--el-color-primary);
-// 左侧品牌区配色（深蓝夜航）：与 hero 图渐变一致
-$navy-top: #1e3a5f;
-$navy-mid: #16294a;
-$navy-bot: #0e1c33;
+// 左侧品牌区配色（夜航底）：由主题主色派生深色调，切换配色体系时同步跟随
+$navy-top: color-mix(in srgb, var(--el-color-primary), #0b1020 62%);
+$navy-mid: color-mix(in srgb, var(--el-color-primary), #0b1020 74%);
+$navy-bot: color-mix(in srgb, var(--el-color-primary), #0b1020 84%);
 
 .login-page {
   // 品牌色阶：从运行时主题色派生，切换配色体系时整页跟随
