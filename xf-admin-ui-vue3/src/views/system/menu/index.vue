@@ -90,7 +90,7 @@
               <el-tag v-if="scope.row.type === MenuTypeEnum.BUTTON" type="danger">按钮</el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="访问地址" align="left" min-width="200">
+          <el-table-column label="访问地址" min-width="200">
             <template #default="scope">
               <div class="menu-address-cell">
                 <a
@@ -114,7 +114,7 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="页面路径" align="left" min-width="180">
+          <el-table-column label="页面路径" min-width="180">
             <template #default="scope">
               <span class="menu-cell-ellipsis" :title="getMenuComponentPath(scope.row)">
                 {{ getMenuComponentPath(scope.row) }}
