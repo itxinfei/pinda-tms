@@ -2,7 +2,9 @@ package com.xinfei.feign.fallback;
 
 import com.xinfei.DTO.TransportOrderDTO;
 import com.xinfei.DTO.TransportOrderSearchDTO;
+import com.xinfei.DTO.WaybillMergeDTO;
 import com.xinfei.common.utils.PageResponse;
+import com.xinfei.common.utils.Result;
 import com.xinfei.feign.TransportOrderFeign;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -63,5 +65,17 @@ public class TransportOrderFeignFallback implements TransportOrderFeign {
     public List<TransportOrderDTO> list(TransportOrderSearchDTO transportOrderSearchDTO) {
         log.warn("远程调用 xf-work 失败: list({}), 返回空列表", transportOrderSearchDTO);
         return Collections.emptyList();
+    }
+
+    @Override
+    public Result mergeWaybills(WaybillMergeDTO mergeDTO) {
+        log.warn("远程调用 xf-work 失败: mergeWaybills({})", mergeDTO);
+        return Result.error("服务降级，合单失败");
+    }
+
+    @Override
+    public Result splitWaybills(Long mainId) {
+        log.warn("远程调用 xf-work 失败: splitWaybills({})", mainId);
+        return Result.error("服务降级，拆单失败");
     }
 }

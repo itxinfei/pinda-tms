@@ -40,6 +40,16 @@ public class TransportOrder implements Serializable {
      */
     private Integer schedulingStatus;
 
+    /**
+     * 父运单ID（合单时指向主运单，ORD-05；拆单/未合并时为 null）
+     */
+    private Long parentId;
+
+    /**
+     * 合并状态（ORD-05）：normal 普通 / merged 合并组主单 / split_child 合并组子单
+     */
+    private String mergeStatus;
+
     private Long createBy;
     private LocalDateTime createTime;
     private Long updateBy;

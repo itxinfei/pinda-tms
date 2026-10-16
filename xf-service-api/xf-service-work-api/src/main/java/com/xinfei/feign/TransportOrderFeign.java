@@ -2,7 +2,9 @@ package com.xinfei.feign;
 
 import com.xinfei.DTO.TransportOrderDTO;
 import com.xinfei.DTO.TransportOrderSearchDTO;
+import com.xinfei.DTO.WaybillMergeDTO;
 import com.xinfei.common.utils.PageResponse;
+import com.xinfei.common.utils.Result;
 import com.xinfei.feign.fallback.TransportOrderFeignFallback;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
@@ -88,4 +90,22 @@ public interface TransportOrderFeign {
      */
     @PostMapping("/transport-order/list")
     List<TransportOrderDTO> list(@RequestBody TransportOrderSearchDTO transportOrderSearchDTO);
+
+    /**
+     * 合单：多个待调度运单归入主单（ORD-05）
+     *
+     * @param mergeDTO 合单入参（mainId + childIds）
+     * @return 操作结果（code=0 成功）
+     */
+    @PostMapping("/waybill-split-merge/merge")
+    Result mergeWaybills(@RequestBody WaybillMergeDTO mergeDTO);
+
+    /**
+     * 拆单：解除合并组，组内全部还原 normal（ORD-05）
+     *
+     * @param mainId 主运单ID
+     * @return 操作结果（code=0 成功）
+     */
+    @PostMapping("/waybill-split-merge/{mainId}/split")
+    Result splitWaybills(@PathVariable(name = "mainId") Long mainId);
 }

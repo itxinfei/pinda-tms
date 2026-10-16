@@ -29,7 +29,15 @@
       </el-form>
 
       <div class="page-table-wrapper">
-        <el-table v-loading="loading" :data="list" class="page-table" border height="100%">
+        <el-table
+          v-loading="loading"
+          :data="list"
+          class="page-table"
+          border
+          height="100%"
+          @selection-change="handleSelectionChange"
+        >
+          <el-table-column type="selection" width="42" :selectable="rowSelectable" />
           <el-table-column prop="id" label="运单号" min-width="170" show-overflow-tooltip />
           <el-table-column label="寄件人" min-width="160">
             <template #default="scope">
@@ -55,13 +63,38 @@
               </el-tag>
             </template>
           </el-table-column>
+          <el-table-column label="合并状态" width="110" align="center">
+            <template #default="scope">
+              <el-tag v-if="scope.row.mergeStatus === 'merged'" type="success" effect="plain">主单</el-tag>
+              <el-tag v-else-if="scope.row.mergeStatus === 'split_child'" type="warning" effect="plain">子单</el-tag>
+              <span v-else>-</span>
+            </template>
+          </el-table-column>
           <el-table-column prop="createTime" label="创建时间" width="170" />
-          <el-table-column label="操作" fixed="right" width="90" align="center">
+          <el-table-column label="操作" fixed="right" width="130" align="center">
             <template #default="scope">
               <el-button type="primary" link size="small" @click="openDetail(scope.row as TransportOrderRecord)">详情</el-button>
+              <el-button
+                v-if="scope.row.mergeStatus === 'merged'"
+                type="warning"
+                link
+                size="small"
+                v-hasPerm="['transport:split']"
+                @click="openSplit(scope.row as TransportOrderRecord)"
+              >拆单</el-button>
             </template>
           </el-table-column>
         </el-table>
+      </div>
+
+      <div class="page-toolbar">
+        <el-button
+          type="primary"
+          :disabled="selectedRows.length < 2"
+          v-hasPerm="['transport:merge']"
+          @click="openMerge"
+        >合单（已选 {{ selectedRows.length }}）</el-button>
+        <span class="page-toolbar__tip">仅待调度运单可参与合拆；合单校验口径：同目的网点 + 同收件区县</span>
       </div>
 
       <div class="page-pagination">
@@ -77,6 +110,28 @@
         />
       </div>
     </el-card>
+
+    <!-- 合单弹窗 -->
+    <el-dialog v-model="mergeVisible" title="运单合单" width="560px" append-to-body destroy-on-close>
+      <el-alert type="info" :closable="false" class="merge-alert"
+        title="将选中的待调度运单归入一个主运单统一调度；校验口径：同目的网点 + 同收件区县" />
+      <el-form label-width="90px">
+        <el-form-item label="已选运单">
+          <div class="merge-list">
+            <div v-for="row in selectedRows" :key="row.id" class="merge-list__item">
+              <el-radio v-model="mergeMainId" :value="row.id">{{ row.id }}</el-radio>
+            </div>
+          </div>
+        </el-form-item>
+        <el-form-item label="主运单">
+          <span class="merge-main-id">{{ mergeMainId || "请选择主运单" }}</span>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="mergeVisible = false">取消</el-button>
+        <el-button type="primary" :loading="submitting" :disabled="!mergeMainId" @click="submitMerge">确定合单</el-button>
+      </template>
+    </el-dialog>
 
     <!-- 运单详情 -->
     <el-drawer v-model="detailVisible" title="运单详情" size="660px">
@@ -156,6 +211,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
+import { ElMessage, ElMessageBox } from "element-plus";
 import TransportOrderAPI from "@/api/transport-order";
 import {
   TransportOrderStatus,
@@ -256,6 +312,68 @@ function handleReset() {
   loadList();
 }
 
+/** 多选：仅待调度且未参与合并的运单可选 */
+const selectedRows = ref<TransportOrderRecord[]>([]);
+
+function rowSelectable(row: TransportOrderRecord): boolean {
+  return row.schedulingStatus === SchedulingStatus.PENDING && (row.mergeStatus ?? "normal") === "normal";
+}
+
+function handleSelectionChange(rows: TransportOrderRecord[]) {
+  selectedRows.value = rows;
+  // 选择集变化时清掉可能已失效的主单选择
+  if (mergeMainId.value && !rows.some((r) => r.id === mergeMainId.value)) {
+    mergeMainId.value = "";
+  }
+}
+
+/** 合单 */
+const mergeVisible = ref(false);
+const submitting = ref(false);
+const mergeMainId = ref("");
+
+function openMerge() {
+  mergeMainId.value = "";
+  mergeVisible.value = true;
+}
+
+async function submitMerge() {
+  if (!mergeMainId.value) return;
+  const childIds = selectedRows.value.map((r) => r.id).filter((id) => id !== mergeMainId.value);
+  if (childIds.length === 0) {
+    ElMessage.warning("请至少再选择一个子运单");
+    return;
+  }
+  submitting.value = true;
+  try {
+    await TransportOrderAPI.merge(mergeMainId.value, childIds);
+    ElMessage.success("合单成功");
+    mergeVisible.value = false;
+    selectedRows.value = [];
+    loadList();
+  } finally {
+    submitting.value = false;
+  }
+}
+
+/** 拆单（解除合并组） */
+function openSplit(row: TransportOrderRecord) {
+  ElMessageBox.confirm(
+    `将解除运单 ${row.id} 的合并组，组内全部运单还原为普通运单。是否继续？`,
+    "运单拆单",
+    { type: "warning", confirmButtonText: "确定拆单", cancelButtonText: "取消" },
+  ).then(async () => {
+    submitting.value = true;
+    try {
+      await TransportOrderAPI.split(row.id);
+      ElMessage.success("拆单成功");
+      loadList();
+    } finally {
+      submitting.value = false;
+    }
+  });
+}
+
 /** 详情 */
 const detailVisible = ref(false);
 const detailLoading = ref(false);
@@ -312,5 +430,32 @@ onMounted(loadList);
   font-size: 14px;
   font-weight: 600;
   color: var(--el-text-color-primary);
+}
+
+.page-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.page-toolbar__tip {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.merge-alert {
+  margin-bottom: 16px;
+}
+
+.merge-list {
+  width: 100%;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.merge-main-id {
+  font-weight: 600;
+  color: var(--el-color-primary);
 }
 </style>

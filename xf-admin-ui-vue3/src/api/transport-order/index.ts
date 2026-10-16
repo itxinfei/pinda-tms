@@ -59,6 +59,10 @@ export interface TransportOrderRecord {
   order?: OrderRecord;
   status: number;
   schedulingStatus?: number;
+  /** 父运单ID（合单组子单指向主单，ORD-05） */
+  parentId?: string;
+  /** 合并状态（ORD-05）：normal 普通 / merged 主单 / split_child 子单 */
+  mergeStatus?: string;
   createTime?: string;
 }
 
@@ -110,6 +114,21 @@ const TransportOrderAPI = {
     return request<unknown, TransportOrderDetail>({
       url: `${ORDER_BASE_URL}/${id}`,
       method: "get",
+    });
+  },
+  /** 合单：多个待调度运单归入主单（ORD-05） */
+  merge(mainId: string, childIds: string[]) {
+    return request<unknown, unknown>({
+      url: "/api/manager/waybill-split-merge/merge",
+      method: "post",
+      data: { mainId, childIds },
+    });
+  },
+  /** 拆单：解除合并组（ORD-05） */
+  split(mainId: string) {
+    return request<unknown, unknown>({
+      url: `/api/manager/waybill-split-merge/${mainId}/split`,
+      method: "post",
     });
   },
 };
