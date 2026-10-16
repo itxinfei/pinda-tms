@@ -59,6 +59,22 @@ public class SysConfigController {
         return ApiResult.success(toVO(configService.detail(id)));
     }
 
+    /**
+     * 查看敏感项明文（编辑回显场景）。独立权限点 sys:config:reveal，
+     * 与列表/详情脱敏口径分离；非敏感项直接返回原值。审计随 OperLogInterceptor 全局覆盖。
+     */
+    @GetMapping("/{id}/plaintext")
+    @SaCheckPermission("sys:config:reveal")
+    public ApiResult<String> plaintext(@PathVariable Long id) {
+        SysConfig entity = configService.detail(id);
+        String value = entity.getConfigValue();
+        if (entity.getIsSensitive() != null && entity.getIsSensitive() == 1
+                && StringUtils.hasText(value)) {
+            value = configCrypto.decrypt(value);
+        }
+        return ApiResult.success(value == null ? "" : value);
+    }
+
     @PostMapping
     @SaCheckPermission("sys:config:create")
     public ApiResult<Long> create(@RequestBody ConfigForm form) {

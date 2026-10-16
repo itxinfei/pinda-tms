@@ -164,13 +164,24 @@
           </el-radio-group>
         </el-form-item>
         <el-form-item label="参数值" prop="configValue">
-          <el-input
-            v-model="formData.configValue"
-            :type="formData.isSensitive === 1 ? 'password' : 'text'"
-            :show-password="formData.isSensitive === 1"
-            :placeholder="valuePlaceholder"
-            :maxlength="500"
-          />
+          <div class="config-value-field">
+            <el-input
+              v-model="formData.configValue"
+              :type="formData.isSensitive === 1 ? 'password' : 'text'"
+              :show-password="formData.isSensitive === 1"
+              :placeholder="valuePlaceholder"
+              :maxlength="500"
+            />
+            <el-button
+              v-if="formData.id && formData.isSensitive === 1"
+              v-hasPerm="['sys:config:reveal']"
+              class="config-value-field__reveal"
+              :loading="revealing"
+              @click="handleReveal"
+            >
+              查看当前值
+            </el-button>
+          </div>
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-switch
@@ -237,6 +248,9 @@ const dialogState = reactive({ title: "", visible: false });
 
 // 敏感项编辑时的当前脱敏值（仅用于占位提示，不回显明文）
 const currentMasked = ref("");
+
+// 「查看当前值」加载态
+const revealing = ref(false);
 
 function createDefaultForm(): ConfigForm {
   return {
@@ -311,6 +325,19 @@ async function openDialog(id?: string): Promise<void> {
 }
 
 /**
+ * 查看当前敏感值明文（sys:config:reveal）：回填到密码框，明暗文用框内眼睛图标切换
+ */
+async function handleReveal(): Promise<void> {
+  if (!formData.id) return;
+  revealing.value = true;
+  try {
+    formData.configValue = await ConfigAPI.plaintext(formData.id);
+  } finally {
+    revealing.value = false;
+  }
+}
+
+/**
  * 校验并提交参数配置表单
  */
 async function handleSubmit(): Promise<void> {
@@ -376,5 +403,16 @@ onMounted(() => {
   font-family: var(--el-font-family-monospace, monospace);
   letter-spacing: 1px;
   color: var(--el-text-color-secondary);
+}
+.config-value-field {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+.config-value-field .el-input {
+  flex: 1;
+}
+.config-value-field__reveal {
+  flex-shrink: 0;
 }
 </style>

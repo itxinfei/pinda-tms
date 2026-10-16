@@ -37,6 +37,16 @@ const ConfigAPI = {
     });
   },
 
+  /**
+   * 查看敏感项明文（独立权限 sys:config:reveal，编辑弹窗「查看当前值」用）
+   */
+  plaintext(id: string) {
+    return request<unknown, string>({
+      url: `${CONFIG_BASE_URL}/${id}/plaintext`,
+      method: "get",
+    });
+  },
+
   /** 新增配置，返回新 ID */
   create(data: ConfigForm) {
     return request({ url: `${CONFIG_BASE_URL}`, method: "post", data });
