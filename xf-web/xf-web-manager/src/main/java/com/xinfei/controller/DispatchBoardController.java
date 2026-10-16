@@ -250,17 +250,25 @@ public class DispatchBoardController {
         }).collect(Collectors.toList());
     }
 
-    /** 批量取机构并按字符串 id 建索引（前端以字符串传递 id，避免雪花精度问题） */
+    /**
+     * 批量取机构并按字符串 id 建索引（前端以字符串传递 id，避免雪花精度问题）。
+     *
+     * <p>走 {@code OrgFeign.list(ids=...)} 一次远程查完，避免逐个机构 get 的 N+1
+     * （线路多时可达数十次调用）；id 为空的项直接跳过，不参与查询。</p>
+     */
     private Map<String, OrgDTO> orgsById(List<String> orgIds) {
         Map<String, OrgDTO> map = new LinkedHashMap<>();
-        for (String orgId : orgIds) {
-            Long id = toLong(orgId);
-            if (id == null) {
-                continue;
-            }
-            OrgDTO org = orgFeign.get(id);
-            if (org != null) {
-                map.put(orgId, org);
+        if (orgIds == null || orgIds.isEmpty()) {
+            return map;
+        }
+        List<Long> ids = orgIds.stream().map(this::toLong).filter(Objects::nonNull).distinct()
+                .collect(Collectors.toList());
+        if (ids.isEmpty()) {
+            return map;
+        }
+        for (OrgDTO org : Rx.list(orgFeign.list(null, ids, null, null, null))) {
+            if (org != null && org.getId() != null) {
+                map.put(String.valueOf(org.getId()), org);
             }
         }
         return map;

@@ -107,11 +107,13 @@ public class DispatchBoardControllerTest {
         disabled.setStatus(0);
         when(lineFeign.findAll(isNull(), isNull(), isNull())).thenReturn(Arrays.asList(
                 line("301", "武汉江岸-武昌干线", "1001", "1002"), disabled));
-        when(orgFeign.get(anyLong())).thenAnswer(inv -> {
-            long id = inv.getArgument(0);
-            if (id == 1001L) return org(1001L, "武汉江岸网点", "114.316", "30.595");
-            if (id == 1002L) return org(1002L, "武汉武昌网点", "114.328", "30.555");
-            return null;
+        when(orgFeign.list(any(), anyList(), any(), any(), any())).thenAnswer(inv -> {
+            List<Long> ids = inv.getArgument(1);
+            return ids.stream().map(id -> {
+                if (id == 1001L) return org(1001L, "武汉江岸网点", "114.316", "30.595");
+                if (id == 1002L) return org(1002L, "武汉武昌网点", "114.328", "30.555");
+                return null;
+            }).filter(java.util.Objects::nonNull).collect(java.util.stream.Collectors.toList());
         });
 
         DispatchBoardVO vo = controller.board(null);
@@ -137,12 +139,14 @@ public class DispatchBoardControllerTest {
         when(orderFeign.list(any(OrderSearchDTO.class)))
                 .thenReturn(List.of(order("9001", "1001"), order("9002", "1001"), order("9003", "1001")));
         when(lineFeign.findAll(isNull(), isNull(), isNull())).thenReturn(List.of());
-        when(orgFeign.get(anyLong())).thenReturn(org(1001L, "武汉江岸网点", "114.316", "30.595"));
+        when(orgFeign.list(any(), anyList(), any(), any(), any()))
+                .thenReturn(List.of(org(1001L, "武汉江岸网点", "114.316", "30.595")));
 
         DispatchBoardVO vo = controller.board(null);
 
         assertEquals(3, vo.getOrders().size());
-        verify(orgFeign, times(1)).get(1001L);
+        // 防 N+1 回归：3 个订单同机构，机构只能批量查一次
+        verify(orgFeign, times(1)).list(any(), anyList(), any(), any(), any());
     }
 
     @Test
@@ -151,7 +155,10 @@ public class DispatchBoardControllerTest {
         when(lineFeign.findAll(isNull(), isNull(), isNull())).thenReturn(Arrays.asList(
                 line("301", "武汉江岸-武昌干线", "1001", "1002"),
                 line("302", "京沪干线", "201", "202")));
-        when(orgFeign.get(anyLong())).thenAnswer(inv -> org(inv.getArgument(0), "机构", "1", "1"));
+        when(orgFeign.list(any(), anyList(), any(), any(), any())).thenAnswer(inv -> {
+            List<Long> ids = inv.getArgument(1);
+            return ids.stream().map(id -> org(id, "机构", "1", "1")).collect(java.util.stream.Collectors.toList());
+        });
 
         List<DispatchBoardVO.Line> hit = controller.line("1001", "1002");
         assertEquals(1, hit.size());
@@ -166,7 +173,8 @@ public class DispatchBoardControllerTest {
         when(orderFeign.findByIds(anyList())).thenReturn(List.of(order("9001", "1001")));
         when(lineFeign.findAll(isNull(), isNull(), isNull()))
                 .thenReturn(List.of(line("301", "武汉江岸-武昌干线", "1001", "1002")));
-        when(orgFeign.get(anyLong())).thenReturn(org(1001L, "武汉江岸网点", "114.316", "30.595"));
+        when(orgFeign.list(any(), anyList(), any(), any(), any()))
+                .thenReturn(List.of(org(1001L, "武汉江岸网点", "114.316", "30.595")));
         when(truckFeign.fineById("501")).thenReturn(new com.xinfei.DTO.truck.TruckDto());
 
         TransportOrderDTO created = new TransportOrderDTO();
@@ -250,7 +258,8 @@ public class DispatchBoardControllerTest {
         when(orderFeign.findByIds(anyList())).thenReturn(List.of(order("9001", "1001")));
         when(lineFeign.findAll(isNull(), isNull(), isNull()))
                 .thenReturn(List.of(line("301", "武汉江岸-武昌干线", "1001", "1002")));
-        when(orgFeign.get(anyLong())).thenReturn(org(1001L, "武汉江岸网点", "114.316", "30.595"));
+        when(orgFeign.list(any(), anyList(), any(), any(), any()))
+                .thenReturn(List.of(org(1001L, "武汉江岸网点", "114.316", "30.595")));
         when(truckFeign.fineById("501")).thenReturn(new com.xinfei.DTO.truck.TruckDto());
         TransportOrderDTO created = new TransportOrderDTO();
         created.setId(7001L);
