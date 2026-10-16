@@ -4,9 +4,9 @@ import com.xinfei.common.interceptor.TokenAuthInterceptor;
 import com.xinfei.interceptor.OperLogInterceptor;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -15,11 +15,15 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * 文档地址：http://localhost:8186/swagger-ui/index.html
  */
 @Configuration
-@RequiredArgsConstructor
 public class SwaggerConfig implements WebMvcConfigurer {
 
     private final OperLogInterceptor operLogInterceptor;
 
+    // 修改点：构造器参数加 @Lazy 破启动期 Bean 循环依赖（swaggerConfig→operLogInterceptor→LogFeign→环，
+    // P0-9 部署联调暴露的启动失败；@Lazy 生成代理延迟到首次使用时解析 LogFeign，拦截器注册行为不变）
+    public SwaggerConfig(@Lazy OperLogInterceptor operLogInterceptor) {
+        this.operLogInterceptor = operLogInterceptor;
+    }
 
     @Bean
     public OpenAPI customOpenApi() {
