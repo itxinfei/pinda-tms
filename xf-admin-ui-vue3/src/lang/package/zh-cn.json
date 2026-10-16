@@ -154,5 +154,8 @@
     "configManagement": "配置管理",
     "copyConfigDescription": "生成当前 defaults 片段并复制到剪贴板",
     "resetConfigDescription": "恢复所有设置为系统默认值"
+  },
+  "request": {
+    "forbidden": "当前账号无管理端权限，请用管理员账号登录"
   }
 }

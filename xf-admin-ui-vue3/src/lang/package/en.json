@@ -188,5 +188,8 @@
     "configManagement": "Config Management",
     "copyConfigDescription": "Generate the current defaults fragment and copy it to clipboard",
     "resetConfigDescription": "Restore all settings to system default values"
+  },
+  "request": {
+    "forbidden": "This account has no admin-console access. Please sign in with an administrator account."
   }
 }

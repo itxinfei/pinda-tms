@@ -7,6 +7,7 @@ import { usePermissionStoreHook } from "@/stores/permission";
 import { AuthStorage } from "@/utils/auth";
 import type { ApiResult } from "@/api/common";
 import { installTokenRefresh } from "@/utils/token-refresh";
+import i18n from "@/lang";
 
 const http = axios.create({
   baseURL: import.meta.env.VITE_API_BASE,
@@ -73,6 +74,13 @@ http.interceptors.response.use(
     // 令牌失效：透传原始响应给续期拦截器处理，不在此提示
     if (code === ApiCodeEnum.ACCESS_TOKEN_INVALID || code === ApiCodeEnum.REFRESH_TOKEN_INVALID) {
       return Promise.reject(error);
+    }
+
+    // 端级角色闸拒绝（HTTP 403，如非 ADMIN 账号登录管理端）：引导切换管理员账号
+    if (response.status === 403) {
+      const message = i18n.global.t("request.forbidden");
+      ElMessage.error(message);
+      return Promise.reject(new Error(message));
     }
 
     // 权限不足：D-42 权限下发未落地前无真实用户信息端点可刷新，跳过（避免再发必 404 请求）
