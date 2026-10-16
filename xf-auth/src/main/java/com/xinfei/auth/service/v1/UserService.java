@@ -15,17 +15,21 @@ import com.xinfei.auth.entity.AuthUserRole;
 import com.xinfei.auth.entity.CoreOrg;
 import com.xinfei.auth.entity.CoreStation;
 import com.xinfei.auth.entity.Role;
+import com.xinfei.feign.DispatchSmsFeign;
 import com.xinfei.auth.mapper.AuthUserMapper;
 import com.xinfei.auth.mapper.AuthUserRoleMapper;
 import com.xinfei.auth.mapper.CoreOrgMapper;
 import com.xinfei.auth.mapper.CoreStationMapper;
 import com.xinfei.auth.mapper.RoleMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -50,8 +54,12 @@ public class UserService {
     private final CoreOrgMapper orgMapper;
     private final CoreStationMapper stationMapper;
     private final StpInterfaceImpl stpInterface;
+    private final StringRedisTemplate stringRedisTemplate;
+    private final DispatchSmsFeign dispatchSmsFeign;
 
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();    /** 短信验证码开关（P0-7d）：true=经 xf-dispatch 渠道路由发真实短信；false=dev 固定码（不外发） */
+    @Value("${auth.sms-code-enabled:false}")
+    private boolean smsCodeEnabled;    private static final String SMS_CODE_KEY_PREFIX = "auth:sms-code:";    private static final java.security.SecureRandom CODE_RANDOM = new java.security.SecureRandom();    private static final org.slf4j.Logger SMS_LOG = org.slf4j.LoggerFactory.getLogger(UserService.class);
 
     /** 默认初始密码（新建用户未指定密码时） */
     private static final String DEFAULT_PASSWORD = "123456";
@@ -397,7 +405,7 @@ public class UserService {
         userMapper.updateById(up);
     }
 
-    /** 发送手机验证码（dev 固定码 + 日志） */
+    /** 发送手机验证码：开关开=随机码落 Redis + 经 xf-dispatch 发真实短信（P0-7d）；开关关=dev 固定码+日志 */
     public String sendMobileCode(String mobile) {
         if (!StringUtils.hasText(mobile)) {
             throw BizException.validFail("手机号不能为空");
@@ -408,8 +416,25 @@ public class UserService {
         if (count != null && count > 0) {
             throw BizException.validFail("该手机号已被其他账号绑定");
         }
-        logCode("手机", mobile);
-        return DEV_VERIFY_CODE;
+        if (!smsCodeEnabled) {
+            logCode("手机", mobile);
+            return DEV_VERIFY_CODE;
+        }
+        // 随机 6 位码落 Redis（一次性，5 分钟），经 xf-dispatch 渠道路由发送
+        String code = String.valueOf(100000 + CODE_RANDOM.nextInt(900000));
+        String key = SMS_CODE_KEY_PREFIX + mobile;
+        stringRedisTemplate.opsForValue().set(key, code, Duration.ofMinutes(5));
+        try {
+            dispatchSmsFeign.send(mobile, "您的验证码为 " + code + "，5 分钟内有效。");
+            SMS_LOG.info("[短信验证码] 已发送: mobile={}", mobile);
+            return null; // 真实短信模式不回显明文（Controller 忽略返回值）
+        } catch (Exception e) {
+            // 降级：发送失败不留 Redis 码，回退 dev 固定码保证流程可运行（不阻断主流程）
+            stringRedisTemplate.delete(key);
+            SMS_LOG.warn("[短信验证码] 发送失败，降级为固定码: mobile={}", mobile, e);
+            logCode("手机", mobile);
+            return DEV_VERIFY_CODE;
+        }
     }
 
     /** 发送邮箱验证码（dev 固定码 + 日志） */
@@ -428,7 +453,7 @@ public class UserService {
 
     /** 绑定/更换手机：校验验证码（dev 固定码） */
     public void bindMobile(Long userId, String mobile, String code) {
-        verifyCode(code);
+        verifyMobileCode(mobile, code);
         if (!StringUtils.hasText(mobile)) {
             throw BizException.validFail("手机号不能为空");
         }
@@ -484,6 +509,20 @@ public class UserService {
         if (!DEV_VERIFY_CODE.equals(StringUtils.trimWhitespace(code))) {
             throw BizException.validFail("验证码不正确（dev 环境固定为 " + DEV_VERIFY_CODE + "）");
         }
+    }
+
+    /** 手机验证码校验（P0-7d）：开关开=Redis 一次性码比对；开关关=dev 固定码 */
+    private void verifyMobileCode(String mobile, String code) {
+        if (!smsCodeEnabled) {
+            verifyCode(code);
+            return;
+        }
+        String key = SMS_CODE_KEY_PREFIX + mobile;
+        String saved = stringRedisTemplate.opsForValue().get(key);
+        if (saved == null || !saved.equals(StringUtils.trimWhitespace(code))) {
+            throw BizException.validFail("验证码不正确或已过期");
+        }
+        stringRedisTemplate.delete(key); // 一次性使用
     }
 
     private void logCode(String channel, String target) {

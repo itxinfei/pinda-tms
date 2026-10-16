@@ -78,3 +78,6 @@ xinfei:
     max-fail: 5
     # 锁定时长（秒）
     lock-seconds: 1800
+auth:
+  # 短信验证码开关（P0-7d）：true=经 xf-dispatch 渠道路由发真实短信（需 SMS_ALIYUN_* 与已报备签名/模板）；false=dev 固定码
+  sms-code-enabled: ${AUTH_SMS_CODE_ENABLED:false}
