@@ -128,7 +128,7 @@
     </el-card>
 
     <!-- 订单详情 -->
-    <el-drawer v-model="detailVisible" title="订单详情" size="min(620px, 92%)">
+    <el-drawer v-model="detailVisible" title="订单详情" size="min(980px, 94%)">
       <div v-loading="detailLoading" class="order-detail">
         <el-result v-if="detailError" icon="error" title="详情加载失败" sub-title="请检查网络后重试">
           <template #extra>
@@ -184,12 +184,12 @@
 
           <div class="order-detail__block">
             <div class="order-detail__title">货物信息</div>
-            <el-empty
-              description="货物明细在「货物维护」页查看与维护（新增 / 编辑 / 删除）"
-              :image-size="56"
-            >
-              <el-button type="primary" @click="goCargoFromDetail">管理货物</el-button>
-            </el-empty>
+            <CargoPanel
+              v-if="detail.id"
+              :order-id="detail.id"
+              :editable="cargoEditable"
+              @change="reloadDetail"
+            />
           </div>
 
           <el-descriptions title="收件信息" :column="2" border class="order-detail__block">
@@ -418,6 +418,7 @@ import {
 } from "@/api/order";
 import AreaAPI, { type Area } from "@/api/area";
 import CommonSimpleAPI, { type GoodsTypeSimple } from "@/api/common-simple";
+import CargoPanel from "./components/CargoPanel.vue";
 import { TransportOrderStatus, SchedulingStatus } from "@/api/transport-order";
 import {
   OrderType,
@@ -823,16 +824,18 @@ function reloadDetail() {
   }
 }
 
-/** 跳转货物编辑页（列表操作列 / 详情抽屉共用） */
+/** 跳转货物维护页（列表操作列；详情抽屉内已内联货物面板，无需跳转） */
 const router = useRouter();
 function goCargo(row: OrderRecord) {
   router.push({ path: "/order/cargoEdit", query: { orderId: row.id, orderNo: row.id } });
 }
-function goCargoFromDetail() {
-  if (detail.value?.id) {
-    router.push({ path: "/order/cargoEdit", query: { orderId: detail.value.id, orderNo: detail.value.id } });
-  }
-}
+
+/** 终态订单（已签收/已拒收/已取消）货物明细只读，避免改单影响已结算运单 */
+const ORDER_FINAL_STATUS: number[] = [OrderStatus.SIGNED, OrderStatus.REJECTED, OrderStatus.CANCELLED];
+const cargoEditable = computed(() => {
+  const status = detail.value?.status;
+  return status !== undefined && !ORDER_FINAL_STATUS.includes(status);
+});
 
 const joinArea = (...areas: ({ name?: string } | undefined)[]) =>
   areas.map((area) => area?.name).filter(Boolean).join(" / ") || "-";
