@@ -44,7 +44,13 @@ public class MybatisPlusConfigure {
             "dict_area",
             // 租户菜单池由平台侧跨租户维护，TenantService 每条语句显式 eq(tenantId)；
             // 若不放行，插件注入的 tenant_id 会与显式条件相与，非当前租户恒查空
-            "sys_tenant_menu"
+            "sys_tenant_menu",
+            // 角色与授权绑定是平台级鉴权数据：登录/鉴权链路（Sa-Token 角色集、菜单下发）
+            // 在 token-session 租户上下文缺失时会回落 tenant_id=0 恒查空，
+            // 导致超管被误判为无角色（403）/ 空菜单，故与 sys_menu 同口径全局放行
+            "sys_user_role",
+            "sys_role",
+            "sys_role_menu"
     );
 
     @Bean

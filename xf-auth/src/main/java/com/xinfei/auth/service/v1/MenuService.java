@@ -172,6 +172,10 @@ public class MenuService {
     public List<RouteDTO> buildRoutes(List<Long> authorizedIds) {
         List<SysMenu> menus = loadRouters(1);
         if (authorizedIds != null) {
+            // 空授权集合 = 无任何角色/绑定，直接返回空菜单，避免空 IN () SQL 语法错误
+            if (authorizedIds.isEmpty()) {
+                return new ArrayList<>();
+            }
             menus = retainAuthorizedWithAncestors(menus, authorizedIds);
         }
         Map<Long, List<SysMenu>> byParent = groupByParent(menus);
