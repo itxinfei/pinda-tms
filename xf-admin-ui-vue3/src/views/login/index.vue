@@ -119,7 +119,6 @@
                     />
                     <div 
                       class="login-card__captcha" 
-                      @click="getCaptcha"
                       style="
                         width: 120px;
                         height: 40px;
@@ -133,6 +132,7 @@
                         align-items: center;
                         justify-content: center;
                       "
+                      @click="getCaptcha"
                     >
                       <el-icon v-if="codeLoading" class="is-loading" :size="16">
                         <Loading />
@@ -183,7 +183,7 @@
 <script setup lang="ts">
 defineOptions({ name: "LoginPage", inheritAttrs: false });
 
-import { Clock, Lock, Loading, Refresh, User } from "@element-plus/icons-vue";
+import { Lock, Loading, Refresh, User } from "@element-plus/icons-vue";
 import type { FormInstance } from "element-plus";
 import AuthAPI from "@/api/auth";
 import type { LoginRequest } from "@/api/auth";
@@ -278,13 +278,6 @@ function checkCapsLock(event: KeyboardEvent) {
   if (event instanceof KeyboardEvent) {
     isCapsLock.value = event.getModifierState("CapsLock");
   }
-}
-
-/**
- * 切换登录区展示的表单
- */
-function showForm(type: "resetPwd") {
-  component.value = type;
 }
 
 onMounted(() => getCaptcha());
