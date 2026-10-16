@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.xinfei.auth.common.BizException;
+import com.xinfei.auth.common.v1.OptionVO;
 import com.xinfei.auth.common.v1.PageResult;
 import com.xinfei.auth.common.v1.UserExcelRow;
 import com.xinfei.auth.common.v1.UserForm;
@@ -54,6 +55,19 @@ public class UserService {
 
     /** 默认初始密码（新建用户未指定密码时） */
     private static final String DEFAULT_PASSWORD = "123456";
+
+    /** 用户下拉选项（原固定空列表占位转正）：仅启用状态，label 优先姓名、回落账号 */
+    public List<OptionVO> options() {
+        List<AuthUser> users = userMapper.selectList(Wrappers.<AuthUser>lambdaQuery()
+                .eq(AuthUser::getStatus, 1)
+                .orderByAsc(AuthUser::getId));
+        return users.stream().map(u -> {
+            OptionVO vo = new OptionVO();
+            vo.setValue(String.valueOf(u.getId()));
+            vo.setLabel(StringUtils.hasText(u.getName()) ? u.getName() : u.getAccount());
+            return vo;
+        }).toList();
+    }
 
     public PageResult<UserVO> page(long pageNum, long pageSize, String keywords,
                                    Integer status, Long deptId) {

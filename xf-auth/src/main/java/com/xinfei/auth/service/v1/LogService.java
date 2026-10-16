@@ -9,6 +9,7 @@ import com.xinfei.auth.common.v1.VisitOverviewDetail;
 import com.xinfei.auth.common.v1.VisitTrendDetail;
 import com.xinfei.auth.entity.SysOperationLog;
 import com.xinfei.auth.mapper.SysOperationLogMapper;
+import com.xinfei.common.utils.SensitiveMasker;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -47,6 +48,10 @@ public class LogService {
         if (!StringUtils.hasText(row.getLogType())) {
             row.setLogType(SysOperationLog.TYPE_OPER);
         }
+        // 落库前统一脱敏（《69》E2：日志禁止明文密码/验证码/token/手机号/身份证）
+        row.setContent(SensitiveMasker.mask(row.getContent()));
+        row.setRequestUri(SensitiveMasker.mask(row.getRequestUri()));
+        row.setErrorMsg(SensitiveMasker.mask(row.getErrorMsg()));
         logMapper.insert(row);
     }
 
@@ -182,10 +187,11 @@ public class LogService {
         v.setModule(l.getModule());
         v.setActionType(l.getActionType());
         v.setTitle(l.getTitle());
-        v.setContent(l.getContent());
+        // 读路径再兜底脱敏一次：历史行入库时未脱敏（mask 幂等，重复调用无副作用）
+        v.setContent(SensitiveMasker.mask(l.getContent()));
         v.setOperatorId(l.getOperatorId());
         v.setOperatorName(l.getOperatorName());
-        v.setRequestUri(l.getRequestUri());
+        v.setRequestUri(SensitiveMasker.mask(l.getRequestUri()));
         v.setRequestMethod(l.getRequestMethod());
         v.setIp(l.getIp());
         v.setRegion(l.getRegion());
@@ -194,7 +200,7 @@ public class LogService {
         v.setOs(l.getOs());
         v.setStatus(l.getStatus());
         v.setExecutionTime(l.getExecutionTime());
-        v.setErrorMsg(l.getErrorMsg());
+        v.setErrorMsg(SensitiveMasker.mask(l.getErrorMsg()));
         v.setCreateTime(l.getCreateTime() == null ? null : l.getCreateTime().format(FMT));
         return v;
     }

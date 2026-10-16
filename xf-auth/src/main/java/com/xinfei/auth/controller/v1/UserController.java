@@ -133,7 +133,7 @@ public class UserController {
     @GetMapping("/options")
     @SaCheckPermission("sys:user:list")
     public ApiResult<List<OptionVO>> options() {
-        return ApiResult.success(List.of());
+        return ApiResult.success(userService.options());
     }
 
     // ============ Excel 导入导出/模板（SYS#4）============
