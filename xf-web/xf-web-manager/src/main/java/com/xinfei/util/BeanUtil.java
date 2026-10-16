@@ -396,6 +396,16 @@ public class BeanUtil {
      * 详情「司机信息」表格恒为空；此处补齐并对 Feign 为 null 的旧调用方保持兼容。</p>
      */
     public static TaskTransportVo parseTaskTransportDTO2Vo(TaskTransportDTO dto, TransportTripsFeign transportTripsFeign, OrgFeign orgFeign, UserFeign userFeign, TruckFeign truckFeign, TransportOrderFeign transportOrderFeign, OrderFeign orderFeign, AreaFeign areaFeign, DriverJobFeign driverJobFeign) {
+        return parseTaskTransportDTO2Vo(dto, transportTripsFeign, orgFeign, userFeign, truckFeign,
+                transportOrderFeign, orderFeign, areaFeign, driverJobFeign, null);
+    }
+
+    /**
+     * 运输任务 DTO → VO（可传入预置的司机映射，避免列表逐行远程查询）。
+     *
+     * @param driversByTaskId 任务 id → 司机列表的预置映射；为空时按单任务查询（详情场景）
+     */
+    public static TaskTransportVo parseTaskTransportDTO2Vo(TaskTransportDTO dto, TransportTripsFeign transportTripsFeign, OrgFeign orgFeign, UserFeign userFeign, TruckFeign truckFeign, TransportOrderFeign transportOrderFeign, OrderFeign orderFeign, AreaFeign areaFeign, DriverJobFeign driverJobFeign, Map<Long, List<SysUserVo>> driversByTaskId) {
         TaskTransportVo vo = new TaskTransportVo();
         BeanUtils.copyProperties(dto, vo);
         vo.setId(toStr(dto.getId()));
@@ -448,8 +458,12 @@ public class BeanUtil {
             });
         }
         vo.setTransportOrders(transportOrderVoList);
-        // 司机信息：经 work_driver_job（任务-司机）反查，未派司机的任务返回空列表（前端显示 "-"）
-        vo.setDrivers(parseTaskDrivers(dto.getId(), driverJobFeign, userFeign));
+        // 司机信息：列表场景由调用方批量预置映射（避免逐行远程查询）；详情场景单任务反查。
+        // 未派司机的任务返回空列表（前端显示 "-"）
+        List<SysUserVo> drivers = driversByTaskId != null
+                ? driversByTaskId.getOrDefault(dto.getId(), new ArrayList<>())
+                : parseTaskDrivers(dto.getId(), driverJobFeign, userFeign);
+        vo.setDrivers(drivers);
         return vo;
     }
 
@@ -463,6 +477,52 @@ public class BeanUtil {
      * @param taskId运输任务 id
      * @return 司机 VO 列表，无司机时为空列表（非 null）
      */
+    /**
+     * 批量取一批运输任务的司机（分页列表用）。
+     *
+     * <p>把「每行 1 次 driver-job 查询 + 1 次用户查询」的 N+1 压成 2 次远程调用：
+     * 先按任务 id 集合一次查司机作业单，再把所有司机 id 去重后一次查用户。
+     * 任一步失败/无数据都返回空 Map（前端显示 "-"），不影响列表主体渲染。</p>
+     *
+     * @param taskIds 一页内的运输任务 id
+     * @return 任务 id → 司机列表
+     */
+    public static Map<Long, List<SysUserVo>> parseTaskDriversBatch(List<Long> taskIds, DriverJobFeign driverJobFeign, UserFeign userFeign) {
+        Map<Long, List<SysUserVo>> result = new LinkedHashMap<>();
+        if (taskIds == null || taskIds.isEmpty() || driverJobFeign == null || userFeign == null) {
+            return result;
+        }
+        List<DriverJobDTO> jobs = Rx.list(driverJobFeign.findAllByTaskTransportIds(taskIds));
+        if (jobs.isEmpty()) {
+            return result;
+        }
+        List<Long> driverIds = jobs.stream()
+                .map(DriverJobDTO::getDriverId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        if (driverIds.isEmpty()) {
+            return result;
+        }
+        Map<Long, SysUserVo> userMap = Rx.list(userFeign.list(driverIds, null, null, null)).stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toMap(UserDTO::getId, user -> parseUser2Vo(user, null, null), (a, b) -> a));
+        for (DriverJobDTO job : jobs) {
+            SysUserVo userVo = userMap.get(job.getDriverId());
+            if (userVo == null || job.getTaskTransportId() == null) {
+                continue;
+            }
+            result.computeIfAbsent(job.getTaskTransportId(), k -> new ArrayList<>());
+            // 同一任务多司机时按 userId 去重
+            List<SysUserVo> drivers = result.get(job.getTaskTransportId());
+            boolean duplicated = drivers.stream().anyMatch(item -> String.valueOf(item.getUserId()).equals(String.valueOf(userVo.getUserId())));
+            if (!duplicated) {
+                drivers.add(userVo);
+            }
+        }
+        return result;
+    }
+
     private static List<SysUserVo> parseTaskDrivers(Long taskId, DriverJobFeign driverJobFeign, UserFeign userFeign) {
         if (taskId == null || driverJobFeign == null || userFeign == null) {
             return new ArrayList<>();

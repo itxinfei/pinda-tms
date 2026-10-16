@@ -20,6 +20,7 @@ import com.xinfei.util.BeanUtil;
 import com.xinfei.util.Rx;
 import com.xinfei.vo.work.PointDTO;
 import com.xinfei.vo.work.TaskTransportVo;
+import com.xinfei.vo.base.userCenter.SysUserVo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +30,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.Objects;
 
 
 /**
@@ -80,7 +83,12 @@ public class TransportTaskController {
         // 远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
         PageResponse<TaskTransportDTO> dtoPageResponse = webManagerFeign.findTaskTransportByPage(dto);
         List<TaskTransportDTO> dtoList = Rx.items(dtoPageResponse);
-        List<TaskTransportVo> voList = dtoList.stream().map(taskTransportDTO -> BeanUtil.parseTaskTransportDTO2Vo(taskTransportDTO, transportTripsFeign, orgFeign, userFeign, truckFeign, transportOrderFeign, orderFeign, areaFeign, driverJobFeign)).collect(Collectors.toList());
+        // 司机信息批量取：一页任务一次 driver-job 查询 + 一次用户查询，
+        // 避免逐行组装时产生 N+1 远程调用（详情/更新等单条路径仍走单任务查询）
+        Map<Long, List<SysUserVo>> driversByTaskId = BeanUtil.parseTaskDriversBatch(
+                dtoList.stream().map(TaskTransportDTO::getId).filter(Objects::nonNull).collect(Collectors.toList()),
+                driverJobFeign, userFeign);
+        List<TaskTransportVo> voList = dtoList.stream().map(taskTransportDTO -> BeanUtil.parseTaskTransportDTO2Vo(taskTransportDTO, transportTripsFeign, orgFeign, userFeign, truckFeign, transportOrderFeign, orderFeign, areaFeign, driverJobFeign, driversByTaskId)).collect(Collectors.toList());
         return PageResponse.<TaskTransportVo>builder().items(voList).pagesize(vo.getPageSize()).page(vo.getPage())
                 .counts(dtoPageResponse != null ? dtoPageResponse.getCounts() : 0L)
                 .pages(dtoPageResponse != null ? dtoPageResponse.getPages() : 0L).build();

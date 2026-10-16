@@ -69,4 +69,16 @@ public class DriverJobServiceImpl extends
         wrapper.orderByDesc(DriverJob::getCreateTime);
         return list(wrapper);
     }
+
+    @Override
+    public List<DriverJob> findAllByTaskTransportIds(List<Long> taskTransportIds) {
+        // 空集合不打库：IN () 是非法 SQL，且列表首屏可能一条都没有
+        if (taskTransportIds == null || taskTransportIds.isEmpty()) {
+            return List.of();
+        }
+        LambdaQueryWrapper<DriverJob> wrapper = new LambdaQueryWrapper<>();
+        wrapper.in(DriverJob::getTaskTransportId, taskTransportIds);
+        wrapper.orderByAsc(DriverJob::getCreateTime);
+        return list(wrapper);
+    }
 }

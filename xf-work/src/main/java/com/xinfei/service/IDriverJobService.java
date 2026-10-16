@@ -41,4 +41,12 @@ public interface IDriverJobService extends IService<DriverJob> {
      * @return 司机作业单列表
      */
     List<DriverJob> findAll(List<Long> ids, Long id, Long driverId, Integer status, Long taskTransportId);
+
+    /**
+     * 按一批运输任务 id 一次性查询司机作业单（分页列表组装司机信息用，避免逐行查询的 N+1）
+     *
+     * @param taskTransportIds 运输任务 id 集合（为空直接返回空列表，不打库）
+     * @return 命中这些任务的司机作业单列表
+     */
+    List<DriverJob> findAllByTaskTransportIds(List<Long> taskTransportIds);
 }

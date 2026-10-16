@@ -56,4 +56,13 @@ public interface DriverJobFeign {
      */
     @PostMapping("/driver-job/findAll")
     List<DriverJobDTO> findAll(@RequestBody DriverJobDTO dto);
+
+    /**
+     * 按一批运输任务 id 一次性查询司机作业单（管理端分页列表组装司机信息用）
+     *
+     * @param taskTransportIds 运输任务 id 集合
+     * @return 命中的司机作业单集合
+     */
+    @PostMapping("/driver-job/findAllByTaskTransportIds")
+    List<DriverJobDTO> findAllByTaskTransportIds(@RequestBody List<Long> taskTransportIds);
 }

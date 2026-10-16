@@ -51,4 +51,10 @@ public class DriverJobFeignFallback implements DriverJobFeign {
         log.warn("远程调用 xf-work 失败: findAll({}), 返回空列表", dto);
         return Collections.emptyList();
     }
+
+    @Override
+    public List<DriverJobDTO> findAllByTaskTransportIds(List<Long> taskTransportIds) {
+        log.warn("远程调用 xf-work 失败: findAllByTaskTransportIds({}), 返回空列表", taskTransportIds);
+        return Collections.emptyList();
+    }
 }

@@ -122,4 +122,25 @@ public class DriverJobController {
         }
         return dtos;
     }
+
+    /**
+     * 按一批运输任务 id 一次性查询司机作业单
+     *
+     * <p>供管理端分页列表组装司机信息：逐行调用 findAll 会产生 N+1 远程调用，
+     * 这里提供批量入口把一页任务的司机压成一次查询。</p>
+     *
+     * @param taskTransportIds 运输任务 id 集合
+     * @return 司机作业单列表
+     */
+    @PostMapping("/findAllByTaskTransportIds")
+    public List<DriverJobDTO> findAllByTaskTransportIds(@RequestBody List<Long> taskTransportIds) {
+        List<DriverJobDTO> dtos = new ArrayList<>();
+        List<DriverJob> driverJobs = driverJobService.findAllByTaskTransportIds(taskTransportIds);
+        for (DriverJob driverJob : driverJobs) {
+            DriverJobDTO resultDto = new DriverJobDTO();
+            BeanUtils.copyProperties(driverJob, resultDto);
+            dtos.add(resultDto);
+        }
+        return dtos;
+    }
 }
