@@ -2,7 +2,21 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.xinfei.mapper.WebManagerMapper">
     <select id="findDriverJobByPage" resultType="com.xinfei.DTO.DriverJobDTO">
-        SELECT driver_job.* FROM work_driver_job driver_job
+        SELECT
+        driver_job.id,
+        driver_job.driver_id,
+        driver_job.task_transport_id,
+        driver_job.start_org_id,
+        driver_job.end_org_id,
+        driver_job.status,
+        driver_job.start_handover,
+        driver_job.finish_handover,
+        driver_job.plan_departure_time,
+        driver_job.actual_departure_time,
+        driver_job.plan_arrival_time,
+        driver_job.actual_arrival_time,
+        driver_job.create_time
+        FROM work_driver_job driver_job
         <if test="params.driverName != null and params.driverName != ''">
             LEFT JOIN sys_user auth_user ON driver_job.driver_id = auth_user.id
         </if>
@@ -27,10 +41,33 @@
     </select>
 
     <select id="findTaskPickupDispatchJobByPage" resultType="com.xinfei.DTO.TaskPickupDispatchDTO">
-        SELECT task_pickup_dispatch.* FROM work_pickup_dispatch_task task_pickup_dispatch
+        SELECT
+        task_pickup_dispatch.id,
+        task_pickup_dispatch.order_id,
+        task_pickup_dispatch.task_type,
+        task_pickup_dispatch.status,
+        task_pickup_dispatch.sign_status,
+        task_pickup_dispatch.org_id,
+        task_pickup_dispatch.courier_id,
+        task_pickup_dispatch.assigned_status,
+        task_pickup_dispatch.estimated_start_time,
+        task_pickup_dispatch.actual_start_time,
+        task_pickup_dispatch.estimated_end_time,
+        task_pickup_dispatch.actual_end_time,
+        task_pickup_dispatch.confirm_time,
+        task_pickup_dispatch.cancel_time,
+        task_pickup_dispatch.mark,
+        task_pickup_dispatch.create_time
+        FROM work_pickup_dispatch_task task_pickup_dispatch
         LEFT JOIN oms_order pdorder ON task_pickup_dispatch.order_id=pdorder.id
-        LEFT JOIN work_transport_order transport_order ON pdorder.id=transport_order.order_id
-        LEFT JOIN sys_user auth_user ON task_pickup_dispatch.courier_id = auth_user.id
+        <!-- transport_order 仅服务于 transportOrderId 过滤；order_id 非唯一，多行会放大分页行数与总数，故按需 JOIN -->
+        <if test="params.transportOrderId != null and params.transportOrderId != ''">
+            LEFT JOIN work_transport_order transport_order ON pdorder.id=transport_order.order_id
+        </if>
+        <!-- auth_user 仅服务于 courierName 过滤 -->
+        <if test="params.courierName != null and params.courierName != ''">
+            LEFT JOIN sys_user auth_user ON task_pickup_dispatch.courier_id = auth_user.id
+        </if>
         <where>
             <if test="params.taskType != null">
                 AND task_pickup_dispatch.task_type = #{params.taskType}
@@ -67,8 +104,26 @@
     </select>
 
     <select id="findTransportOrderByPage" resultType="com.xinfei.DTO.TransportOrderDTO">
-        SELECT * FROM work_transport_order transport_order
-        LEFT JOIN oms_order pdorder ON transport_order.order_id = pdorder.id
+        SELECT
+        transport_order.id,
+        transport_order.order_id,
+        transport_order.status,
+        transport_order.scheduling_status,
+        transport_order.create_time
+        FROM work_transport_order transport_order
+        <!-- pdorder 仅服务于发/收件人过滤条件，且按 order_id 唯一，不会放大行数 -->
+        <if test="params.senderName != null and params.senderName != ''
+                or params.senderPhone != null and params.senderPhone != ''
+                or params.senderProvinceId != null and params.senderProvinceId != ''
+                or params.senderCityId != null and params.senderCityId != ''
+                or params.senderCountyId != null and params.senderCountyId != ''
+                or params.receiverName != null and params.receiverName != ''
+                or params.receiverPhone != null and params.receiverPhone != ''
+                or params.receiverProvinceId != null and params.receiverProvinceId != ''
+                or params.receiverCityId != null and params.receiverCityId != ''
+                or params.receiverCountyId != null and params.receiverCountyId != ''">
+            LEFT JOIN oms_order pdorder ON transport_order.order_id = pdorder.id
+        </if>
         <where>
             <if test="params.id != null and params.id != ''">
                 AND transport_order.id LIKE CONCAT('%',#{params.id},'%')
@@ -120,9 +175,38 @@
     </select>
 
     <select id="findTaskTransportByPage" resultType="com.xinfei.DTO.TaskTransportDTO">
-        SELECT * FROM work_task_transport task_transport
-        LEFT JOIN work_driver_job driver_job ON task_transport.id = driver_job.task_transport_id
-        LEFT JOIN sys_user auth_user ON driver_job.driver_id = auth_user.id
+        SELECT
+        task_transport.id,
+        task_transport.trips_id,
+        task_transport.start_org_id,
+        task_transport.end_org_id,
+        task_transport.status,
+        task_transport.assigned_status,
+        task_transport.loading_status,
+        task_transport.truck_id,
+        task_transport.pickup_picture,
+        task_transport.cargo_picture,
+        task_transport.certificate_picture,
+        task_transport.deliver_picture,
+        task_transport.pickup_longitude,
+        task_transport.pickup_latitude,
+        task_transport.deliver_longitude,
+        task_transport.deliver_latitude,
+        task_transport.plan_departure_time,
+        task_transport.actual_departure_time,
+        task_transport.plan_arrival_time,
+        task_transport.actual_arrival_time,
+        task_transport.plan_pick_up_time,
+        task_transport.actual_pick_up_time,
+        task_transport.plan_delivery_time,
+        task_transport.actual_delivery_time,
+        task_transport.create_time
+        FROM work_task_transport task_transport
+        <!-- driver_job / auth_user 仅服务于 driverName 过滤；一个任务可配多司机，无条件 JOIN 会按「任务×司机数」放大行数与分页总数 -->
+        <if test="params.driverName != null and params.driverName != ''">
+            LEFT JOIN work_driver_job driver_job ON task_transport.id = driver_job.task_transport_id
+            LEFT JOIN sys_user auth_user ON driver_job.driver_id = auth_user.id
+        </if>
         <where>
             <if test="params.id != null and params.id != ''">
                 AND task_transport.id LIKE CONCAT('%',#{params.id},'%')
