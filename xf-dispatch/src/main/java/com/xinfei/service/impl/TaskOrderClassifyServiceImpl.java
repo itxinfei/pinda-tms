@@ -190,7 +190,7 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
         //根据当前订单获取发件人地址详细信息，包含省市区
         String address = senderFullAddress(order);
         if(StringUtils.isBlank(address)){
-            exceptionHappend("发件人地址不能为空");
+            throw exceptionHappend("发件人地址不能为空");
         }
 
         //调用百度地图工具类，根据地址获取对应的经纬度坐标
@@ -203,7 +203,7 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
                 log.info("百度地图不可用，按发件区县[{}]确定性匹配起始网点[{}]", order.getSenderCountyId(), fallbackAgencyId);
                 return fallbackAgencyId;
             }
-            exceptionHappend("发件人地址不正确");
+            throw exceptionHappend("发件人地址不正确");
         }
 
         log.info("根据地址{}获取对应的坐标值{}",address,location);
@@ -211,7 +211,7 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
         //根据经纬度坐标获取对应的区县检查通过百度地图获取的区域是否和下单时选择的区域一致
         Map map = EntCoordSyncJob.getLocationByPosition(location);//根据经纬度获取对应的区域信息（从百度官方获取）
         if(ObjectUtils.isEmpty(map)){
-            exceptionHappend("根据经纬度获取区域信息为空");
+            throw exceptionHappend("根据经纬度获取区域信息为空");
         }
 
         String adcode = (String) map.get("adcode");
@@ -219,19 +219,19 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
         //根据adcode（区域编码）查询我们系统中的区域信息
         AreaDTO area = areaFeign.getByCode(adcode + "000000");
         if(area == null){
-            exceptionHappend("没有查询到区域数据");
+            throw exceptionHappend("没有查询到区域数据");
         }
 
         // order 侧的区域 id 是 String（列 varchar(20)），area.getId() 是 Long，
         // 直接 equals 恒 false，会让每一单都被判成"区域不一致"而无法进分单
         if (!StringUtils.equals(order.getSenderCountyId(), String.valueOf(area.getId()))) {
-            exceptionHappend("发件地址区域id和根据坐标计算出的区域不一致");
+            throw exceptionHappend("发件地址区域id和根据坐标计算出的区域不一致");
         }
 
         //查询当前区县下的所有网点
         List<AgencyScopeDto> agencyScope = agencyScopeFeign.findAllAgencyScope(area.getId().toString(), null, null, null);
         if(agencyScope == null || agencyScope.size() == 0){
-            exceptionHappend("无法获取收件人所在网点信息");
+            throw exceptionHappend("无法获取收件人所在网点信息");
         }
 
         //计算当前区域下所有网点距离收件人地址最近的网点
@@ -245,29 +245,83 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
      * @param order
      * @return
      */
-    @SneakyThrows
     private String senderFullAddress(OrderDTO order) {
-        Long provinceId = Long.valueOf(order.getSenderProvinceId());//省份id
-        Long cityId = Long.valueOf(order.getSenderCityId());//市id
-        Long countyId = Long.valueOf(order.getSenderCountyId());//区id
+        return buildFullAddress("发件人", order.getSenderProvinceId(), order.getSenderCityId(),
+                order.getSenderCountyId(), order.getSenderAddress());
+    }
+
+    /**
+     * 拼装「省+市+区+详细地址」全地址（发件/收件共用）。
+     *
+     * <p>健壮性约束（区划数据缺失必须给出业务原因，不能抛 NPE）：区划 Feign 抖动/超时/返回空时
+     * 会得到空 map，原实现直接 {@code areaMap.get(id).getName()} 抛 {@code NullPointerException}，
+     * 日志只有 "Map.get(Object) is null"，无法定位是哪一级区划缺失。这里逐级判空并转成带层级的
+     * 业务异常，由调用方（buildNewOrder/buildTransferOrder 的单订单 try-catch）隔离跳过该单。</p>
+     *
+     * @param roleLabel 角色标签（发件人/收件人），用于异常文案
+     * @param provinceId 省id
+     * @param cityId     市id
+     * @param countyId   区县id
+     * @param detail     详细地址
+     * @return 拼接后的完整地址
+     */
+    private String buildFullAddress(String roleLabel, String provinceId, String cityId,
+                                    String countyId, String detail) {
+        Long province = parseAreaId(provinceId, roleLabel + "省");
+        Long city = parseAreaId(cityId, roleLabel + "市");
+        Long county = parseAreaId(countyId, roleLabel + "区");
 
         Set<Long> areaSet = new HashSet<>();
-        areaSet.add(provinceId);
-        areaSet.add(cityId);
-        areaSet.add(countyId);
+        areaSet.add(province);
+        areaSet.add(city);
+        areaSet.add(county);
 
-        CompletableFuture<Map<Long, AreaDTO>> future = XfCompletableFuture.areaMapFuture(areaFeign, null, areaSet);
-        Map<Long, AreaDTO> areaMap = future.get();
+        Map<Long, AreaDTO> areaMap;
+        try {
+            areaMap = XfCompletableFuture.areaMapFuture(areaFeign, null, areaSet).get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw exceptionHappend(roleLabel + "地址区划查询被中断");
+        } catch (Exception e) {
+            throw exceptionHappend(roleLabel + "地址区划查询失败: " + e.getMessage());
+        }
 
-        //根据key（id的值）获取到对应的区域Area对象
-        String provinceName = areaMap.get(provinceId).getName();
-        String cityName = areaMap.get(cityId).getName();
-        String countyName = areaMap.get(countyId).getName();
+        if (areaMap == null || areaMap.isEmpty()) {
+            throw exceptionHappend(roleLabel + "地址区划数据缺失（区划服务无返回）");
+        }
 
         StringBuffer stringBuffer = new StringBuffer();
-        stringBuffer.append(provinceName).append(cityName).append(countyName).append(order.getSenderAddress());
+        stringBuffer.append(requireAreaName(areaMap, province, roleLabel + "省"))
+                .append(requireAreaName(areaMap, city, roleLabel + "市"))
+                .append(requireAreaName(areaMap, county, roleLabel + "区"))
+                .append(StringUtils.isBlank(detail) ? "" : detail.trim());
 
         return stringBuffer.toString();
+    }
+
+    /**
+     * 区划id 字符串转 Long：空白/非数字一律转成明确业务异常（避免 Long.valueOf 抛 NumberFormatException）
+     */
+    private Long parseAreaId(String rawId, String label) {
+        if (StringUtils.isBlank(rawId)) {
+            throw exceptionHappend(label + "区划id为空");
+        }
+        try {
+            return Long.valueOf(rawId.trim());
+        } catch (NumberFormatException e) {
+            throw exceptionHappend(label + "区划id非法: " + rawId);
+        }
+    }
+
+    /**
+     * 取区划名称，缺失时给出带层级与id 的业务异常（替代原 NPE）
+     */
+    private String requireAreaName(Map<Long, AreaDTO> areaMap, Long areaId, String label) {
+        AreaDTO area = areaMap.get(areaId);
+        if (area == null || StringUtils.isBlank(area.getName())) {
+            throw exceptionHappend(label + "区划数据缺失: id=" + areaId);
+        }
+        return area.getName();
     }
 
     /**
@@ -313,8 +367,8 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
      * 抛出业务异常，中断当前流程
      * @param msg 错误信息
      */
-    private void exceptionHappend(String msg){
-        throw new RuntimeException(msg);
+    private RuntimeException exceptionHappend(String msg){
+        return new RuntimeException(msg);
     }
 
     /**
@@ -343,7 +397,7 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
         //根据当前订单获取收件人地址详细信息，包含省市区，例如：北京市昌平区建材城西路金燕龙办公楼
         String address = receiverFullAddress(order);
         if(StringUtils.isBlank(address)){
-            exceptionHappend("收件人地址不能为空");
+            throw exceptionHappend("收件人地址不能为空");
         }
 
         //调用百度地图工具类，根据地址获取对应的经纬度坐标
@@ -356,7 +410,7 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
                 log.info("百度地图不可用，按收件区县[{}]确定性匹配目的网点[{}]", order.getReceiverCountyId(), fallbackAgencyId);
                 return fallbackAgencyId;
             }
-            exceptionHappend("收件人地址不正确");
+            throw exceptionHappend("收件人地址不正确");
         }
 
         log.info("根据地址{}获取对应的坐标值{}",address,location);
@@ -364,7 +418,7 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
         //根据经纬度获取对应的区县检查通过百度地图获取的区域是否和下单时选择的区域一致
         Map map = EntCoordSyncJob.getLocationByPosition(location);//根据经纬度获取对应的区域信息（从百度官方获取）
         if(ObjectUtils.isEmpty(map)){
-            exceptionHappend("根据经纬度获取区域信息为空");
+            throw exceptionHappend("根据经纬度获取区域信息为空");
         }
 
         String adcode = (String) map.get("adcode");
@@ -372,18 +426,18 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
         //根据adcode（区域编码）查询我们系统中的区域信息
         AreaDTO area = areaFeign.getByCode(adcode + "000000");
         if(area == null){
-            exceptionHappend("没有查询到区域数据");
+            throw exceptionHappend("没有查询到区域数据");
         }
 
         // 同上：Area.id 是 Long、order 侧县 id 是 varchar，直接 equals 恒 false
         if(!StringUtils.equals(order.getReceiverCountyId(), String.valueOf(area.getId()))){
-            exceptionHappend("收货地址区域id和根据坐标计算出的区域不一致");
+            throw exceptionHappend("收货地址区域id和根据坐标计算出的区域不一致");
         }
 
         //查询当前区县下的所有网点
         List<AgencyScopeDto> agencyScope = agencyScopeFeign.findAllAgencyScope(area.getId().toString(), null, null, null);
         if(agencyScope == null || agencyScope.size() == 0){
-            exceptionHappend("无法获取收件人所在网点信息");
+            throw exceptionHappend("无法获取收件人所在网点信息");
         }
 
         //计算当前区域下所有网点距离收件人地址最近的网点
@@ -437,29 +491,9 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
      * @param order
      * @return
      */
-    @SneakyThrows
     private String receiverFullAddress(OrderDTO order) {
-        Long provinceId = Long.valueOf(order.getReceiverProvinceId());//省份id
-        Long cityId = Long.valueOf(order.getReceiverCityId());//市id
-        Long countyId = Long.valueOf(order.getReceiverCountyId());//区id
-
-        Set<Long> areaSet = new HashSet<>();
-        areaSet.add(provinceId);
-        areaSet.add(cityId);
-        areaSet.add(countyId);
-
-        CompletableFuture<Map<Long, AreaDTO>> future = XfCompletableFuture.areaMapFuture(areaFeign, null, areaSet);
-        Map<Long, AreaDTO> areaMap = future.get();
-
-        //根据key（id的值）获取到对应的区域Area对象
-        String provinceName = areaMap.get(provinceId).getName();
-        String cityName = areaMap.get(cityId).getName();
-        String countyName = areaMap.get(countyId).getName();
-
-        StringBuffer stringBuffer = new StringBuffer();
-        stringBuffer.append(provinceName).append(cityName).append(countyName).append(order.getReceiverAddress());
-
-        return stringBuffer.toString();
+        return buildFullAddress("收件人", order.getReceiverProvinceId(), order.getReceiverCityId(),
+                order.getReceiverCountyId(), order.getReceiverAddress());
     }
 
 
