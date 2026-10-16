@@ -25,7 +25,14 @@ public class ForwardSameTokenFilter implements GlobalFilter, Ordered {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        // 先剥离客户端可能伪造的租户/用户头，再由服务端按 token 重新注入：
+        // 不剥离时攻击者自带 tenantId:1 会覆盖 token-session 的真实租户，
+        // 配合后端「无 header回落 tenant 0」的口径形成越权读取（真实漏洞，非理论）。
         ServerHttpRequest.Builder builder = exchange.getRequest().mutate()
+                .headers(headers -> {
+                    headers.remove(TENANT_HEADER);
+                    headers.remove(USER_ID_HEADER);
+                })
                 .header(SaSameUtil.SAME_TOKEN, SaSameUtil.getToken());
 
         // 已登录请求：按 token 查 token-session，透传租户ID（不依赖 Reactor 上下文持有者）

@@ -34,7 +34,7 @@ public class SysConfigController {
 
     @Operation(summary = "参数配置分页")
     @GetMapping("/page")
-    @SaCheckPermission("config:list")
+    @SaCheckPermission("sys:config:list")
     public Result page(@RequestParam("page") Integer page,
                        @RequestParam("pageSize") Integer pageSize,
                        @RequestParam(value = "keywords", required = false) String keywords,
@@ -44,28 +44,28 @@ public class SysConfigController {
 
     @Operation(summary = "参数配置详情")
     @GetMapping("/{id}")
-    @SaCheckPermission("config:detail")
+    @SaCheckPermission("sys:config:detail")
     public Result detail(@PathVariable("id") Long id) {
         return Result.ok().put("data", configFeign.detail(id));
     }
 
     @Operation(summary = "新增参数配置")
     @PostMapping
-    @SaCheckPermission("config:create")
+    @SaCheckPermission("sys:config:create")
     public Result save(@RequestBody SysConfigDTO dto) {
         return configFeign.save(dto);
     }
 
     @Operation(summary = "修改参数配置")
     @PutMapping("/{id}")
-    @SaCheckPermission("config:update")
+    @SaCheckPermission("sys:config:update")
     public Result update(@PathVariable("id") Long id, @RequestBody SysConfigDTO dto) {
         return configFeign.update(id, dto);
     }
 
     @Operation(summary = "删除参数配置")
     @DeleteMapping("/{id}")
-    @SaCheckPermission("config:delete")
+    @SaCheckPermission("sys:config:delete")
     public Result remove(@PathVariable("id") Long id) {
         return configFeign.remove(id);
     }
