@@ -34,7 +34,7 @@ public class TaskTransportVo implements Serializable {
     @Schema(description = "任务分配状态(1未分配2已分配3待人工分配)")
     private Integer assignedStatus;
 
-    @Schema(description = "满载状态(1.半载2.满载3.空载)")
+    @Schema(description = "满载状态(1.空载2.半载3.满载)")
     private Integer loadingStatus;
 
     @Schema(description = "车辆")

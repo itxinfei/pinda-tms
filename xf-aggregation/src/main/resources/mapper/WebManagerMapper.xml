@@ -24,6 +24,7 @@
             LEFT JOIN work_task_transport task_transport ON driver_job.task_transport_id = task_transport.id
         </if>
         <where>
+            AND driver_job.deleted = 0
             <if test="params.status != null">
                 AND driver_job.status = #{params.status}
             </if>
@@ -69,6 +70,7 @@
             LEFT JOIN sys_user auth_user ON task_pickup_dispatch.courier_id = auth_user.id
         </if>
         <where>
+            AND task_pickup_dispatch.deleted = 0
             <if test="params.taskType != null">
                 AND task_pickup_dispatch.task_type = #{params.taskType}
             </if>
@@ -125,6 +127,7 @@
             LEFT JOIN oms_order pdorder ON transport_order.order_id = pdorder.id
         </if>
         <where>
+            AND transport_order.deleted = 0
             <if test="params.id != null and params.id != ''">
                 AND transport_order.id LIKE CONCAT('%',#{params.id},'%')
             </if>
@@ -208,6 +211,7 @@
             LEFT JOIN sys_user auth_user ON driver_job.driver_id = auth_user.id
         </if>
         <where>
+            AND task_transport.deleted = 0
             <if test="params.id != null and params.id != ''">
                 AND task_transport.id LIKE CONCAT('%',#{params.id},'%')
             </if>
