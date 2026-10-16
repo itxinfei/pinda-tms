@@ -13,6 +13,7 @@ import com.xinfei.DTO.webManager.DriverJobQueryDTO;
 import com.xinfei.DTO.transportline.TransportTripsDto;
 import com.xinfei.DTO.truck.TruckDto;
 import com.xinfei.common.utils.PageResponse;
+import com.xinfei.common.utils.Result;
 import com.xinfei.feign.AreaFeign;
 import com.xinfei.feign.DriverJobFeign;
 import com.xinfei.feign.OrderFeign;
@@ -168,6 +169,45 @@ public class DriverJobController {
         }).collect(Collectors.toList());
 
         return PageResponse.<DriverJobVo>builder().items(voList).pagesize(vo.getPageSize()).page(vo.getPage()).counts(dtoPageResponse.getCounts()).pages(dtoPageResponse.getPages()).build();
+    }
+
+    /**
+     * 管理端修正司机作业单（干预场景：司机端卡单/录入纠错）。
+     * 状态白名单：仅允许复位「待执行(1)」或「作废(5)」——进行中(2)/改派(3)/已完成(4) 是司机端
+     * 真实流转产物，管理端手动伪造会污染结算与绩效；已完成单不可作废。
+     */
+    @Operation(summary = "修正司机作业单（状态限复位待执行/作废，支持对接人纠错）")
+    @PutMapping("/{id}")
+    @SaCheckPermission("driverJob:update")
+    public Result updateJob(@PathVariable(name = "id") String id, @RequestBody DriverJobVo vo) {
+        Long jobId = parseLong(id);
+        if (jobId == null) {
+            return Result.error(400, "作业单 id 非法");
+        }
+        DriverJobDTO dto = driverJobFeign.findById(jobId);
+        if (dto == null || dto.getId() == null) {
+            return Result.error(404, "作业单不存在");
+        }
+        if (vo.getStatus() != null && !vo.getStatus().equals(dto.getStatus())) {
+            final int statusPending = 1;
+            final int statusCancelled = 5;
+            final int statusCompleted = 4;
+            if (vo.getStatus() != statusPending && vo.getStatus() != statusCancelled) {
+                return Result.error(400, "状态仅允许修正为：待执行/已作废");
+            }
+            if (vo.getStatus() == statusCancelled && dto.getStatus() != null && dto.getStatus() == statusCompleted) {
+                return Result.error(400, "已完成作业单不可作废");
+            }
+            dto.setStatus(vo.getStatus());
+        }
+        if (vo.getStartHandover() != null) {
+            dto.setStartHandover(vo.getStartHandover());
+        }
+        if (vo.getFinishHandover() != null) {
+            dto.setFinishHandover(vo.getFinishHandover());
+        }
+        driverJobFeign.updateById(dto.getId(), dto);
+        return Result.ok();
     }
 
     // ---- 批量预取辅助（null 安全，依赖 Rx.list 兜底空集合）----

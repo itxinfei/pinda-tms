@@ -94,10 +94,31 @@
           <el-table-column label="下单时间" width="170">
             <template #default="scope">{{ scope.row.createTime || "-" }}</template>
           </el-table-column>
-          <el-table-column label="操作" fixed="right" width="190" align="center">
+          <el-table-column label="操作" fixed="right" width="240" align="center">
             <template #default="scope">
               <el-button type="primary" link size="small" @click="openDetail(scope.row as OrderRecord)">详情</el-button>
               <el-button type="primary" link size="small" @click="goCargo(scope.row as OrderRecord)">货物</el-button>
+              <el-button
+                v-if="canPay(scope.row as OrderRecord)"
+                type="success"
+                link
+                size="small"
+                :loading="payingId === scope.row.id"
+                v-hasPerm="['order:pay']"
+                @click="handlePay(scope.row as OrderRecord)"
+              >
+                支付
+              </el-button>
+              <el-button
+                v-if="canReprice(scope.row.status)"
+                type="warning"
+                link
+                size="small"
+                v-hasPerm="['order:reprice']"
+                @click="openReprice(scope.row as OrderRecord)"
+              >
+                改价
+              </el-button>
               <el-button
                 v-if="canCancel(scope.row.status)"
                 type="danger"
@@ -253,6 +274,23 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button
+            v-if="detail && canPay(detail)"
+            type="success"
+            :loading="payingId === detail.id"
+            v-hasPerm="['order:pay']"
+            @click="handlePay(detail)"
+          >
+            支付确认
+          </el-button>
+          <el-button
+            v-if="detail && canReprice(detail.status)"
+            type="warning"
+            v-hasPerm="['order:reprice']"
+            @click="openReprice(detail)"
+          >
+            改价
+          </el-button>
+          <el-button
             v-if="detail && canCancel(detail.status)"
             type="danger"
             :loading="cancellingId === detail.id"
@@ -264,6 +302,35 @@
         </div>
       </template>
     </el-drawer>
+
+    <!-- 改价（服务端重算运费 + FR-75 决策留痕） -->
+    <el-dialog v-model="repriceVisible" title="订单改价" width="480px" :close-on-click-modal="false">
+      <el-alert
+        type="info"
+        :closable="false"
+        title="按订单地址与货物明细由服务端重算运费（百度测距 + Drools 计价），金额以重算结果为准"
+        style="margin-bottom: 16px"
+      />
+      <el-form :model="repriceForm" label-width="90px">
+        <el-form-item label="订单号">
+          <el-input :model-value="repriceTarget?.id" disabled />
+        </el-form-item>
+        <el-form-item label="当前金额">
+          <el-input :model-value="repriceTarget?.amount != null ? `¥${repriceTarget.amount}` : '-'" disabled />
+        </el-form-item>
+        <el-form-item label="改价理由" required>
+          <el-select v-model="repriceForm.reasonEnum" placeholder="请选择改价理由" style="width: 100%">
+            <el-option label="成本修正" value="COST_CORRECTION" />
+            <el-option label="报价错误" value="QUOTATION_ERROR" />
+            <el-option label="客户优惠" value="CUSTOMER_DISCOUNT" />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="repriceVisible = false">取消</el-button>
+        <el-button type="primary" :loading="repricing" @click="handleReprice">确认重算</el-button>
+      </template>
+    </el-dialog>
 
     <!-- 新建订单（B 端录单，复用客户端 Drools 试算契约） -->
     <el-dialog v-model="createVisible" title="新建订单" width="720px" :close-on-click-modal="false" @closed="resetCreateForm">
@@ -619,6 +686,73 @@ async function handleCancel(row: OrderRecord) {
 
 /** 取消中订单 id：列表行与抽屉底部按钮共用防重 */
 const cancellingId = ref<string>();
+
+// ===== 支付确认 / 改价 =====
+/** 未付（paymentStatus=1）且非终态（1~9）可发起支付确认 */
+const canPay = (row: OrderRecord) => row.paymentStatus === 1 && canCancel(row.status);
+/** 非终态订单（1~9）可改价 */
+const canReprice = (status?: number) => canCancel(status);
+
+const payingId = ref<string>();
+
+/** 支付确认：状态流转+支付时间落库 */
+async function handlePay(row: OrderRecord) {
+  try {
+    await ElMessageBox.confirm(
+      `确认订单 ${row.id} 已收到款项 ¥${row.amount ?? "-"}？确认后订单状态与支付时间将落库。`,
+      "支付确认",
+      { confirmButtonText: "确认已收款", cancelButtonText: "取消", type: "warning" }
+    );
+  } catch {
+    return;
+  }
+  payingId.value = row.id;
+  try {
+    await OrderAPI.pay(row.id);
+    ElMessage.success("支付确认成功");
+    loadList();
+    if (detailVisible.value && detail.value?.id === row.id) {
+      openDetail(row);
+    }
+  } catch {
+    // 失败已由拦截器统一提示
+  } finally {
+    payingId.value = undefined;
+  }
+}
+
+const repriceVisible = ref(false);
+const repricing = ref(false);
+const repriceTarget = ref<OrderRecord>();
+const repriceForm = ref<{ reasonEnum?: string }>({});
+
+function openReprice(row: OrderRecord) {
+  repriceTarget.value = row;
+  repriceForm.value = {};
+  repriceVisible.value = true;
+}
+
+/** 改价提交：服务端按地址+货物重算，返回新金额并留痕 */
+async function handleReprice() {
+  if (!repriceForm.value.reasonEnum) {
+    ElMessage.warning("请选择改价理由");
+    return;
+  }
+  repricing.value = true;
+  try {
+    const res = await OrderAPI.reprice(repriceTarget.value!.id, repriceForm.value.reasonEnum);
+    repriceVisible.value = false;
+    loadList();
+    if (detailVisible.value && detail.value?.id === repriceTarget.value?.id) {
+      openDetail(repriceTarget.value!);
+    }
+    ElMessage.success(`改价成功，重算后金额 ¥${res?.amount ?? "?"}`);
+  } catch {
+    // 失败已由拦截器统一提示（含决策理由校验/运费重算失败）
+  } finally {
+    repricing.value = false;
+  }
+}
 
 // ===== 新建订单（B 端录单） =====
 const createVisible = ref(false);

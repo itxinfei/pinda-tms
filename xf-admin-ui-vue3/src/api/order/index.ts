@@ -199,6 +199,24 @@ const OrderAPI = {
       data: { reason },
     });
   },
+  /** 支付确认（订单状态流转+支付时间落库） */
+  pay(id: string) {
+    return request<unknown, void>({
+      url: `${ORDER_BASE_URL}/${id}/pay`,
+      method: "put",
+    });
+  },
+  /**
+   * 改价（服务端按订单地址+货物 Drools 重算运费，FR-75 决策留痕）
+   * @param reasonEnum 枚举白名单：COST_CORRECTION/QUOTATION_ERROR/CUSTOMER_DISCOUNT
+   */
+  reprice(id: string, reasonEnum: string) {
+    return request<unknown, { amount?: number }>({
+      url: `${ORDER_BASE_URL}/${id}/reprice`,
+      method: "put",
+      params: { reasonEnum },
+    });
+  },
   /** 运费试算（Drools 计费；失败/参数不全时静默返回空，前端须显式判空） */
   estimate(data: OrderCreateParams) {
     return request<unknown, OrderPriceMsg | null>({

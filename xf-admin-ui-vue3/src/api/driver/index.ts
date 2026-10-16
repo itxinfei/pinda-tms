@@ -74,6 +74,26 @@ const DriverAPI = {
       method: "get",
     });
   },
+  /**
+   * 更新司机档案（BFF 仅支持年龄与所属车队；姓名/手机号属用户账号域）
+   */
+  update(id: string, data: { age?: number; fleet?: { id: string } }) {
+    return request<unknown, DriverRecord>({
+      url: `${DRIVER_BASE_URL}/${id}`,
+      method: "put",
+      data,
+    });
+  },
+  /**
+   * 保存司机驾驶证信息（按司机 userId upsert，可用于新增/编辑）
+   */
+  saveLicense(data: DriverLicenseRecord) {
+    return request<unknown, DriverLicenseRecord>({
+      url: `${DRIVER_LICENSE_BASE_URL}`,
+      method: "post",
+      data,
+    });
+  },
 };
 
 export default DriverAPI;

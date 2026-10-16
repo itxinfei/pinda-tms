@@ -57,6 +57,17 @@ const DriverJobAPI = {
       data,
     });
   },
+
+  /**
+   * 修正司机作业单（管理端干预：状态仅允许复位待执行/已作废，支持对接人纠错）
+   */
+  update(id: string, data: { status?: number; startHandover?: string; finishHandover?: string }) {
+    return request<unknown, void>({
+      url: `${DRIVER_JOB_BASE_URL}/${id}`,
+      method: "put",
+      data,
+    });
+  },
 };
 
 export default DriverJobAPI;

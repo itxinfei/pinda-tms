@@ -48,9 +48,16 @@
             </template>
           </el-table-column>
           <el-table-column prop="planDepartureTime" label="计划发车" width="170" />
-          <el-table-column label="操作" fixed="right" width="90" align="center">
+          <el-table-column label="操作" fixed="right" width="140" align="center">
             <template #default="scope">
               <el-button type="primary" link size="small" @click="openDetail(scope.row as DriverJobRecord)">详情</el-button>
+              <el-button
+                type="primary"
+                link
+                size="small"
+                v-hasPerm="['driverJob:update']"
+                @click="openFix(scope.row as DriverJobRecord)"
+              >干预</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -104,11 +111,43 @@
         </el-descriptions>
       </template>
     </el-drawer>
+
+    <!-- 作业单干预（状态白名单：复位待执行/作废 + 对接人纠错） -->
+    <el-dialog v-model="fixVisible" title="作业单干预" width="520px" :close-on-click-modal="false">
+      <el-form ref="fixFormRef" :model="fixForm" :rules="fixRules" label-width="100px">
+        <el-form-item label="作业单号">
+          <el-input :model-value="fixTarget?.id" disabled />
+        </el-form-item>
+        <el-form-item label="当前状态">
+          <el-tag :type="statusTagType(fixTarget?.status)" size="small">{{ statusLabel(fixTarget?.status) }}</el-tag>
+        </el-form-item>
+        <el-form-item label="目标状态" prop="status">
+          <el-select v-model="fixForm.status" placeholder="选择修正后状态" clearable style="width: 220px">
+            <el-option label="复位为待执行" :value="DriverJobStatus.PENDING" />
+            <el-option label="作废" :value="DriverJobStatus.CANCELLED" />
+          </el-select>
+          <div class="page-text-sub" style="line-height: 1.5; margin-top: 4px">
+            仅允许复位待执行或作废；进行中/改派/已完成由司机端流转产生，管理端不可伪造
+          </div>
+        </el-form-item>
+        <el-form-item label="提货对接人">
+          <el-input v-model="fixForm.startHandover" placeholder="留空则不修改" maxlength="30" />
+        </el-form-item>
+        <el-form-item label="交付对接人">
+          <el-input v-model="fixForm.finishHandover" placeholder="留空则不修改" maxlength="30" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="fixVisible = false">取消</el-button>
+        <el-button type="primary" :loading="fixSubmitting" @click="handleFix">确认修正</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
+import { FormInstance, ElMessage } from "element-plus";
 import DriverJobAPI from "@/api/driver-job";
 import { DriverJobStatus, type DriverJobRecord, type DriverJobPageQuery } from "@/api/driver-job";
 
@@ -182,6 +221,52 @@ const detail = ref<DriverJobRecord>();
 function openDetail(row: DriverJobRecord) {
   detail.value = row;
   detailVisible.value = true;
+}
+
+/** 作业单干预（状态白名单修正 + 对接人纠错） */
+interface DriverJobFixForm {
+  status?: number;
+  startHandover?: string;
+  finishHandover?: string;
+}
+
+const fixVisible = ref(false);
+const fixSubmitting = ref(false);
+const fixFormRef = ref<FormInstance>();
+const fixTarget = ref<DriverJobRecord>();
+const fixForm = ref<DriverJobFixForm>({});
+
+const fixRules = {
+  status: [{ required: true, message: "请选择目标状态", trigger: "change" }],
+};
+
+function openFix(row: DriverJobRecord) {
+  fixTarget.value = row;
+  fixForm.value = {};
+  fixVisible.value = true;
+}
+
+async function handleFix() {
+  const valid = await fixFormRef.value?.validate().catch(() => false);
+  if (!valid) return;
+  // 目标状态与当前一致时不发请求
+  if (fixForm.value.status === fixTarget.value?.status) {
+    ElMessage.info("目标状态与当前状态一致，无需修正");
+    return;
+  }
+  fixSubmitting.value = true;
+  try {
+    await DriverJobAPI.update(fixTarget.value!.id, {
+      status: fixForm.value.status,
+      startHandover: fixForm.value.startHandover || undefined,
+      finishHandover: fixForm.value.finishHandover || undefined,
+    });
+    ElMessage.success("修正成功");
+    fixVisible.value = false;
+    loadList();
+  } finally {
+    fixSubmitting.value = false;
+  }
 }
 
 onMounted(loadList);

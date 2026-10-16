@@ -1,6 +1,7 @@
 package com.xinfei.controller;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.xinfei.DTO.OrderCargoDto;
 import com.xinfei.DTO.OrderCancelDTO;
 import com.xinfei.DTO.OrderDTO;
 import com.xinfei.DTO.OrderLocationDto;
@@ -12,6 +13,7 @@ import com.xinfei.common.utils.Result;
 import com.xinfei.enums.pickuptask.PickupDispatchTaskStatus;
 import com.xinfei.enums.pickuptask.PickupDispatchTaskType;
 import com.xinfei.feign.AreaFeign;
+import com.xinfei.feign.CargoFeign;
 import com.xinfei.feign.OrderFeign;
 import com.xinfei.feign.OrgFeign;
 import com.xinfei.feign.PickupDispatchTaskFeign;
@@ -50,6 +52,8 @@ import java.util.stream.Collectors;
 public class OrderController {
     @Autowired
     private OrderFeign orderFeign;
+    @Autowired
+    private CargoFeign cargoFeign;
     @Autowired
     private PickupDispatchTaskFeign pickupDispatchTaskFeign;
     @Autowired
@@ -210,6 +214,39 @@ public class OrderController {
         Map<String, Object> resp = new LinkedHashMap<>();
         resp.put("warnings", warnings);
         return resp;
+    }
+
+    /**
+     * 支付确认（透传 xf-oms /{id}/pay，订单状态流转+支付时间落库）
+     */
+    @Operation(summary = "支付确认")
+    @PutMapping("/{id}/pay")
+    @SaCheckPermission("order:pay")
+    public Result payOrder(@PathVariable(name = "id") String id) {
+        return orderFeign.pay(id);
+    }
+
+    /**
+     * 改价（FR-75 决策留痕 + 服务端 Drools 重算运费）。
+     * 入参只需改价理由；地址/货物由 BFF 从 xf-oms 详情与货物端点组装后透传重算，
+     * 计算结果以服务端为准，前端不可篡改金额。reasonEnum 枚举白名单：
+     * COST_CORRECTION 成本修正 / QUOTATION_ERROR 报价错误 / CUSTOMER_DISCOUNT 客户优惠。
+     */
+    @Operation(summary = "改价（重算运费，含决策留痕）")
+    @PutMapping("/{id}/reprice")
+    @SaCheckPermission("order:reprice")
+    public Result repriceOrder(@PathVariable(name = "id") String id,
+                               @RequestParam(value = "reasonEnum", required = false) String reasonEnum) {
+        OrderDTO order = orderFeign.findById(id);
+        if (order == null || order.getId() == null) {
+            return Result.error(404, "订单不存在");
+        }
+        List<OrderCargoDto> cargos = cargoFeign.findAll(null, id);
+        if (cargos == null || cargos.isEmpty()) {
+            return Result.error(400, "订单缺少货物明细，无法重算运费");
+        }
+        order.setOrderCargoDto(cargos.get(0));
+        return orderFeign.reprice(id, order, reasonEnum);
     }
 
     /**
