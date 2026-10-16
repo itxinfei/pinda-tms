@@ -92,6 +92,11 @@ public class SettlementOrder implements Serializable {
     private Long transportOrderId;
 
     /**
+     * 关联运费账单 id（oms_freight_bill.id，P0-6b 对账归集时回写）
+     */
+    private Long billId;
+
+    /**
      * 结算对象类型：1客户 2司机 3承运商
      */
     private Integer settleObjectType;
