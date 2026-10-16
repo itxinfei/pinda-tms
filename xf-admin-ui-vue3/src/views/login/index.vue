@@ -555,7 +555,8 @@ $navy-bot: #0e1c33;
       flex-shrink: 0;
       background: rgb(255 255 255 / 28%);
       border-radius: 50%;
-      animation: brand-step-done 14s linear infinite;
+      /* 错峰点亮：delay 按 23.8% × 14s ≈ 3.33s 递增；backwards 使延迟期间保持 0% 未点亮帧 */
+      animation: brand-step-done 14s linear calc(var(--i) * 3.332s) infinite backwards;
     }
   }
 
@@ -752,21 +753,24 @@ $navy-bot: #0e1c33;
   }
 }
 
-/* 里程碑点：随进度依次点亮（0-23.8-47.6-71.4% 四等分运输段） */
+/*
+ * 里程碑点：随进度依次点亮。错峰通过 animation-delay: calc(var(--i) * 3.332s)
+ * 实现（keyframe 选择器不允许 calc()，只能写纯百分比），点亮窗口相对各点自身周期。
+ */
 @keyframes brand-step-done {
   0%,
-  calc(var(--i) * 23.8% + 0.5%) {
+  0.4% {
     background: rgb(255 255 255 / 28%);
     box-shadow: none;
   }
 
-  calc(var(--i) * 23.8% + 3%),
-  84% {
+  2.5%,
+  78% {
     background: #fff;
     box-shadow: 0 0 0 3px rgb(255 255 255 / 18%);
   }
 
-  90%,
+  82%,
   100% {
     background: rgb(255 255 255 / 28%);
     box-shadow: none;
