@@ -7,7 +7,16 @@ import { usePermissionStoreHook } from "@/stores/permission";
 import { AuthStorage } from "@/utils/auth";
 import type { ApiResult } from "@/api/common";
 import { installTokenRefresh } from "@/utils/token-refresh";
-import i18n from "@/lang";
+
+// 403 提示的翻译函数由入口（main.ts）在 i18n 初始化后注入：本模块若静态依赖
+// @/lang 会形成 request → lang → stores → request 循环依赖，rolldown 打包后
+// 模块求值顺序改变，stores chunk 顶层拿到的 pinia 实例为 undefined 启动即崩（_s 报错）
+let translate: (key: string) => string = (key) => key;
+
+/** 注册请求层文案翻译函数（main.ts 在 setupI18n 后调用） */
+export function registerRequestTranslator(fn: (key: string) => string) {
+  translate = fn;
+}
 
 const http = axios.create({
   baseURL: import.meta.env.VITE_API_BASE,
@@ -78,7 +87,7 @@ http.interceptors.response.use(
 
     // 端级角色闸拒绝（HTTP 403，如非 ADMIN 账号登录管理端）：引导切换管理员账号
     if (response.status === 403) {
-      const message = i18n.global.t("request.forbidden");
+      const message = translate("request.forbidden");
       ElMessage.error(message);
       return Promise.reject(new Error(message));
     }

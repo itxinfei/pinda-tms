@@ -11,7 +11,8 @@ import "animate.css";
 import { setupDirective } from "@/directives";
 import { setupRouter } from "@/router";
 import { setupStore } from "@/stores";
-import { setupI18n } from "@/lang";
+import i18n, { setupI18n } from "@/lang";
+import { registerRequestTranslator } from "@/utils/request";
 import { registerFormCreateApp } from "@/plugins/form-create";
 import * as ElementPlusIcons from "@element-plus/icons-vue";
 import { setupPermissionGuard } from "@/router/guards";
@@ -33,6 +34,8 @@ app.config.errorHandler = (err, _instance, info) => {
 
 setupDirective(app);
 setupI18n(app);
+// 请求层 403 提示走 i18n 语言包（注入翻译函数，避免 request 静态依赖 lang 形成循环依赖）
+registerRequestTranslator((key) => i18n.global.t(key));
 setupRouter(app);
 setupStore(app);
 // 只登记 app 引用；表单引擎（element-plus 全量 + form-create/设计器及其内置富文本）
