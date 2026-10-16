@@ -18,10 +18,24 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
  * 路线规划service
+ *
+ * <p>性能审计（H5）改造：原 {@code findLine} 递归对每个节点调 {@code findDirectLine} + {@code findStartLine}，
+ * 同一机构作为不同路径的中间节点被访问多次时查询完全重复；{@code execute} 对每个新订单分组独立调一次
+ * {@code findLine}，单轮可达约 2000 次 Feign。且 {@code superiorStarts} 用 List 线性查找 O(n²)，
+ * 递归无深度上限（线路成环会栈溢出）。</p>
+ *
+ * <p>改造要点：
+ * 1. {@code findStartLine} / {@code findDirectLine} 结果分别用 {@code ConcurrentHashMap} 缓存
+ *    （按 start / start|end 组合），同一起点/起终点只查一次 transportLineFeign；
+ * 2. {@code superiorStarts} 改 {@code Set<String>}，递归时 {@code new HashSet<>(superiorStarts)} 传入，
+ *    避免跨分支污染，查找 O(1)；
+ * 3. {@code findLine} 递归加最大深度（默认 20），超过直接返回无解，防栈溢出/成环。
+ * 保留现有"找最优线路"的语义不变。</p>
  */
 @Slf4j
 @Service
@@ -36,6 +50,23 @@ public class TaskRoutePlanningServiceImpl implements ITaskRoutePlanningService {
     private ICacheLineUseService cacheLineUseService;
     @Autowired
     private IScheduleExceptionOrderService scheduleExceptionOrderService;
+
+    /**
+     * 起始线路缓存：key=起点机构id，value=该起点发出的所有线路。
+     * 同一 {@code startAgency} 在一次 job 内只查一次 transportLineFeign.list。
+     */
+    private final Map<String, List<TransportLineDto>> startLineCache = new ConcurrentHashMap<>();
+
+    /**
+     * 直达线路缓存：key= 起点|终点 组合，value= 两机构间的直达线路。
+     * 同一 (start,end) 组合只查一次 transportLineFeign.list。
+     */
+    private final Map<String, List<TransportLineDto>> directLineCache = new ConcurrentHashMap<>();
+
+    /**
+     * 线路 DFS 最大递归深度，超过视为成环/过深，直接返回无解，防止栈溢出。
+     */
+    private static final int MAX_LINE_DEPTH = 20;
 
     /**
      * 路线规划
@@ -66,7 +97,7 @@ public class TaskRoutePlanningServiceImpl implements ITaskRoutePlanningService {
             log.info("开始计算线路 {} -> {}", item.getStartOrgId(), item.getEndOrgId());
             // 查找到所有相关线路 （存在无法通行的情况，）
             // findLine 递归内部全程走 xf-base String 边界，仅在入口把 disp 内部 Long 机构转 String
-            RoutePlanningDTO routePlanningDTO = findLine(0, IdConvert.toStr(orgId), IdConvert.toStr(item.getStartOrgId()), IdConvert.toStr(item.getEndOrgId()), new ArrayList<>());
+            RoutePlanningDTO routePlanningDTO = findLine(0, IdConvert.toStr(orgId), IdConvert.toStr(item.getStartOrgId()), IdConvert.toStr(item.getEndOrgId()), new HashSet<>());
             log.info("RoutePlanningDTO:{}", JSON.toJSONString(routePlanningDTO));
             // 查找到的线路分析，拆分，聚合。
             AnalysisRoutePlanningDTO analysisRoutePlanningDTO = new AnalysisRoutePlanningDTO(routePlanningDTO, item.getStartOrgId(), item.getEndOrgId()).build();
@@ -288,31 +319,52 @@ public class TaskRoutePlanningServiceImpl implements ITaskRoutePlanningService {
      * @param depth          查找深度
      * @param start          开始机构
      * @param end            结束结构
-     * @param superiorStarts 上级开始机构集合
+     * @param superiorStarts 上级开始机构集合（含当前节点），用于过滤回头/成环线路
      * @return
      */
-    private RoutePlanningDTO findLine(int depth, String agencyId, String start, String end, List<String> superiorStarts) {
+    private RoutePlanningDTO findLine(int depth, String agencyId, String start, String end, Set<String> superiorStarts) {
+        return findLine(depth, agencyId, start, end, superiorStarts, MAX_LINE_DEPTH);
+    }
+
+    /**
+     * 递归查找线路（带最大深度防栈溢出）。
+     *
+     * @param depth          查找深度
+     * @param start          开始机构
+     * @param end            结束结构
+     * @param superiorStarts 上级开始机构集合（含当前节点），用于过滤回头/成环线路
+     * @param maxDepth       最大递归深度，超过直接返回无解
+     * @return
+     */
+    private RoutePlanningDTO findLine(int depth, String agencyId, String start, String end, Set<String> superiorStarts, int maxDepth) {
+        if (depth > maxDepth) {
+            log.warn("[{}] 线路递归深度[{}]已超过上限[{}]，终止本次DFS分支（防栈溢出/成环）", agencyId, depth, maxDepth);
+            return new RoutePlanningDTO(depth);
+        }
         RoutePlanningDTO routePlanningDTO = new RoutePlanningDTO(++depth);
         List<String> feasibleIds = new ArrayList<>();
         List<TransportLineDto> transportLineDtos = findDirectLine(start, end, agencyId);
-        log.info("【{}】查找直达路线【{}】->【{}】：{}条 深度:{}", agencyId, start, end, transportLineDtos.size(), depth);
+        log.info("【{}】查找直达路线【{}】->【{}】：{}条 深度:{}", agencyId, start, end, transportLineDtos == null ? 0 : transportLineDtos.size(), depth);
         if (transportLineDtos != null && transportLineDtos.size() > 0) {
             routePlanningDTO.addFeasible(transportLineDtos);
             feasibleIds.addAll(transportLineDtos.stream().map(item -> item.getId()).collect(Collectors.toList()));
         }
 
         transportLineDtos = findStartLine(start, agencyId);
-        superiorStarts.add(start);
+        // 基于父分支的 superiorStarts 复制一份并加入当前节点，避免跨分支污染（每分支独立）；
+        // 同时使"终点不能是上级或在上级的机构"的过滤为 O(1)。
+        Set<String> nextSuperior = new HashSet<>(superiorStarts);
+        nextSuperior.add(start);
         // 1 过滤已经直达的路线，2 过滤上一级的机构（本次查询到的路线 终点不能是上一级或者在上级的机构，若不过滤，理论上会出现死循环）
         transportLineDtos = transportLineDtos.stream()
-                .filter(item -> ((!feasibleIds.contains(item.getId())) && (!superiorStarts.contains(item.getEndAgencyId()))))
+                .filter(item -> ((!feasibleIds.contains(item.getId())) && (!nextSuperior.contains(item.getEndAgencyId()))))
                 .collect(Collectors.toList());
         log.info("【{}】查找起始机构路线【{}】->【{}】：{}条 深度:{}", agencyId, start, end, transportLineDtos.size(), depth);
         if (transportLineDtos.size() > 0) {
             routePlanningDTO.add(transportLineDtos);
             for (TransportLineDto transportLineDto : transportLineDtos) {
                 String endAgencyId = transportLineDto.getEndAgencyId();
-                RoutePlanningDTO routePlanningDTOD = findLine(depth, agencyId, endAgencyId, end, superiorStarts);
+                RoutePlanningDTO routePlanningDTOD = findLine(depth, agencyId, endAgencyId, end, nextSuperior, maxDepth);
                 routePlanningDTO.put(transportLineDto.getId(), routePlanningDTOD);
             }
         }
@@ -320,30 +372,35 @@ public class TaskRoutePlanningServiceImpl implements ITaskRoutePlanningService {
     }
 
     /**
-     * 查找直达线路
+     * 查找直达线路（结果缓存：同一 (start,end) 只查一次 Feign）
      *
      * @return
      */
     private List<TransportLineDto> findDirectLine(String start, String end, String agencyId) {
-        TransportLineDto transportLineDto = new TransportLineDto();
-        transportLineDto.setStartAgencyId(start);
-        transportLineDto.setEndAgencyId(end);
-        //transportLineDto.setAgencyId(agencyId);
-        transportLineDto.setStatus(1);
-        return transportLineFeign.list(transportLineDto);
+        String cacheKey = start + "|" + end;
+        return directLineCache.computeIfAbsent(cacheKey, k -> {
+            TransportLineDto transportLineDto = new TransportLineDto();
+            transportLineDto.setStartAgencyId(start);
+            transportLineDto.setEndAgencyId(end);
+            //transportLineDto.setAgencyId(agencyId);
+            transportLineDto.setStatus(1);
+            return transportLineFeign.list(transportLineDto);
+        });
     }
 
     /**
-     * 查找起始线路
+     * 查找起始线路（结果缓存：同一 startAgency 只查一次 Feign）
      *
      * @param startAgency
      * @return
      */
     private List<TransportLineDto> findStartLine(String startAgency, String agencyId) {
-        TransportLineDto transportLineDto = new TransportLineDto();
-        transportLineDto.setStartAgencyId(startAgency);
-        //transportLineDto.setAgencyId(agencyId);
-        transportLineDto.setStatus(1);
-        return transportLineFeign.list(transportLineDto);
+        return startLineCache.computeIfAbsent(startAgency, k -> {
+            TransportLineDto transportLineDto = new TransportLineDto();
+            transportLineDto.setStartAgencyId(startAgency);
+            //transportLineDto.setAgencyId(agencyId);
+            transportLineDto.setStatus(1);
+            return transportLineFeign.list(transportLineDto);
+        });
     }
 }
