@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +37,7 @@ public class PickupDispatchTaskController {
      * @return 取派件任务信息
      */
     @PostMapping("")
-    public TaskPickupDispatchDTO save(@RequestBody TaskPickupDispatchDTO dto) {
+    public TaskPickupDispatchDTO save(@Valid @RequestBody TaskPickupDispatchDTO dto) {
         TaskPickupDispatch dispatch = new TaskPickupDispatch();
         BeanUtils.copyProperties(dto, dispatch);
         log.info("新增取派件任务:{}    {}", dto, dispatch);

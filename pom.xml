@@ -67,6 +67,10 @@
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
         <!-- ArchUnit：模块边界守护（test 作用域，红线"严禁跨模块写业务"可执行化） -->
         <archunit.version>1.3.0</archunit.version>
+        <!-- ↓↓↓ SCA 供应链安全（T-SEC-E4：《72》依赖漏洞扫描；不绑 lifecycle，sca.yml 显式调 goal） ↓↓↓ -->
+        <dependency-check.version>12.1.0</dependency-check.version>
+        <cyclonedx.version>2.9.1</cyclonedx.version>
+        <maven-enforcer.version>3.5.0</maven-enforcer.version>
     </properties>
 
     <dependencyManagement>
@@ -247,7 +251,73 @@
                         </annotationProcessorPaths>
                     </configuration>
                 </plugin>
+                <!-- T-SEC-E4：OWASP Dependency-Check（CVE 比对）。不绑 lifecycle——常规编译/部署不跑
+                     （NVD 拉取重、内网受限），由 .gitea/workflows/sca.yml 手动触发显式调用 check goal。
+                     failOnError=false：NVD/镜像不可达时降级为告警而非构建失败，避免内网环境死锁。 -->
+                <plugin>
+                    <groupId>org.owasp</groupId>
+                    <artifactId>dependency-check-maven</artifactId>
+                    <version>${dependency-check.version}</version>
+                    <configuration>
+                        <failBuildOnCVSS>7</failBuildOnCVSS>
+                        <failOnError>false</failOnError>
+                        <suppressionFiles>
+                            <suppressionFile>${maven.multiModuleProjectDirectory}/ci/dependency-check-suppressions.xml</suppressionFile>
+                        </suppressionFiles>
+                        <formats>
+                            <format>HTML</format>
+                            <format>JSON</format>
+                        </formats>
+                    </configuration>
+                </plugin>
+                <!-- T-SEC-E4：CycloneDX SBOM（软件物料清单）。不绑 lifecycle，sca.yml 显式调
+                     makeAggregateBom 聚合生成全仓 SBOM（target/bom.json），供漏洞比对与交付留档。 -->
+                <plugin>
+                    <groupId>org.cyclonedx</groupId>
+                    <artifactId>cyclonedx-maven-plugin</artifactId>
+                    <version>${cyclonedx.version}</version>
+                    <configuration>
+                        <projectType>application</projectType>
+                        <schemaVersion>1.6</schemaVersion>
+                        <outputFormat>json</outputFormat>
+                    </configuration>
+                </plugin>
+                <!-- T-SEC-E4：Enforcer 禁依赖基线（log4j2 CVE-2021-44228 受害版本段 / fastjson 1.x 反序列化历史重灾区）。
+                     仓库实际使用 fastjson2 与 Boot3 托管的 log4j-api（无 core），预期恒绿；若未来引入即构建期当场红。 -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-enforcer-plugin</artifactId>
+                    <version>${maven-enforcer.version}</version>
+                    <configuration>
+                        <fail>true</fail>
+                        <rules>
+                            <bannedDependencies>
+                                <excludes>
+                                    <exclude>org.apache.logging.log4j:log4j-core:[2.0,2.15.0)</exclude>
+                                    <exclude>com.alibaba:fastjson:[0,1.2.83)</exclude>
+                                </excludes>
+                                <message>检测到被禁依赖（log4j-core 2.0~2.15 受 Log4Shell 影响 / fastjson 1.x&lt;1.2.83 存在反序列化历史漏洞），请勿引入；如确需，先走《60》技术栈评估并经安全确认。</message>
+                            </bannedDependencies>
+                        </rules>
+                    </configuration>
+                </plugin>
             </plugins>
         </pluginManagement>
+        <plugins>
+            <!-- Enforcer 进构建（继承全模块）：validate 阶段禁依赖基线，单模块构建/CI 全量构建均生效 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>ban-vulnerable-dependencies</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <phase>validate</phase>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
     </build>
 </project>

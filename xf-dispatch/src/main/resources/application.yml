@@ -108,7 +108,8 @@ spring:
           merge-sql: true
         wall:
           config:
-            multi-statement-allow: true
+            # T-SEC-08/B3：禁多语句（Druid wall 防堆叠注入），如业务确需再评估
+            multi-statement-allow: false
   # Redis（本模块引入 sa-token-redis-jackson，登录态与会话需落 Redis）
   # 口径对齐已上线的 xf-auth / xf-gateway；Boot3 下键名为 spring.data.redis.*
   data:
@@ -134,7 +135,8 @@ mybatis-plus:
     cache-enabled: true
     call-setters-on-nulls: false
     jdbc-type-for-null: NULL
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    # T-SEC-08/B3：SQL 日志走 Slf4j（可按日志级别管控），禁 stdout 直打（生产泄漏 SQL/参数）
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
   global-config:
     banner: false
     db-config:

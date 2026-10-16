@@ -28,6 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import jakarta.servlet.http.HttpServletResponse;
 import java.math.BigDecimal;
@@ -62,7 +63,7 @@ public class OrderController {
      * @return 订单信息
      */
     @PostMapping("")
-    public OrderDTO save(@RequestBody OrderDTO orderDTO, HttpServletResponse res) {
+    public OrderDTO save(@Valid @RequestBody OrderDTO orderDTO, HttpServletResponse res) {
         log.info("保存订单信息:{}", JSON.toJSONString(orderDTO));
         if (orderDTO == null || orderDTO.getOrderCargoDto() == null) {
             log.warn("[订单] 保存失败：orderDTO或orderCargoDto为空");

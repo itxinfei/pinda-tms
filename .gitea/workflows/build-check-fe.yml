@@ -64,3 +64,13 @@ jobs:
           pnpm run build:driver
           pnpm run build:courier
           pnpm run build:customer
+
+      - name: pnpm audit 依赖漏洞扫描（T-SEC-E4，告警不阻断）
+        # npmmirror 对 /-/npm/v1/security/audits 的支持不稳定，先告警不阻断门禁；
+        # 公网/官方 registry 可达后可去掉 continue-on-error 升级为硬门禁（HIGH 及以上红）。
+        continue-on-error: true
+        run: |
+          echo ">> 管理端 audit"
+          (cd xf-admin-ui-vue3 && pnpm audit --prod --audit-level high) || echo "::warning::管理端存在 HIGH+ 依赖漏洞（或 registry audit 端点不可用），人工复核"
+          echo ">> 移动端（monorepo）audit"
+          (cd xf-mobile && pnpm audit --prod --audit-level high) || echo "::warning::移动端存在 HIGH+ 依赖漏洞（或 registry audit 端点不可用），人工复核"

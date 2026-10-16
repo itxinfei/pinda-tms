@@ -17,6 +17,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 /**
  * 会员前端控制器（USR-01：档案 CRUD + 状态启停 + 分页筛选）
@@ -40,7 +41,7 @@ public class MemberController {
      */
     @PostMapping("")
     @Operation(summary = "新增会员")
-    public Result save(@RequestBody MemberDTO entity) {
+    public Result save(@Valid @RequestBody MemberDTO entity) {
         if (StringUtils.isBlank(entity.getPhone())) {
             return Result.error(400, "手机号不能为空");
         }

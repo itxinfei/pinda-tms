@@ -78,4 +78,4 @@ mybatis-plus:
     cache-enabled: ${mybatis-plus.configuration.cache-enabled}
     call-setters-on-nulls: ${mybatis-plus.configuration.call-setters-on-nulls}
     jdbc-type-for-null: ${mybatis-plus.configuration.jdbc-type-for-null}
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl

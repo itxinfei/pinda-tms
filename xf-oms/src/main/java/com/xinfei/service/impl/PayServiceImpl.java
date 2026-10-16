@@ -16,13 +16,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import jakarta.annotation.PostConstruct;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,10 +59,41 @@ public class PayServiceImpl implements IPayService {
     private List<PayChannel> payChannels;
 
     /**
-     * 默认支付渠道（可通过配置 pay.channel 覆盖: wechat/alipay/mock）
+     * 默认支付渠道（可通过配置 pay.channel 覆盖: wechat/alipay/mock）。
+     * T-SEC-09/A4：故意不设默认值——由 {@link #initPayChannelGuard()} 在启动期闸门校验，
+     * 生产环境空白或显式 mock 直接启动失败，防止真实交易落进模拟渠道。
      */
-    @Value("${pay.channel:mock}")
+    @Value("${pay.channel:}")
     private String defaultChannel;
+
+    @Autowired
+    private Environment environment;
+
+    /**
+     * 支付渠道启动闸门（T-SEC-09/A4 fail-fast）：
+     * <ul>
+     *   <li>prod profile：pay.channel 空白 → 启动失败（禁止静默回落 mock）；</li>
+     *   <li>prod profile：pay.channel=mock → 启动失败（模拟渠道不进生产）；</li>
+     *   <li>非 prod（dev/test）：空白回落 mock 并告警，保持开发联调体验。</li>
+     * </ul>
+     */
+    @PostConstruct
+    void initPayChannelGuard() {
+        boolean isProd = Arrays.asList(environment.getActiveProfiles()).contains("prod");
+        String channel = StringUtils.trimToNull(defaultChannel);
+        if (isProd) {
+            if (channel == null) {
+                throw new IllegalStateException(
+                        "生产环境必须显式配置 pay.channel（wechat/alipay），禁止空白回落模拟渠道");
+            }
+            if (PaymentOrder.CHANNEL_MOCK.equals(channel)) {
+                throw new IllegalStateException("生产环境禁止配置 mock 模拟支付渠道（pay.channel=mock）");
+            }
+        } else if (channel == null) {
+            log.warn("[支付] pay.channel 未配置，非生产环境回落 mock 模拟渠道（生产启动将直接失败）");
+            defaultChannel = PaymentOrder.CHANNEL_MOCK;
+        }
+    }
 
     /**
      * 创建支付（生成支付单并预下单）

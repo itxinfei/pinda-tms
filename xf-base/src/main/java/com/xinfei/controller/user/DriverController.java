@@ -14,6 +14,7 @@ import com.xinfei.service.user.IPdTruckDriverService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +37,7 @@ public class DriverController {
      * @return 返回信息
      */
     @PostMapping("")
-    public TruckDriverDto saveDriver(@RequestBody TruckDriverDto dto) {
+    public TruckDriverDto saveDriver(@Valid @RequestBody TruckDriverDto dto) {
         XfTruckDriver driver = new XfTruckDriver();
         BeanUtils.copyProperties(dto, driver);
         driver.setUserId(IdConverter.toLong(dto.getUserId()));
@@ -81,7 +82,7 @@ public class DriverController {
      * @return 返回信息
      */
     @PostMapping("/driverLicense")
-    public TruckDriverLicenseDto saveDriverLicense(@RequestBody TruckDriverLicenseDto dto) {
+    public TruckDriverLicenseDto saveDriverLicense(@Valid @RequestBody TruckDriverLicenseDto dto) {
         XfTruckDriverLicense driverLicense = new XfTruckDriverLicense();
         BeanUtils.copyProperties(dto, driverLicense);
         driverLicense.setDriverId(IdConverter.toLong(dto.getUserId()));

@@ -1,0 +1,75 @@
+# ============================================================
+# 心飞物流TMS SCA 依赖漏洞扫描（T-SEC-E4，《72》手动触发）
+#
+# 触发：仅 workflow_dispatch 手动运行——扫描重（NVD 全量拉取首次可达 40min+），
+#       不适合挂 push 门禁拖慢常规提交；上线前/依赖大变更后/每季度例行各跑一次。
+#
+# 内容：
+#   ① Enforcer 禁依赖基线（validate，秒级）：log4j-core 受害版本段 / fastjson 1.x 明令禁止；
+#   ② OWASP Dependency-Check：NVD CVE 比对，CVSS>=7 且确认为真报即红
+#      （failOnError=false：内网拉不到 NVD 时降级告警，不因网络问题假死锁）；
+#   ③ CycloneDX SBOM：全仓聚合 bom.json，交付/审计留档。
+#
+# 报告留存：/root/.m2/sca-reports/<时间戳>/（宿主 /data/m2/sca-reports/，随卷持久）。
+# 豁免维护：ci/dependency-check-suppressions.xml（只放确认误报，须写明理由）。
+# ============================================
+name: "SCA-依赖漏洞扫描与SBOM（手动）"
+
+on:
+  workflow_dispatch:
+
+env:
+  DEPLOY_HOST: "192.168.20.130" # 内网 Gitea/部署宿主机，换机器只改这里
+
+jobs:
+  sca:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码（内网 Gitea，不用 actions/checkout 以避免外网）
+        run: |
+          rm -rf ./* ./.??*
+          git clone --depth 50 -b "${GITHUB_REF_NAME:-master}" \
+            "http://${DEPLOY_HOST}:3000/xinfei/xinfei-tms.git" .
+
+      - name: Enforcer 禁依赖基线（log4j-core / fastjson 1.x 明令禁止）
+        run: |
+          set -e
+          mvn -B validate -s /ci/maven-settings.xml
+          echo "::notice::Enforcer 禁依赖基线通过"
+
+      - name: OWASP Dependency-Check（NVD CVE 比对，CVSS>=7 红线）
+        timeout-minutes: 60
+        run: |
+          set -e
+          mkdir -p /root/.m2/sca-reports
+          STAMP=$(date +%Y%m%d_%H%M)
+          echo "STAMP=$STAMP" >> "$GITHUB_ENV"
+          # 注意：dependency-check 逐模块出报告，根聚合报告在根 target；
+          # 内网拉不到 NVD 时 failOnError=false 降级为告警（分析结果可能为空，属预期，勿误判为"无漏洞"）。
+          if mvn -B org.owasp:dependency-check-maven:check -s /ci/maven-settings.xml; then
+            echo ">> Dependency-Check 完成（CVSS>=7 真报为零或已豁免）"
+          else
+            echo "::error::Dependency-Check 检出 CVSS>=7 漏洞，见下方报告路径，按《72》升级修复（真实漏洞禁止豁免了事）"
+            exit 1
+          fi
+          # 归档报告到持久卷（dependency-check 逐模块出报告，全部收进同一时间戳目录）
+          find . -name 'dependency-check-report.html' -o -name 'dependency-check-report.json' \
+            | xargs -I{} cp --parents {} "/root/.m2/sca-reports/${STAMP}/" 2>/dev/null || true
+
+      - name: CycloneDX SBOM（全仓聚合 bom.json）
+        run: |
+          set -e
+          mvn -B org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom -s /ci/maven-settings.xml \
+            || { echo "::error::SBOM 生成失败"; exit 1; }
+          mkdir -p "/root/.m2/sca-reports/${STAMP}"
+          cp target/bom.json "/root/.m2/sca-reports/${STAMP}/bom.json" 2>/dev/null || true
+          echo "::notice::SBOM 已归档 /data/m2/sca-reports/${STAMP}/bom.json"
+
+      - name: 扫描结果汇总
+        run: |
+          echo "=============================================="
+          echo "SCA 扫描完成：$(date '+%F %T')"
+          echo "  报告与 SBOM 归档：/data/m2/sca-reports/${STAMP}/"
+          echo "  Dependency-Check：HTML+JSON（CVSS>=7 真报即流水线红）"
+          echo "  Enforcer 禁依赖基线：通过"
+          echo "=============================================="

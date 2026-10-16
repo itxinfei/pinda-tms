@@ -114,3 +114,31 @@ sa-token:
   is-share: false
   token-style: uuid
   is-log: false
+
+# Actuator 端点收敛（T-SEC-02/A6）：仅暴露 health（compose 探针），其余全部关闭
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+# 安全基线（T-SEC-01/02）：阈值与白名单全部配置化（禁硬编码纪律），生产经 Nacos xf-gateway.yml 覆盖
+xinfei:
+  security:
+    # 限流阈值（次/分钟）：登录/验证码按 IP 严限，通用按 IP 兜底 + 登录用户计数
+    rate-limit:
+      # dev 演示口径（办公室 NAT 同出口 IP 多人共用，过严会误伤正常登录/看板轮询）；
+      # 生产上线经 Nacos 收紧为 login 5 / captcha 10 / user 300 / ip 2000
+      login-per-minute: 30     # /api/auth/anno/login（防撞库）
+      captcha-per-minute: 30   # /api/auth/anno/captcha（防轰炸）
+      user-per-minute: 1000
+      ip-per-minute: 5000      # 兜底（A1）
+    # CORS origin 白名单（逗号分隔 pattern）：dev 未配置回落通配；生产必须覆盖，如
+    # https://admin.xinfei.cn,https://driver.xinfei.cn,https://courier.xinfei.cn,https://customer.xinfei.cn
+    cors:
+      allowed-origin-patterns: ""
+    # CSP（A13）：仅在非空时下发。dev 置空不下发（CSP 配错会挡正常资源）；
+    # 生产上线前配置白名单并逐端回归三条用例：管理端下单页地图 / 大屏 WS / 司机端定位。
+    # 生产参考串（须回归后再启用）：
+    #   "default-src 'self'; script-src 'self' *.baidu.com; img-src 'self' data: blob: *.baidu.com *.bcebos.com; connect-src 'self' *.baidu.com *.bcebos.com wss:; style-src 'self' 'unsafe-inline'; font-src 'self' data:"
+    csp: ""

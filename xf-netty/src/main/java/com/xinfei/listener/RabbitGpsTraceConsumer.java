@@ -96,6 +96,64 @@ public class RabbitGpsTraceConsumer {
     @Value("${gps.tenant.default-id:1}")
     private long defaultTenantId;
 
+    // ===== A18 最小集（与《10》R2-3 轨迹防伪造硬闸对齐）：车辆标识实存校验 =====
+
+    /**
+     * 校验开关：dev 默认关（base_truck 无种子数据，开校验会拒收联调报文，误伤现状）；
+     * 生产上线经 Nacos xf-netty.yml 置 true 生效（《69》A18：上线前完成的最小集）。
+     */
+    @Value("${gps.truck-id-check.enabled:false}")
+    private boolean truckIdCheckEnabled;
+
+    /** 信任/不信任缓存 TTL：5 分钟内同车不重复远程查证（千级设备高频上报不会打爆 xf-base） */
+    private static final long TRUCK_CHECK_TTL_MS = 5 * 60 * 1000L;
+
+    /** 缓存容量上限（防伪造方用随机 ID 撑爆内存；超限整体清空，下轮重新查证） */
+    private static final int TRUCK_CHECK_CACHE_MAX = 10000;
+
+    private static final Map<String, Long> TRUSTED_TRUCKS = new ConcurrentHashMap<>();
+    private static final Map<String, Long> UNTRUSTED_TRUCKS = new ConcurrentHashMap<>();
+
+    /**
+     * 车辆标识实存校验：truck 类型报文的 businessId 必须对应真实存在的车辆，
+     * 伪造 ID 的轨迹报文直接拒收。courier 类型属人员上报，归属校验属 P1 余项，本层放行。
+     *
+     * <p>防误伤设计：xf-base 不可用（返回 null）时 fail-open 放行并告警——查证是防御项，
+     * 不能反过来打断正常上报；非数字 ID 本地判伪，零远程调用。</p>
+     */
+    private boolean isTrustedBusinessId(LocationEntity location) {
+        if (!truckIdCheckEnabled) {
+            return true;
+        }
+        if (resolveBusinessType(location.getType()) != BusinessType.TRUCK.getCode()) {
+            return true;
+        }
+        String truckId = location.getBusinessId();
+        if (IdConverter.toLong(truckId) == null) {
+            return false;
+        }
+        long now = System.currentTimeMillis();
+        Long trustedAt = TRUSTED_TRUCKS.get(truckId);
+        if (trustedAt != null && now - trustedAt < TRUCK_CHECK_TTL_MS) {
+            return true;
+        }
+        Long untrustedAt = UNTRUSTED_TRUCKS.get(truckId);
+        if (untrustedAt != null && now - untrustedAt < TRUCK_CHECK_TTL_MS) {
+            return false;
+        }
+        Boolean exists = truckBaseClient.truckExists(truckId);
+        if (exists == null) {
+            log.warn("[GPS防伪造] xf-base 不可用，fail-open 放行: truckId={}", truckId);
+            return true;
+        }
+        if (TRUSTED_TRUCKS.size() >= TRUCK_CHECK_CACHE_MAX || UNTRUSTED_TRUCKS.size() >= TRUCK_CHECK_CACHE_MAX) {
+            TRUSTED_TRUCKS.clear();
+            UNTRUSTED_TRUCKS.clear();
+        }
+        (exists ? TRUSTED_TRUCKS : UNTRUSTED_TRUCKS).put(truckId, now);
+        return exists;
+    }
+
     static {
         CLEANUP_EXECUTOR.scheduleAtFixedRate(RabbitGpsTraceConsumer::cleanupExpiredCache, 1, 1, TimeUnit.HOURS);
     }
@@ -184,6 +242,13 @@ public class RabbitGpsTraceConsumer {
     public void consumeGpsTrace(Message message, Channel channel) {
         try {
             LocationEntity location = JSON.parseObject(message.getBody(), LocationEntity.class);
+            // A18 最小集：车辆 ID 必须真实存在，伪造报文 ack 丢弃（不重回队列，伪消息无重试价值）
+            if (!isTrustedBusinessId(location)) {
+                log.warn("[GPS防伪造] 拒收车辆ID不存在/非法的轨迹报文: businessId={}, source={}",
+                        location.getBusinessId(), location.getSource());
+                channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+                return;
+            }
             // 租户随消息体透传：设置上下文后，本线程的轨迹落库及告警落库都归属该租户
             TenantContextHolder.setTenantId(resolveTenant(location.getTenantId()));
             LocationRecord locationRecord = buildLocationRecord(location);

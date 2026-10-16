@@ -80,10 +80,20 @@ resilience4j:
         timeout-duration: 10s
         cancel-running-future: false
 
-# springdoc 接口文档
+# springdoc 接口文档（T-SEC-02/A6 端点收敛）：默认关闭，仅开发联调时经 SWAGGER_ENABLED=true 开启
 springdoc:
+  api-docs:
+    enabled: ${SWAGGER_ENABLED:false}
   swagger-ui:
     path: /swagger-ui.html
+    enabled: ${SWAGGER_ENABLED:false}
+
+# Actuator 端点收敛（T-SEC-02/A6）：仅暴露 health（compose 探针），其余全部关闭
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
 
 # Sa-Token（BFF 仅作出站 Same-Token 消费方，不注册入站登录拦截器，入站仍由网关负责）
 # 关键：token-name 必须与网关/xf-auth 同为 token，Same-Token 的 Redis key 为 token:var:same-token；

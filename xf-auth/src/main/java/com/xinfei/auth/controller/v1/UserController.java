@@ -15,6 +15,7 @@ import com.xinfei.auth.entity.AuthUser;
 import com.xinfei.auth.mapper.AuthUserMapper;
 import com.xinfei.auth.service.v1.UserService;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -89,7 +90,7 @@ public class UserController {
 
     @PostMapping
     @SaCheckPermission("sys:user:create")
-    public ApiResult<Long> create(@RequestBody UserForm form) {
+    public ApiResult<Long> create(@Valid @RequestBody UserForm form) {
         return ApiResult.success(userService.create(form));
     }
 

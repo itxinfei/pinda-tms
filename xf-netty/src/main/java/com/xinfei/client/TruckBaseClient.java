@@ -1,5 +1,6 @@
 package com.xinfei.client;
 
+import cn.dev33.satoken.same.SaSameUtil;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import lombok.extern.slf4j.Slf4j;
@@ -62,6 +63,12 @@ public class TruckBaseClient {
         requestFactory.setConnectTimeout(3000);
         requestFactory.setReadTimeout(5000);
         this.restTemplate = new RestTemplate(requestFactory);
+        // T-SEC-04：xf-base 入站已启用 Same-Token 校验，出站调用必须注入凭证，否则心跳/查证请求被 401 拒绝
+        //（姿势对齐网关 ForwardSameTokenFilter：头名 SaSameUtil.SAME_TOKEN，值 getToken()，Redis 共享变量多实例一致）
+        this.restTemplate.getInterceptors().add((request, body, execution) -> {
+            request.getHeaders().set(SaSameUtil.SAME_TOKEN, SaSameUtil.getToken());
+            return execution.execute(request, body);
+        });
     }
 
     /**
@@ -84,6 +91,29 @@ public class TruckBaseClient {
         } catch (Exception e) {
             log.warn("[GPS心跳] 调用 xf-base 心跳接口失败: truckId={}", truckId, e);
             return false;
+        }
+    }
+
+    /**
+     * 查证车辆是否存在（A18 最小集/R2-3 轨迹防伪造：TCP 报文 businessId 必须是真实卡车）
+     *
+     * <p>调 xf-base {@code GET /base/truck/{id}}（不存在时返回空响应体）。</p>
+     *
+     * @param truckId 车辆主键 id
+     * @return true-存在；false-不存在；null-xf-base 不可用或调用异常（调用方按 fail-open 放行，防抖动打断正常上报）
+     */
+    public Boolean truckExists(String truckId) {
+        String baseUrl = chooseInstanceUrl();
+        if (baseUrl == null) {
+            return null;
+        }
+        String url = baseUrl + "/base/truck/{id}";
+        try {
+            String body = restTemplate.getForObject(url, String.class, truckId);
+            return body != null && !body.isEmpty();
+        } catch (Exception e) {
+            log.warn("[GPS防伪造] 查证车辆存在性失败（按 fail-open 处理）: truckId={}", truckId, e);
+            return null;
         }
     }
 

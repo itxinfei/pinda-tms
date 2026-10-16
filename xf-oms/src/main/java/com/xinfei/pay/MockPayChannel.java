@@ -3,6 +3,7 @@ package com.xinfei.pay;
 import com.alibaba.fastjson2.JSON;
 import com.xinfei.entity.PaymentOrder;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -14,9 +15,13 @@ import java.util.Map;
  *
  * <p>用于无微信/支付宝商户配置时模拟支付成功流程：
  * 预下单直接返回可"支付成功"的模拟参数，回调验签恒真，便于联调完整支付链路。</p>
+ *
+ * <p>T-SEC-09/A4：prod profile 下整个 Bean 不注册（@Profile("!prod")），
+ * 配合 PayServiceImpl 启动闸门双保险，防止模拟渠道流入生产。</p>
  */
 @Slf4j
 @Component
+@Profile("!prod")
 public class MockPayChannel implements PayChannel {
 
     @Override

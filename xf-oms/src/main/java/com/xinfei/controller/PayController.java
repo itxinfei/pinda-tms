@@ -57,6 +57,11 @@ public class PayController {
      * <p>微信 APIv3 把签名放在 HTTP 头、报文体需按原文验签，所以这里保留 rawBody 与原样
      * 头信息传给渠道；否则渠道侧拿不到签名，只能退化成"字段非空即放行"。</p>
      *
+     * <p>生产口径（T-SEC-09/A5）：真实渠道的服务器回调无登录态，上线时须在网关为
+     * /api/oms/pay/callback/** 增加免登录白名单（安全由渠道验签兜底）；mock 渠道
+     * 无外部回调（创建支付单时服务端内部直调），prod 下 MockPayChannel 不注册，
+     * 此端点对 mock 渠道恒拒绝（resolveChannel 返回 null）。</p>
+     *
      * @param channel 渠道编码: wechat/alipay/mock
      * @return 处理结果
      */

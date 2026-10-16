@@ -10,6 +10,7 @@ import com.xinfei.service.IOrderCargoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -52,7 +53,7 @@ public class CargoController {
      * @return 货物信息
      */
     @PostMapping("")
-    public OrderCargoDto save(@RequestBody OrderCargoDto dto) {
+    public OrderCargoDto save(@Valid @RequestBody OrderCargoDto dto) {
         OrderCargo orderCargo = orderCargoConverter.toEntity(dto);
         orderCargo = orderCargoService.saveSelective(orderCargo);
         return orderCargoConverter.toDto(orderCargo);

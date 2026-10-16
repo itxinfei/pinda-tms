@@ -1,6 +1,10 @@
 package com.xinfei.DTO;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 import org.springframework.format.annotation.DateTimeFormat;
 
@@ -8,6 +12,10 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * 订单 DTO（下单域，T-SEC-08/B4：必填/长度经 JSR-303 校验——仅 @Valid 生效处触发，
+ * 分页查询等无 @Valid 场景不受影响；禁在本 DTO 加注解后直接用于部分更新端点的 @Valid）
+ */
 @Data
 public class OrderDTO implements Serializable {
     private static final long serialVersionUID = 3355577312030835991L;
@@ -22,12 +30,14 @@ public class OrderDTO implements Serializable {
     /**
      * 订单类型，1为同城订单，2为城际订单
      */
+    @NotNull(message = "订单类型不能为空")
     private Integer orderType;
 
 
     /**
      * 取件类型，1为网点自寄，2为上门取件
      */
+    @NotNull(message = "取件类型不能为空")
     private Integer pickupType;
 
     /**
@@ -62,6 +72,8 @@ public class OrderDTO implements Serializable {
     /**
      * 收件人详细地址
      */
+    @NotBlank(message = "收件人详细地址不能为空")
+    @Size(max = 200, message = "收件人详细地址超长")
     private String receiverAddress;
     /**
      * 收件人地址id
@@ -71,11 +83,15 @@ public class OrderDTO implements Serializable {
     /**
      * 收件人姓名
      */
+    @NotBlank(message = "收件人姓名不能为空")
+    @Size(max = 50, message = "收件人姓名超长")
     private String receiverName;
 
     /**
      * 收件人电话
      */
+    @NotBlank(message = "收件人电话不能为空")
+    @Size(max = 20, message = "收件人电话超长")
     private String receiverPhone;
 
     /**
@@ -96,6 +112,8 @@ public class OrderDTO implements Serializable {
     /**
      * 发件人详细地址
      */
+    @NotBlank(message = "发件人详细地址不能为空")
+    @Size(max = 200, message = "发件人详细地址超长")
     private String senderAddress;
 
     /**
@@ -106,11 +124,15 @@ public class OrderDTO implements Serializable {
     /**
      * 发件人姓名
      */
+    @NotBlank(message = "发件人姓名不能为空")
+    @Size(max = 50, message = "发件人姓名超长")
     private String senderName;
 
     /**
      * 发件人电话
      */
+    @NotBlank(message = "发件人电话不能为空")
+    @Size(max = 20, message = "发件人电话超长")
     private String senderPhone;
 
     /**
@@ -187,5 +209,7 @@ public class OrderDTO implements Serializable {
      */
     private Integer pageSize;
 
+    @Valid
+    @NotNull(message = "货物信息不能为空")
     private OrderCargoDto orderCargoDto;
 }

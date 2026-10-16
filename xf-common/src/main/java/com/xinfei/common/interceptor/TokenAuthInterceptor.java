@@ -2,11 +2,14 @@ package com.xinfei.common.interceptor;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.MDC;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
+import java.util.UUID;
 
 /**
  * Web 端 Token 鉴权拦截器（轻量，依赖网关透传身份）
@@ -33,26 +36,46 @@ public class TokenAuthInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        // 非控制器方法（静态资源等）直接放行
-        if (!(handler instanceof HandlerMethod)) {
-            return true;
+        // 链路追踪（T-SEC-01/A2）：网关 X-Trace-Id 落 MDC，缺失兜底生成；口径与 SameTokenAuthInterceptor 一致
+        String traceId = request.getHeader("X-Trace-Id");
+        if (StringUtils.isBlank(traceId)) {
+            traceId = UUID.randomUUID().toString().replace("-", "");
         }
-        String uri = request.getRequestURI();
-        for (String prefix : EXCLUDE_PREFIXES) {
-            if (uri.startsWith(prefix)) {
+        MDC.put("traceId", traceId);
+        try {
+            // 非控制器方法（静态资源等）直接放行
+            if (!(handler instanceof HandlerMethod)) {
                 return true;
             }
+            String uri = request.getRequestURI();
+            for (String prefix : EXCLUDE_PREFIXES) {
+                if (uri.startsWith(prefix)) {
+                    return true;
+                }
+            }
+            // 校验网关透传的身份头
+            String userId = request.getHeader(USER_ID_HEADER);
+            if (StringUtils.isBlank(userId)) {
+                log.warn("[鉴权] 请求缺少用户身份(userid头)，拒绝访问: uri={}, remote={}",
+                    uri, request.getRemoteAddr());
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json;charset=UTF-8");
+                response.getWriter().write("{\"code\":401,\"msg\":\"未登录或身份信息缺失，请通过网关访问\"}");
+                // preHandle 返回 false 时 afterCompletion 不会被调用，手动清 MDC 防线程复用串号
+                MDC.remove("traceId");
+                return false;
+            }
+            return true;
+        } catch (Exception e) {
+            MDC.remove("traceId");
+            throw e;
         }
-        // 校验网关透传的身份头
-        String userId = request.getHeader(USER_ID_HEADER);
-        if (StringUtils.isBlank(userId)) {
-            log.warn("[鉴权] 请求缺少用户身份(userid头)，拒绝访问: uri={}, remote={}",
-                uri, request.getRemoteAddr());
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("application/json;charset=UTF-8");
-            response.getWriter().write("{\"code\":401,\"msg\":\"未登录或身份信息缺失，请通过网关访问\"}");
-            return false;
-        }
-        return true;
+    }
+
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response,
+                                Object handler, Exception ex) {
+        // 请求结束清 MDC，防线程池复用把上一条请求的 traceId 带进无关日志
+        MDC.remove("traceId");
     }
 }

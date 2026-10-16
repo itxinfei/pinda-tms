@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  T-SEC-E4：OWASP Dependency-Check 误报豁免清单（suppressions）。
+
+  用途：dependency-check 的 NVD 比对存在已知误报（CPE 推断不准、把第三方库误配到
+  漏洞组件），凡确认误报的在此登记，注明 CPE/包名 + 豁免理由 + 登记日期，禁止无备注豁免。
+
+  维护纪律（对应《72》T-SEC-E4）：
+  1. 新增豁免必须写清「为什么是误报」，能引用 CVE 官方说明或组件官方声明的优先引用；
+  2. 每季度复审一次，上游修复/依赖升级后及时删除已失效的豁免条目；
+  3. 本文件只放「确认误报」，真实存在的 HIGH 及以上漏洞一律升级修复，不得豁免了事。
+-->
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+
+    <!-- 示例模板（取消注释并按实情填写后使用）：
+    <suppress>
+        <notes><![CDATA[
+        登记日期：2026-10-16 | 登记人：xxx
+        误报原因：CPE 将 xx 库误配到 yy 组件，官方公告明确受影响范围为 zz，本项目所用版本不在内。
+        ]]></notes>
+        <gav regex="true">^com\.example:example-lib:.*$</gav>
+        <cpe>cpe:/a:example:example</cpe>
+    </suppress>
+    -->
+
+</suppressions>

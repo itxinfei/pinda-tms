@@ -74,7 +74,8 @@ spring:
           merge-sql: true
         wall:
           config:
-            multi-statement-allow: true
+            # T-SEC-08/B3：禁多语句（Druid wall 防堆叠注入），如业务确需再评估
+            multi-statement-allow: false
   # RabbitMQ：消费订单交付事件 ORDER_DELIVERED 触发结算。rabbitmq 在 xinfei-infra 网络，
   # 与 xf-oms 的 xinfei-apps 网络隔离、无法用服务名，故走宿主机 IP（同 MySQL/Redis）；
   # 账号密码由环境变量注入，密码不入库
@@ -111,7 +112,8 @@ mybatis-plus:
     cache-enabled: true
     call-setters-on-nulls: false
     jdbc-type-for-null: NULL
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    # T-SEC-08/B3：SQL 日志走 Slf4j（可按日志级别管控），禁 stdout 直打（生产泄漏 SQL/参数）
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
   global-config:
     banner: false
     db-config:

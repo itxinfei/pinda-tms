@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +33,7 @@ public class DriverJobController {
      * @return 司机作业单信息
      */
     @PostMapping("")
-    public DriverJobDTO save(@RequestBody DriverJobDTO dto) {
+    public DriverJobDTO save(@Valid @RequestBody DriverJobDTO dto) {
         DriverJob driverJob = new DriverJob();
         BeanUtils.copyProperties(dto, driverJob);
         driverJobService.saveDriverJob(driverJob);

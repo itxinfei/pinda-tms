@@ -13,6 +13,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -38,7 +39,7 @@ public class TransportOrderController {
      * @return 运单信息
      */
     @PostMapping("")
-    public TransportOrderDTO save(@RequestBody TransportOrderDTO dto) {
+    public TransportOrderDTO save(@Valid @RequestBody TransportOrderDTO dto) {
         TransportOrder transportOrder = new TransportOrder();
         BeanUtils.copyProperties(dto, transportOrder);
         transportOrderService.saveTransportOrder(transportOrder);
