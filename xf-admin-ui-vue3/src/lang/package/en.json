@@ -78,13 +78,7 @@
     "otherLoginMethods": "Other",
     "resetPassword": "Reset password",
     "thinkOfPasswd": "Remember your password?",
-    "register": "Register account",
-    "agree": "I have read and agree to the",
-    "userAgreement": "User Agreement",
-    "haveAccount": "Already have an account?",
-    "noAccount": "Don't have an account?",
     "quickFill": "Quick fill",
-    "reg": "Register",
     "adminResetTip": "Please ask your system administrator to reset your password",
     "adminResetPath": "Administrator path: System Management → Users → select user → Reset password",
     "resetDone": "Account noted. Please contact your system administrator to reset the password"
