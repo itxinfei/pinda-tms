@@ -2,6 +2,8 @@
 // 维护「菜单 component 字符串 → src/views 视图文件」的映射，路由注册与菜单表单共用
 // 表单的「页面路径」选项树也由此派生：跳过错误页与页面内部组件，index.vue 归并到目录
 
+import { ensureFormCreate } from "@/plugins/form-create";
+
 /**
  * 全部视图模块，键形如 /src/views/system/user/index.vue
  */
@@ -27,15 +29,28 @@ export function normalizeViewPath(componentPath: string): string {
 }
 
 /**
- * 解析组件：支持 system/user 与 system/user/index 两种写法，未命中回退 404
+ * 需要 form-create 表单引擎的视图前缀：
+ * dynamic-form 各页直接渲染表单规则/设计器；workflow 页面（发起流程、审批详情）内嵌绑定表单渲染
+ */
+const FORM_CREATE_VIEW_PREFIXES = ["dynamic-form/", "workflow/"];
+
+/**
+ * 解析组件：支持 system/user 与 system/user/index 两种写法，未命中回退 404；
+ * 命中表单引擎页面时先 ensureFormCreate 再加载视图（全局组件注册必须早于页面渲染）
  */
 export function resolveComponent(componentPath: string) {
   const path = normalizeViewPath(componentPath);
-  return (
+  const raw =
     viewModules[`${VIEW_PREFIX}${path}.vue`] ||
     viewModules[`${VIEW_PREFIX}${path}/index.vue`] ||
-    viewModules[`${VIEW_PREFIX}error/404.vue`]
-  );
+    viewModules[`${VIEW_PREFIX}error/404.vue`];
+  if (FORM_CREATE_VIEW_PREFIXES.some((prefix) => path.startsWith(prefix))) {
+    return async () => {
+      await ensureFormCreate();
+      return raw();
+    };
+  }
+  return raw;
 }
 
 /**

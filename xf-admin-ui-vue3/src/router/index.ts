@@ -1,5 +1,6 @@
 import type { App } from "vue";
 import { createRouter, createWebHashHistory, type RouteRecordRaw } from "vue-router";
+import { ensureFormCreate } from "@/plugins/form-create";
 
 /**
  * 布局组件，供各路由复用（懒加载）
@@ -57,7 +58,11 @@ export const constantRoutes: RouteRecordRaw[] = [
   {
     path: "/f/:formKey",
     name: "FormShare",
-    component: () => import("@/views/dynamic-form/share.vue"),
+    // 分享页是 form-create 渲染器消费方：loader 先完成引擎注册，再挂载视图
+    component: async () => {
+      await ensureFormCreate();
+      return import("@/views/dynamic-form/share.vue");
+    },
     meta: { hidden: true, title: "表单填写" },
   },
 
@@ -143,7 +148,12 @@ export const constantRoutes: RouteRecordRaw[] = [
         component: () => import("@/views/transport-board/index.vue"),
         meta: { title: "运输闭环看板", icon: "el-icon-DataAnalysis", keepAlive: true },
       },
-      pendingRoute("/dispatch", "Dispatch", "调度一张图", "el-icon-LocationFilled"),
+      {
+        path: "/dispatch",
+        name: "Dispatch",
+        component: () => import("@/views/dispatch/index.vue"),
+        meta: { title: "调度一张图", icon: "el-icon-LocationFilled", keepAlive: true },
+      },
     ],
   },
 

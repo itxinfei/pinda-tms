@@ -269,13 +269,14 @@
 <script setup lang="ts">
 import { ArrowRight, Check, DocumentCopy, RefreshLeft } from "@element-plus/icons-vue";
 import {
+  LanguageEnum,
   LayoutMode,
   PageSwitchingAnimationOptions,
   SidebarColor,
   TagsViewStyle,
   ThemeMode,
 } from "@/enums";
-import { useSettingsStore } from "@/stores";
+import { useAppStore, useSettingsStore } from "@/stores";
 import { themeColorNames, themePalettePresets } from "@/settings";
 import type { ThemeColorMap, ThemeColorName, ThemePalettePreset } from "@/settings";
 
@@ -337,6 +338,7 @@ const paletteI18nKeys: Record<string, string> = {
   slate: "slate",
 };
 
+const appStore = useAppStore();
 const settingsStore = useSettingsStore();
 
 const isCustomColorsOpen = ref(false);
@@ -481,8 +483,8 @@ function buildDefaultsCode(): string {
     themeColors: themeColorsCode.trimStart(),
     sidebarColorScheme: `SidebarColor.${settingsStore.sidebarColorScheme.toUpperCase().replace("-", "_")}`,
     layout: `LayoutMode.${settingsStore.layout.toUpperCase()}`,
-    size: "ComponentSize.DEFAULT",
-    language: "LanguageEnum.ZH_CN",
+    size: `ComponentSize.${String(appStore.size).toUpperCase()}`,
+    language: appStore.language === LanguageEnum.EN ? "LanguageEnum.EN" : "LanguageEnum.ZH_CN",
     showTagsView: settingsStore.showTagsView,
     tagsViewStyle: `TagsViewStyle.${settingsStore.tagsViewStyle.toUpperCase()}`,
     showAppLogo: settingsStore.showAppLogo,
