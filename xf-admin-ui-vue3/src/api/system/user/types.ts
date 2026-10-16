@@ -74,6 +74,8 @@ export interface UserForm {
   avatar?: string;
   /** 部门 ID */
   deptId?: string;
+  /** 岗位 ID（后端 stationId，按机构联动） */
+  stationId?: string;
   /** 用户邮箱 */
   email?: string;
   /** 性别 */

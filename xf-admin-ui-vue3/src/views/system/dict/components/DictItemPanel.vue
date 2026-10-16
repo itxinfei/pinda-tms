@@ -13,11 +13,11 @@
         <el-button @click="handleResetQuery">重置</el-button>
       </div>
       <div class="flex items-center gap-2">
-        <el-button v-hasPerm="['sys:dict-item:create']" type="primary" @click="handleCreateClick()">
+        <el-button v-hasPerm="['sys:dict:create']" type="primary" @click="handleCreateClick()">
           新增
         </el-button>
         <el-button
-          v-hasPerm="['sys:dict-item:delete']"
+          v-hasPerm="['sys:dict:delete']"
           type="danger"
           :disabled="!hasSelection"
           @click="handleDelete()"
@@ -70,7 +70,7 @@
         <el-table-column fixed="right" label="操作" align="center" width="160">
           <template #default="scope">
             <el-button
-              v-hasPerm="['sys:dict-item:update']"
+              v-hasPerm="['sys:dict:update']"
               type="primary"
               link
               size="small"
@@ -79,7 +79,7 @@
               编辑
             </el-button>
             <el-button
-              v-hasPerm="['sys:dict-item:delete']"
+              v-hasPerm="['sys:dict:delete']"
               type="danger"
               link
               size="small"

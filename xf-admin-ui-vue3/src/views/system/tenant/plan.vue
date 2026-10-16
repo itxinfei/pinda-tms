@@ -29,7 +29,7 @@
       <div class="page-toolbar">
         <div class="page-toolbar__left">
           <el-button
-            v-hasPerm="['sys:tenant-plan:create']"
+            v-hasPerm="['sys:tenant:create']"
             type="primary"
             @click="handleCreateClick()"
           >
@@ -74,7 +74,7 @@
           <el-table-column fixed="right" label="操作" width="240">
             <template #default="scope">
               <el-button
-                v-hasPerm="['sys:tenant-plan:assign']"
+                v-hasPerm="['sys:tenant:plan-assign']"
                 type="primary"
                 size="small"
                 link
@@ -84,7 +84,7 @@
                 菜单配置
               </el-button>
               <el-button
-                v-hasPerm="['sys:tenant-plan:update']"
+                v-hasPerm="['sys:tenant:update']"
                 type="primary"
                 size="small"
                 link
@@ -93,7 +93,7 @@
                 编辑
               </el-button>
               <el-button
-                v-hasPerm="['sys:tenant-plan:delete']"
+                v-hasPerm="['sys:tenant:delete']"
                 type="danger"
                 size="small"
                 link
@@ -207,7 +207,7 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button
-            v-hasPerm="['sys:tenant-plan:assign']"
+            v-hasPerm="['sys:tenant:plan-assign']"
             type="primary"
             @click="handlePlanMenuSubmit"
           >

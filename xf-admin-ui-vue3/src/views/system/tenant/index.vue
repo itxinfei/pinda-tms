@@ -32,6 +32,14 @@
             新增
           </el-button>
           <el-button
+            v-hasPerm="['sys:tenant:list']"
+            type="primary"
+            plain
+            @click="router.push('/tenant/plan')"
+          >
+            套餐管理
+          </el-button>
+          <el-button
             v-hasPerm="['sys:tenant:delete']"
             type="danger"
             :disabled="!hasSelection"
@@ -357,6 +365,7 @@
 </template>
 
 <script setup lang="ts">
+import { useRouter } from "vue-router";
 import {
   ElMessage,
   ElMessageBox,
@@ -388,6 +397,7 @@ defineOptions({
 });
 
 const tableWrapperRef = ref<HTMLElement | null>(null);
+const router = useRouter();
 const { toggle: toggleFullscreen } = useFullscreen(tableWrapperRef);
 
 const queryFormRef = ref<FormInstance>();

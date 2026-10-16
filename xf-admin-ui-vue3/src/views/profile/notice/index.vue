@@ -29,6 +29,16 @@
     </el-card>
 
     <el-card class="page-content" shadow="never">
+      <div class="page-toolbar">
+        <div class="page-toolbar__left">
+          <el-button :loading="readAllLoading" @click="handleReadAll">
+            <template #icon>
+              <Checked />
+            </template>
+            全部已读
+          </el-button>
+        </div>
+      </div>
       <div class="page-table-wrapper">
         <el-table
           v-loading="loading"
@@ -88,7 +98,8 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
-import { Refresh, Search } from "@element-plus/icons-vue";
+import { ElMessage } from "element-plus";
+import { Checked, Refresh, Search } from "@element-plus/icons-vue";
 
 import NoticeAPI from "@/api/system/notice";
 import type { NoticeDetail, NoticeItem, NoticeQueryParams } from "@/api/system/notice";
@@ -119,6 +130,21 @@ const { loading, list, total, params, fetchData, handleQuery, handleResetQuery }
 
 const noticeDialogVisible = ref(false);
 const noticeDetail = ref<NoticeDetail | null>(null);
+const readAllLoading = ref(false);
+
+/**
+ * 全部标记已读（PUT /notices/read-all）
+ */
+async function handleReadAll(): Promise<void> {
+  readAllLoading.value = true;
+  try {
+    await NoticeAPI.readAll();
+    ElMessage.success("已全部标记为已读");
+    fetchData();
+  } finally {
+    readAllLoading.value = false;
+  }
+}
 
 /**
  * 查看通知详情

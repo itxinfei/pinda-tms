@@ -120,14 +120,18 @@
               </template>
             </el-table-column>
             <el-table-column label="用户名" min-width="120" prop="username" show-overflow-tooltip />
-            <el-table-column label="状态" align="center" width="80">
+            <el-table-column label="状态" align="center" width="90">
               <template #default="scope">
-                <el-tag
-                  :type="scope.row.status === CommonStatus.ENABLED ? 'success' : 'danger'"
-                  size="small"
-                >
-                  {{ scope.row.status === CommonStatus.ENABLED ? "正常" : "禁用" }}
-                </el-tag>
+                <el-switch
+                  v-model="scope.row.status"
+                  v-hasPerm="['sys:user:update']"
+                  inline-prompt
+                  active-text="正常"
+                  inactive-text="禁用"
+                  :active-value="CommonStatus.ENABLED"
+                  :inactive-value="CommonStatus.DISABLED"
+                  @change="handleStatusChange(scope.row as UserItem)"
+                />
               </template>
             </el-table-column>
             <el-table-column label="性别" align="center" width="70">
@@ -229,7 +233,27 @@
             filterable
             check-strictly
             :render-after-expand="false"
+            @change="handleDeptChange"
           />
+        </el-form-item>
+
+        <el-form-item label="所属岗位" prop="stationId">
+          <el-select
+            v-model="formData.stationId"
+            placeholder="请先选择所属部门"
+            :disabled="!formData.deptId"
+            :loading="stationLoading"
+            clearable
+            filterable
+            style="width: 100%"
+          >
+            <el-option
+              v-for="item in stationOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
         </el-form-item>
 
         <el-form-item label="性别" prop="gender">
@@ -335,6 +359,7 @@ import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from "elem
 
 import UserAPI from "@/api/system/user";
 import OrgAPI from "@/api/org";
+import StationAPI from "@/api/station";
 import RoleAPI from "@/api/system/role";
 import type { UserForm, UserItem, UserQueryParams } from "@/api/system/user";
 import type { OptionItem } from "@/api/common";
@@ -409,6 +434,8 @@ const resetPasswordForm = reactive<ResetPasswordForm>({
 
 const deptOptions = ref<OptionItem[]>([]);
 const roleOptions = ref<OptionItem[]>([]);
+const stationOptions = ref<OptionItem[]>([]);
+const stationLoading = ref(false);
 
 const drawerSize = computed(() => (appStore.device === DeviceEnum.DESKTOP ? "600px" : "90%"));
 
@@ -450,6 +477,47 @@ async function loadFormOptions(): Promise<void> {
     RoleAPI.getOptions(),
     OrgAPI.getOptions(),
   ]);
+}
+
+/**
+ * 按机构加载岗位下拉选项（stationId 为字符串，与后端 v1 契约一致）
+ */
+async function loadStationsByOrg(deptId?: string): Promise<void> {
+  stationOptions.value = [];
+  formData.stationId = undefined;
+  if (!deptId) return;
+  stationLoading.value = true;
+  try {
+    const orgId = Number(deptId);
+    const result = await StationAPI.page({ pageNo: 1, size: 100, orgId });
+    stationOptions.value = (result.records ?? []).map((s) => ({
+      value: String(s.id),
+      label: s.name,
+    }));
+  } finally {
+    stationLoading.value = false;
+  }
+}
+
+/**
+ * 表单内切换部门时联动刷新岗位选项
+ */
+function handleDeptChange(deptId?: string): void {
+  loadStationsByOrg(deptId);
+}
+
+/**
+ * 行内启停用用户；失败回滚开关状态
+ */
+async function handleStatusChange(row: UserItem): Promise<void> {
+  const target = row.status === CommonStatus.ENABLED ? CommonStatus.DISABLED : CommonStatus.ENABLED;
+  const status = row.status ?? CommonStatus.DISABLED;
+  try {
+    await UserAPI.changeStatus(String(row.id), status);
+    ElMessage.success(status === CommonStatus.ENABLED ? "已启用" : "已禁用");
+  } catch {
+    row.status = target;
+  }
 }
 
 /**
@@ -498,6 +566,9 @@ async function handleEditClick(id: string): Promise<void> {
   await loadFormOptions();
   const data = await UserAPI.getFormData(id);
   Object.assign(formData, data);
+  await loadStationsByOrg(data.deptId);
+  // 回显岗位选择（loadStationsByOrg 会清空 stationId，需在选项加载后回填）
+  formData.stationId = data.stationId;
   openDialog();
 }
 

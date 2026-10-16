@@ -96,6 +96,20 @@ const UserAPI = {
   },
 
   /**
+   * 修改用户状态（启停用）
+   *
+   * @param id 用户 ID
+   * @param status 1 正常 / 0 禁用
+   */
+  changeStatus(id: string, status: number) {
+    return request({
+      url: `${USER_BASE_URL}/${id}/status`,
+      method: "put",
+      params: { status },
+    });
+  },
+
+  /**
    * 批量删除用户，多个以英文逗号(,)分割
    *
    * @param ids 用户 ID 字符串，多个以英文逗号(,)分割
