@@ -40,6 +40,9 @@ public class BigDecimalSerializer extends JsonSerializer<BigDecimal> implements 
             }
             return serializerProvider.findValueSerializer(beanProperty.getType(), beanProperty);
         }
-        return serializerProvider.findNullValueSerializer(beanProperty);
+        // 修改点：Map 值/根级序列化无 BeanProperty 上下文，必须返回可正常输出的默认序列化器；
+        // 原实现返回 findNullValueSerializer 会把【非空】BigDecimal 写成 null
+        // （P0-6d 联调暴露：profit/summary/ranking 顶层 income/cost/profit 全 null，而 marginRate 有值）。
+        return new BigDecimalSerializer();
     }
 }
