@@ -10,6 +10,7 @@ import com.xinfei.DTO.OrderDTO;
 import com.xinfei.DTO.OrderLocationDto;
 import com.xinfei.DTO.OrderSearchDTO;
 import com.xinfei.common.exception.XfException;
+import com.xinfei.common.context.RequestContext;
 import com.xinfei.common.utils.IdConverter;
 import com.xinfei.common.utils.PageResponse;
 import com.xinfei.common.utils.Result;
@@ -21,6 +22,8 @@ import com.xinfei.entity.OrderCargo;
 import com.xinfei.entity.OrderLocation;
 import com.xinfei.enums.OrderPaymentStatus;
 import com.xinfei.enums.OrderStatus;
+import com.xinfei.entity.DecisionLog;
+import com.xinfei.service.IDecisionLogService;
 import com.xinfei.service.IOrderCargoService;
 import com.xinfei.service.IOrderLocationService;
 import com.xinfei.service.IOrderService;
@@ -45,6 +48,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("order")
 public class OrderController {
+    @Autowired
+    private IDecisionLogService decisionLogService;
     @Autowired
     private IOrderService orderService;
     @Autowired
@@ -206,12 +211,21 @@ public class OrderController {
      * @return 更新后的订单金额
      */
     @PutMapping("/{id}/reprice")
-    public Result reprice(@PathVariable(name = "id") String id, @RequestBody OrderDTO orderDTO) {
+    public Result reprice(@PathVariable(name = "id") String id, @RequestBody OrderDTO orderDTO,
+                          @RequestParam(value = "reasonEnum", required = false) String reasonEnum) {
         if (orderDTO == null) {
             return Result.error(400, "订单信息不能为空");
         }
         Long orderId = IdConverter.toLong(id);
         orderDTO.setId(id);
+        // FR-75 决策留痕：先落痕（调价属于合规须回溯决策，枚举理由缺省按成本修正落痕）
+        try {
+            decisionLogService.apply(DecisionLog.TYPE_REPRICE, orderId,
+                    StringUtils.defaultIfBlank(reasonEnum, "COST_CORRECTION"),
+                    "调价至 " + orderDTO.getDistance() + "km 口径重算", IdConverter.toLong(RequestContext.getUserId()));
+        } catch (IllegalArgumentException e) {
+            return Result.error(400, e.getMessage());
+        }
         // 服务端重算运费
         Map map = orderService.calculateAmount(orderDTO);
         // calculateAmount 在地址解析失败时返回含 errorMsg 的 map（amount=0），必须一并拒绝，
@@ -268,6 +282,14 @@ public class OrderController {
         if (OrderStatus.CANCELLED.getCode().equals(order.getStatus())) {
             log.warn("[订单] 订单已取消，拒绝重复取消: id={}", id);
             return Result.error(400, "订单已取消，请勿重复操作");
+        }
+        // FR-75 决策留痕：先落痕（枚举理由白名单校验失败/落库失败即阻断取消，保证合规可追溯）
+        try {
+            String reasonEnum = StringUtils.defaultIfBlank(cancelDTO.getReasonEnum(), "OTHER");
+            decisionLogService.apply(DecisionLog.TYPE_CANCEL, orderId, reasonEnum, reason,
+                    IdConverter.toLong(RequestContext.getUserId()));
+        } catch (IllegalArgumentException e) {
+            return Result.error(400, e.getMessage());
         }
         if (!orderService.cancel(orderId, reason)) {
             log.warn("[订单] 取消失败（当前状态不允许流转到已取消）: id={}, status={}",

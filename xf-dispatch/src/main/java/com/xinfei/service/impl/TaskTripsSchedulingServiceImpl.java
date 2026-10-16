@@ -8,9 +8,11 @@ import com.xinfei.DTO.transportline.TransportTripsDto;
 import com.xinfei.DTO.transportline.TransportTripsTruckDriverDto;
 import com.xinfei.DTO.truck.TruckDto;
 import com.xinfei.DTO.UserDTO;
+import com.xinfei.common.config.dynamic.DynamicConfigService;
 import com.xinfei.common.utils.DateUtils;
 import com.xinfei.entity.CacheLineDetailEntity;
 import com.xinfei.entity.OrderClassifyAttachEntity;
+import com.xinfei.feign.NettyTraceFeign;
 import com.xinfei.feign.transportline.TransportTripsFeign;
 import com.xinfei.feign.truck.TruckFeign;
 import com.xinfei.feign.UserFeign;
@@ -31,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -55,6 +58,10 @@ public class TaskTripsSchedulingServiceImpl implements ITaskTripsSchedulingServi
 
     @Autowired
     private IOrderClassifyAttachService orderClassifyAttachService;
+    @Autowired
+    private NettyTraceFeign nettyTraceFeign;
+    @Autowired
+    private DynamicConfigService dynamicConfigService;
 
     @Override
     public List<OrderLineTripsTruckDriverDTO> execute(List<OrderLineSimpleDTO> orderLineSimpleDTOS, Long businessId, Long jobId, Long logId, Long agencyId) {
@@ -213,6 +220,71 @@ public class TaskTripsSchedulingServiceImpl implements ITaskTripsSchedulingServi
                 }
             });
         });
-        return tripsTruckDriverDTOS;
+        // FR-36 离线禁排班：剔除 GPS 离线车辆（gps.offline.timeout.minutes，默认 30 分钟无心跳即离线）；
+        // 在线状态查询失败时降级为不过滤，不阻断调度主流程
+        Set<String> onlineTruckIds = resolveOnlineTruckIds(
+                tripsTruckDriverDTOS.stream().map(TripsTruckDriverDTO::getTruckId).collect(Collectors.toSet()));
+        List<TripsTruckDriverDTO> onlineList = tripsTruckDriverDTOS.stream()
+                .filter(item -> onlineTruckIds.contains(item.getTruckId()))
+                .collect(Collectors.toList());
+        if (onlineList.size() < tripsTruckDriverDTOS.size()) {
+            log.warn("[FR-36] 离线禁排班：候选 {} 台中 {} 台 GPS 离线被剔除，剩 {} 台",
+                    tripsTruckDriverDTOS.size(), tripsTruckDriverDTOS.size() - onlineList.size(), onlineList.size());
+        }
+        return onlineList;
+    }
+
+    /**
+     * 判定在线车辆集合（FR-36）：车辆最近 GPS 心跳距现在 ≤ gps.offline.timeout.minutes 视为在线。
+     *
+     * <p>数据源 = xf-netty /trace/latestAll(type=1 车辆)；查询异常时降级为全放行（不阻断调度）。
+     * 心跳时间解析失败的条目按在线处理（保守放行，仅剔除明确离线的）。</p>
+     */
+    private Set<String> resolveOnlineTruckIds(Set<String> truckIds) {
+        if (truckIds == null || truckIds.isEmpty()) {
+            return java.util.Collections.emptySet();
+        }
+        try {
+            com.xinfei.common.utils.Result r = nettyTraceFeign.latestAll("1");
+            if (r == null || r.get("data") == null) {
+                log.warn("[FR-36] 车辆最新位置查询为空，降级为不过滤");
+                return truckIds;
+            }
+            int offlineMinutes = dynamicConfigService.getInt("gps.offline.timeout.minutes", 30);
+            java.time.LocalDateTime deadline = java.time.LocalDateTime.now().minusMinutes(offlineMinutes);
+            Set<String> online = new java.util.HashSet<>();
+            for (Object rowObj : (List<?>) r.get("data")) {
+                if (!(rowObj instanceof Map)) {
+                    continue;
+                }
+                Map<?, ?> row = (Map<?, ?>) rowObj;
+                String businessId = String.valueOf(row.get("businessId"));
+                if (!truckIds.contains(businessId)) {
+                    continue;
+                }
+                Object rt = row.get("reportTime");
+                if (rt == null) {
+                    online.add(businessId); // 无心跳记录的保守放行
+                    continue;
+                }
+                try {
+                    String s = String.valueOf(rt).replace(" ", "T");
+                    if (s.length() > 29) {
+                        s = s.substring(0, 29); // 截掉纳秒超长部分
+                    }
+                    java.time.LocalDateTime last = java.time.LocalDateTime.parse(s);
+                    if (last.isAfter(deadline)) {
+                        online.add(businessId);
+                    }
+                } catch (Exception pe) {
+                    log.debug("[FR-36] 心跳时间解析失败按在线处理: businessId={}, reportTime={}", businessId, rt);
+                    online.add(businessId);
+                }
+            }
+            return online;
+        } catch (Exception e) {
+            log.warn("[FR-36] 车辆在线状态查询异常，降级为不过滤（不阻断调度）: {}", e.getMessage());
+            return truckIds;
+        }
     }
 }

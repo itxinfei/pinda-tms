@@ -19,4 +19,11 @@ public class OrderCancelDTO implements Serializable {
      */
     @Schema(description = "取消原因")
     private String reason;
+
+    /**
+     * 枚举理由（P0-9/FR-75 合规留痕，白名单校验：
+     * CUSTOMER_CANCEL/CARGO_DAMAGE/ADDRESS_ERROR/OTHER；缺省时按 OTHER 落痕）
+     */
+    @Schema(description = "枚举理由（合规留痕白名单）")
+    private String reasonEnum;
 }
