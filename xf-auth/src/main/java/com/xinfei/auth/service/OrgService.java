@@ -8,6 +8,7 @@ import com.xinfei.auth.entity.AuthUser;
 import com.xinfei.auth.mapper.AuthUserMapper;
 import com.xinfei.auth.mapper.CoreOrgMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -53,6 +54,7 @@ public class OrgService {
     /**
      * 新增组织，返回新ID
      */
+    @CacheEvict(cacheNames = {"org", "orgList"}, allEntries = true)
     public Long save(CoreOrg org) {
         org.setId(null);
         Long parentId = org.getParentId() == null ? 0L : org.getParentId();
@@ -67,6 +69,7 @@ public class OrgService {
     /**
      * 修改组织。parentId 变化时移动整棵子树并刷新 tree_path。
      */
+    @CacheEvict(cacheNames = {"org", "orgList"}, allEntries = true)
     public void update(CoreOrg org) {
         if (org.getId() == null) {
             throw new BizException("缺少组织ID");
@@ -97,6 +100,7 @@ public class OrgService {
     /**
      * 删除组织：存在下级时拒绝
      */
+    @CacheEvict(cacheNames = {"org", "orgList"}, allEntries = true)
     public void remove(Long id) {
         Long childCount = orgMapper.selectCount(Wrappers.<CoreOrg>lambdaQuery()
                 .eq(CoreOrg::getParentId, id));

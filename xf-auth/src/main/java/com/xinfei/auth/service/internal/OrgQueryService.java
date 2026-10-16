@@ -12,6 +12,7 @@ import com.xinfei.DTO.OrgTreeDTO;
 import com.xinfei.common.utils.PageResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -36,6 +37,7 @@ public class OrgQueryService {
     /**
      * 按ID查询
      */
+    @Cacheable(cacheNames = "org", key = "#id", unless = "#result == null")
     public OrgDTO get(Long id) {
         CoreOrg org = orgMapper.selectById(id);
         if (org == null) {
@@ -55,8 +57,9 @@ public class OrgQueryService {
     }
 
     /**
-     * 多条件查询
+     * 多条件查询。key 由 Spring 默认 SimpleKey 组合全部入参，多参数组合安全不串。
      */
+    @Cacheable(cacheNames = "orgList")
     public List<OrgDTO> list(Integer orgType, List<Long> ids, Long countyId,
                              Long parentId, List<Long> parentIds) {
         List<CoreOrg> orgs = orgMapper.selectList(Wrappers.<CoreOrg>lambdaQuery()
