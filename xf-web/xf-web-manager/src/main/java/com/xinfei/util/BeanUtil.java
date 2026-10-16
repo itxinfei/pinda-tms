@@ -9,6 +9,7 @@ import com.xinfei.common.utils.Constant;
 import com.xinfei.constant.StaticStation;
 import com.xinfei.enums.org.OrgType;
 import com.xinfei.feign.AreaFeign;
+import com.xinfei.feign.DriverJobFeign;
 import com.xinfei.feign.OrderFeign;
 import com.xinfei.feign.OrgFeign;
 import com.xinfei.feign.RoleFeign;
@@ -383,6 +384,18 @@ public class BeanUtil {
     }
 
     public static TaskTransportVo parseTaskTransportDTO2Vo(TaskTransportDTO dto, TransportTripsFeign transportTripsFeign, OrgFeign orgFeign, UserFeign userFeign, TruckFeign truckFeign, TransportOrderFeign transportOrderFeign, OrderFeign orderFeign, AreaFeign areaFeign) {
+        return parseTaskTransportDTO2Vo(dto, transportTripsFeign, orgFeign, userFeign, truckFeign,
+                transportOrderFeign, orderFeign, areaFeign, null);
+    }
+
+    /**
+     * 运输任务 DTO → VO。
+     *
+     * <p>driverJobFeign 用于组装司机信息：任务与司机的权威关联是 {@code work_driver_job}
+     * （一个任务可绑定多个司机，如主副驾）。历史实现未组装 drivers，导致列表「司机」列与
+     * 详情「司机信息」表格恒为空；此处补齐并对 Feign 为 null 的旧调用方保持兼容。</p>
+     */
+    public static TaskTransportVo parseTaskTransportDTO2Vo(TaskTransportDTO dto, TransportTripsFeign transportTripsFeign, OrgFeign orgFeign, UserFeign userFeign, TruckFeign truckFeign, TransportOrderFeign transportOrderFeign, OrderFeign orderFeign, AreaFeign areaFeign, DriverJobFeign driverJobFeign) {
         TaskTransportVo vo = new TaskTransportVo();
         BeanUtils.copyProperties(dto, vo);
         vo.setId(toStr(dto.getId()));
@@ -435,8 +448,38 @@ public class BeanUtil {
             });
         }
         vo.setTransportOrders(transportOrderVoList);
-        // 说明：司机信息由 parseTruckDriverDto2Vo / parseDriverJobVo2DTO 等转换方法承载，此处不再重复组装
+        // 司机信息：经 work_driver_job（任务-司机）反查，未派司机的任务返回空列表（前端显示 "-"）
+        vo.setDrivers(parseTaskDrivers(dto.getId(), driverJobFeign, userFeign));
         return vo;
+    }
+
+    /**
+     * 组装运输任务的司机列表（可多司机）。
+     *
+     * <p>链路：{@code work_driver_job.task_transport_id → driver_id → 用户详情}。
+     * Feign 返回可能为 null（下游异常/无数据），统一走 {@link Rx} 兜底为空集合，
+     * 避免详情页因单个关联查询失败整体报错。</p>
+     *
+     * @param taskId运输任务 id
+     * @return 司机 VO 列表，无司机时为空列表（非 null）
+     */
+    private static List<SysUserVo> parseTaskDrivers(Long taskId, DriverJobFeign driverJobFeign, UserFeign userFeign) {
+        if (taskId == null || driverJobFeign == null || userFeign == null) {
+            return new ArrayList<>();
+        }
+        DriverJobDTO query = new DriverJobDTO();
+        query.setTaskTransportId(taskId);
+        List<Long> driverIds = Rx.list(driverJobFeign.findAll(query)).stream()
+                .map(DriverJobDTO::getDriverId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        if (driverIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return Rx.list(userFeign.list(driverIds, null, null, null)).stream()
+                .map(user -> parseUser2Vo(user, null, null))
+                .collect(Collectors.toList());
     }
 
     public static DriverJobDTO parseDriverJobVo2DTO(DriverJobVo vo) {

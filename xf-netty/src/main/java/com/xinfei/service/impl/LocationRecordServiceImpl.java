@@ -28,6 +28,14 @@ public class LocationRecordServiceImpl extends ServiceImpl<LocationRecordMapper,
     private ILocationRecordArchiveService locationRecordArchiveService;
 
     /**
+     * 批量查询每个业务对象的最新一条位置（自联结 SQL，见 Mapper）
+     */
+    @Override
+    public List<LocationRecord> selectLatestPerBusiness(Integer businessType, String licensePlate) {
+        return baseMapper.selectLatestPerBusiness(businessType, licensePlate);
+    }
+
+    /**
      * 清理过期轨迹数据（按 createTime 早于保留天数，先归档再删除）
      *
      * @param retentionDays 保留天数（>0 才执行清理）

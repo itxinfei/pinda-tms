@@ -38,6 +38,10 @@ export interface LocationRecordItem {
   reportTime?: string;
   /** 入库时间 */
   createTime?: string;
+  /** BD09 经度（出参按 coordSystem 动态转换，管理端百度地图直接用） */
+  bd09Lng?: string | number;
+  /** BD09 纬度（出参按 coordSystem 动态转换） */
+  bd09Lat?: string | number;
 }
 
 /** 轨迹分页查询条件（POST body，空字段不参与过滤） */
@@ -70,6 +74,22 @@ const TraceAPI = {
       url: `${TRACE_BASE_URL}/page`,
       method: "post",
       data,
+    });
+  },
+  /** 批量最新位置（每个业务对象最新一条，供在途监控轮询；出参含 bd09Lng/bd09Lat） */
+  latestAll(params?: { type?: "truck" | "courier"; licensePlate?: string }) {
+    return request<unknown, LocationRecordItem[]>({
+      url: `${TRACE_BASE_URL}/latestAll`,
+      method: "get",
+      params,
+    });
+  },
+  /** 轨迹回放（按上报时间升序全量轨迹，出参含 bd09Lng/bd09Lat） */
+  replay(params: { businessId: string; type?: "truck" | "courier" }) {
+    return request<unknown, LocationRecordItem[]>({
+      url: `${TRACE_BASE_URL}/replay`,
+      method: "get",
+      params,
     });
   },
 };

@@ -125,14 +125,20 @@ export interface TaskTransportPageQuery {
   driverName?: string;
 }
 
-/** 运输任务途经点（GET /point/{id} 返回） */
+/** 运输任务途经点（GET /point/{id} 返回）
+ *  后端 PointDTO 为嵌套结构：{ name, markerPoint: { lng, lat } }，此处按真实契约声明，
+ *  页面用 normalizePoints 摊平为 { name, lng, lat } 供表格与地图使用。
+ */
 export interface TransportPoint {
   /** 途经点名称（机构名） */
   name?: string;
-  /** 经度 */
-  lng?: string;
-  /** 纬度 */
-  lat?: string;
+  /** 坐标点 */
+  markerPoint?: {
+    /** 经度 */
+    lng?: string;
+    /** 纬度 */
+    lat?: string;
+  };
 }
 
 const TransportTaskAPI = {

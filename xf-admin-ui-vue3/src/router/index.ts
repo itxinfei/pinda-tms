@@ -151,11 +151,16 @@ export const constantRoutes: RouteRecordRaw[] = [
     path: "/transit",
     name: "TransitCenter",
     component: Layout,
-    redirect: "/alarm",
-    // 告警中心页面已建（TRK-02）入菜单；在途监控未开发仍 hidden，页面上线后去掉
+    redirect: "/monitor",
+    // 运输在途分组：在途监控（DSP-02，百度地图实时+回放）与告警中心均已建成
     meta: { title: "运输在途", icon: "el-icon-Monitor" },
     children: [
-      pendingRoute("/monitor", "Monitor", "在途监控", "el-icon-Location"),
+      {
+        path: "/monitor",
+        name: "Monitor",
+        component: () => import("@/views/monitor/index.vue"),
+        meta: { title: "在途监控", icon: "el-icon-Location", keepAlive: true },
+      },
       {
         path: "/alarm",
         name: "Alarm",

@@ -94,4 +94,19 @@ public class LocationRecord implements Serializable {
      * 入库时间
      */
     private LocalDateTime createTime;
+
+    /**
+     * BD09 经度（查询出参，按 coordSystem 动态转换，不落库）
+     *
+     * <p>管理端百度地图统一渲染 BD-09（BDS-01），原始字段保持落库口径不动，
+     * 转换在查询出口由 {@code CoordTransform} 完成。</p>
+     */
+    @TableField(exist = false)
+    private BigDecimal bd09Lng;
+
+    /**
+     * BD09 纬度（查询出参，按 coordSystem 动态转换，不落库）
+     */
+    @TableField(exist = false)
+    private BigDecimal bd09Lat;
 }

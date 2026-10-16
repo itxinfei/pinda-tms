@@ -146,9 +146,9 @@
             <el-descriptions-item label="实际交付">{{ detail.actualDeliveryTime || "-" }}</el-descriptions-item>
           </el-descriptions>
 
-          <div v-if="points.length" class="task-detail__block">
-            <div class="task-detail__title">途经点（{{ points.length }}）</div>
-            <el-table :data="points" border size="small">
+          <div v-if="pointRows.length" class="task-detail__block">
+            <div class="task-detail__title">途经点（{{ pointRows.length }}）</div>
+            <el-table :data="pointRows" border size="small">
               <el-table-column label="途经点" prop="name" min-width="180" show-overflow-tooltip />
               <el-table-column label="经度" prop="lng" width="150" />
               <el-table-column label="纬度" prop="lat" width="150" />
@@ -281,6 +281,15 @@ const detail = ref<TaskTransportDetail>();
 /** 途经点（GET /point/{id}） */
 const points = ref<TransportPoint[]>([]);
 
+/** 途经点摊平视图：后端返回嵌套 markerPoint，表格与地图按扁平 lng/lat 取值 */
+const pointRows = computed(() =>
+  points.value.map((p) => ({
+    name: p.name ?? "-",
+    lng: p.markerPoint?.lng ?? "",
+    lat: p.markerPoint?.lat ?? "",
+  }))
+);
+
 /** 任务进度步骤条（T-046）：4 个主节点按实际时间推进；已取消时流程终止（顶部 alert 提示，步骤停驻） */
 type TaskStep = { label: string; time: string; status: "success" | "process" | "wait" | "error" };
 
@@ -311,7 +320,7 @@ const taskStepActive = computed(() => {
 
 /** 途经点地图预览：仅取有效经纬度，绘制在中国地图 geo 坐标系上的散点 */
 const pointMapOption = computed<echarts.EChartsCoreOption>(() => {
-  const data = points.value
+  const data = pointRows.value
     .map((p) => {
       const lng = Number(p.lng);
       const lat = Number(p.lat);

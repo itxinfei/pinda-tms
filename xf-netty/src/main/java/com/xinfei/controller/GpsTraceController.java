@@ -7,7 +7,9 @@ import com.xinfei.common.utils.Result;
 import com.xinfei.controller.support.IdConverter;
 import com.xinfei.entity.LocationRecord;
 import com.xinfei.enums.BusinessType;
+import com.xinfei.enums.CoordSystem;
 import com.xinfei.service.ILocationRecordService;
+import com.xinfei.utils.CoordTransform;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +22,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -28,8 +35,9 @@ import java.util.Map;
  * GPS轨迹查询接口
  *
  * <p>基于落库的 {@link LocationRecord}（iot_truck_location 表）提供：
- * 轨迹回放、最近位置、按运输任务批量查询、分页能力，供管理端车辆轨迹监控、
- * 客户小程序订单轨迹使用。</p>
+ * 轨迹回放、最近位置、批量最新位置、按运输任务批量查询、分页能力，供管理端车辆轨迹监控、
+ * 客户小程序订单轨迹使用。查询出口统一附加 BD09 坐标（bd09Lng/bd09Lat），
+ * 管理端百度地图直接渲染，前端不做坐标转换（BDS-01）。</p>
  */
 @Slf4j
 @RestController
@@ -67,6 +75,7 @@ public class GpsTraceController {
         // 按上报时间升序，还原行驶轨迹
         wrapper.orderByAsc(LocationRecord::getReportTime);
         List<LocationRecord> records = locationRecordService.list(wrapper);
+        fillBd09(records);
         return Result.ok().put("data", records);
     }
 
@@ -94,7 +103,34 @@ public class GpsTraceController {
         wrapper.orderByDesc(LocationRecord::getReportTime);
         wrapper.last("limit 1");
         LocationRecord record = locationRecordService.getOne(wrapper);
+        if (record != null) {
+            fillBd09(Collections.singletonList(record));
+        }
         return Result.ok().put("data", record);
+    }
+
+    /**
+     * 批量最新位置：每个业务对象（车辆/快递员）只取最新一条（供管理端在途监控轮询）
+     *
+     * @param type         类型别名 truck/courier（可选，缺省查全部）
+     * @param licensePlate 车牌号模糊过滤（可选）
+     * @return 最新位置记录列表
+     */
+    @Operation(summary = "批量最新位置")
+    @GetMapping("/latestAll")
+    public Result latestAll(@RequestParam(value = "type", required = false) String type,
+                            @RequestParam(value = "licensePlate", required = false) String licensePlate) {
+        Integer businessType = BusinessType.codeOfAlias(type);
+        String plate = StringUtils.isBlank(licensePlate) ? null : licensePlate.trim();
+        List<LocationRecord> records = locationRecordService.selectLatestPerBusiness(businessType, plate);
+        // 同车同秒重复上报会命中多行，按 businessId#businessType 去重各保一条
+        Map<String, LocationRecord> unique = new LinkedHashMap<>();
+        for (LocationRecord record : records) {
+            unique.putIfAbsent(record.getBusinessId() + "#" + record.getBusinessType(), record);
+        }
+        List<LocationRecord> data = new ArrayList<>(unique.values());
+        fillBd09(data);
+        return Result.ok().put("data", data);
     }
 
     /**
@@ -191,5 +227,36 @@ public class GpsTraceController {
         }
         String text = value.toString();
         return StringUtils.isBlank(text) ? null : text.trim();
+    }
+
+    /**
+     * 按 coordSystem 统一换算 BD09 坐标并填充到出参（bd09Lng/bd09Lat，不落库）
+     *
+     * <p>现网落库口径已统一 BD09（coordSystem=3），正常原样透出；
+     * 对历史 WGS84/GCJ02 数据按对应公式转换，保证前端拿到的一定是百度坐标。</p>
+     */
+    private void fillBd09(List<LocationRecord> records) {
+        if (records == null || records.isEmpty()) {
+            return;
+        }
+        for (LocationRecord record : records) {
+            if (record.getLongitude() == null || record.getLatitude() == null) {
+                continue;
+            }
+            double lng = record.getLongitude().doubleValue();
+            double lat = record.getLatitude().doubleValue();
+            int coordCode = record.getCoordSystem() != null
+                    ? record.getCoordSystem() : CoordSystem.BD09.getNumericCode();
+            double[] bd09;
+            if (coordCode == CoordSystem.WGS84.getNumericCode()) {
+                bd09 = CoordTransform.wgs84ToBd09(lng, lat);
+            } else if (coordCode == CoordSystem.GCJ02.getNumericCode()) {
+                bd09 = CoordTransform.gcj02ToBd09(lng, lat);
+            } else {
+                bd09 = new double[]{lng, lat};
+            }
+            record.setBd09Lng(BigDecimal.valueOf(bd09[0]).setScale(6, RoundingMode.HALF_UP));
+            record.setBd09Lat(BigDecimal.valueOf(bd09[1]).setScale(6, RoundingMode.HALF_UP));
+        }
     }
 }

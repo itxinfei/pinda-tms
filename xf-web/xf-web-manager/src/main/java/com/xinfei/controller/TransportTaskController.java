@@ -7,6 +7,7 @@ import com.xinfei.DTO.webManager.TaskTransportQueryDTO;
 import com.xinfei.DTO.webManager.TransportBoardDTO;
 import com.xinfei.common.utils.PageResponse;
 import com.xinfei.feign.AreaFeign;
+import com.xinfei.feign.DriverJobFeign;
 import com.xinfei.feign.OrderFeign;
 import com.xinfei.feign.OrgFeign;
 import com.xinfei.feign.TransportOrderFeign;
@@ -52,6 +53,8 @@ public class TransportTaskController {
     @Autowired
     private UserFeign userFeign;
     @Autowired
+    private DriverJobFeign driverJobFeign;
+    @Autowired
     private TruckFeign truckFeign;
     @Autowired
     private TransportOrderFeign transportOrderFeign;
@@ -77,7 +80,7 @@ public class TransportTaskController {
         // 远程调用返回 PageResponse 可能为 null，统一通过 Rx 安全取值，避免 NPE
         PageResponse<TaskTransportDTO> dtoPageResponse = webManagerFeign.findTaskTransportByPage(dto);
         List<TaskTransportDTO> dtoList = Rx.items(dtoPageResponse);
-        List<TaskTransportVo> voList = dtoList.stream().map(taskTransportDTO -> BeanUtil.parseTaskTransportDTO2Vo(taskTransportDTO, transportTripsFeign, orgFeign, userFeign, truckFeign, transportOrderFeign, orderFeign, areaFeign)).collect(Collectors.toList());
+        List<TaskTransportVo> voList = dtoList.stream().map(taskTransportDTO -> BeanUtil.parseTaskTransportDTO2Vo(taskTransportDTO, transportTripsFeign, orgFeign, userFeign, truckFeign, transportOrderFeign, orderFeign, areaFeign, driverJobFeign)).collect(Collectors.toList());
         return PageResponse.<TaskTransportVo>builder().items(voList).pagesize(vo.getPageSize()).page(vo.getPage())
                 .counts(dtoPageResponse != null ? dtoPageResponse.getCounts() : 0L)
                 .pages(dtoPageResponse != null ? dtoPageResponse.getPages() : 0L).build();
@@ -91,7 +94,7 @@ public class TransportTaskController {
         TaskTransportVo vo;
         // 说明：任务实时轨迹已由 GPS 模块提供（xf-netty /trace/replay），此处返回任务基础信息
         if (dto != null) {
-            vo = BeanUtil.parseTaskTransportDTO2Vo(dto, transportTripsFeign, orgFeign, userFeign, truckFeign, transportOrderFeign, orderFeign, areaFeign);
+            vo = BeanUtil.parseTaskTransportDTO2Vo(dto, transportTripsFeign, orgFeign, userFeign, truckFeign, transportOrderFeign, orderFeign, areaFeign, driverJobFeign);
         } else {
             vo = new TaskTransportVo();
             vo.setId(id);
@@ -139,6 +142,6 @@ public class TransportTaskController {
     @SaCheckPermission("task:update")
     public TaskTransportVo update(@PathVariable(name = "id") String id, @RequestBody TaskTransportVo vo) {
         TaskTransportDTO dto = transportTaskFeign.updateById(Long.valueOf(id), BeanUtil.parseTaskTransportVo2DTO(vo));
-        return BeanUtil.parseTaskTransportDTO2Vo(dto, transportTripsFeign, orgFeign, userFeign, truckFeign, transportOrderFeign, orderFeign, areaFeign);
+        return BeanUtil.parseTaskTransportDTO2Vo(dto, transportTripsFeign, orgFeign, userFeign, truckFeign, transportOrderFeign, orderFeign, areaFeign, driverJobFeign);
     }
 }

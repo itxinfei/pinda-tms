@@ -8,6 +8,7 @@ import com.xinfei.DTO.webManager.TransportOrderQueryDTO;
 import com.xinfei.common.utils.PageResponse;
 import com.xinfei.enums.pickuptask.PickupDispatchTaskType;
 import com.xinfei.feign.AreaFeign;
+import com.xinfei.feign.DriverJobFeign;
 import com.xinfei.feign.OrderFeign;
 import com.xinfei.feign.OrgFeign;
 import com.xinfei.feign.PickupDispatchTaskFeign;
@@ -57,6 +58,8 @@ public class TransportOrderController {
     private OrgFeign orgFeign;
     @Autowired
     private UserFeign userFeign;
+    @Autowired
+    private DriverJobFeign driverJobFeign;
     @Autowired
     private TransportTaskFeign transportTaskFeign;
     @Autowired
@@ -146,7 +149,7 @@ public class TransportOrderController {
         List<TaskTransportVo> taskTransportVoList = new ArrayList<>();
         List<TaskTransportDTO> taskTransportDTOList = transportTaskFeign.findAllByOrderIdOrTaskId(Long.valueOf(vo.getId()), null);
         if (taskTransportDTOList != null) {
-            taskTransportDTOList.forEach(taskTransportDTO -> taskTransportVoList.add(BeanUtil.parseTaskTransportDTO2Vo(taskTransportDTO, transportTripsFeign, orgFeign, userFeign, truckFeign, transportOrderFeign, orderFeign, areaFeign)));
+            taskTransportDTOList.forEach(taskTransportDTO -> taskTransportVoList.add(BeanUtil.parseTaskTransportDTO2Vo(taskTransportDTO, transportTripsFeign, orgFeign, userFeign, truckFeign, transportOrderFeign, orderFeign, areaFeign, driverJobFeign)));
         }
         vo.setTaskTransports(taskTransportVoList);
         return vo;
