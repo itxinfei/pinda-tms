@@ -12,8 +12,21 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class LocationUtil {
-    // 百度地图AK通过系统属性配置，禁止硬编码密钥
-    private static final String AK = System.getProperty("baidu.map.ak", "");
+    // AK 动态读取（CFG-01）：Spring 装配后由 BaiduAkBridge 注入「参数库 → Environment」链路；
+    // 未注入时回落 JVM -Dbaidu.map.ak，行为与旧版等价
+    private static volatile java.util.function.Supplier<String> akSupplier;
+
+    /** Spring 装配入口（由 xf-common 自动装配调用，业务代码勿调） */
+    public static void setAkSupplier(java.util.function.Supplier<String> supplier) {
+        akSupplier = supplier;
+    }
+
+    private static String currentAk() {
+        java.util.function.Supplier<String> supplier = akSupplier;
+        return supplier != null ? supplier.get()
+                : System.getProperty(com.xinfei.common.utils.EntCoordSyncJob.CONFIG_KEY_BAIDU_AK, "");
+    }
+
     public static final String KEY_LAT = "lat";
     public static final String KEY_LNG = "lng";
     /**
@@ -29,7 +42,7 @@ public class LocationUtil {
             // 将地址转换成utf-8的16进制
             address = URLEncoder.encode(address, "UTF-8");
 
-            URL resjson = URI.create(String.format("http://api.map.baidu.com/geocoding/v3/?&output=json&address=%s&ak=%s", address, AK)).toURL();
+            URL resjson = URI.create(String.format("http://api.map.baidu.com/geocoding/v3/?&output=json&address=%s&ak=%s", address, currentAk())).toURL();
             BufferedReader in = new BufferedReader(new InputStreamReader(resjson.openStream()));
             String res;
             StringBuilder sb = new StringBuilder("");

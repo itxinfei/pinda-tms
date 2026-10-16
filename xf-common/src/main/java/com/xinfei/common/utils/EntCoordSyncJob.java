@@ -26,8 +26,26 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class EntCoordSyncJob {
-    // 百度地图AK通过系统属性配置，禁止硬编码密钥
-    static String AK = System.getProperty("baidu.map.ak", "");
+    /** 百度地图 AK 在参数配置表（sys_config）中的键名，与 BaiduMapUtils 同源 */
+    public static final String CONFIG_KEY_BAIDU_AK = "baidu.map.ak";
+
+    /**
+     * AK 动态读取器（CFG-01）：Spring 装配后由 {@code BaiduAkBridge} 注入「参数库 → Environment」链路；
+     * 未注入（非 Spring / 单测）时回落 JVM {@code -Dbaidu.map.ak}，行为与旧版等价。
+     * 每次调用取值，后台改库后最长一个缓存 TTL 即生效。
+     */
+    private static volatile java.util.function.Supplier<String> akSupplier;
+
+    /** Spring 装配入口（由 xf-common 自动装配调用，业务代码勿调） */
+    public static void setAkSupplier(java.util.function.Supplier<String> supplier) {
+        akSupplier = supplier;
+    }
+
+    /** 取当前生效的 AK：动态链路 → -D；为空表示尚未配置 */
+    static String currentAk() {
+        java.util.function.Supplier<String> supplier = akSupplier;
+        return supplier != null ? supplier.get() : System.getProperty(CONFIG_KEY_BAIDU_AK, "");
+    }
 
     public static void main(String[] args) {
 //        String dom = "北京金燕龙";
@@ -46,7 +64,7 @@ public class EntCoordSyncJob {
     public static String getCoordinate(String address) {
         if (address != null && !"".equals(address)) {
             address = address.replaceAll("\\s*", "").replace("#", "栋");
-            String url = "http://api.map.baidu.com/geocoding/v3/?output=json&ak=" + AK + "&callback=showLocation&address=" + address;
+            String url = "http://api.map.baidu.com/geocoding/v3/?output=json&ak=" + currentAk() + "&callback=showLocation&address=" + address;
 //            String url = "http://api.map.baidu.com/geocoder/v2/?address=" + address + "&output=json&ak=" + AK;
             String json = loadJSON(url);
             json = StringUtils.substringBetween(json, "showLocation(", ")");
@@ -71,7 +89,7 @@ public class EntCoordSyncJob {
     public static Integer getTime(String origin, String destination) {
         origin = parseCoordinate(origin);
         destination = parseCoordinate(destination);
-        String url = "http://api.map.baidu.com/directionlite/v1/driving?origin=" + origin + "&destination=" + destination + "&ak=" + AK;
+        String url = "http://api.map.baidu.com/directionlite/v1/driving?origin=" + origin + "&destination=" + destination + "&ak=" + currentAk();
         String json = loadJSON(url);
         log.debug("json-->{}", json);
         if (json != null && !"".equals(json)) {
@@ -92,7 +110,7 @@ public class EntCoordSyncJob {
     public static Double getDistance(String origin, String destination) {
         origin = parseCoordinate(origin);
         destination = parseCoordinate(destination);
-        String url = "http://api.map.baidu.com/directionlite/v1/driving?origin=" + origin + "&destination=" + destination + "&ak=" + AK;
+        String url = "http://api.map.baidu.com/directionlite/v1/driving?origin=" + origin + "&destination=" + destination + "&ak=" + currentAk();
         String json = loadJSON(url);
         log.debug("json-->{}", json);
         if (json != null && !"".equals(json)) {
@@ -162,8 +180,8 @@ public class EntCoordSyncJob {
      */
     public static Map getLocationByPosition(String location) {
         location = parseCoordinate(location);
-        String url = "http://api.map.baidu.com/reverse_geocoding/v3/?ak=" + AK + "&output=json&coordtype=wgs84ll&location=" + location;
-//        String url = "http://api.map.baidu.com/directionlite/v1/driving?origin=" + origin + "&destination=" + destination + "&ak=" + AK;
+        String url = "http://api.map.baidu.com/reverse_geocoding/v3/?ak=" + currentAk() + "&output=json&coordtype=wgs84ll&location=" + location;
+//        String url = "http://api.map.baidu.com/directionlite/v1/driving?origin=" + origin + "&destination=" + destination + "&ak=" + currentAk();
         String json = loadJSON(url);
         log.debug("json-->{}", json);
         if (json != null && !"".equals(json)) {

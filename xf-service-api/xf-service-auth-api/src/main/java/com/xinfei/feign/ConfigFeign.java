@@ -36,6 +36,13 @@ public interface ConfigFeign {
     SysConfigDTO detail(@PathVariable("id") Long id);
 
     /**
+     * 按 key 取配置明文值（已解密；无启用项返回 null）。
+     * 供无数据源的服务（BFF）读取第三方凭据（如 baidu.map.ak），失败时回落 -D/环境变量。
+     */
+    @GetMapping("/internal/config/key/{key}")
+    String valueByKey(@PathVariable("key") String key);
+
+    /**
      * 新增参数。
      */
     @PostMapping("/internal/config")

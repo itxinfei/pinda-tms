@@ -37,6 +37,12 @@ public class ConfigFeignFallback implements ConfigFeign {
     }
 
     @Override
+    public String valueByKey(String key) {
+        log.warn("远程调用 xf-auth 失败: ConfigFeign.valueByKey({}), 返回 null", key);
+        return null;
+    }
+
+    @Override
     public Result save(SysConfigDTO dto) {
         log.warn("远程调用 xf-auth 失败: ConfigFeign.save");
         return Result.error(UNAVAILABLE);

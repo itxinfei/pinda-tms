@@ -55,6 +55,16 @@ public class SysConfigInternalController {
         return toDTO(configService.detail(id));
     }
 
+    /**
+     * 按 key 取配置明文值（已解密；无启用项返回 null）。
+     * 供无数据源的消费方（如 BFF）经 ConfigFeign 读取第三方凭据（如 baidu.map.ak）。
+     * 仅内网 Same-Token 可达，敏感值明文不出服务边界。
+     */
+    @GetMapping("/key/{key}")
+    public String valueByKey(@PathVariable("key") String key) {
+        return configService.findEnabledValueByKey(key);
+    }
+
     @PostMapping
     public Result create(@RequestBody SysConfigDTO dto) {
         try {

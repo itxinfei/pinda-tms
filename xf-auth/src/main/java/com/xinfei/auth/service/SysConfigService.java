@@ -57,6 +57,27 @@ public class SysConfigService {
     }
 
     /**
+     * 按 key 取「平台全局、启用中」的配置值（已解密；无启用项或值为空返回 null）。
+     * 供内部 Feign 端点（/internal/config/key/{key}）服务无数据源的消费方（如 BFF）。
+     */
+    public String findEnabledValueByKey(String configKey) {
+        if (!StringUtils.hasText(configKey)) {
+            return null;
+        }
+        SysConfig config = configMapper.selectOne(Wrappers.<SysConfig>lambdaQuery()
+                .eq(SysConfig::getTenantId, PLATFORM_TENANT_ID)
+                .eq(SysConfig::getConfigKey, configKey.trim())
+                .eq(SysConfig::getStatus, 1)
+                .last("LIMIT 1"));
+        if (config == null || !StringUtils.hasText(config.getConfigValue())) {
+            return null;
+        }
+        return config.getIsSensitive() != null && config.getIsSensitive() == 1
+                ? configCrypto.decrypt(config.getConfigValue())
+                : config.getConfigValue();
+    }
+
+    /**
      * 新增，返回新 ID。
      */
     public Long create(SysConfig entity) {

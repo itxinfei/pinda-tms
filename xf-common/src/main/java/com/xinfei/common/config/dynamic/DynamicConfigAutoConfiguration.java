@@ -35,4 +35,20 @@ public class DynamicConfigAutoConfiguration {
         return new DynamicConfigService(
                 dataSourceProvider, environment, configCrypto, properties.getCacheTtlSeconds());
     }
+
+    /**
+     * 把动态配置链路接入静态工具 EntCoordSyncJob / LocationUtil（百度 AK 存库热读取）。
+     * 默认链路 = 参数库 sys_config → Environment(-D/环境变量)；DynamicConfigService 内部含 30s TTL 缓存。
+     * BFF 等无库服务可注册同名 Bean 覆盖为「Feign 读 xf-auth」链路。
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public BaiduAkBridge baiduAkBridge(ObjectProvider<DynamicConfigService> dynamicConfigProvider) {
+        return new BaiduAkBridge(() -> {
+            DynamicConfigService service = dynamicConfigProvider.getIfAvailable();
+            return service != null
+                    ? service.get(BaiduAkBridge.CONFIG_KEY_BAIDU_AK, "")
+                    : System.getProperty(BaiduAkBridge.CONFIG_KEY_BAIDU_AK, "");
+        });
+    }
 }
