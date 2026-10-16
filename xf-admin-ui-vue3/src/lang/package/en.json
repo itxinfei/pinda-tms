@@ -21,10 +21,7 @@
     "slogan": "Faster and Safer",
     "copyright": "© 2020-2026 Xinfei Logistics Group",
     "footer": "Copyright © 2026-2026 Xinfei TMS",
-    "accounts": {
-      "admin": "Administrator",
-      "xinfei": "Xinfei Account"
-    },
+    "demoHint": "Demo account: demo / 123456 (tap to autofill, demo only)",
     "capsLock": "Caps Lock is On",
     "rememberMe": "Remember Me",
     "forgetPassword": "Forget Password?",

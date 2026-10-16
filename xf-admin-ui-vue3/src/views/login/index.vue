@@ -98,6 +98,12 @@
                 >
                   {{ t("login.login") }}
                 </el-button>
+
+                <div class="login-card__demo">
+                  <div class="login-card__demo-hint" @click="fillDemoAccount">
+                    {{ t("login.demoHint") }}
+                  </div>
+                </div>
               </el-form>
             </div>
 
@@ -146,7 +152,7 @@ const UserIcon = markRaw(User);
 const LockIcon = markRaw(Lock);
 
 const loginFormData = ref<LoginRequest>({
-  username: "xinfei",
+  username: "demo",
   password: "123456",
   captchaId: "",
   captchaCode: "",
@@ -162,17 +168,12 @@ const loginRules = computed(() => ({
   captchaCode: [{ required: true, trigger: "blur", message: t("login.message.captchaCode.required") }],
 }));
 
-// 心飞物流演示账号（必须是 sys_user 中真实存在的账号，口径见《57-账号密码与凭据总表》）
-const demoAccounts = computed(() => [
-  { username: "admin", label: t("login.accounts.admin") },
-  { username: "xinfei", label: t("login.accounts.xinfei") },
-]);
-
+// 四端统一演示账号 demo/123456（必须是 sys_user 中真实存在的账号，口径见《57-账号密码与凭据总表》）
 /**
- * 填充演示账号
+ * 一键填充演示账号
  */
-function fillDemoAccount(account: { username: string }): void {
-  loginFormData.value.username = account.username;
+function fillDemoAccount(): void {
+  loginFormData.value.username = "demo";
   loginFormData.value.password = "123456";
 }
 
@@ -462,6 +463,28 @@ $brand-red: #FF0033; // 心飞品牌主色 #FF0033：登录按钮、书法标语
       color: $text-muted;
     }
 
+    &-hint {
+      padding: 8px 12px;
+      font-size: 12px;
+      line-height: 1.5;
+      color: $text-secondary;
+      text-align: center;
+      cursor: pointer;
+      background: color-mix(in srgb, var(--el-color-primary) 5%, transparent);
+      border: 1px dashed color-mix(in srgb, var(--el-color-primary) 30%, transparent);
+      border-radius: 8px;
+      transition:
+        color 0.2s,
+        background 0.2s,
+        border-color 0.2s;
+
+      &:hover {
+        color: var(--el-color-primary);
+        background: color-mix(in srgb, var(--el-color-primary) 10%, transparent);
+        border-color: color-mix(in srgb, var(--el-color-primary) 50%, transparent);
+      }
+    }
+
     &-chip {
       height: 28px;
       padding: 0 12px;
@@ -608,6 +631,18 @@ $brand-red: #FF0033; // 心飞品牌主色 #FF0033：登录按钮、书法标语
       color: #fff;
       background: rgb(255 255 255 / 12%);
       border-color: rgb(255 255 255 / 28%);
+    }
+  }
+
+  &__demo-hint {
+    color: rgb(255 255 255 / 65%);
+    background: rgb(255 255 255 / 6%);
+    border-color: rgb(255 255 255 / 18%);
+
+    &:hover {
+      color: #fff;
+      background: rgb(255 255 255 / 12%);
+      border-color: rgb(255 255 255 / 35%);
     }
   }
 

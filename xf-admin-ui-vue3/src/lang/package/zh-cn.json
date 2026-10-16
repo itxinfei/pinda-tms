@@ -21,10 +21,7 @@
     "slogan": "心飞物流 速达天下",
     "copyright": "© 2020-2026 心飞物流集团",
     "footer": "Copyright © 2026-2026 心飞物流TMS",
-    "accounts": {
-      "admin": "管理员",
-      "xinfei": "心飞账号"
-    },
+    "demoHint": "演示账号 demo，密码 123456（点击自动填充，仅用于演示）",
     "capsLock": "大写锁定已打开",
     "rememberMe": "记住我",
     "forgetPassword": "忘记密码？",
