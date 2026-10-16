@@ -9,6 +9,7 @@ import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;
 import com.xinfei.common.converter.EnumDeserializer;
+import com.xinfei.common.interceptor.SameTokenAuthInterceptor;
 import com.xinfei.common.json.BigDecimalSerializer;
 import com.xinfei.common.utils.DatePatterns;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -17,6 +18,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -38,7 +41,7 @@ import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKN
  */
 @Slf4j
 @Configuration
-public class ConfigurationSupport {
+public class ConfigurationSupport implements WebMvcConfigurer {
     /**
      * Jackson 序列化 / 反序列化定制（枚举、时间格式，BigDecimal/BigInteger 转字符串）
      */
@@ -70,5 +73,20 @@ public class ConfigurationSupport {
                 .info(new Info()
                         .title("心飞物流管理数据聚合服务--Swagger文档")
                         .version("1.0"));
+    }
+
+    /**
+     * Same-Token 入站鉴权（T-SEC-04：堵住绕过网关/BFF 直连服务端口的漏洞）。
+     * 凭证由网关 ForwardSameTokenFilter 或调用方 Feign 出站拦截器注入；放行 /actuator/**
+     * （compose HTTP 探活无凭证——《12》§8 部署红线，恒放行）、favicon/error/swagger 文档。
+     *
+     * @param registry 拦截器注册器
+     */
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(new SameTokenAuthInterceptor())
+                .addPathPatterns("/**")
+                .excludePathPatterns("/actuator/**", "/favicon.ico", "/error",
+                        "/swagger-ui/**", "/v3/api-docs/**", "/webjars/**");
     }
 }

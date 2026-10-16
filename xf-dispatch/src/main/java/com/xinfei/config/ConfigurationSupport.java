@@ -18,6 +18,7 @@ import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;
 import com.xinfei.common.converter.EnumDeserializer;
+import com.xinfei.common.interceptor.SameTokenAuthInterceptor;
 import com.xinfei.common.json.BigDecimalSerializer;
 import com.xinfei.common.utils.DatePatterns;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +28,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupport;
 
@@ -105,6 +107,22 @@ public class ConfigurationSupport extends WebMvcConfigurationSupport {
         // 解决swagger的js文件无法访问
         registry.addResourceHandler("/webjars/**").addResourceLocations("classpath:/META-INF/resources/webjars/");
 
+    }
+
+    /**
+     * Same-Token 入站鉴权（T-SEC-04：堵住绕过网关/BFF 直连服务端口的漏洞）。
+     * 本类继承 WebMvcConfigurationSupport 会关闭 MVC 自动配置，独立 WebMvcConfigurer bean
+     * 不会被收集，故须直接 override 本方法注册。放行 /actuator/**（compose HTTP 探活
+     * 无凭证——《12》§8 部署红线，恒放行）、favicon/error/swagger 文档。
+     *
+     * @param registry 拦截器注册器
+     */
+    @Override
+    protected void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(new SameTokenAuthInterceptor())
+                .addPathPatterns("/**")
+                .excludePathPatterns("/actuator/**", "/favicon.ico", "/error",
+                        "/swagger-ui/**", "/v3/api-docs/**", "/webjars/**");
     }
 
     /**
