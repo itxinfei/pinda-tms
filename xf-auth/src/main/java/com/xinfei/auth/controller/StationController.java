@@ -1,5 +1,6 @@
 package com.xinfei.auth.controller;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.xinfei.auth.common.R;
 import com.xinfei.auth.entity.CoreStation;
@@ -16,6 +17,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * 岗位管理。经网关访问路径 /api/auth/station/**。
+ *
+ * <p>读接口（page/detail）不设权限码：岗位下拉是用户表单等公共数据源
+ * （对齐《62》§11.1 纪律）；写接口用按钮权限码双控。</p>
  */
 @RestController
 @RequestMapping("/station")
@@ -41,12 +45,14 @@ public class StationController {
 
     /** 新增岗位 */
     @PostMapping
+    @SaCheckPermission("sys:station:create")
     public R<Long> save(@RequestBody CoreStation station) {
         return R.success(stationService.save(station));
     }
 
     /** 修改岗位 */
     @PutMapping
+    @SaCheckPermission("sys:station:update")
     public R<Void> update(@RequestBody CoreStation station) {
         stationService.update(station);
         return R.success();
@@ -54,6 +60,7 @@ public class StationController {
 
     /** 删除岗位 */
     @DeleteMapping
+    @SaCheckPermission("sys:station:delete")
     public R<Void> remove(@RequestParam Long id) {
         stationService.remove(id);
         return R.success();

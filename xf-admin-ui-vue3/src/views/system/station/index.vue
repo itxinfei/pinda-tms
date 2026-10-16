@@ -33,7 +33,7 @@
     <el-card class="page-content" shadow="never">
       <div class="page-toolbar">
         <div class="page-toolbar__left">
-          <el-button type="primary" @click="openDialog()">新增岗位</el-button>
+          <el-button v-hasPerm="['sys:station:create']" type="primary" @click="openDialog()">新增岗位</el-button>
         </div>
         <div class="page-toolbar__right">
           <el-tooltip content="刷新" placement="top">
@@ -60,10 +60,22 @@
           <el-table-column prop="createTime" label="创建时间" width="180" />
           <el-table-column label="操作" fixed="right" align="left" width="150">
             <template #default="scope">
-              <el-button type="primary" link size="small" @click.stop="openDialog(scope.row as Station)">
+              <el-button
+                v-hasPerm="['sys:station:update']"
+                type="primary"
+                link
+                size="small"
+                @click.stop="openDialog(scope.row as Station)"
+              >
                 编辑
               </el-button>
-              <el-button type="danger" link size="small" @click.stop="handleDelete(scope.row as Station)">
+              <el-button
+                v-hasPerm="['sys:station:delete']"
+                type="danger"
+                link
+                size="small"
+                @click.stop="handleDelete(scope.row as Station)"
+              >
                 删除
               </el-button>
             </template>

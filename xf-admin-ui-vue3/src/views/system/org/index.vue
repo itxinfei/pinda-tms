@@ -3,7 +3,7 @@
     <el-card class="page-content" shadow="never">
       <div class="page-toolbar">
         <div class="page-toolbar__left">
-          <el-button type="primary" @click="openDialog('root')">新增组织</el-button>
+          <el-button v-hasPerm="['sys:org:create']" type="primary" @click="openDialog('root')">新增组织</el-button>
         </div>
         <div class="page-toolbar__right">
           <el-tooltip :content="expandAll ? '折叠全部' : '展开全部'" placement="top">
@@ -51,13 +51,31 @@
           </el-table-column>
           <el-table-column label="操作" fixed="right" align="left" width="210">
             <template #default="scope">
-              <el-button type="primary" link size="small" @click.stop="openDialog('child', scope.row as OrgNode)">
+              <el-button
+                v-hasPerm="['sys:org:create']"
+                type="primary"
+                link
+                size="small"
+                @click.stop="openDialog('child', scope.row as OrgNode)"
+              >
                 新增下级
               </el-button>
-              <el-button type="primary" link size="small" @click.stop="openDialog('edit', scope.row as OrgNode)">
+              <el-button
+                v-hasPerm="['sys:org:update']"
+                type="primary"
+                link
+                size="small"
+                @click.stop="openDialog('edit', scope.row as OrgNode)"
+              >
                 编辑
               </el-button>
-              <el-button type="danger" link size="small" @click.stop="handleDelete(scope.row as OrgNode)">
+              <el-button
+                v-hasPerm="['sys:org:delete']"
+                type="danger"
+                link
+                size="small"
+                @click.stop="handleDelete(scope.row as OrgNode)"
+              >
                 删除
               </el-button>
             </template>
