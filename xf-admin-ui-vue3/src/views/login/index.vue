@@ -7,7 +7,22 @@
 
     <div class="login-layout">
       <div class="login-brand">
-        <img :src="loginHero" class="login-brand__hero-img" alt="物流配送" />
+        <div class="login-brand__scene" aria-hidden="true">
+          <div class="login-brand__grid"></div>
+          <div class="login-brand__glow"></div>
+          <div class="login-brand__route">
+            <span class="login-brand__node" style="--i: 0"></span>
+            <span class="login-brand__node" style="--i: 1"></span>
+            <span class="login-brand__node" style="--i: 2"></span>
+            <span class="login-brand__node login-brand__node--end" style="--i: 3"></span>
+          </div>
+          <div class="login-brand__truck">
+            <span class="login-brand__truck-box"></span>
+            <span class="login-brand__truck-cab"></span>
+            <span class="login-brand__truck-wheel login-brand__truck-wheel--rear"></span>
+            <span class="login-brand__truck-wheel login-brand__truck-wheel--front"></span>
+          </div>
+        </div>
         <div class="login-brand__slogan">{{ t("login.slogan") }}</div>
         <div class="login-brand__copyright">{{ t("login.copyright") }}</div>
       </div>
@@ -134,7 +149,6 @@ import { useUserStore } from "@/stores";
 import { AuthStorage } from "@/utils/auth";
 import ResetPwd from "./components/ResetPwd.vue";
 import logoFull from "@/assets/images/logo-full.png";
-import loginHero from "@/assets/images/login-hero.png";
 import { useI18n } from "vue-i18n";
 
 const { t } = useI18n();
@@ -238,7 +252,12 @@ $text-primary: #273248;
 $text-secondary: #667085;
 $text-muted: #98a2b3;
 $input-h: 44px;
-$brand-red: #FF0033; // 心飞品牌主色 #FF0033：登录按钮、书法标语
+// 心飞品牌主色 #FF0033：仅用于登录按钮（红色只留这一处，不与左侧品牌区抢视觉）
+$brand-red: #FF0033;
+// 左侧品牌区配色（深蓝夜航）：与 hero 图渐变一致
+$navy-top: #1e3a5f;
+$navy-mid: #16294a;
+$navy-bot: #0e1c33;
 
 .login-page {
   // 品牌色阶：从运行时主题色派生，切换主题色板（ArcoD/AntD/ElementD）时整页跟随
@@ -249,8 +268,8 @@ $brand-red: #FF0033; // 心飞品牌主色 #FF0033：登录按钮、书法标语
   display: flex;
   min-height: 100vh;
   overflow: auto;
-  /* 浅色渐变底色；桌面端被品牌区背景与白色卡片完全覆盖，窄屏两区透明后透出 */
-  background: linear-gradient(180deg, #ffffff 0%, #dbeafe 100%);
+  /* 窄屏隐藏品牌区后透出的页面底色（取浅蓝调，与深蓝品牌区分明） */
+  background: linear-gradient(180deg, #f7f9fc 0%, #dce7f5 100%);
 }
 
 .login-toolbar {
@@ -278,34 +297,147 @@ $brand-red: #FF0033; // 心飞品牌主色 #FF0033：登录按钮、书法标语
   flex: 0 0 65%;
   min-height: 100vh;
   overflow: hidden;
-  /* 插画铺满整个品牌区，标语与版权叠加其上 */
-  background: linear-gradient(180deg, #e8f4ff 0%, #cfe6ff 55%, #a8d0f5 100%);
+  /* 深蓝夜航底：纯 CSS 场景，红色只在终点定位针与品牌标识处点缀 */
+  background: linear-gradient(160deg, $navy-top 0%, $navy-mid 55%, $navy-bot 100%);
   animation: login-pane-in 0.36s ease-out both;
 
-  &__hero-img {
+  /* CSS 动画场景层（网格 + 光晕 + 行驶轨迹 + 货车） */
+  &__scene {
     position: absolute;
     inset: 0;
     z-index: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: center;
+    overflow: hidden;
+  }
+
+  /* 几何网格：暗示运力网络，缓慢横向漂移 */
+  &__grid {
+    position: absolute;
+    inset: -20% -60%;
+    background:
+      repeating-linear-gradient(90deg, transparent 0 87px, rgb(255 255 255 / 5%) 87px 89px),
+      repeating-linear-gradient(0deg, transparent 0 87px, rgb(255 255 255 / 5%) 87px 89px);
+    animation: brand-grid-drift 26s linear infinite;
+  }
+
+  /* 顶部品牌红光晕：呼应主色，但极低透明度不刺眼 */
+  &__glow {
+    position: absolute;
+    top: -22%;
+    left: -10%;
+    width: 72%;
+    aspect-ratio: 1;
+    background: radial-gradient(circle, rgb(255 0 51 / 22%) 0%, transparent 62%);
+    animation: brand-glow-breathe 7s ease-in-out infinite;
+  }
+
+  /* 运输轨迹：从左下贯穿到右上 */
+  &__route {
+    position: absolute;
+    left: 6%;
+    bottom: 22%;
+    width: 78%;
+    height: 42%;
+
+    &::before {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 3px;
+      content: "";
+      background: linear-gradient(90deg, transparent 0%, rgb(255 255 255 / 55%) 100%);
+      border-radius: 2px;
+    }
+  }
+
+  /* 轨迹上的 4 个定位节点，依次点亮 */
+  &__node {
+    position: absolute;
+    bottom: -7px;
+    left: calc(var(--i) * 31%);
+    width: 14px;
+    height: 14px;
+    background: rgb(255 255 255 / 85%);
+    border: 3px solid rgb(255 255 255 / 25%);
+    border-radius: 50%;
+    animation: brand-node-pulse 3.2s ease-in-out infinite;
+    animation-delay: calc(var(--i) * 0.55s);
+
+    /* 终点：品牌红，作为画面里唯一的红色强调 */
+    &--end {
+      background: $brand-red;
+      border-color: rgb(255 255 255 / 30%);
+      box-shadow: 0 0 0 0 rgb(255 0 51 / 60%);
+    }
+  }
+
+  /* CSS 货车：沿轨迹匀速行驶 + 轻微车身起伏 */
+  &__truck {
+    position: absolute;
+    bottom: 22%;
+    left: 6%;
+    width: 76px;
+    height: 40px;
+    animation: brand-truck-run 13s linear infinite, brand-truck-bob 1.6s ease-in-out infinite;
+
+    /* 货箱 */
+    &-box {
+      position: absolute;
+      bottom: 9px;
+      left: 0;
+      width: 40px;
+      height: 26px;
+      background: linear-gradient(160deg, #fff 0%, #d8e2f0 100%);
+      border-radius: 3px 4px 0 0;
+      box-shadow: 0 4px 12px rgb(0 0 0 / 25%);
+    }
+
+    /* 驾驶室 */
+    &-cab {
+      position: absolute;
+      bottom: 9px;
+      left: 40px;
+      width: 32px;
+      height: 20px;
+      background: linear-gradient(160deg, #ff2a55 0%, $brand-red 100%);
+      border-radius: 8px 4px 0 0;
+      box-shadow: 0 4px 12px rgb(0 0 0 / 25%);
+    }
+
+    /* 车轮 */
+    &-wheel {
+      position: absolute;
+      bottom: 0;
+      width: 13px;
+      height: 13px;
+      background: #0b1220;
+      border: 2px solid rgb(255 255 255 / 55%);
+      border-radius: 50%;
+      animation: brand-wheel-spin 0.7s linear infinite;
+
+      &--rear {
+        left: 8px;
+      }
+
+      &--front {
+        left: 52px;
+      }
+    }
   }
 
   &__slogan {
     position: absolute;
     z-index: 1;
     left: 7%;
-    top: 50%;
-    transform: translateY(-50%) rotate(-4deg);
+    top: 34%;
     font-family: "STXingkai", "STKaiti", "KaiTi", "楷体", serif;
-    font-size: 64px;
+    font-size: 68px;
     font-weight: 700;
     line-height: 1.2;
-    color: $brand-red;
+    color: #fff;
     text-shadow:
-      0 2px 4px rgb(255 255 255 / 60%),
-      0 6px 20px rgb(255 255 255 / 45%);
+      0 2px 4px rgb(0 0 0 / 30%),
+      0 6px 22px rgb(0 0 0 / 45%);
     letter-spacing: 8px;
     white-space: nowrap;
     user-select: none;
@@ -319,7 +451,79 @@ $brand-red: #FF0033; // 心飞品牌主色 #FF0033：登录按钮、书法标语
     right: 0;
     font-size: 12px;
     text-align: center;
-    color: rgb(39 50 72 / 55%);
+    color: rgb(255 255 255 / 55%);
+  }
+}
+
+/* 网格缓慢漂移 */
+@keyframes brand-grid-drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(87px, -87px, 0);
+  }
+}
+
+/* 品牌红光晕呼吸 */
+@keyframes brand-glow-breathe {
+  0%,
+  100% {
+    opacity: 0.75;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.12);
+  }
+}
+
+/* 定位节点依次点亮 */
+@keyframes brand-node-pulse {
+  0%,
+  70%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(255 255 255 / 45%);
+  }
+
+  20% {
+    box-shadow: 0 0 0 9px rgb(255 255 255 / 0%);
+  }
+}
+
+/* 货车沿轨迹行驶 */
+@keyframes brand-truck-run {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  100% {
+    transform: translate3d(62vw, -24vh, 0);
+  }
+}
+
+/* 车身轻微起伏，模拟行驶颠簸 */
+@keyframes brand-truck-bob {
+  0%,
+  100% {
+    margin-bottom: 0;
+  }
+
+  50% {
+    margin-bottom: 4px;
+  }
+}
+
+/* 车轮滚动 */
+@keyframes brand-wheel-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
   }
 }
 
@@ -351,13 +555,13 @@ $brand-red: #FF0033; // 心飞品牌主色 #FF0033：登录按钮、书法标语
 
   &__brand {
     display: flex;
-    gap: 12px;
-    align-items: center;
-    margin-bottom: 22px;
+    justify-content: center;
+    margin-bottom: 26px;
   }
 
+  /* Logo 放大：登录页门面，品牌识别要够醒目 */
   &__logo-full {
-    height: 40px;
+    height: 68px;
     width: auto;
     display: block;
   }
@@ -439,13 +643,13 @@ $brand-red: #FF0033; // 心飞品牌主色 #FF0033：登录按钮、书法标语
     background: $brand-red;
     border-color: $brand-red;
     border-radius: 8px;
-    box-shadow: 0 12px 24px rgb(215 0 15 / 22%);
+    box-shadow: 0 12px 24px rgb(255 0 51 / 20%);
 
     &:hover,
     &:focus {
-      background: #b8000c;
-      border-color: #b8000c;
-      box-shadow: 0 14px 28px rgb(215 0 15 / 28%);
+      background: #e6002e;
+      border-color: #e6002e;
+      box-shadow: 0 14px 28px rgb(255 0 51 / 26%);
     }
 
     &:focus,
@@ -584,19 +788,19 @@ $brand-red: #FF0033; // 心飞品牌主色 #FF0033：登录按钮、书法标语
 }
 
 .dark .login-brand {
-  // 深蓝渐变底，插画之上叠加轻微暗化遮罩提升标语可读性
-  background: linear-gradient(135deg, #0f1a33 0%, #0c1428 55%, #0a1020 100%);
+  // 深蓝品牌区：网格纹理已足够表达层次，叠加轻微暗化遮罩提升标语可读性
+  background: linear-gradient(160deg, $navy-top 0%, $navy-mid 55%, $navy-bot 100%);
 
   &::after {
     position: absolute;
     inset: 0;
     z-index: 0;
     content: "";
-    background: linear-gradient(180deg, rgb(10 16 32 / 10%) 0%, rgb(10 16 32 / 35%) 100%);
+    background: linear-gradient(180deg, rgb(10 16 32 / 18%) 0%, rgb(10 16 32 / 42%) 100%);
   }
 
   &__slogan {
-    color: $brand-red;
+    color: #fff;
     text-shadow:
       0 2px 4px rgb(0 0 0 / 35%),
       0 6px 22px rgb(0 0 0 / 45%);
@@ -696,6 +900,23 @@ $brand-red: #FF0033; // 心飞品牌主色 #FF0033：登录按钮、书法标语
   }
 }
 
+/* 无障碍：系统开启"减少动态效果"时停掉品牌区所有动画 */
+@media (prefers-reduced-motion: reduce) {
+  .login-brand {
+    &__grid,
+    &__glow,
+    &__node,
+    &__truck,
+    &__truck-wheel {
+      animation: none;
+    }
+
+    &__truck {
+      transform: translate3d(24vw, -10vh, 0);
+    }
+  }
+}
+
 @media (max-width: 1024px) {
   .login-layout {
     flex-direction: column;
@@ -711,15 +932,7 @@ $brand-red: #FF0033; // 心飞品牌主色 #FF0033：登录按钮、书法标语
     display: none;
   }
 
-  /* 深色品牌区的渐变与网格纹理不适合窄屏，透出页面底色 */
-  .dark .login-brand {
-    background: none;
-
-    &::before,
-    &::after {
-      display: none;
-    }
-  }
+  /* 窄屏已整块隐藏 .login-brand，其子元素样式无需再处理 */
 
   /* 卡片占满剩余高度并透出页面渐变，inner 沿用全局的垂直居中，页脚沉底 */
   .login-card {
