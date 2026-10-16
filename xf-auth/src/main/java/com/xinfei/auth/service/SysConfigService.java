@@ -102,7 +102,9 @@ public class SysConfigService {
     }
 
     /**
-     * 修改。configValue 留空=不修改；敏感性不允许变更（避免明文/密文语义错乱）。
+     * 修改。configValue 留空=不修改值本身。
+     * <p>isSensitive 允许变更：切换时把存量值按新设置重新加密/解密落库，避免明文/密文语义错乱；
+     * 同时传入 configValue 时不做存量转换，直接按新敏感性加密/明文落库。</p>
      */
     public void update(SysConfig entity) {
         if (entity.getId() == null) {
@@ -125,10 +127,20 @@ public class SysConfigService {
         existing.setStatus(entity.getStatus() != null && entity.getStatus() == 0 ? 0 : 1);
         existing.setRemark(entity.getRemark());
 
-        // 留空不改；有值时按既有敏感性加密/明文落库
+        int newSensitive = entity.getIsSensitive() != null && entity.getIsSensitive() == 1 ? 1 : 0;
+        boolean sensitiveChanged = newSensitive != (existing.getIsSensitive() != null ? existing.getIsSensitive() : 0);
+
         if (StringUtils.hasText(entity.getConfigValue())) {
-            existing.setConfigValue(encryptIfSensitive(existing.getIsSensitive(), entity.getConfigValue()));
+            // 显式传值：直接按新敏感性落库
+            existing.setConfigValue(encryptIfSensitive(newSensitive, entity.getConfigValue()));
+        } else if (sensitiveChanged) {
+            // 只切敏感性不改值：先把存量值还原为明文，再按新设置落库
+            String plain = existing.getIsSensitive() != null && existing.getIsSensitive() == 1
+                    ? decryptStored(existing.getConfigValue())
+                    : existing.getConfigValue();
+            existing.setConfigValue(encryptIfSensitive(newSensitive, plain));
         }
+        existing.setIsSensitive(newSensitive);
 
         existing.setUpdateBy(null);
         existing.setUpdateTime(LocalDateTime.now());
@@ -153,6 +165,17 @@ public class SysConfigService {
             return configCrypto.encrypt(value.trim());
         }
         return value == null ? "" : value;
+    }
+
+    /**
+     * 存量密文还原为明文（敏感性切换时用）；解密失败按业务异常抛出，避免把坏密文降级为明文。
+     */
+    private String decryptStored(String stored) {
+        try {
+            return configCrypto.decrypt(stored);
+        } catch (Exception e) {
+            throw new BizException("存量值解密失败，无法切换敏感性（请直接重新输入参数值后保存）");
+        }
     }
 
     private long countByKey(String configKey, Long excludeId) {

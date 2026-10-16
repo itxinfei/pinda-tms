@@ -158,10 +158,11 @@
           </el-select>
         </el-form-item>
         <el-form-item label="是否敏感" prop="isSensitive">
-          <el-radio-group v-model="formData.isSensitive" :disabled="!!formData.id">
+          <el-radio-group v-model="formData.isSensitive">
             <el-radio :value="0">否</el-radio>
             <el-radio :value="1">是（加密存储，列表脱敏）</el-radio>
           </el-radio-group>
+          <span v-if="!!formData.id" class="config-sensitive-hint">切换后存量参数值将自动按新设置重新加密/解密存储</span>
         </el-form-item>
         <el-form-item label="参数值" prop="configValue">
           <div class="config-value-field">
@@ -414,5 +415,10 @@ onMounted(() => {
 }
 .config-value-field__reveal {
   flex-shrink: 0;
+}
+.config-sensitive-hint {
+  margin-left: 12px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 </style>
