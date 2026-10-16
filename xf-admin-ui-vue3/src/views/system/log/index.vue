@@ -47,7 +47,13 @@
     <el-card ref="tableWrapperRef" class="page-content" shadow="never">
       <div class="page-toolbar">
         <div class="page-toolbar__right" style="margin-left: auto">
-          <el-button type="primary" plain :loading="exporting" @click="handleExport">
+          <el-button
+            v-hasPerm="'sys:log:export'"
+            type="primary"
+            plain
+            :loading="exporting"
+            @click="handleExport"
+          >
             <el-icon style="margin-right: 4px"><Download /></el-icon>导出
           </el-button>
           <el-tooltip content="刷新" placement="top">

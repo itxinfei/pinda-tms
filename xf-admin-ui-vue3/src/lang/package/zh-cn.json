@@ -87,35 +87,35 @@
     },
     "themePalettes": {
       "arco": {
-        "name": "ArcoD",
-        "description": "蓝橙清晰，默认推荐"
+        "name": "心飞红",
+        "description": "品牌心飞红，默认推荐"
       },
       "antDesign": {
-        "name": "AntD",
+        "name": "AntD 蓝",
         "description": "规范稳重，后台友好"
       },
       "elementPlus": {
-        "name": "ElementD",
+        "name": "Element 蓝",
         "description": "贴近组件默认识别"
       },
       "emerald": {
-        "name": "Emerald",
+        "name": "翡翠绿",
         "description": "翡翠绿，清爽护眼，适合日常运营"
       },
       "violet": {
-        "name": "Violet",
+        "name": "优雅紫",
         "description": "优雅紫，个性鲜明，适合数据看板"
       },
       "cyan": {
-        "name": "Cyan",
+        "name": "青瓷蓝",
         "description": "青瓷蓝绿，冷静专业，适合监控场景"
       },
       "orange": {
-        "name": "Orange",
+        "name": "活力橙",
         "description": "活力暖橙，醒目亲和，适合业务一线"
       },
       "slate": {
-        "name": "Slate",
+        "name": "石墨灰",
         "description": "石墨灰蓝，低调沉稳，适合长时间使用"
       }
     },

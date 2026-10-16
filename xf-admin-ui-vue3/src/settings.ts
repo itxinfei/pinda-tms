@@ -29,8 +29,8 @@ export interface ThemePalettePreset {
 export const themePalettePresets = [
   {
     id: "arco",
-    name: "ArcoD",
-    description: "蓝橙对比清晰，适合现代中后台",
+    name: "心飞红",
+    description: "品牌心飞红，默认推荐",
     colors: {
       primary: "#FF0033",
       success: "#00B42A",
@@ -41,7 +41,7 @@ export const themePalettePresets = [
   },
   {
     id: "ant-design",
-    name: "AntD",
+    name: "AntD 蓝",
     description: "规范稳重，适合标准业务系统",
     colors: {
       primary: "#1677FF",
@@ -53,7 +53,7 @@ export const themePalettePresets = [
   },
   {
     id: "element-plus",
-    name: "ElementD",
+    name: "Element 蓝",
     description: "贴近组件默认色识别",
     colors: {
       primary: "#409EFF",
@@ -65,7 +65,7 @@ export const themePalettePresets = [
   },
   {
     id: "emerald",
-    name: "Emerald",
+    name: "翡翠绿",
     description: "翡翠绿，清爽护眼，适合日常运营",
     colors: {
       primary: "#13A970",
@@ -77,7 +77,7 @@ export const themePalettePresets = [
   },
   {
     id: "violet",
-    name: "Violet",
+    name: "优雅紫",
     description: "优雅紫，个性鲜明，适合数据看板",
     colors: {
       primary: "#722ED1",
@@ -89,7 +89,7 @@ export const themePalettePresets = [
   },
   {
     id: "cyan",
-    name: "Cyan",
+    name: "青瓷蓝",
     description: "青瓷蓝绿，冷静专业，适合监控场景",
     colors: {
       primary: "#0FB5BA",
@@ -101,7 +101,7 @@ export const themePalettePresets = [
   },
   {
     id: "orange",
-    name: "Orange",
+    name: "活力橙",
     description: "活力暖橙，醒目亲和，适合业务一线",
     colors: {
       primary: "#FF7D00",
@@ -113,7 +113,7 @@ export const themePalettePresets = [
   },
   {
     id: "slate",
-    name: "Slate",
+    name: "石墨灰",
     description: "石墨灰蓝，低调沉稳，适合长时间使用",
     colors: {
       primary: "#4E5969",
