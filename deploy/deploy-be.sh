@@ -207,7 +207,12 @@ for s in "${SERVICES[@]}"; do
     ! -name '*sources*' ! -name '*javadoc*' ! -name '*.original' 2>/dev/null | head -1)
   [ -n "$jar" ] || { echo "!! 未找到 $s（$m）的 fat jar"; exit 1; }
   mkdir -p "$CTX_ROOT/$s"
-  ln -f "$jar" "$CTX_ROOT/$s/app.jar"
+  # 2026-10-16 修复：CI 容器内 Maven 以 root 跑 → target/*.jar 为 root 属主；
+  # 宿主 fs.protected_hardlinks=1 时 pdwl 的 ln -f 会报 Operation not permitted，
+  # 且本脚本无 set -e，失败被静默吞掉 → .ctx 残留旧 jar 被打进镜像 → 容器
+  # "no main manifest attribute" 秒退重启 → 健康检查必败回滚。故 ln 失败回退 cp。
+  ln -f "$jar" "$CTX_ROOT/$s/app.jar" 2>/dev/null \
+    || { cp -f "$jar" "$CTX_ROOT/$s/app.jar" || { echo "!! jar 落 .ctx 失败"; exit 1; }; }
   echo "   $s <- $(basename "$jar") ($(du -h "$jar" | cut -f1))"
 done
 
