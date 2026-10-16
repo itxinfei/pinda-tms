@@ -18,7 +18,7 @@
     "login": "Sign In",
     "captchaCode": "Verify Code",
     "captchaPlaceholder": "Please enter verify code",
-    "slogan": "Faster and Safer",
+    "slogan": "Faster and Safer", "scene": {"waybill": "Waybill No.", "origin": "Beijing Hub", "dest": "Shanghai Qingpu", "status": "Line-haul Transit", "pickup": "Picked up", "lineHaul": "Line-haul", "delivering": "Out for delivery", "signed": "Signed", "inTransit": "In transit", "onTime": "On-time rate", "signedToday": "Delivered today"},
     "copyright": "© 2020-2026 Xinfei Logistics Group",
     "footer": "Copyright © 2026-2026 Xinfei TMS",
     "demoHint": "Demo account: demo / 123456 (tap to autofill, demo only)",

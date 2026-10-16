@@ -18,7 +18,7 @@
     "login": "登 录",
     "captchaCode": "验证码",
     "captchaPlaceholder": "请输入验证码",
-    "slogan": "心飞物流 速达天下",
+    "slogan": "心飞物流 速达天下", "scene": {"waybill": "运单号", "origin": "北京分拨中心", "dest": "上海青浦仓", "status": "干线运输中", "pickup": "已揽收", "lineHaul": "干线运输", "delivering": "派送中", "signed": "已签收", "inTransit": "在途运单", "onTime": "时效达成", "signedToday": "今日签收"},
     "copyright": "© 2020-2026 心飞物流集团",
     "footer": "Copyright © 2026-2026 心飞物流TMS",
     "demoHint": "演示账号 demo，密码 123456（点击自动填充，仅用于演示）",

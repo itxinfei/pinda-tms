@@ -10,17 +10,60 @@
         <div class="login-brand__scene" aria-hidden="true">
           <div class="login-brand__grid"></div>
           <div class="login-brand__glow"></div>
-          <div class="login-brand__route">
-            <span class="login-brand__node" style="--i: 0"></span>
-            <span class="login-brand__node" style="--i: 1"></span>
-            <span class="login-brand__node" style="--i: 2"></span>
-            <span class="login-brand__node login-brand__node--end" style="--i: 3"></span>
-          </div>
-          <div class="login-brand__truck">
-            <span class="login-brand__truck-box"></span>
-            <span class="login-brand__truck-cab"></span>
-            <span class="login-brand__truck-wheel login-brand__truck-wheel--rear"></span>
-            <span class="login-brand__truck-wheel login-brand__truck-wheel--front"></span>
+
+          <!-- 运单跟踪演示卡：可视化 TMS 核心能力「全程可视」 -->
+          <div class="login-brand__panel">
+            <div class="track-card">
+              <header class="track-card__head">
+                <span class="track-card__waybill">
+                  {{ t("login.scene.waybill") }}<b>XFY2026101600327</b>
+                </span>
+                <span class="track-card__pill">
+                  <i></i>{{ t("login.scene.status") }}
+                </span>
+              </header>
+
+              <!-- 干线路线：流动虚线 + 红色运单标记沿线移动 -->
+              <div class="track-card__route">
+                <span class="track-route__city">{{ t("login.scene.origin") }}</span>
+                <span class="track-route__line">
+                  <i class="track-route__fill"></i>
+                  <i class="track-route__marker">
+                    <el-icon :size="16"><Truck /></el-icon>
+                  </i>
+                </span>
+                <span class="track-route__city track-route__city--end">
+                  {{ t("login.scene.dest") }}
+                </span>
+              </div>
+
+              <!-- 里程碑步骤：随运输进度依次点亮 -->
+              <ol class="track-card__steps">
+                <li
+                  v-for="(key, i) in ['pickup', 'lineHaul', 'delivering', 'signed']"
+                  :key="key"
+                  class="track-step"
+                  :style="{ '--i': i }"
+                >
+                  <i class="track-step__dot"></i>
+                  <span>{{ t("login.scene." + key) }}</span>
+                </li>
+              </ol>
+            </div>
+
+            <!-- 数据徽标：体现"系统在跑"的实时感 -->
+            <div class="login-brand__chip login-brand__chip--a">
+              <el-icon :size="18"><Box /></el-icon>
+              <span>{{ t("login.scene.inTransit") }}<b>1,284</b></span>
+            </div>
+            <div class="login-brand__chip login-brand__chip--b">
+              <el-icon :size="18"><Timer /></el-icon>
+              <span>{{ t("login.scene.onTime") }}<b>98.6%</b></span>
+            </div>
+            <div class="login-brand__chip login-brand__chip--c">
+              <el-icon :size="18"><CircleCheck /></el-icon>
+              <span>{{ t("login.scene.signedToday") }}<b>3,462</b></span>
+            </div>
           </div>
         </div>
         <div class="login-brand__slogan">{{ t("login.slogan") }}</div>
@@ -330,98 +373,235 @@ $navy-bot: #0e1c33;
     animation: brand-glow-breathe 7s ease-in-out infinite;
   }
 
-  /* 运输轨迹：从左下贯穿到右上 */
-  &__route {
+  /* 运单跟踪演示面板（玻璃拟态卡 + 浮动数据徽标） */
+  &__panel {
     position: absolute;
-    left: 6%;
-    bottom: 22%;
-    width: 78%;
-    height: 42%;
+    z-index: 1;
+    top: 46%;
+    right: 7%;
+    left: 7%;
+  }
 
+  /* ---------- 运单跟踪卡 ---------- */
+  .track-card {
+    width: min(520px, 100%);
+    padding: 18px 22px 20px;
+    margin: 0 auto;
+    background: rgb(255 255 255 / 8%);
+    border: 1px solid rgb(255 255 255 / 14%);
+    border-radius: 14px;
+    box-shadow: 0 18px 44px rgb(5 10 25 / 35%);
+    backdrop-filter: blur(14px);
+    animation: track-card-in 0.6s ease-out 0.15s both;
+  }
+
+  .track-card__head {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+  }
+
+  .track-card__waybill {
+    display: inline-flex;
+    gap: 8px;
+    align-items: baseline;
+    min-width: 0;
+    font-size: 12px;
+    color: rgb(255 255 255 / 60%);
+
+    b {
+      overflow: hidden;
+      font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      letter-spacing: 0.5px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  /* 状态徽标：品牌红，是卡片的"在途"信号 */
+  .track-card__pill {
+    display: inline-flex;
+    flex-shrink: 0;
+    gap: 6px;
+    align-items: center;
+    padding: 3px 10px;
+    font-size: 12px;
+    color: #fff;
+    background: linear-gradient(135deg, #ff2a55 0%, $brand-red 100%);
+    border-radius: 999px;
+    box-shadow: 0 4px 12px rgb(255 0 51 / 30%);
+
+    i {
+      width: 6px;
+      height: 6px;
+      background: #fff;
+      border-radius: 50%;
+      animation: brand-pill-blink 1.2s ease-in-out infinite;
+    }
+  }
+
+  .track-card__route {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+  }
+
+  .track-route__city {
+    flex-shrink: 0;
+    max-width: 96px;
+    overflow: hidden;
+    font-size: 13px;
+    color: rgb(255 255 255 / 88%);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &--end {
+      text-align: right;
+    }
+  }
+
+  .track-route__line {
+    position: relative;
+    flex: 1;
+    height: 4px;
+    background: rgb(255 255 255 / 16%);
+    border-radius: 2px;
+
+    /* 流动虚线纹理：暗示线路活跃 */
     &::before {
       position: absolute;
-      left: 0;
-      bottom: 0;
-      width: 100%;
-      height: 3px;
+      inset: 0;
       content: "";
-      background: linear-gradient(90deg, transparent 0%, rgb(255 255 255 / 55%) 100%);
-      border-radius: 2px;
+      opacity: 0.45;
+      background: repeating-linear-gradient(
+        90deg,
+        rgb(255 255 255 / 40%) 0 10px,
+        transparent 10px 20px
+      );
+      border-radius: inherit;
+      animation: brand-dash-flow 1.2s linear infinite;
     }
-  }
 
-  /* 轨迹上的 4 个定位节点，依次点亮 */
-  &__node {
-    position: absolute;
-    bottom: -7px;
-    left: calc(var(--i) * 31%);
-    width: 14px;
-    height: 14px;
-    background: rgb(255 255 255 / 85%);
-    border: 3px solid rgb(255 255 255 / 25%);
-    border-radius: 50%;
-    animation: brand-node-pulse 3.2s ease-in-out infinite;
-    animation-delay: calc(var(--i) * 0.55s);
-
-    /* 终点：品牌红，作为画面里唯一的红色强调 */
-    &--end {
-      background: $brand-red;
-      border-color: rgb(255 255 255 / 30%);
-      box-shadow: 0 0 0 0 rgb(255 0 51 / 60%);
-    }
-  }
-
-  /* CSS 货车：沿轨迹匀速行驶 + 轻微车身起伏 */
-  &__truck {
-    position: absolute;
-    bottom: 22%;
-    left: 6%;
-    width: 76px;
-    height: 40px;
-    animation: brand-truck-run 13s linear infinite, brand-truck-bob 1.6s ease-in-out infinite;
-
-    /* 货箱 */
-    &-box {
+    /* 运输进度填充：品牌红 */
+    .track-route__fill {
       position: absolute;
-      bottom: 9px;
+      top: 0;
       left: 0;
-      width: 40px;
-      height: 26px;
-      background: linear-gradient(160deg, #fff 0%, #d8e2f0 100%);
-      border-radius: 3px 4px 0 0;
-      box-shadow: 0 4px 12px rgb(0 0 0 / 25%);
+      height: 100%;
+      background: linear-gradient(90deg, rgb(255 0 51 / 50%) 0%, $brand-red 100%);
+      border-radius: inherit;
+      box-shadow: 0 0 10px rgb(255 0 51 / 45%);
+      animation: brand-track-fill 14s ease-in-out infinite;
     }
 
-    /* 驾驶室 */
-    &-cab {
+    /* 运单标记：品牌红圆徽 + 货车图标，沿线路移动，是画面的视觉焦点 */
+    .track-route__marker {
       position: absolute;
-      bottom: 9px;
-      left: 40px;
-      width: 32px;
-      height: 20px;
-      background: linear-gradient(160deg, #ff2a55 0%, $brand-red 100%);
-      border-radius: 8px 4px 0 0;
-      box-shadow: 0 4px 12px rgb(0 0 0 / 25%);
-    }
-
-    /* 车轮 */
-    &-wheel {
-      position: absolute;
-      bottom: 0;
-      width: 13px;
-      height: 13px;
-      background: #0b1220;
-      border: 2px solid rgb(255 255 255 / 55%);
+      top: 50%;
+      left: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      color: #fff;
+      background: linear-gradient(135deg, #ff2a55 0%, $brand-red 100%);
       border-radius: 50%;
-      animation: brand-wheel-spin 0.7s linear infinite;
+      box-shadow:
+        0 0 0 6px rgb(255 0 51 / 18%),
+        0 8px 20px rgb(0 0 0 / 40%);
+      transform: translate(-50%, -50%);
+      animation: brand-track-marker 14s ease-in-out infinite;
+    }
 
-      &--rear {
-        left: 8px;
-      }
+    /* 到达终点的脉冲 */
+    &::after {
+      position: absolute;
+      top: 50%;
+      right: -3px;
+      width: 8px;
+      height: 8px;
+      content: "";
+      background: $brand-red;
+      border-radius: 50%;
+      transform: translateY(-50%);
+      animation: brand-end-pop 14s ease-in-out infinite;
+    }
+  }
 
-      &--front {
-        left: 52px;
-      }
+  .track-card__steps {
+    display: flex;
+    justify-content: space-between;
+    padding: 0;
+    margin: 16px 2px 0;
+    list-style: none;
+  }
+
+  .track-step {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    font-size: 12px;
+    color: rgb(255 255 255 / 42%);
+
+    &__dot {
+      width: 8px;
+      height: 8px;
+      flex-shrink: 0;
+      background: rgb(255 255 255 / 28%);
+      border-radius: 50%;
+      animation: brand-step-done 14s linear infinite;
+    }
+  }
+
+  /* ---------- 浮动数据徽标 ---------- */
+  &__chip {
+    position: absolute;
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: rgb(255 255 255 / 65%);
+    background: rgb(255 255 255 / 8%);
+    border: 1px solid rgb(255 255 255 / 12%);
+    border-radius: 10px;
+    box-shadow: 0 10px 26px rgb(5 10 25 / 30%);
+    backdrop-filter: blur(10px);
+    animation: brand-chip-float 6s ease-in-out infinite;
+
+    .el-icon {
+      color: $brand-red;
+    }
+
+    b {
+      margin-left: 4px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      font-variant-numeric: tabular-nums;
+    }
+
+    &--a {
+      top: -52px;
+      right: 6%;
+    }
+
+    &--b {
+      bottom: -56px;
+      left: 4%;
+      animation-delay: -2s;
+    }
+
+    &--c {
+      right: 4%;
+      bottom: -56px;
+      animation-delay: -4s;
     }
   }
 
@@ -429,7 +609,7 @@ $navy-bot: #0e1c33;
     position: absolute;
     z-index: 1;
     left: 7%;
-    top: 34%;
+    top: 12%;
     font-family: "STXingkai", "STKaiti", "KaiTi", "楷体", serif;
     font-size: 68px;
     font-weight: 700;
@@ -480,50 +660,149 @@ $navy-bot: #0e1c33;
   }
 }
 
-/* 定位节点依次点亮 */
-@keyframes brand-node-pulse {
-  0%,
-  70%,
-  100% {
-    box-shadow: 0 0 0 0 rgb(255 255 255 / 45%);
-  }
-
-  20% {
-    box-shadow: 0 0 0 9px rgb(255 255 255 / 0%);
-  }
-}
-
-/* 货车沿轨迹行驶 */
-@keyframes brand-truck-run {
-  0% {
-    transform: translate3d(0, 0, 0);
-  }
-
-  100% {
-    transform: translate3d(62vw, -24vh, 0);
-  }
-}
-
-/* 车身轻微起伏，模拟行驶颠簸 */
-@keyframes brand-truck-bob {
-  0%,
-  100% {
-    margin-bottom: 0;
-  }
-
-  50% {
-    margin-bottom: 4px;
-  }
-}
-
-/* 车轮滚动 */
-@keyframes brand-wheel-spin {
+/* 演示卡入场 */
+@keyframes track-card-in {
   from {
-    transform: rotate(0deg);
+    opacity: 0;
+    transform: translateY(14px);
   }
 
   to {
-    transform: rotate(360deg);
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 状态徽标呼吸点 */
+@keyframes brand-pill-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.25;
+  }
+}
+
+/* 虚线流动 */
+@keyframes brand-dash-flow {
+  to {
+    background-position-x: 20px;
+  }
+}
+
+/*
+ * 主循环 14s：0-71%（10s）运输中 → 71-88% 到达停留 → 88-100% 软复位。
+ * 标记与进度线同步；steps 用 var(--i) 在关键帧内错峰点亮，保证每轮循环同步。
+ */
+@keyframes brand-track-marker {
+  0% {
+    left: 0;
+    opacity: 1;
+  }
+
+  71%,
+  88% {
+    left: 100%;
+    opacity: 1;
+  }
+
+  94% {
+    left: 100%;
+    opacity: 0;
+  }
+
+  95% {
+    left: 0;
+    opacity: 0;
+  }
+
+  100% {
+    left: 0;
+    opacity: 1;
+  }
+}
+
+@keyframes brand-track-fill {
+  0% {
+    width: 0;
+    opacity: 1;
+  }
+
+  71%,
+  88% {
+    width: 100%;
+    opacity: 1;
+  }
+
+  94% {
+    width: 100%;
+    opacity: 0;
+  }
+
+  95% {
+    width: 0;
+    opacity: 0;
+  }
+
+  100% {
+    width: 0;
+    opacity: 1;
+  }
+}
+
+/* 里程碑点：随进度依次点亮（0-23.8-47.6-71.4% 四等分运输段） */
+@keyframes brand-step-done {
+  0%,
+  calc(var(--i) * 23.8% + 0.5%) {
+    background: rgb(255 255 255 / 28%);
+    box-shadow: none;
+  }
+
+  calc(var(--i) * 23.8% + 3%),
+  84% {
+    background: #fff;
+    box-shadow: 0 0 0 3px rgb(255 255 255 / 18%);
+  }
+
+  90%,
+  100% {
+    background: rgb(255 255 255 / 28%);
+    box-shadow: none;
+  }
+}
+
+/* 到达终点：脉冲一下 */
+@keyframes brand-end-pop {
+  0%,
+  68% {
+    box-shadow: 0 0 0 0 rgb(255 0 51 / 0%);
+    transform: translateY(-50%) scale(1);
+  }
+
+  72%,
+  84% {
+    box-shadow: 0 0 0 7px rgb(255 0 51 / 35%);
+    transform: translateY(-50%) scale(1.15);
+  }
+
+  90%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(255 0 51 / 0%);
+    transform: translateY(-50%) scale(1);
+  }
+}
+
+/* 数据徽标缓慢浮动 */
+@keyframes brand-chip-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
   }
 }
 
@@ -900,19 +1179,28 @@ $navy-bot: #0e1c33;
   }
 }
 
-/* 无障碍：系统开启"减少动态效果"时停掉品牌区所有动画 */
+/* 无障碍：系统开启"减少动态效果"时停掉品牌区所有动画，定格在运输中段 */
 @media (prefers-reduced-motion: reduce) {
   .login-brand {
     &__grid,
     &__glow,
-    &__node,
-    &__truck,
-    &__truck-wheel {
+    .track-card,
+    .track-card__pill i,
+    .track-route__line::before,
+    .track-route__line::after,
+    .track-route__fill,
+    .track-route__marker,
+    .track-step__dot,
+    &__chip {
       animation: none;
     }
 
-    &__truck {
-      transform: translate3d(24vw, -10vh, 0);
+    .track-route__fill {
+      width: 46%;
+    }
+
+    .track-route__marker {
+      left: 46%;
     }
   }
 }

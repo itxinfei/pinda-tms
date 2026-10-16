@@ -47,10 +47,10 @@
 <p align="center">  
 <b><a href="#sec-tech"><code>14</code></a></b> 个微服务 · <b><code>4</code></b> 端协同 · <b><code>101</code></b> 条功能需求 · <b><code>55</code></b> 张数据表 · <b><code>27</code></b> 项技术栈 · 全链路业务闭环  
 </p>
-
 <p align="center">  
-🔗 <b>在线体验</b>：<code>http://\&lt;内网服务器IP\&gt;</code>（部署后替换，公网 Demo 规划中）｜ 账号 <code>admin / 123456</code>  
+🔗 <b>项目资料</b>：<a href="https://itxinfei.github.io/xinfei-tms/" target="_blank">https://itxinfei.github.io/xinfei-tms/</a> 
 </p>
+
 
 ---
 

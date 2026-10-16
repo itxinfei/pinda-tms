@@ -51,7 +51,7 @@
 </p>
 
 <p align="center">
-🔗 <b>Live demo</b>: <code>http://&lt;server-ip&gt;</code> (replace after deployment; public demo planned) ｜ Account <code>admin / 123456</code>
+🔗 <b>Live demo</b>: <a href="https://itxinfei.github.io/xinfei-tms/" target="_blank">https://itxinfei.github.io/xinfei-tms/</a> ｜ Account <code>admin / 123456</code>
 </p>
 
 ---
