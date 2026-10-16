@@ -48,7 +48,10 @@
     "haveAccount": "已有账号？",
     "noAccount": "您没有账号？",
     "quickFill": "快速填写",
-    "reg": "注 册"
+    "reg": "注 册",
+    "adminResetTip": "请联系系统管理员为您重置密码",
+    "adminResetPath": "管理员操作路径：系统管理 → 用户管理 → 选中用户 → 重置密码",
+    "resetDone": "已记录您的账号，请联系系统管理员重置密码"
   },
   "navbar": {
     "dashboard": "首页",
