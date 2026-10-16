@@ -39,6 +39,7 @@ import org.springframework.beans.BeanUtils;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class BeanUtil {
     public static SysUserVo parseUser2Vo(UserDTO user, RoleFeign roleFeign, OrgFeign orgFeign) {
@@ -205,46 +206,91 @@ public class BeanUtil {
         return dto;
     }
 
+    /**
+     * 订单 DTO → VO（区划批量富化）。
+     *
+     * <p>原实现逐单逐级6 次 {@code areaFeign.get}（发/收各省市区），分页 20 单就是
+     * 120 次远程调用；这里改为整页一次批量查询后回填。</p>
+     */
     public static OrderVo parseOrderDTO2Vo(OrderDTO dto, AreaFeign areaFeign) {
+        return parseOrderDTO2Vo(dto, areaFeign, null);
+    }
+
+    /**
+     * 订单 DTO → VO（区划可由调用方批量预置）。
+     *
+     * @param areasById 区划 id → 区划数据；为空时按单条查询（详情场景）
+     */
+    public static OrderVo parseOrderDTO2Vo(OrderDTO dto, AreaFeign areaFeign, Map<Long, AreaDTO> areasById) {
         OrderVo vo = new OrderVo();
         BeanUtils.copyProperties(dto, vo);
-        if (dto.getSenderProvinceId() != null && areaFeign != null) {
-            AreaDTO area = areaFeign.get(Long.valueOf(dto.getSenderProvinceId()));
-            if (area != null) {
-                vo.setSenderProvince(parseArea2Vo(area));
-            }
-        }
-        if (dto.getSenderCityId() != null && areaFeign != null) {
-            AreaDTO area = areaFeign.get(Long.valueOf(dto.getSenderCityId()));
-            if (area != null) {
-                vo.setSenderCity(parseArea2Vo(area));
-            }
-        }
-        if (dto.getSenderCountyId() != null && areaFeign != null) {
-            AreaDTO area = areaFeign.get(Long.valueOf(dto.getSenderCountyId()));
-            if (area != null) {
-                vo.setSenderCounty(parseArea2Vo(area));
-            }
-        }
-        if (dto.getReceiverProvinceId() != null && areaFeign != null) {
-            AreaDTO area = areaFeign.get(Long.valueOf(dto.getReceiverProvinceId()));
-            if (area != null) {
-                vo.setReceiverProvince(parseArea2Vo(area));
-            }
-        }
-        if (dto.getReceiverCityId() != null && areaFeign != null) {
-            AreaDTO area = areaFeign.get(Long.valueOf(dto.getReceiverCityId()));
-            if (area != null) {
-                vo.setReceiverCity(parseArea2Vo(area));
-            }
-        }
-        if (dto.getReceiverCountyId() != null && areaFeign != null) {
-            AreaDTO area = areaFeign.get(Long.valueOf(dto.getReceiverCountyId()));
-            if (area != null) {
-                vo.setReceiverCounty(parseArea2Vo(area));
-            }
-        }
+        fillOrderArea(vo, dto, areaFeign, areasById, true);
         return vo;
+    }
+
+    /** 填充发件/收件三级区划（single=true 表示单条模式，可直接远程查） */
+    private static void fillOrderArea(OrderVo vo, OrderDTO dto, AreaFeign areaFeign,
+                                      Map<Long, AreaDTO> areasById, boolean single) {
+        vo.setSenderProvince(parseArea2Vo(lookupArea(dto.getSenderProvinceId(), areaFeign, areasById, single)));
+        vo.setSenderCity(parseArea2Vo(lookupArea(dto.getSenderCityId(), areaFeign, areasById, single)));
+        vo.setSenderCounty(parseArea2Vo(lookupArea(dto.getSenderCountyId(), areaFeign, areasById, single)));
+        vo.setReceiverProvince(parseArea2Vo(lookupArea(dto.getReceiverProvinceId(), areaFeign, areasById, single)));
+        vo.setReceiverCity(parseArea2Vo(lookupArea(dto.getReceiverCityId(), areaFeign, areasById, single)));
+        vo.setReceiverCounty(parseArea2Vo(lookupArea(dto.getReceiverCountyId(), areaFeign, areasById, single)));
+    }
+
+    /** 区划查询：优先取批量预置，single 模式才远程单查 */
+    private static AreaDTO lookupArea(String rawId, AreaFeign areaFeign, Map<Long, AreaDTO> areasById, boolean single) {
+        if (StringUtils.isBlank(rawId)) {
+            return null;
+        }
+        Long areaId;
+        try {
+            areaId = Long.valueOf(rawId.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+        if (areasById != null) {
+            return areasById.get(areaId);
+        }
+        return single && areaFeign != null ? areaFeign.get(areaId) : null;
+    }
+
+    /**
+     * 批量取一页订单涉及的区划（省/市/区去重后一次查询）。
+     *
+     * @param orders 一页订单
+     * @return 区划 id → 区划数据
+     */
+    public static Map<Long, AreaDTO> loadAreasBatch(List<OrderDTO> orders, AreaFeign areaFeign) {
+        Map<Long, AreaDTO> result = new LinkedHashMap<>();
+        if (orders == null || orders.isEmpty() || areaFeign == null) {
+            return result;
+        }
+        List<Long> ids = orders.stream()
+                .flatMap(order -> Stream.of(order.getSenderProvinceId(), order.getSenderCityId(),
+                        order.getSenderCountyId(), order.getReceiverProvinceId(),
+                        order.getReceiverCityId(), order.getReceiverCountyId()))
+                .filter(StringUtils::isNotBlank)
+                .map(id -> {
+                    try {
+                        return Long.valueOf(id.trim());
+                    } catch (NumberFormatException e) {
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        if (ids.isEmpty()) {
+            return result;
+        }
+        for (AreaDTO area : Rx.list(areaFeign.findAll(null, ids))) {
+            if (area != null && area.getId() != null) {
+                result.put(area.getId(), area);
+            }
+        }
+        return result;
     }
 
     /**

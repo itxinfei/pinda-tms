@@ -22,6 +22,7 @@ import com.xinfei.util.BeanUtil;
 import com.xinfei.util.Rx;
 import com.xinfei.vo.work.TaskTransportVo;
 import com.xinfei.vo.work.TransportOrderVo;
+import com.xinfei.vo.base.userCenter.SysUserVo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +33,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * <p>
@@ -149,7 +152,12 @@ public class TransportOrderController {
         List<TaskTransportVo> taskTransportVoList = new ArrayList<>();
         List<TaskTransportDTO> taskTransportDTOList = transportTaskFeign.findAllByOrderIdOrTaskId(Long.valueOf(vo.getId()), null);
         if (taskTransportDTOList != null) {
-            taskTransportDTOList.forEach(taskTransportDTO -> taskTransportVoList.add(BeanUtil.parseTaskTransportDTO2Vo(taskTransportDTO, transportTripsFeign, orgFeign, userFeign, truckFeign, transportOrderFeign, orderFeign, areaFeign, driverJobFeign)));
+            // 与运输任务分页同一口径：司机信息批量预置，避免逐个任务远程查（昨天只改了分页，此处遗漏）
+            Map<Long, List<SysUserVo>> driversByTaskId = BeanUtil.parseTaskDriversBatch(
+                    taskTransportDTOList.stream().map(TaskTransportDTO::getId).filter(Objects::nonNull)
+                            .collect(Collectors.toList()),
+                    driverJobFeign, userFeign);
+            taskTransportDTOList.forEach(taskTransportDTO -> taskTransportVoList.add(BeanUtil.parseTaskTransportDTO2Vo(taskTransportDTO, transportTripsFeign, orgFeign, userFeign, truckFeign, transportOrderFeign, orderFeign, areaFeign, driverJobFeign, driversByTaskId)));
         }
         vo.setTaskTransports(taskTransportVoList);
         return vo;

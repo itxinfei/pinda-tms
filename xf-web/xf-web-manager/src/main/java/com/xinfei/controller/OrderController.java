@@ -6,6 +6,7 @@ import com.xinfei.DTO.OrderDTO;
 import com.xinfei.DTO.OrderLocationDto;
 import com.xinfei.DTO.TaskPickupDispatchDTO;
 import com.xinfei.DTO.TransportOrderDTO;
+import com.xinfei.DTO.AreaDTO;
 import com.xinfei.common.utils.PageResponse;
 import com.xinfei.common.utils.Result;
 import com.xinfei.enums.pickuptask.PickupDispatchTaskStatus;
@@ -84,7 +85,11 @@ public class OrderController {
         //加工数据
         // 分页 items 可能为 null，统一通过 Rx 安全取值
         List<OrderDTO> orderDTOList = Rx.items(orderPage);
-        List<OrderVo> orderVoList = orderDTOList.stream().map(orderDTO -> BeanUtil.parseOrderDTO2Vo(orderDTO, areaFeign)).collect(Collectors.toList());
+        // 区划批量预置：一页订单的发/收省市区去重后一次远程查，避免逐单 6 次（分页 20 单 = 120 次）
+        Map<Long, AreaDTO> areasById = BeanUtil.loadAreasBatch(orderDTOList, areaFeign);
+        List<OrderVo> orderVoList = orderDTOList.stream()
+                .map(orderDTO -> BeanUtil.parseOrderDTO2Vo(orderDTO, areaFeign, areasById))
+                .collect(Collectors.toList());
         return PageResponse.<OrderVo>builder().items(orderVoList).pagesize(vo.getPageSize()).page(vo.getPage()).counts(orderPage.getCounts()).pages(orderPage.getPages()).build();
     }
 

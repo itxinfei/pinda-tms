@@ -20,9 +20,23 @@ public final class PageResponses {
         return (page == null || page < 1) ? 1 : page;
     }
 
-    /** 每页条数兜底：null 或 &lt;1 → 10 */
+    /** 每页条数兜底默认��� */
+    public static final int DEFAULT_PAGE_SIZE = 10;
+
+    /** 每页条数上限：与 xf-common PageQuery 口径一致，防止 pageSize=100000 打穿内存与下游SQL */
+    public static final int MAX_PAGE_SIZE = 500;
+
+    /**
+     * 每页条数兜底 + 上限：null 或 &lt;1 → 10；&gt;500 → 500。
+     *
+     * <p>不设上限时前端一次误传（或被诱导传）大pageSize 会让聚合层把整表读进内存，
+     * 连带拖垮同实例其它接口；这里与 xf-common {@code PageQuery#normalize} 保持同一口径。</p>
+     */
     public static int pageSize(Integer pageSize) {
-        return (pageSize == null || pageSize < 1) ? 10 : pageSize;
+        if (pageSize == null || pageSize < 1) {
+            return DEFAULT_PAGE_SIZE;
+        }
+        return Math.min(pageSize, MAX_PAGE_SIZE);
     }
 
     /** 由 MyBatis-Plus 分页结果组装统一分页响应 */
