@@ -34,7 +34,7 @@
     <el-card ref="tableWrapperRef" class="page-content" shadow="never">
       <div class="page-toolbar">
         <div class="page-toolbar__left">
-          <el-button type="primary" @click="openDialog()">新增参数</el-button>
+          <el-button v-hasPerm="['sys:config:create']" type="primary" @click="openDialog()">新增参数</el-button>
         </div>
         <div class="page-toolbar__right">
           <el-tooltip content="刷新" placement="top">
@@ -93,10 +93,22 @@
           <el-table-column key="remark" label="备注" prop="remark" min-width="120" />
           <el-table-column fixed="right" label="操作" width="160">
             <template #default="scope">
-              <el-button type="primary" size="small" link @click="openDialog(scope.row.id)">
+              <el-button
+                v-hasPerm="['sys:config:update']"
+                type="primary"
+                size="small"
+                link
+                @click="openDialog(scope.row.id)"
+              >
                 编辑
               </el-button>
-              <el-button type="danger" size="small" link @click="handleDelete(scope.row.id)">
+              <el-button
+                v-hasPerm="['sys:config:delete']"
+                type="danger"
+                size="small"
+                link
+                @click="handleDelete(scope.row.id)"
+              >
                 删除
               </el-button>
             </template>

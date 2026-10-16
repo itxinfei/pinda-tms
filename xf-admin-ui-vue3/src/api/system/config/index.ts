@@ -1,32 +1,30 @@
 import request from "@/utils/request";
-import type { PageResponse, PageResult } from "@/api/common";
+import type { PageResult } from "@/api/common";
 import type { ConfigQueryParams, ConfigForm, ConfigItem } from "./types";
 
 /**
  * 参数配置（CFG-01）
  *
- * BFF xf-web-manager 薄转发至 xf-auth，网关前缀 /api/manager。
- * 后端分页为 PageResponse（counts/items，参数 page），在此适配为
- * 列表页通用的 PageResult（list/total，参数 pageNum），供 usePageTable 直接消费。
+ * youlai 契约 /api/v1/sys-config，网关 StripPrefix 后落到 xf-auth
+ * SysConfigController；统一响应 ApiResult（code="00000"），分页 PageResult{list,total}。
  */
-const CONFIG_BASE_URL = "/api/manager/sys-config";
+const CONFIG_BASE_URL = "/api/v1/sys-config";
 
 const ConfigAPI = {
   /**
-   * 参数配置分页（pageNum → 后端 page；counts/items → total/list）
+   * 参数配置分页
    */
-  async getPage(params: ConfigQueryParams): Promise<PageResult<ConfigItem>> {
-    const res = await request<unknown, PageResponse<ConfigItem>>({
+  getPage(params: ConfigQueryParams): Promise<PageResult<ConfigItem>> {
+    return request<unknown, PageResult<ConfigItem>>({
       url: `${CONFIG_BASE_URL}/page`,
       method: "get",
       params: {
-        page: params.pageNum,
+        pageNum: params.pageNum,
         pageSize: params.pageSize,
         keywords: params.keywords || undefined,
         status: params.status === "" ? undefined : params.status,
       },
     });
-    return { list: res?.items ?? [], total: res?.counts ?? 0 };
   },
 
   /**
@@ -39,7 +37,7 @@ const ConfigAPI = {
     });
   },
 
-  /** 新增配置 */
+  /** 新增配置，返回新 ID */
   create(data: ConfigForm) {
     return request({ url: `${CONFIG_BASE_URL}`, method: "post", data });
   },
