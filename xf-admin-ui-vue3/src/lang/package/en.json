@@ -179,8 +179,6 @@
     "resetSuccess": "Reset to default configuration",
     "copyDescription": "Copy config generates the current defaults fragment; reset restores defaults",
     "confirmReset": "Are you sure to reset all settings to default? This operation cannot be undone.",
-    "applyToFile": "Apply to File",
-    "onlyCopy": "Only Copy",
     "leftLayout": "Left Mode",
     "topLayout": "Top Mode",
     "mixLayout": "Mix Mode",

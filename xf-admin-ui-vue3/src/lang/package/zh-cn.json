@@ -145,8 +145,6 @@
     "resetSuccess": "已重置为默认配置",
     "copyDescription": "复制配置会生成当前 defaults 片段，重置会恢复默认设置",
     "confirmReset": "确定要重置所有设置为默认值吗？此操作不可恢复。",
-    "applyToFile": "应用到文件",
-    "onlyCopy": "仅复制",
     "leftLayout": "左侧模式",
     "topLayout": "顶部模式",
     "mixLayout": "混合模式",
