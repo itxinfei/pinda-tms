@@ -1,8 +1,10 @@
 package com.xinfei.config;
 
 import com.xinfei.common.interceptor.TokenAuthInterceptor;
+import com.xinfei.interceptor.OperLogInterceptor;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -13,7 +15,11 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * 文档地址：http://localhost:8186/swagger-ui/index.html
  */
 @Configuration
+@RequiredArgsConstructor
 public class SwaggerConfig implements WebMvcConfigurer {
+
+    private final OperLogInterceptor operLogInterceptor;
+
 
     @Bean
     public OpenAPI customOpenApi() {
@@ -31,5 +37,9 @@ public class SwaggerConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(new TokenAuthInterceptor())
                 .addPathPatterns("/**");
+        // 写请求审计（SYS-06 跨服务埋点）：POST/PUT/DELETE 经 Feign 上报 xf-auth，失败不影响业务
+        registry.addInterceptor(operLogInterceptor)
+                .addPathPatterns("/**")
+                .excludePathPatterns("/actuator/**", "/internal/**", "/error");
     }
 }

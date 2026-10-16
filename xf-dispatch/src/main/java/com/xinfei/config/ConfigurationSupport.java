@@ -51,7 +51,11 @@ import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKN
 
 @Slf4j
 @Configuration
+@lombok.RequiredArgsConstructor
 public class ConfigurationSupport extends WebMvcConfigurationSupport {
+
+    private final com.xinfei.interceptor.OperLogInterceptor operLogInterceptor;
+
     /**
      * deserializerByType 解决string类型入参转为 LocalDateTime 格式问题
      *
@@ -123,6 +127,10 @@ public class ConfigurationSupport extends WebMvcConfigurationSupport {
                 .addPathPatterns("/**")
                 .excludePathPatterns("/actuator/**", "/favicon.ico", "/error",
                         "/swagger-ui/**", "/v3/api-docs/**", "/webjars/**");
+        // 写请求审计（SYS-06 跨服务埋点）：POST/PUT/DELETE 落 OPER 日志，失败不影响业务
+        registry.addInterceptor(operLogInterceptor)
+                .addPathPatterns("/**")
+                .excludePathPatterns("/actuator/**", "/internal/**", "/error");
     }
 
     /**
