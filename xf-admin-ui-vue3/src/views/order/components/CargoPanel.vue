@@ -174,7 +174,7 @@ const props = withDefaults(
   { editable: true }
 );
 
-/** 货物变更后通知父组件（订单金额/距离随货物重量变化，需刷新详情） */
+/** 货物变更后通知父组件，由父组件决定是否刷新订单详情（列表与详情口径保持一致） */
 const emit = defineEmits<{ (e: "change"): void }>();
 
 const loading = ref(false);
