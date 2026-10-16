@@ -70,7 +70,7 @@ public class AppController {
     }
 
     @PutMapping("/{id}/status")
-    @SaCheckPermission("sys:app:update")
+    @SaCheckPermission("sys:app:change-status")
     public ApiResult<Void> updateStatus(@PathVariable Long id,
                                         @RequestParam("status") Integer status) {
         appService.updateStatus(id, status);
