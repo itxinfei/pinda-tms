@@ -87,7 +87,12 @@ import { ElMessage } from "element-plus";
 import { Search, VideoPause, VideoPlay } from "@element-plus/icons-vue";
 import TraceAPI, { type LocationRecordItem } from "@/api/trace";
 import MapConfigAPI from "@/api/map-config";
-import { loadBaiduMap } from "@/utils/baidu-map";
+import {
+  createLabeledMarker,
+  fitViewport,
+  loadBaiduMap,
+  moveMarker,
+} from "@/utils/baidu-map";
 
 defineOptions({ name: "Monitor" });
 
@@ -245,26 +250,16 @@ function renderRealtimeMarkers() {
     const point = pointOf(item);
     let marker = markerMap.get(key);
     if (marker) {
-      marker.setPosition(point);
+      moveMarker(marker, point);
     } else {
-      marker = new BMap.Marker(point);
-      const label = new BMap.Label(item.licensePlate || item.name || "", {
-        offset: new BMap.Size(14, -10),
+      // GL 版 Label 是独立覆盖物（构造需position），不支持 marker.setLabel
+      marker = createLabeledMarker(map, BMap, point, item.licensePlate || item.name || "", {
+        background: "#2b6cff",
+        onClick: () => {
+          activeKey.value = key;
+          openInfoWindow(item, point);
+        },
       });
-      label.setStyle({
-        padding: "2px 6px",
-        fontSize: "12px",
-        color: "#fff",
-        background: "var(--el-color-primary)",
-        border: "none",
-        borderRadius: "4px",
-      });
-      marker.setLabel(label);
-      marker.addEventListener("click", () => {
-        activeKey.value = key;
-        openInfoWindow(item, point);
-      });
-      map.addOverlay(marker);
       markerMap.set(key, marker);
     }
   }
@@ -342,20 +337,21 @@ function drawReplay() {
     });
     map.addOverlay(replayPolyline);
   }
-  replayStartMark = new BMap.Marker(points[0]);
-  replayStartMark.setLabel(makeEndpointLabel("起点"));
-  map.addOverlay(replayStartMark);
-  replayEndMark = new BMap.Marker(points[points.length - 1]);
-  replayEndMark.setLabel(makeEndpointLabel("终点"));
-  map.addOverlay(replayEndMark);
+  // 起终点标注：GL 版不支持 marker.setLabel，改为独立 Label 覆盖物
+  const startLabel = makeEndpointLabel("起点", points[0]);
+  const endLabel = makeEndpointLabel("终点", points[points.length - 1]);
+  map.addOverlay(startLabel);
+  map.addOverlay(endLabel);
+  replayStartMark = startLabel;
+  replayEndMark = endLabel;
   replayMarker = new BMap.Marker(points[0]);
   map.addOverlay(replayMarker);
-  replayOverlays.push(replayPolyline, replayStartMark, replayEndMark, replayMarker);
-  map.setViewport(points);
+  replayOverlays.push(replayPolyline, startLabel, endLabel, replayMarker);
+  fitViewport(map, points);
 }
 
-function makeEndpointLabel(text: string) {
-  const label = new BMap.Label(text, { offset: new BMap.Size(14, -10) });
+function makeEndpointLabel(text: string, position: any) {
+  const label = new BMap.Label(text, { position, offset: new BMap.Size(14, -10) });
   label.setStyle({
     padding: "2px 6px",
     fontSize: "12px",
@@ -384,9 +380,14 @@ function clearReplayOverlays() {
   replayVehicle.value = null;
 }
 
-/** 时间轴拖动：直接定位到对应轨迹点 */
-function onSliderInput(index: number) {
-  moveReplayTo(index);
+/** 时间轴拖动：直接定位到对应轨迹点
+ *  el-slider 的 input 事件在未设 multiple 时发 number，但类型签名是 Arrayable<number>，
+ *  这里兼容两种形态（原先声明 number 会导致 vue-tsc 报错、卡死构建）。 */
+function onSliderInput(value: number | number[]) {
+  const index = Array.isArray(value) ? value[0] : value;
+  if (typeof index === "number") {
+    moveReplayTo(index);
+  }
 }
 
 function moveReplayTo(index: number) {
