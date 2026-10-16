@@ -99,8 +99,8 @@ public class OrderFeignFallback implements OrderFeign {
 
     @Override
     public Map getOrderMsg(OrderDTO orderAddDto) {
-        log.warn("远程调用 xf-oms 失败: getOrderMsg({}), 返回null", orderAddDto);
-        return null;
+        log.warn("远程调用 xf-oms 失败: getOrderMsg({}), 返回空Map", orderAddDto);
+        return Collections.emptyMap();
     }
 
     @Override
