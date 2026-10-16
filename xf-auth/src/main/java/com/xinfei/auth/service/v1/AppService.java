@@ -9,6 +9,7 @@ import com.xinfei.auth.common.v1.AppVO;
 import com.xinfei.auth.common.v1.PageResult;
 import com.xinfei.auth.entity.SysApp;
 import com.xinfei.auth.mapper.SysAppMapper;
+import com.xinfei.common.config.dynamic.ConfigCrypto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,8 +27,12 @@ import java.util.List;
 public class AppService {
 
     private final SysAppMapper appMapper;
+    private final ConfigCrypto configCrypto;
 
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    /** 回显脱敏前缀：提交值以它开头视为"未修改的掩码回显"，不覆盖库中密文 */
+    private static final String MASK_PREFIX = "••";
 
     public PageResult<AppVO> page(long pageNum, long pageSize, String keywords,
                                   Integer status, String platform) {
@@ -51,9 +56,9 @@ public class AppService {
         f.setAppCode(a.getAppCode());
         f.setPlatform(a.getPlatform());
         f.setAppId(a.getAppId());
-        f.setAppSecret(a.getAppSecret());
+        f.setAppSecret(maskStored(a.getAppSecret()));
         f.setMerchantId(a.getMerchantId());
-        f.setMerchantKey(a.getMerchantKey());
+        f.setMerchantKey(maskStored(a.getMerchantKey()));
         f.setStatus(a.getStatus());
         f.setRemark(a.getRemark());
         f.setTenantId(a.getTenantId() == null ? null : String.valueOf(a.getTenantId()));
@@ -110,9 +115,14 @@ public class AppService {
         if (StringUtils.hasText(form.getAppId())) {
             a.setAppId(form.getAppId().trim());
         }
-        a.setAppSecret(form.getAppSecret());
-        a.setMerchantId(form.getMerchantId());
-        a.setMerchantKey(form.getMerchantKey());
+        // 敏感列（appSecret/merchantKey）：留空或仍是回显掩码＝不修改，保留库中已有密文；
+        // 只有用户输入了新明文才加密覆盖（与 sys_config「编辑留空=不改」同一范式）
+        if (isRealSecret(form.getAppSecret())) {
+            a.setAppSecret(configCrypto.encrypt(form.getAppSecret().trim()));
+        }
+        if (isRealSecret(form.getMerchantKey())) {
+            a.setMerchantKey(configCrypto.encrypt(form.getMerchantKey().trim()));
+        }
         if (form.getStatus() != null) {
             a.setStatus(form.getStatus());
         } else if (a.getStatus() == null) {
@@ -157,9 +167,9 @@ public class AppService {
         v.setAppCode(a.getAppCode());
         v.setPlatform(a.getPlatform());
         v.setAppId(a.getAppId());
-        v.setAppSecret(a.getAppSecret());
+        v.setAppSecret(maskStored(a.getAppSecret()));
         v.setMerchantId(a.getMerchantId());
-        v.setMerchantKey(a.getMerchantKey());
+        v.setMerchantKey(maskStored(a.getMerchantKey()));
         v.setStatus(a.getStatus());
         v.setRemark(a.getRemark());
         v.setTenantId(a.getTenantId() == null ? null : String.valueOf(a.getTenantId()));
@@ -170,5 +180,25 @@ public class AppService {
 
     private String fmt(LocalDateTime t) {
         return t == null ? null : t.format(FMT);
+    }
+
+    /** 是否为需要入库的新密钥明文：非空且不是回显掩码。
+     *  前提不变量：{@link ConfigCrypto#mask} 输出恒以 "••" 开头（见其源码：全掩或 "••••••••"+后4位），
+     *  故 MASK_PREFIX 判定可靠；若未来改动 mask 输出格式，须同步此处。 */
+    private boolean isRealSecret(String value) {
+        return StringUtils.hasText(value) && !value.trim().startsWith(MASK_PREFIX);
+    }
+
+    /** 库中存储值 → 回显脱敏（enc: 密文先解密再掩码，历史明文直接掩码）。
+     *  解密失败（主密钥变更/密文损坏）时回退为全掩，保证列表/表单接口不整体 500。 */
+    private String maskStored(String stored) {
+        if (!StringUtils.hasText(stored)) {
+            return "";
+        }
+        try {
+            return ConfigCrypto.mask(configCrypto.decrypt(stored));
+        } catch (Exception e) {
+            return "••••••••";
+        }
     }
 }
