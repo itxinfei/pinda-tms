@@ -90,7 +90,7 @@ public class OrderController {
         List<OrderVo> orderVoList = orderDTOList.stream()
                 .map(orderDTO -> BeanUtil.parseOrderDTO2Vo(orderDTO, areaFeign, areasById))
                 .collect(Collectors.toList());
-        return PageResponse.<OrderVo>builder().items(orderVoList).pagesize(vo.getPageSize()).page(vo.getPage()).counts(orderPage.getCounts()).pages(orderPage.getPages()).build();
+        return PageResponse.<OrderVo>builder().items(orderVoList).pagesize(vo.getPageSize()).page(vo.getPage()).counts(orderPage != null && orderPage.getCounts() != null ? orderPage.getCounts() : 0L).pages(orderPage != null && orderPage.getPages() != null ? orderPage.getPages() : 0L).build();
     }
 
     @Operation(summary = "获取订单详情")

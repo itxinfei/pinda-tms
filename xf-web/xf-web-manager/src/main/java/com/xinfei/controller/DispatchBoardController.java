@@ -7,6 +7,7 @@ import com.xinfei.DTO.OrgDTO;
 import com.xinfei.DTO.TaskTransportDTO;
 import com.xinfei.DTO.TransportOrderDTO;
 import com.xinfei.DTO.transportline.TransportLineDto;
+import com.xinfei.common.utils.Result;
 import com.xinfei.enums.OrderStatus;
 import com.xinfei.feign.OrderFeign;
 import com.xinfei.feign.OrgFeign;
@@ -106,21 +107,21 @@ public class DispatchBoardController {
     @Operation(summary = "一键派单（建运输单 + 建运输任务）")
     @PostMapping("/assign")
     @SaCheckPermission("dispatch:board:assign")
-    public Map<String, Object> assign(@RequestBody DispatchAssignForm form) {
+    public Object assign(@RequestBody DispatchAssignForm form) {
         if (form == null || form.getOrderIds() == null || form.getOrderIds().isEmpty()) {
-            return Map.of("code", 400, "msg", "请先选择待调度订单");
+            return Result.error(400, "请先选择待调度订单");
         }
         if (StringUtils.isBlank(form.getTruckId())) {
-            return Map.of("code", 400, "msg", "请选择承运车辆");
+            return Result.error(400, "请选择承运车辆");
         }
         // 车辆存在性校验：避免前端传入已删除车辆导致建出无主运输任务
         if (truckFeign.fineById(form.getTruckId()) == null) {
-            return Map.of("code", 400, "msg", "承运车辆不存在或已停用");
+            return Result.error(400, "承运车辆不存在或已停用");
         }
 
         List<OrderDTO> orders = Rx.list(orderFeign.findByIds(form.getOrderIds()));
         if (orders.isEmpty()) {
-            return Map.of("code", 404, "msg", "订单不存在或已变更状态");
+            return Result.error(404, "订单不存在或已变更状态");
         }
 
         // 起始机构 = 订单当前入库网点；目的机构取该网点第一条可用线路的终点
@@ -129,7 +130,7 @@ public class DispatchBoardController {
                 .filter(line -> Objects.equals(line.getStartOrgId(), startOrgId))
                 .collect(Collectors.toList());
         if (candidates.isEmpty()) {
-            return Map.of("code", 400, "msg", "起始网点没有可用线路，请先在「运输线路」维护");
+            return Result.error(400, "起始网点没有可用线路，请先在「运输线路」维护");
         }
         String endOrgId = candidates.get(0).getEndOrgId();
 
@@ -148,7 +149,7 @@ public class DispatchBoardController {
             }
         }
         if (transportOrderIds.isEmpty()) {
-            return Map.of("code", 500, "msg", "运输单创建失败");
+            return Result.error(500, "运输单创建失败");
         }
 
         // 2) 建运输任务并关联运单（xf-work saveWithRelations 会置待执行/待分配状态）
@@ -162,12 +163,18 @@ public class DispatchBoardController {
         }
         taskDTO.setTransportOrderIds(transportOrderIds);
         TaskTransportDTO task = transportTaskFeign.save(taskDTO);
+        // fallback 熔断时 save 返回 null：此时已建的运单成孤儿，必须抛异常让事务回滚，
+        // 不能返回成功让前端误以为派单完成
+        if (task == null || task.getId() == null) {
+            throw new IllegalStateException("运输任务创建失败（xf-work 不可用），派单已回滚");
+        }
 
+        // 返回「不含 code 的裸 Map」由 GlobalResponseAdvice 包成 {code,msg,data}：
+        // Result 继承 HashMap 且 ok(map) 是扁平 putAll，自带 code 会被 Advice 原样放行，
+        // 前端 request.ts 取 body.data 得到 undefined（曾导致提示「生成 0 张运输单」）
         Map<String, Object> data = new LinkedHashMap<>();
-        data.put("code", 0);
-        data.put("msg", "success");
         data.put("transportOrderCount", transportOrderIds.size());
-        data.put("taskId", task == null ? null : task.getId());
+        data.put("taskId", task.getId());
         data.put("startOrgId", startOrgId);
         data.put("endOrgId", endOrgId);
         return data;

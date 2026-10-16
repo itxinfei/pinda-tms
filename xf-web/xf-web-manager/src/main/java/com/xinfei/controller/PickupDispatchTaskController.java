@@ -85,7 +85,7 @@ public class PickupDispatchTaskController {
         PageResponse<TaskPickupDispatchDTO> dtoPageResponse = webManagerFeign.findTaskPickupDispatchJobByPage(dto);
         List<TaskPickupDispatchDTO> dtoList = Rx.items(dtoPageResponse);
         List<TaskPickupDispatchVo> voList = dtoList.stream().map(taskPickupDispatchDTO -> BeanUtil.parseTaskPickupDispatchDTO2Vo(taskPickupDispatchDTO, orderFeign, areaFeign, orgFeign, userFeign)).collect(Collectors.toList());
-        return PageResponse.<TaskPickupDispatchVo>builder().items(voList).pagesize(vo.getPageSize()).page(vo.getPage())
+        return PageResponse.<TaskPickupDispatchVo>builder().items(voList).pagesize(vo != null && vo.getPageSize() != null ? vo.getPageSize() : 10).page(vo != null && vo.getPage() != null ? vo.getPage() : 1)
                 .counts(dtoPageResponse != null ? dtoPageResponse.getCounts() : 0L)
                 .pages(dtoPageResponse != null ? dtoPageResponse.getPages() : 0L).build();
     }

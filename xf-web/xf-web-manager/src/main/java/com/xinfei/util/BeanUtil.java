@@ -111,7 +111,8 @@ public class BeanUtil {
         agencyVo.setName(org.getName());
         if (org.getOrgType() != null) {
             agencyVo.setAgencyType(org.getOrgType());
-            agencyVo.setAgencyTypeName(OrgType.getEnumByType(org.getOrgType()).getName());
+            OrgType orgTypeEnum = OrgType.getEnumByType(org.getOrgType());
+        agencyVo.setAgencyTypeName(orgTypeEnum == null ? null : orgTypeEnum.getName());
         }
         agencyVo.setAddress(org.getAddress());
         agencyVo.setLongitude(org.getLongitude());
@@ -510,6 +511,9 @@ public class BeanUtil {
                 ? driversByTaskId.getOrDefault(dto.getId(), new ArrayList<>())
                 : parseTaskDrivers(dto.getId(), driverJobFeign, userFeign);
         vo.setDrivers(drivers);
+        // 运单数量：聚合层 SQL 不返回该列，直接由关联运单数推导，
+        // 否则详情页「运单数量」恒显-（与「司机信息恒空」同类问题）
+        vo.setTransportOrderCount(dto.getTransportOrderIds() == null ? 0 : dto.getTransportOrderIds().size());
         return vo;
     }
 

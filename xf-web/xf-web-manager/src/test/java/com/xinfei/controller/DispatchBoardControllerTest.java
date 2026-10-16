@@ -24,7 +24,8 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -189,13 +190,18 @@ public class DispatchBoardControllerTest {
         form.setOrderIds(List.of("9001"));
         form.setTruckId("501");
 
-        Map<String, Object> result = controller.assign(form);
+        Object result = controller.assign(form);
 
-        assertEquals(0, result.get("code"));
-        assertEquals(1, result.get("transportOrderCount"));
-        assertEquals(8888L, result.get("taskId"));
-        assertEquals("1001", result.get("startOrgId"));
-        assertEquals("1002", result.get("endOrgId"));
+        // 契约回归：成功必须返回「不含 code 的裸 Map」，由 GlobalResponseAdvice 包成
+        // {code,msg,data}；若这里带了 code，Advice 会原样放行，前端取 body.data 得 undefined
+        assertTrue(result instanceof Map, "应返回 Map");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> data = (Map<String, Object>) result;
+        assertFalse(data.containsKey("code"), "成功响应不得自带 code，否则不会被包装成 data");
+        assertEquals(1, data.get("transportOrderCount"));
+        assertEquals(8888L, data.get("taskId"));
+        assertEquals("1001", data.get("startOrgId"));
+        assertEquals("1002", data.get("endOrgId"));
 
         // 运输单的 orderId 必须是 Long（DTO 口径），不是字符串
         ArgumentCaptor<TransportOrderDTO> orderCaptor = ArgumentCaptor.forClass(TransportOrderDTO.class);
@@ -219,19 +225,19 @@ public class DispatchBoardControllerTest {
         DispatchAssignForm empty = new DispatchAssignForm();
         empty.setOrderIds(List.of());
         empty.setTruckId("501");
-        assertEquals(400, controller.assign(empty).get("code"));
+        assertEquals(400, ((Map<?, ?>) controller.assign(empty)).get("code"));
 
         // 2) 未选车辆
         DispatchAssignForm noTruck = new DispatchAssignForm();
         noTruck.setOrderIds(List.of("9001"));
-        assertEquals(400, controller.assign(noTruck).get("code"));
+        assertEquals(400, ((Map<?, ?>) controller.assign(noTruck)).get("code"));
 
         // 3) 车辆不存在
         DispatchAssignForm badTruck = new DispatchAssignForm();
         badTruck.setOrderIds(List.of("9001"));
         badTruck.setTruckId("999");
         when(truckFeign.fineById("999")).thenReturn(null);
-        assertEquals(400, controller.assign(badTruck).get("code"));
+        assertEquals(400, ((Map<?, ?>) controller.assign(badTruck)).get("code"));
 
         // 4) 订单不存在
         when(truckFeign.fineById("501")).thenReturn(new com.xinfei.DTO.truck.TruckDto());
@@ -239,7 +245,7 @@ public class DispatchBoardControllerTest {
         DispatchAssignForm noOrder = new DispatchAssignForm();
         noOrder.setOrderIds(List.of("9001"));
         noOrder.setTruckId("501");
-        assertEquals(404, controller.assign(noOrder).get("code"));
+        assertEquals(404, ((Map<?, ?>) controller.assign(noOrder)).get("code"));
 
         // 5) 起始网点无可用线路：不建单不建任务
         when(orderFeign.findByIds(anyList())).thenReturn(List.of(order("9001", "1001")));
@@ -247,9 +253,30 @@ public class DispatchBoardControllerTest {
         DispatchAssignForm noLine = new DispatchAssignForm();
         noLine.setOrderIds(List.of("9001"));
         noLine.setTruckId("501");
-        assertEquals(400, controller.assign(noLine).get("code"));
+        assertEquals(400, ((Map<?, ?>) controller.assign(noLine)).get("code"));
         verify(transportOrderFeign, times(0)).save(any());
         verify(transportTaskFeign, times(0)).save(any());
+    }
+
+    @Test
+    @DisplayName("派单熔断兜底：transportTaskFeign 返回 null 时抛异常（避免运单残留成孤儿）")
+    public void testAssignThrowsWhenTaskFeignReturnsNull() {
+        when(orderFeign.findByIds(anyList())).thenReturn(List.of(order("9001", "1001")));
+        when(lineFeign.findAll(isNull(), isNull(), isNull()))
+                .thenReturn(List.of(line("301", "\u6b66\u6c49\u6c5f\u5cb8-\u6b66\u660c\u5e72\u7ebf", "1001", "1002")));
+        when(orgFeign.list(any(), anyList(), any(), any(), any()))
+                .thenReturn(List.of(org(1001L, "\u6b66\u6c49\u6c5f\u5cb8\u7f51\u70b9", "114.316", "30.595")));
+        when(truckFeign.fineById("501")).thenReturn(new com.xinfei.DTO.truck.TruckDto());
+        TransportOrderDTO created = new TransportOrderDTO();
+        created.setId(7001L);
+        when(transportOrderFeign.save(any())).thenReturn(created);
+        // 熔\u65ad\u65f6Feign fallback \u8fd4\u56de null
+        when(transportTaskFeign.save(any())).thenReturn(null);
+
+        DispatchAssignForm form = new DispatchAssignForm();
+        form.setOrderIds(List.of("9001"));
+        form.setTruckId("501");
+        assertThrows(IllegalStateException.class, () -> controller.assign(form));
     }
 
     @Test
@@ -264,7 +291,9 @@ public class DispatchBoardControllerTest {
         TransportOrderDTO created = new TransportOrderDTO();
         created.setId(7001L);
         when(transportOrderFeign.save(any())).thenReturn(created);
-        when(transportTaskFeign.save(any())).thenReturn(new TaskTransportDTO());
+        TaskTransportDTO tripsTask = new TaskTransportDTO();
+        tripsTask.setId(9999L);
+        when(transportTaskFeign.save(any())).thenReturn(tripsTask);
 
         DispatchAssignForm form = new DispatchAssignForm();
         form.setOrderIds(List.of("9001"));
@@ -275,6 +304,6 @@ public class DispatchBoardControllerTest {
         ArgumentCaptor<TaskTransportDTO> captor = ArgumentCaptor.forClass(TaskTransportDTO.class);
         verify(transportTaskFeign).save(captor.capture());
         assertEquals(407L, captor.getValue().getTripsId());
-        assertNotNull(captor.getValue().getTransportOrderIds());
+        assertFalse(captor.getValue().getTransportOrderIds() == null);
     }
 }
