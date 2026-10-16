@@ -245,8 +245,20 @@ public class OrderController {
         if (cargos == null || cargos.isEmpty()) {
             return Result.error(400, "订单缺少货物明细，无法重算运费");
         }
-        order.setOrderCargoDto(cargos.get(0));
-        return orderFeign.reprice(id, order, reasonEnum);
+        // 只组装计费所需字段：完整透传会把 createTime 等 "yyyy-MM-dd HH:mm:ss" 字符串
+        // 再次发往 xf-oms，LocalDateTime 反序列化直接 400（实测踩坑）；距离由服务端重算
+        OrderDTO repriceDto = new OrderDTO();
+        repriceDto.setId(id);
+        repriceDto.setSenderAddress(order.getSenderAddress());
+        repriceDto.setSenderProvinceId(order.getSenderProvinceId());
+        repriceDto.setSenderCityId(order.getSenderCityId());
+        repriceDto.setSenderCountyId(order.getSenderCountyId());
+        repriceDto.setReceiverAddress(order.getReceiverAddress());
+        repriceDto.setReceiverProvinceId(order.getReceiverProvinceId());
+        repriceDto.setReceiverCityId(order.getReceiverCityId());
+        repriceDto.setReceiverCountyId(order.getReceiverCountyId());
+        repriceDto.setOrderCargoDto(cargos.get(0));
+        return orderFeign.reprice(id, repriceDto, reasonEnum);
     }
 
     /**
