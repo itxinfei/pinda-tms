@@ -319,7 +319,7 @@ const tagsViewStyleOptions: TagsViewStyleOption[] = [
 const colorOptions: ColorOption[] = themeColorNames.map((name) => ({ name }));
 
 const colorPresets: Record<ThemeColorName, string[]> = {
-  primary: ["#165DFF", "#1677FF", "#409EFF", "#FF7D00", "#14C9C9", "#EB2F96", "#722ED1"],
+  primary: ["#FF0033", "#165DFF", "#1677FF", "#409EFF", "#FF7D00", "#13A970", "#14C9C9", "#EB2F96", "#722ED1"],
   success: ["#00B42A", "#23C343", "#67C23A", "#22C55E"],
   warning: ["#FF7D00", "#FF9A2E", "#E6A23C", "#FAAD14"],
   danger: ["#F53F3F", "#F76560", "#F56C6C", "#FF4D4F"],
@@ -330,6 +330,11 @@ const paletteI18nKeys: Record<string, string> = {
   arco: "arco",
   "ant-design": "antDesign",
   "element-plus": "elementPlus",
+  emerald: "emerald",
+  violet: "violet",
+  cyan: "cyan",
+  orange: "orange",
+  slate: "slate",
 };
 
 const settingsStore = useSettingsStore();
@@ -664,7 +669,7 @@ function handleCloseDrawer(): void {
 
 .palette-strip {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 6px;
 }
 

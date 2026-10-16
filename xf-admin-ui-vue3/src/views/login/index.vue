@@ -295,17 +295,18 @@ $text-primary: #273248;
 $text-secondary: #667085;
 $text-muted: #98a2b3;
 $input-h: 44px;
-// 心飞品牌主色 #FF0033：仅用于登录按钮（红色只留这一处，不与左侧品牌区抢视觉）
-$brand-red: #FF0033;
+// 品牌主色：跟随主题色板运行时变量（切换配色体系时登录页同步变色）
+$brand-red: var(--el-color-primary);
 // 左侧品牌区配色（深蓝夜航）：与 hero 图渐变一致
 $navy-top: #1e3a5f;
 $navy-mid: #16294a;
 $navy-bot: #0e1c33;
 
 .login-page {
-  // 品牌色阶：从运行时主题色派生，切换主题色板（ArcoD/AntD/ElementD）时整页跟随
+  // 品牌色阶：从运行时主题色派生，切换配色体系时整页跟随
   --brand-strong: color-mix(in srgb, var(--el-color-primary), #000 15%);
   --brand-deep: color-mix(in srgb, var(--el-color-primary), #000 45%);
+  --brand-light: color-mix(in srgb, var(--el-color-primary), #fff 15%);
 
   position: relative;
   display: flex;
@@ -369,7 +370,7 @@ $navy-bot: #0e1c33;
     left: -10%;
     width: 72%;
     aspect-ratio: 1;
-    background: radial-gradient(circle, rgb(255 0 51 / 22%) 0%, transparent 62%);
+    background: radial-gradient(circle, color-mix(in srgb, var(--el-color-primary) 22%, transparent) 0%, transparent 62%);
     animation: brand-glow-breathe 7s ease-in-out infinite;
   }
 
@@ -432,9 +433,9 @@ $navy-bot: #0e1c33;
     padding: 3px 10px;
     font-size: 12px;
     color: #fff;
-    background: linear-gradient(135deg, #ff2a55 0%, $brand-red 100%);
+    background: linear-gradient(135deg, var(--brand-light) 0%, $brand-red 100%);
     border-radius: 999px;
-    box-shadow: 0 4px 12px rgb(255 0 51 / 30%);
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--el-color-primary) 30%, transparent);
 
     i {
       width: 6px;
@@ -493,9 +494,9 @@ $navy-bot: #0e1c33;
       top: 0;
       left: 0;
       height: 100%;
-      background: linear-gradient(90deg, rgb(255 0 51 / 50%) 0%, $brand-red 100%);
+      background: linear-gradient(90deg, color-mix(in srgb, var(--el-color-primary) 50%, transparent) 0%, $brand-red 100%);
       border-radius: inherit;
-      box-shadow: 0 0 10px rgb(255 0 51 / 45%);
+      box-shadow: 0 0 10px color-mix(in srgb, var(--el-color-primary) 45%, transparent);
       animation: brand-track-fill 14s ease-in-out infinite;
     }
 
@@ -510,10 +511,10 @@ $navy-bot: #0e1c33;
       width: 30px;
       height: 30px;
       color: #fff;
-      background: linear-gradient(135deg, #ff2a55 0%, $brand-red 100%);
+      background: linear-gradient(135deg, var(--brand-light) 0%, $brand-red 100%);
       border-radius: 50%;
       box-shadow:
-        0 0 0 6px rgb(255 0 51 / 18%),
+        0 0 0 6px color-mix(in srgb, var(--el-color-primary) 18%, transparent),
         0 8px 20px rgb(0 0 0 / 40%);
       transform: translate(-50%, -50%);
       animation: brand-track-marker 14s ease-in-out infinite;
@@ -781,19 +782,19 @@ $navy-bot: #0e1c33;
 @keyframes brand-end-pop {
   0%,
   68% {
-    box-shadow: 0 0 0 0 rgb(255 0 51 / 0%);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--el-color-primary) 0%, transparent);
     transform: translateY(-50%) scale(1);
   }
 
   72%,
   84% {
-    box-shadow: 0 0 0 7px rgb(255 0 51 / 35%);
+    box-shadow: 0 0 0 7px color-mix(in srgb, var(--el-color-primary) 35%, transparent);
     transform: translateY(-50%) scale(1.15);
   }
 
   90%,
   100% {
-    box-shadow: 0 0 0 0 rgb(255 0 51 / 0%);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--el-color-primary) 0%, transparent);
     transform: translateY(-50%) scale(1);
   }
 }
@@ -926,13 +927,13 @@ $navy-bot: #0e1c33;
     background: $brand-red;
     border-color: $brand-red;
     border-radius: 8px;
-    box-shadow: 0 12px 24px rgb(255 0 51 / 20%);
+    box-shadow: 0 12px 24px color-mix(in srgb, var(--el-color-primary) 20%, transparent);
 
     &:hover,
     &:focus {
-      background: #e6002e;
-      border-color: #e6002e;
-      box-shadow: 0 14px 28px rgb(255 0 51 / 26%);
+      background: var(--brand-strong);
+      border-color: var(--brand-strong);
+      box-shadow: 0 14px 28px color-mix(in srgb, var(--el-color-primary) 26%, transparent);
     }
 
     &:focus,

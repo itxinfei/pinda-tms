@@ -100,6 +100,26 @@
       "elementPlus": {
         "name": "ElementD",
         "description": "贴近组件默认识别"
+      },
+      "emerald": {
+        "name": "Emerald",
+        "description": "翡翠绿，清爽护眼，适合日常运营"
+      },
+      "violet": {
+        "name": "Violet",
+        "description": "优雅紫，个性鲜明，适合数据看板"
+      },
+      "cyan": {
+        "name": "Cyan",
+        "description": "青瓷蓝绿，冷静专业，适合监控场景"
+      },
+      "orange": {
+        "name": "Orange",
+        "description": "活力暖橙，醒目亲和，适合业务一线"
+      },
+      "slate": {
+        "name": "Slate",
+        "description": "石墨灰蓝，低调沉稳，适合长时间使用"
       }
     },
     "darkMode": "暗黑模式",

@@ -437,18 +437,18 @@ onMounted(async () => {
 .area-result__name {
   flex: 1;
   overflow: hidden;
+  text-overflow: ellipsis;
   font-size: 14px;
   color: var(--el-text-color-primary);
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .area-result__sub {
   margin-top: 2px;
   overflow: hidden;
+  text-overflow: ellipsis;
   font-size: 12px;
   color: var(--el-text-color-secondary);
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -466,9 +466,12 @@ onMounted(async () => {
 
 .area-breadcrumb {
   font-size: 14px;
+  line-height: 1.5;
 
   :deep(.el-breadcrumb__item) {
-    display: inline-block;
+    float: none;
+    display: inline-flex;
+    align-items: center;
   }
 }
 

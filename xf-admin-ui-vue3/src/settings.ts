@@ -63,6 +63,66 @@ export const themePalettePresets = [
       info: "#909399",
     },
   },
+  {
+    id: "emerald",
+    name: "Emerald",
+    description: "翡翠绿，清爽护眼，适合日常运营",
+    colors: {
+      primary: "#13A970",
+      success: "#00B42A",
+      warning: "#FF9A2E",
+      danger: "#F53F3F",
+      info: "#8D95A3",
+    },
+  },
+  {
+    id: "violet",
+    name: "Violet",
+    description: "优雅紫，个性鲜明，适合数据看板",
+    colors: {
+      primary: "#722ED1",
+      success: "#52C41A",
+      warning: "#FAAD14",
+      danger: "#FF4D4F",
+      info: "#86909C",
+    },
+  },
+  {
+    id: "cyan",
+    name: "Cyan",
+    description: "青瓷蓝绿，冷静专业，适合监控场景",
+    colors: {
+      primary: "#0FB5BA",
+      success: "#23C343",
+      warning: "#FF7D00",
+      danger: "#F76560",
+      info: "#909399",
+    },
+  },
+  {
+    id: "orange",
+    name: "Orange",
+    description: "活力暖橙，醒目亲和，适合业务一线",
+    colors: {
+      primary: "#FF7D00",
+      success: "#00B42A",
+      warning: "#FFB400",
+      danger: "#F53F3F",
+      info: "#86909C",
+    },
+  },
+  {
+    id: "slate",
+    name: "Slate",
+    description: "石墨灰蓝，低调沉稳，适合长时间使用",
+    colors: {
+      primary: "#4E5969",
+      success: "#00B42A",
+      warning: "#FF7D00",
+      danger: "#F53F3F",
+      info: "#8D95A3",
+    },
+  },
 ] as const satisfies readonly ThemePalettePreset[];
 
 export const defaultThemePalette = themePalettePresets[0];

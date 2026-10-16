@@ -1,7 +1,43 @@
 {
   "route": {
     "dashboard": "Dashboard",
-    "document": "Document"
+    "document": "Document",
+    "仪表盘": "Dashboard",
+    "订单中心": "Order Center",
+    "订单管理": "Order Management",
+    "货物编辑": "Cargo Edit",
+    "运单管理": "Waybill Management",
+    "调度中心": "Dispatch Center",
+    "运输任务": "Transport Task",
+    "取派件任务": "Pickup & Delivery Task",
+    "司机作业单": "Driver Job Sheet",
+    "运输在途": "In-Transit",
+    "告警中心": "Alarm Center",
+    "基础档案": "Basic Data",
+    "车辆管理": "Truck Management",
+    "车型管理": "Truck Type Management",
+    "车队管理": "Fleet Management",
+    "司机管理": "Driver Management",
+    "线路管理": "Route Management",
+    "线路类型": "Route Type",
+    "货物类型": "Cargo Type",
+    "会员管理": "Member Management",
+    "系统管理": "System Management",
+    "用户管理": "User Management",
+    "角色管理": "Role Management",
+    "菜单管理": "Menu Management",
+    "部门管理": "Department Management",
+    "组织架构": "Organization",
+    "岗位管理": "Post Management",
+    "字典管理": "Dictionary Management",
+    "参数配置": "Parameter Config",
+    "消息通知": "Message Center",
+    "操作日志": "Operation Log",
+    "租户管理": "Tenant Management",
+    "行政区划": "Region Data",
+    "个人中心": "Profile",
+    "表单填写": "Form Fill",
+    "运营监控大屏": "Ops Monitor"
   },
   "login": {
     "themeToggle": "Theme Switch",
@@ -100,6 +136,26 @@
       "elementPlus": {
         "name": "ElementD",
         "description": "Close to component defaults"
+      },
+      "emerald": {
+        "name": "Emerald",
+        "description": "Fresh green, easy on the eyes"
+      },
+      "violet": {
+        "name": "Violet",
+        "description": "Elegant purple for dashboards"
+      },
+      "cyan": {
+        "name": "Cyan",
+        "description": "Cool teal for monitoring"
+      },
+      "orange": {
+        "name": "Orange",
+        "description": "Warm and energetic"
+      },
+      "slate": {
+        "name": "Slate",
+        "description": "Low-key gray-blue, calm for long use"
       }
     },
     "showTagsView": "Show Tags View",
