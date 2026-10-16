@@ -11,6 +11,19 @@
           />
         </el-form-item>
 
+        <el-form-item prop="logType" label="日志类型">
+          <el-select
+            v-model="params.logType"
+            placeholder="全部"
+            clearable
+            style="width: 120px"
+            @change="handleQuery"
+          >
+            <el-option label="登录日志" value="LOGIN" />
+            <el-option label="操作日志" value="OPER" />
+          </el-select>
+        </el-form-item>
+
         <el-form-item prop="createTime" label="操作时间">
           <el-date-picker
             v-model="params.createTime"
@@ -34,6 +47,9 @@
     <el-card ref="tableWrapperRef" class="page-content" shadow="never">
       <div class="page-toolbar">
         <div class="page-toolbar__right" style="margin-left: auto">
+          <el-button type="primary" plain :loading="exporting" @click="handleExport">
+            <el-icon style="margin-right: 4px"><Download /></el-icon>导出
+          </el-button>
           <el-tooltip content="刷新" placement="top">
             <el-button class="page-icon-btn" @click="fetchData">
               <el-icon><Refresh /></el-icon>
@@ -140,7 +156,7 @@
 <script setup lang="ts">
 import { useFullscreen } from "@vueuse/core";
 import { type FormInstance, type TagProps } from "element-plus";
-import { FullScreen, Refresh } from "@element-plus/icons-vue";
+import { Download, FullScreen, Refresh } from "@element-plus/icons-vue";
 
 import LogAPI from "@/api/system/log";
 import type { LogItem, LogQueryParams } from "@/api/system/log";
@@ -169,10 +185,28 @@ const { loading, list, total, params, fetchData, handleQuery, handleResetQuery }
     pageSize: 10,
     keywords: "",
     createTime: undefined,
+    logType: undefined,
   },
   request: LogAPI.getPage,
   onBeforeReset: () => queryFormRef.value?.resetFields(),
 });
+
+// 导出（D-30 可导出审计痕迹）：按当前筛选条件下载 xlsx
+const exporting = ref(false);
+const handleExport = async () => {
+  exporting.value = true;
+  try {
+    const blob = await LogAPI.export({ ...params } as LogQueryParams);
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `审计日志_${new Date().toISOString().slice(0, 19).replace(/[T:]/g, "")}.xlsx`;
+    link.click();
+    URL.revokeObjectURL(url);
+  } finally {
+    exporting.value = false;
+  }
+};
 
 const detailVisible = ref(false);
 const detailData = ref<Partial<LogItem>>({});

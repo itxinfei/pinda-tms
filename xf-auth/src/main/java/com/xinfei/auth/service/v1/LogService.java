@@ -30,11 +30,28 @@ public class LogService {
 
     private final SysOperationLogMapper logMapper;
 
+    /** 单次导出行数上限：防全表导出拖垮内存（dev 单表量小，上线后由调度任务归档控制总量） */
+    public static final int EXPORT_MAX_ROWS = 50_000;
+
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final DateTimeFormatter DAY = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
+    /**
+     * 落一条日志（登录埋点 / 写请求拦截器共用）。createTime 显式赋值——
+     * 实体未标注 @TableField(fill)，不经过 AuditMetaObjectHandler；tenant_id 由租户插件填充。
+     */
+    public void record(SysOperationLog row) {
+        if (row.getCreateTime() == null) {
+            row.setCreateTime(LocalDateTime.now());
+        }
+        if (!StringUtils.hasText(row.getLogType())) {
+            row.setLogType(SysOperationLog.TYPE_OPER);
+        }
+        logMapper.insert(row);
+    }
+
     public PageResult<LogVO> page(long pageNum, long pageSize, String keywords,
-                                  String startTime, String endTime) {
+                                  String startTime, String endTime, String logType) {
         IPage<SysOperationLog> res = logMapper.selectPage(new Page<>(pageNum, pageSize),
                 Wrappers.<SysOperationLog>lambdaQuery()
                         .and(StringUtils.hasText(keywords), w -> w
@@ -42,9 +59,24 @@ public class LogService {
                                 .or().like(SysOperationLog::getOperatorName, keywords))
                         .ge(StringUtils.hasText(startTime), SysOperationLog::getCreateTime, parse(startTime))
                         .le(StringUtils.hasText(endTime), SysOperationLog::getCreateTime, parse(endTime))
+                        .eq(StringUtils.hasText(logType), SysOperationLog::getLogType, logType)
                         .orderByDesc(SysOperationLog::getId));
         List<LogVO> list = res.getRecords().stream().map(this::toVO).toList();
         return new PageResult<>(list, res.getTotal());
+    }
+
+    /** 导出：与分页同筛选条件，封顶 {@link #EXPORT_MAX_ROWS}，按 id 倒序 */
+    public List<SysOperationLog> listForExport(String keywords, String startTime,
+                                               String endTime, String logType) {
+        return logMapper.selectList(Wrappers.<SysOperationLog>lambdaQuery()
+                .and(StringUtils.hasText(keywords), w -> w
+                        .like(SysOperationLog::getIp, keywords)
+                        .or().like(SysOperationLog::getOperatorName, keywords))
+                .ge(StringUtils.hasText(startTime), SysOperationLog::getCreateTime, parse(startTime))
+                .le(StringUtils.hasText(endTime), SysOperationLog::getCreateTime, parse(endTime))
+                .eq(StringUtils.hasText(logType), SysOperationLog::getLogType, logType)
+                .orderByDesc(SysOperationLog::getId)
+                .last("LIMIT " + EXPORT_MAX_ROWS));
     }
 
     /** 访问趋势：按天 PV/UV，日期区间内缺失的天补 0 */

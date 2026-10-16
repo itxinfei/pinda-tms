@@ -8,14 +8,21 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 操作日志。写入由 AOP/拦截器落库（本期先建表与读接口）。
+ * 操作/登录日志。写入由登录埋点与写请求拦截器落库（2110 迁移单表 + log_type 判别口径）。
  */
 @Data
 @TableName("sys_operation_log")
 public class SysOperationLog {
 
+    /** 日志类型：OPER 操作 / LOGIN 登录（《62》§4.3 口径，2110 迁移定案） */
+    public static final String TYPE_OPER = "OPER";
+    public static final String TYPE_LOGIN = "LOGIN";
+
     @TableId(type = IdType.AUTO)
     private Long id;
+
+    /** OPER 操作 / LOGIN 登录（缺省 OPER 由表默认值兜底，但登录写入显式赋值） */
+    private String logType;
 
     private String module;
     private String actionType;

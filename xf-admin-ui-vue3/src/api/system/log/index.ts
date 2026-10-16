@@ -23,6 +23,18 @@ const LogAPI = {
   },
 
   /**
+   * 审计日志导出（D-30）：xlsx 二进制流
+   */
+  export(queryParams: LogQueryParams) {
+    return request<unknown, Blob>({
+      url: `${LOG_BASE_URL}/export`,
+      method: "get",
+      params: queryParams,
+      responseType: "blob",
+    });
+  },
+
+  /**
    * 获取访问趋势统计
    */
   getVisitTrend(queryParams: VisitTrendQueryParams) {

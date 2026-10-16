@@ -10,6 +10,8 @@ export interface LogQueryParams extends BaseQueryParams {
   keywords?: string;
   /** 操作时间 */
   createTime?: [string, string];
+  /** 日志类型：OPER 操作 / LOGIN 登录，空=全部 */
+  logType?: string;
 }
 
 /**
