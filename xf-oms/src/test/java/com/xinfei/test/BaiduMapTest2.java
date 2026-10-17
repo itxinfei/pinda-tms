@@ -19,7 +19,12 @@ import java.util.Map;
  */
 public class BaiduMapTest2 {
     public static void main(String[] args) throws Exception{
-        String ak = "UEBQm9c3KZ5LrsO2C2qsOAs1eSdLvlzM";
+        // AK 禁硬编码入库：本地调试传 -Dbaidu.map.ak=<服务端类型AK>，未传则跳过
+        String ak = System.getProperty("baidu.map.ak", "");
+        if (ak.isBlank()) {
+            System.out.println("未配置 -Dbaidu.map.ak，跳过联调（真实第三方凭证禁止写进代码）");
+            return;
+        }
         String origin = "40.01116,116.339303"; //起点经纬度，格式为：纬度,经度；小数点后不超过6位
         String destination = "39.936404,116.452562"; //终点经纬度，格式为：纬度,经度；小数点后不超过6位
         String httpUrl = "http://api.map.baidu.com/directionlite/v1/driving?origin="

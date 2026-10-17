@@ -15,7 +15,12 @@ import java.util.Map;
  */
 public class BaiduMapTest {
     public static void main(String[] args) throws Exception{
-        String ak = "UEBQm9c3KZ5LrsO2C2qsOAs1eSdLvlzM";//注意，ak类型必须为服务端类型
+        // AK 禁硬编码入库：本地调试传 -Dbaidu.map.ak=<服务端类型AK>，未传则跳过
+        String ak = System.getProperty("baidu.map.ak", "");
+        if (ak.isBlank()) {
+            System.out.println("未配置 -Dbaidu.map.ak，跳过联调（真实第三方凭证禁止写进代码）");
+            return;
+        }
         String address = "北京市育新花园小区";
         String httpUrl = "http://api.map.baidu.com/geocoding/v3/?address=" + address + "&output=json&ak=" + ak;
 

@@ -144,10 +144,10 @@ public class EntCoordSyncJob {
                 }
             }
         } catch (MalformedURLException e) {
-            log.error("[坐标同步] 无效的URL: {}", url, e);
+            log.error("[坐标同步] 无效的URL: {}", maskAk(url), e);
             return null;
         } catch (IOException e) {
-            log.error("[坐标同步] 请求失败: {}", url, e);
+            log.error("[坐标同步] 请求失败: {}", maskAk(url), e);
             return null;
         } finally {
             if (conn != null) {
@@ -155,6 +155,13 @@ public class EntCoordSyncJob {
             }
         }
         return json.toString();
+    }
+
+    /**
+     * 日志脱敏：URL 中 ak 参数值替换为 ***，防真实第三方凭证进日志（CFG-01 二期）
+     */
+    static String maskAk(String url) {
+        return url == null ? null : url.replaceAll("(ak=)[^&]*", "$1***");
     }
 
     /**

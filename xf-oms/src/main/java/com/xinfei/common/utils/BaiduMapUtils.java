@@ -218,10 +218,10 @@ public class BaiduMapUtils {
                 }
             }
         } catch (MalformedURLException e) {
-            log.error("百度地图API URL异常: {}", httpUrl, e);
+            log.error("百度地图API URL异常: {}", maskAk(httpUrl), e);
             return "";
         } catch (IOException e) {
-            log.error("百度地图API请求IO异常: {}", httpUrl, e);
+            log.error("百度地图API请求IO异常: {}", maskAk(httpUrl), e);
             return "";
         } finally {
             if (urlConnection != null) {
@@ -230,5 +230,12 @@ public class BaiduMapUtils {
         }
         log.debug(json.toString());
         return json.toString();
+    }
+
+    /**
+     * 日志脱敏：URL 中 ak 参数值替换为 ***，防真实第三方凭证进日志（CFG-01 二期）
+     */
+    static String maskAk(String url) {
+        return url == null ? null : url.replaceAll("(ak=)[^&]*", "$1***");
     }
 }
