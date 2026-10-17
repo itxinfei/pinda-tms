@@ -7,6 +7,7 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.LineBasedFrameDecoder;
 import io.netty.handler.codec.string.StringDecoder;
@@ -56,9 +57,11 @@ public class NettyServer implements CommandLineRunner {
                 .option(ChannelOption.SO_BACKLOG, 128)// 设置缓存
                 .childOption(ChannelOption.SO_KEEPALIVE, true)
                 .channel(NioServerSocketChannel.class)// 指定使用NioServerSocketChannel产生一个Channel用来接收连接
-                .childHandler(new ChannelInitializer<NioServerSocketChannel>() {
+                // childHandler 接收的是每个入站连接（NioSocketChannel），
+                // 泛型误写 NioServerSocketChannel 会致 initChannel 每连接 ClassCastException（2026-10-17 修复）
+                .childHandler(new ChannelInitializer<SocketChannel>() {
                     @Override
-                    protected void initChannel(NioServerSocketChannel ch) {
+                    protected void initChannel(SocketChannel ch) {
                         // 报文约定：以换行符 \n 分隔。LineBasedFrameDecoder 解决 TCP 拆包/粘包，
                         // 单帧最大 4096 字节，超出抛 TooLongFrameException（由 exceptionCaught 关连接）
                         ch.pipeline().addLast(new LineBasedFrameDecoder(4096));
