@@ -137,10 +137,30 @@ export function createLabeledMarker(
   });
   map.addOverlay(marker);
   map.addOverlay(label);
+  // label 与 marker 是两个独立覆盖物：只给 marker 绑事件时，用户点最显眼的文字标签毫无反应
+  // （调度一张图选车点不中，2026-10-17 修复）。label 实测支持 addEventListener，一并绑上。
+  // label 引用回挂到 marker，供 highlightMarker 改选中态样式。
+  (marker as any).__label = label;
+  (marker as any).__bg = background;
   if (onClick) {
     marker.addEventListener("click", onClick);
+    label.addEventListener("click", onClick);
   }
   return marker;
+}
+
+/**
+ * 标注选中态高亮：给文字标签加白色描边 + 主色外环。
+ *
+ * 派单必须先选车，选中后没有任何视觉反馈时用户无法判断自己到底选没选上。
+ */
+export function highlightMarker(marker: any, active: boolean) {
+  const label = marker?.__label;
+  if (!label || typeof label.setStyle !== "function") return;
+  label.setStyle({
+    border: active ? "2px solid #ffffff" : "none",
+    boxShadow: active ? "0 0 0 2px #2b6cff" : "none",
+  });
 }
 
 /**

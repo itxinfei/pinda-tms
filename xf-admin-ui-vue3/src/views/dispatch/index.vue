@@ -12,7 +12,7 @@
               v-hasPerm="['dispatch:board:assign']"
               type="primary"
               size="small"
-              :disabled="!selected.length || !activeTruck"
+              :disabled="!selected.length"
               @click="openAssign"
             >
               一键派单
@@ -91,6 +91,9 @@
               <span><i class="dot dot--order" />待调度订单 {{ orders.length }}</span>
               <span><i class="dot dot--truck" />在途车辆 {{ trucks.length }}</span>
               <span><i class="dot dot--line" />线路 {{ lines.length }}</span>
+              <el-tag v-if="activeTruck" type="success" size="small" effect="dark">
+                已选车辆：{{ truckLabel(activeTruck) }}
+              </el-tag>
               <el-button size="small" :icon="Refresh" @click="loadAll">刷新</el-button>
             </div>
           </div>
@@ -115,7 +118,33 @@
           {{ selected.length }} 张<template v-if="startOrgName"> （起始网点：{{ startOrgName }}）</template>
         </el-descriptions-item>
         <el-descriptions-item label="承运车辆">
-          {{ activeTruck?.licensePlate || activeTruck?.name || activeTruck?.businessId }}
+          <el-select
+            v-model="selectedTruckId"
+            filterable
+            remote
+            clearable
+            reserve-keyword
+            size="small"
+            placeholder="输入车牌搜索并选择"
+            :remote-method="searchTrucks"
+            :loading="truckLoading"
+            class="dispatch-board__truck-select"
+          >
+            <el-option
+              v-for="truck in truckOptions"
+              :key="truck.id"
+              :label="truck.licensePlate || truck.id"
+              :value="String(truck.id)"
+            >
+              <span>{{ truck.licensePlate || truck.id }}</span>
+              <span class="dispatch-board__truck-option-meta">
+                {{ truck.fleet?.name || truck.truckType?.name || "" }}
+              </span>
+            </el-option>
+          </el-select>
+          <div v-if="activeTruck" class="dispatch-board__truck-hint">
+            地图点选：{{ truckLabel(activeTruck) }}
+          </div>
         </el-descriptions-item>
         <el-descriptions-item label="目的网点">{{ targetLine?.endOrgName || "按线路自动匹配" }}</el-descriptions-item>
         <el-descriptions-item v-if="targetLine" label="线路">
@@ -149,10 +178,12 @@ import DispatchAPI, {
   type DispatchOrderPoint,
 } from "@/api/dispatch";
 import TraceAPI, { type LocationRecordItem } from "@/api/trace";
+import TruckAPI, { type TruckRecord } from "@/api/truck";
 import MapConfigAPI from "@/api/map-config";
 import {
   createLabeledMarker,
   fitViewport,
+  highlightMarker,
   loadBaiduMap,
   moveMarker,
   wgs84ToBd09,
@@ -186,6 +217,10 @@ const selectAll = ref(false);
 const activeOrderId = ref("");
 const activeTruck = ref<LocationRecordItem | null>(null);
 const assignVisible = ref(false);
+/** 派单弹窗里的车辆下拉：地图点选只是快捷方式，最终以本值为准 */
+const truckOptions = ref<TruckRecord[]>([]);
+const truckLoading = ref(false);
+const selectedTruckId = ref("");
 
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 const orderMarkers = new Map<string, any>();
@@ -327,12 +362,52 @@ function renderTrucks() {
     }
     const marker = createLabeledMarker(instance, BMap, point, item.licensePlate || item.name || "车辆", {
       background: cssVar("--el-color-primary", "#FF0033"),
-      onClick: () => {
-        activeTruck.value = item;
-      },
+      onClick: () => selectTruck(item),
     });
     truckMarkers.set(key, marker);
   });
+  syncTruckHighlight();
+}
+
+/** 车辆标注显示名 */
+function truckLabel(item: LocationRecordItem): string {
+  return item.licensePlate || item.name || (item.businessId == null ? "-" : String(item.businessId));
+}
+
+/**
+ * 选中车辆（地图点选的快捷入口）
+ *
+ * 同时回写派单弹窗的下拉，避免「地图选了、下拉还空」的两处状态不一致；
+ * 选中后给标注描边高亮，否则用户无法确认自己到底点没点上。
+ */
+function selectTruck(item: LocationRecordItem) {
+  activeTruck.value = item;
+  selectedTruckId.value = item.businessId == null ? "" : String(item.businessId);
+  syncTruckHighlight();
+  ElMessage.success(`已选择车辆 ${truckLabel(item)}`);
+}
+
+/** 同步地图车辆标注的选中态描边 */
+function syncTruckHighlight() {
+  const activeKey = activeTruck.value
+    ? `${activeTruck.value.businessId}#${activeTruck.value.businessType}`
+    : "";
+  truckMarkers.forEach((marker, key) => highlightMarker(marker, key === activeKey));
+}
+
+/** 车辆下拉远程搜索（车牌模糊） */
+async function searchTrucks(keyword: string) {
+  truckLoading.value = true;
+  try {
+    const res = await TruckAPI.page({
+      page: 1,
+      pageSize: 50,
+      licensePlate: keyword?.trim() || undefined,
+    });
+    truckOptions.value = res?.items ?? [];
+  } finally {
+    truckLoading.value = false;
+  }
 }
 
 function renderLines() {
@@ -415,20 +490,29 @@ function openAssign() {
     ElMessage.warning("勾选订单须为同一网点的入库订单，请按网点分别派单");
     return;
   }
-  if (!activeTruck.value) {
-    ElMessage.warning("请先在地图上点击选择承运车辆");
-    return;
+  // 车辆改为弹窗内下拉选择，地图上已点选时作为默认值带出（地图点选只是快捷方式）
+  if (activeTruck.value) {
+    selectedTruckId.value = String(activeTruck.value.businessId ?? "");
+  }
+  if (!truckOptions.value.length) {
+    searchTrucks("");
   }
   assignVisible.value = true;
 }
 
 async function doAssign() {
-  if (!activeTruck.value) return;
+  const truckId =
+    selectedTruckId.value ||
+    (activeTruck.value ? String(activeTruck.value.businessId ?? "") : "");
+  if (!truckId) {
+    ElMessage.warning("请选择承运车辆");
+    return;
+  }
   assigning.value = true;
   try {
     const result = (await DispatchAPI.assign({
       orderIds: selected.value,
-      truckId: String(activeTruck.value.businessId),
+      truckId,
     })) as DispatchAssignResult;
     ElMessage.success(`派单成功：生成 ${result?.transportOrderCount ?? 0} 张运输单`);
     assignVisible.value = false;
@@ -629,6 +713,26 @@ onBeforeUnmount(() => {
 
   &__assign-alert {
     margin-top: 12px;
+  }
+
+  // 派单弹窗车辆下拉：撑满描述项宽度，避免窄栏被挤成两三字符
+  &__truck-select {
+    width: 100%;
+    max-width: 320px;
+  }
+
+  // 下拉项右侧的车队/车型副标题，右对齐弱化
+  &__truck-option-meta {
+    float: right;
+    margin-left: 12px;
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+  }
+
+  &__truck-hint {
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
   }
 }
 
