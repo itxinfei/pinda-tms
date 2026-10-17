@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.xinfei.common.json.BigDecimalFormat;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -56,17 +57,23 @@ public class LocationRecord implements Serializable {
     private String licensePlate;
 
     /**
-     * 经度（BD09）
+     * 经度（存库 WGS84；查询出参经 fillDisplayCoords 归一恒为 WGS84）
+     *
+     * <p>坐标需 6 位精度（全局 BigDecimalSerializer 默认 ##0.00 为金额设计，
+     * 2 位约 1km 颗粒，坐标不可用）。</p>
      */
+    @BigDecimalFormat("##0.000000")
     private BigDecimal longitude;
 
     /**
-     * 纬度（BD09）
+     * 纬度（存库 WGS84；查询出参经 fillDisplayCoords 归一恒为 WGS84）
      */
+    @BigDecimalFormat("##0.000000")
     private BigDecimal latitude;
 
     /**
-     * 坐标系: 1WGS84 2GCJ02 3BD09 4CGCS2000；落库前坐标已统一为 BD09，故恒为 3
+     * 坐标系: 1WGS84 2GCJ02 3BD09 4CGCS2000；2026-10-17 起新数据统一落 1（WGS84），
+     * 历史行保留原行标（多为 3=BD09），出参按行标归一
      */
     private Integer coordSystem;
 
@@ -103,11 +110,13 @@ public class LocationRecord implements Serializable {
      * 转换在查询出口由 {@code CoordTransform} 完成。</p>
      */
     @TableField(exist = false)
+    @BigDecimalFormat("##0.000000")
     private BigDecimal bd09Lng;
 
     /**
      * BD09 纬度（查询出参，按 coordSystem 动态转换，不落库）
      */
     @TableField(exist = false)
+    @BigDecimalFormat("##0.000000")
     private BigDecimal bd09Lat;
 }
