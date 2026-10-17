@@ -36,8 +36,9 @@ import java.util.Map;
  *
  * <p>基于落库的 {@link LocationRecord}（iot_truck_location 表）提供：
  * 轨迹回放、最近位置、批量最新位置、按运输任务批量查询、分页能力，供管理端车辆轨迹监控、
- * 客户小程序订单轨迹使用。查询出口统一附加 BD09 坐标（bd09Lng/bd09Lat），
- * 管理端百度地图直接渲染，前端不做坐标转换（BDS-01）。</p>
+ * 客户小程序订单轨迹使用。查询出口统一归一坐标口径（2026-10-17 拍板）：
+ * {@code lng/lat} 恒为 WGS84（移动三端自行 wgs84→gcj02 渲染），
+ * {@code bd09Lng/bd09Lat} 恒为 BD09（管理端百度地图直渲染，前端不做转换，BDS-01）。</p>
  */
 @Slf4j
 @RestController
@@ -75,7 +76,7 @@ public class GpsTraceController {
         // 按上报时间升序，还原行驶轨迹
         wrapper.orderByAsc(LocationRecord::getReportTime);
         List<LocationRecord> records = locationRecordService.list(wrapper);
-        fillBd09(records);
+        fillDisplayCoords(records);
         return Result.ok().put("data", records);
     }
 
@@ -104,7 +105,7 @@ public class GpsTraceController {
         wrapper.last("limit 1");
         LocationRecord record = locationRecordService.getOne(wrapper);
         if (record != null) {
-            fillBd09(Collections.singletonList(record));
+            fillDisplayCoords(Collections.singletonList(record));
         }
         return Result.ok().put("data", record);
     }
@@ -129,7 +130,7 @@ public class GpsTraceController {
             unique.putIfAbsent(record.getBusinessId() + "#" + record.getBusinessType(), record);
         }
         List<LocationRecord> data = new ArrayList<>(unique.values());
-        fillBd09(data);
+        fillDisplayCoords(data);
         return Result.ok().put("data", data);
     }
 
@@ -230,12 +231,17 @@ public class GpsTraceController {
     }
 
     /**
-     * 按 coordSystem 统一换算 BD09 坐标并填充到出参（bd09Lng/bd09Lat，不落库）
+     * 查询出参坐标归一化（不落库，按行标 coordSystem 分支）：
+     * <ul>
+     *   <li>{@code lng/lat} 恒为 <b>WGS84</b>：历史 BD09/GCJ02 行反解归一，移动三端
+     *       拿到后做 wgs84→gcj02 渲染才正确（2026-10-17 存库口径统一 WGS84 配套）；</li>
+     *   <li>{@code bd09Lng/bd09Lat} 恒为 <b>BD09</b>：管理端百度底图渲染直用，口径不变。</li>
+     * </ul>
      *
-     * <p>现网落库口径已统一 BD09（coordSystem=3），正常原样透出；
-     * 对历史 WGS84/GCJ02 数据按对应公式转换，保证前端拿到的一定是百度坐标。</p>
+     * <p>先基于库内原值算 BD09 出参，再反解改写 lng/lat，避免串扰。
+     * 行标 4(CGCS2000) 按 WGS84 处理（民用与 WGS84 无实际差异）。</p>
      */
-    private void fillBd09(List<LocationRecord> records) {
+    private void fillDisplayCoords(List<LocationRecord> records) {
         if (records == null || records.isEmpty()) {
             return;
         }
@@ -243,20 +249,32 @@ public class GpsTraceController {
             if (record.getLongitude() == null || record.getLatitude() == null) {
                 continue;
             }
-            double lng = record.getLongitude().doubleValue();
-            double lat = record.getLatitude().doubleValue();
+            double srcLng = record.getLongitude().doubleValue();
+            double srcLat = record.getLatitude().doubleValue();
             int coordCode = record.getCoordSystem() != null
                     ? record.getCoordSystem() : CoordSystem.BD09.getNumericCode();
+
             double[] bd09;
-            if (coordCode == CoordSystem.WGS84.getNumericCode()) {
-                bd09 = CoordTransform.wgs84ToBd09(lng, lat);
-            } else if (coordCode == CoordSystem.GCJ02.getNumericCode()) {
-                bd09 = CoordTransform.gcj02ToBd09(lng, lat);
+            if (coordCode == CoordSystem.GCJ02.getNumericCode()) {
+                bd09 = CoordTransform.gcj02ToBd09(srcLng, srcLat);
+            } else if (coordCode == CoordSystem.WGS84.getNumericCode()
+                    || coordCode == CoordSystem.CGCS2000.getNumericCode()) {
+                bd09 = CoordTransform.wgs84ToBd09(srcLng, srcLat);
             } else {
-                bd09 = new double[]{lng, lat};
+                bd09 = new double[]{srcLng, srcLat};
             }
             record.setBd09Lng(BigDecimal.valueOf(bd09[0]).setScale(6, RoundingMode.HALF_UP));
             record.setBd09Lat(BigDecimal.valueOf(bd09[1]).setScale(6, RoundingMode.HALF_UP));
+
+            if (coordCode == CoordSystem.BD09.getNumericCode()) {
+                double[] wgs = CoordTransform.bd09ToWgs84(srcLng, srcLat);
+                record.setLongitude(BigDecimal.valueOf(wgs[0]).setScale(6, RoundingMode.HALF_UP));
+                record.setLatitude(BigDecimal.valueOf(wgs[1]).setScale(6, RoundingMode.HALF_UP));
+            } else if (coordCode == CoordSystem.GCJ02.getNumericCode()) {
+                double[] wgs = CoordTransform.gcj02ToWgs84(srcLng, srcLat);
+                record.setLongitude(BigDecimal.valueOf(wgs[0]).setScale(6, RoundingMode.HALF_UP));
+                record.setLatitude(BigDecimal.valueOf(wgs[1]).setScale(6, RoundingMode.HALF_UP));
+            }
         }
     }
 }

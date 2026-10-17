@@ -15,7 +15,8 @@ import java.time.LocalDateTime;
  *
  * <p>由 {@code RabbitGpsTraceConsumer} 将上报协议模型 {@link LocationEntity}
  * 在落库边界转换而来。类型字段（business_type/coord_system）用数字枚举，
- * 坐标用 DECIMAL，上报时间用 DATETIME。tenant_id 不声明，由多租户插件在 insert 时补入。</p>
+ * 坐标用 DECIMAL，上报时间用 DATETIME。tenant_id 不声明，由多租户插件在 insert 时补入。
+ * 坐标存库统一 WGS84（coord_system=1，2026-10-17 拍板）；bd09Lng/bd09Lat 为查询出参瞬态字段。</p>
  */
 @Data
 @TableName("iot_truck_location")

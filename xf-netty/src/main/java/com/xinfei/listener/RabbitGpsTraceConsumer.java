@@ -304,6 +304,7 @@ public class RabbitGpsTraceConsumer {
 
         String coordSystem = location.getCoordSystem();
         if (!StringUtils.hasText(coordSystem)) {
+            // 缺省按 BD09 解释（设备侧语义）；落库前统一反解为 WGS84，勿改成存库目标
             location.setCoordSystem(CoordSystem.BD09.getCode());
         } else if (!CoordSystem.isValid(coordSystem)) {
             log.warn("[GPS消费] 坐标系非法被丢弃: businessId={}, coordSystem={}", location.getBusinessId(), coordSystem);
@@ -321,17 +322,19 @@ public class RabbitGpsTraceConsumer {
         double lng = Double.parseDouble(location.getLng().trim());
         double lat = Double.parseDouble(location.getLat().trim());
         CoordSystem cs = CoordSystem.of(location.getCoordSystem());
-        double[] bd09;
+        // 统一 WGS84 落库（2026-10-17 拍板：存库 GPS 原生坐标，渲染边界按底图厂商转换）
+        double[] wgs84;
         if (cs == CoordSystem.BD09) {
-            bd09 = new double[]{lng, lat};
+            wgs84 = CoordTransform.bd09ToWgs84(lng, lat);
         } else if (cs == CoordSystem.GCJ02) {
-            bd09 = CoordTransform.gcj02ToBd09(lng, lat);
+            wgs84 = CoordTransform.gcj02ToWgs84(lng, lat);
         } else {
-            bd09 = CoordTransform.wgs84ToBd09(lng, lat);
+            // WGS84 / CGCS2000（民用与 WGS84 无实际差异）原样
+            wgs84 = new double[]{lng, lat};
         }
-        location.setLng(CoordTransform.toFixed6(bd09[0]));
-        location.setLat(CoordTransform.toFixed6(bd09[1]));
-        location.setCoordSystem(CoordSystem.BD09.getCode());
+        location.setLng(CoordTransform.toFixed6(wgs84[0]));
+        location.setLat(CoordTransform.toFixed6(wgs84[1]));
+        location.setCoordSystem(CoordSystem.WGS84.getCode());
 
         String cacheKey = location.getBusinessId() + "#" + location.getType();
         List<LocationEntity> tracePoints = TRACE_CACHE.computeIfAbsent(cacheKey, k ->
@@ -346,7 +349,7 @@ public class RabbitGpsTraceConsumer {
                 }
             }
             long count = TRACE_COUNT.incrementAndGet();
-            log.debug("[GPS消费] 轨迹点接收(BD09): businessId={}, lng={}, lat={}, source={}, 累计处理: {}",
+            log.debug("[GPS消费] 轨迹点接收(WGS84): businessId={}, lng={}, lat={}, source={}, 累计处理: {}",
                     location.getBusinessId(), location.getLng(), location.getLat(), location.getSource(), count);
             checkAnomalies(location, cacheKey, tracePoints);
         }
@@ -371,8 +374,8 @@ public class RabbitGpsTraceConsumer {
         record.setTeam(location.getTeam());
         record.setTransportTaskId(IdConverter.toLong(location.getTransportTaskId()));
         record.setCreateTime(LocalDateTime.now());
-        // 坐标落库前已统一转换为 BD09
-        record.setCoordSystem(CoordSystem.BD09.getNumericCode());
+        // 坐标落库前已统一转换为 WGS84（存库口径，2026-10-17 拍板）
+        record.setCoordSystem(CoordSystem.WGS84.getNumericCode());
         record.setSource(location.getSource());
         return record;
     }

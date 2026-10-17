@@ -8,15 +8,14 @@ import java.util.Locale;
  * <p>纯 Java 实现，无任何第三方依赖。采用互联网公开的标准转换公式（eviltransform）：
  * <ul>
  *   <li>WGS84：GPS 原始坐标系，GPS/北斗终端原始输出；CGCS2000 民用坐标与 WGS84
- *       在米级以下无实际差异，本系统按 WGS84 处理。</li>
+ *       在米级以下无实际差异，本系统按 WGS84 处理。<b>本系统存库统一口径（2026-10-17 拍板）</b>。</li>
  *   <li>GCJ02：国测局火星坐标系（高德/腾讯地图）。</li>
- *   <li>BD09：百度坐标系（本系统存库统一口径，与后端 BaiduMapUtils 一致）。</li>
+ *   <li>BD09：百度坐标系（管理端百度底图的渲染口径）。</li>
  * </ul>
- * 中国境外 WGS84→GCJ02 不加偏移（GCJ02 仅在中国大陆有效）；GCJ02→BD09 为纯数学
- * 公式（其中含百度固定常量偏移），境外结果无实际业务意义。本系统两个上报入口均已
- * 拒绝境外坐标，CoordTransform 实际只处理境内数据。</p>
- *
- * <p>注意：GCJ02 与 BD09 之间不可逆，反向转换为近似值；本系统设备上报只做正向转换。</p>
+ * 中国境外 WGS84→GCJ02 不加偏移（GCJ02 仅在中国大陆有效）；GCJ02↔BD09 为纯数学
+ * 公式（含百度固定常量偏移），反向为近似逆变换（往返误差约米级，eviltransform 通用做法，
+ * 小于 GPS 本身定位精度）。本系统两个上报入口均已拒绝境外坐标，CoordTransform
+ * 实际只处理境内数据。</p>
  *
  * @author Claude Code
  * @since 2026-10-07
@@ -91,15 +90,23 @@ public final class CoordTransform {
         if (outOfChina(lng, lat)) {
             return new double[]{lng, lat};
         }
-        double dLat = transformLat(lng - 105.0, lat - 35.0);
-        double dLng = transformLng(lng - 105.0, lat - 35.0);
-        double radLat = lat / 180.0 * PI;
-        double magic = Math.sin(radLat);
-        magic = 1 - EE * magic * magic;
-        double sqrtMagic = Math.sqrt(magic);
-        dLat = (dLat * 180.0) / ((A * (1 - EE)) / (magic * sqrtMagic) * PI);
-        dLng = (dLng * 180.0) / (A / sqrtMagic * Math.cos(radLat) * PI);
-        return new double[]{lng + dLng, lat + dLat};
+        double[] delta = gcj02Offset(lng, lat);
+        return new double[]{lng + delta[0], lat + delta[1]};
+    }
+
+    /**
+     * GCJ02 转 WGS84（逆变换：在 GCJ02 点求偏移量并扣除，一次近似误差约米级）
+     *
+     * @param lng GCJ02 经度
+     * @param lat GCJ02 纬度
+     * @return 长度 2 的数组：[WGS84 经度, WGS84 纬度]；境外原样返回
+     */
+    public static double[] gcj02ToWgs84(double lng, double lat) {
+        if (outOfChina(lng, lat)) {
+            return new double[]{lng, lat};
+        }
+        double[] delta = gcj02Offset(lng, lat);
+        return new double[]{lng - delta[0], lat - delta[1]};
     }
 
     /**
@@ -118,6 +125,21 @@ public final class CoordTransform {
     }
 
     /**
+     * BD09 转 GCJ02（gcj02ToBd09 的逆公式，近似值）
+     *
+     * @param lng BD09 经度
+     * @param lat BD09 纬度
+     * @return 长度 2 的数组：[GCJ02 经度, GCJ02 纬度]
+     */
+    public static double[] bd09ToGcj02(double lng, double lat) {
+        double x = lng - 0.0065;
+        double y = lat - 0.006;
+        double z = Math.sqrt(x * x + y * y) - 0.00002 * Math.sin(y * X_PI);
+        double theta = Math.atan2(y, x) - 0.000003 * Math.cos(x * X_PI);
+        return new double[]{z * Math.cos(theta), z * Math.sin(theta)};
+    }
+
+    /**
      * WGS84 转 BD09（先转 GCJ02 再转 BD09）
      *
      * @param lng WGS84 经度
@@ -127,6 +149,37 @@ public final class CoordTransform {
     public static double[] wgs84ToBd09(double lng, double lat) {
         double[] gcj = wgs84ToGcj02(lng, lat);
         return gcj02ToBd09(gcj[0], gcj[1]);
+    }
+
+    /**
+     * BD09 转 WGS84（先逆转 GCJ02 再逆转 WGS84，近似值；本系统历史 BD09 数据归一出参用）
+     *
+     * @param lng BD09 经度
+     * @param lat BD09 纬度
+     * @return 长度 2 的数组：[WGS84 经度, WGS84 纬度]；境外原样返回
+     */
+    public static double[] bd09ToWgs84(double lng, double lat) {
+        double[] gcj = bd09ToGcj02(lng, lat);
+        return gcj02ToWgs84(gcj[0], gcj[1]);
+    }
+
+    /**
+     * GCJ02 偏移量（正向在 WGS84 点、逆向在 GCJ02 点调用，均为该点处偏移的近似扣除）
+     *
+     * @param lng 参考经度
+     * @param lat 参考纬度
+     * @return 长度 2 的数组：[经度偏移, 纬度偏移]
+     */
+    private static double[] gcj02Offset(double lng, double lat) {
+        double dLat = transformLat(lng - 105.0, lat - 35.0);
+        double dLng = transformLng(lng - 105.0, lat - 35.0);
+        double radLat = lat / 180.0 * PI;
+        double magic = Math.sin(radLat);
+        magic = 1 - EE * magic * magic;
+        double sqrtMagic = Math.sqrt(magic);
+        dLat = (dLat * 180.0) / ((A * (1 - EE)) / (magic * sqrtMagic) * PI);
+        dLng = (dLng * 180.0) / (A / sqrtMagic * Math.cos(radLat) * PI);
+        return new double[]{dLng, dLat};
     }
 
     /**
