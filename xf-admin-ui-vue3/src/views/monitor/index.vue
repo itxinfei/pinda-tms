@@ -93,12 +93,7 @@ import { ElMessage } from "element-plus";
 import { Search, VideoPause, VideoPlay } from "@element-plus/icons-vue";
 import TraceAPI, { type LocationRecordItem } from "@/api/trace";
 import MapConfigAPI from "@/api/map-config";
-import {
-  createLabeledMarker,
-  fitViewport,
-  loadBaiduMap,
-  moveMarker,
-} from "@/utils/baidu-map";
+import { createMapProvider, type LngLat, type MapProvider } from "@/utils/map";
 
 defineOptions({ name: "Monitor" });
 
@@ -121,7 +116,8 @@ const mapError = ref("");
 const vehicles = ref<LocationRecordItem[]>([]);
 
 // ===== 地图与实时覆盖物 =====
-let BMap: any = null;
+/** 厂商无关地图 provider（批1 抽象层；vendor 由 map-config 下发，缺省百度） */
+let provider: MapProvider = createMapProvider();
 let map: any = null;
 /** 实时 marker 池：key = businessId#businessType，轮询增量更新位置 */
 const markerMap = new Map<string, any>();
@@ -162,10 +158,12 @@ function formatTime(value?: string) {
   return String(value ?? "").slice(0, 19) || "--";
 }
 
-function pointOf(item: LocationRecordItem): any {
-  const lng = Number(item.bd09Lng ?? item.longitude);
-  const lat = Number(item.bd09Lat ?? item.latitude);
-  return new BMap.Point(lng, lat);
+/** 轨迹点 → 渲染坐标（bd09* 为后端已转好的百度底图坐标，缺省回落原始值） */
+function lngLatOf(item: { bd09Lng?: number | string | null; bd09Lat?: number | string | null; longitude?: number | string | null; latitude?: number | string | null }): LngLat {
+  return {
+    lng: Number(item.bd09Lng ?? item.longitude),
+    lat: Number(item.bd09Lat ?? item.latitude),
+  };
 }
 
 /** 判定列表项是否为当前模式下的选中车辆 */
@@ -185,8 +183,9 @@ const activeKey = ref("");
 // ===== 初始化 =====
 onMounted(async () => {
   try {
-    const { ak } = await MapConfigAPI.get();
-    BMap = await loadBaiduMap(ak);
+    const { ak, vendor } = await MapConfigAPI.get();
+    provider = createMapProvider(vendor);
+    await provider.load(ak);
     await nextTick();
     initMap();
     await loadVehicles();
@@ -217,9 +216,12 @@ function initMap() {
   if (!mapRef.value) {
     return;
   }
-  map = new BMap.Map(mapRef.value, { enableMapClick: false });
-  map.centerAndZoom(new BMap.Point(104.19, 35.86), 5); // 全国视角，加载到数据后自适应
-  map.enableScrollWheelZoom(true);
+  map = provider.createMap(mapRef.value, {
+    center: { lng: 104.19, lat: 35.86 }, // 全国视角，加载到数据后自适应
+    zoom: 5,
+    enableMapClick: false,
+    scrollWheelZoom: true,
+  });
 }
 
 async function loadVehicles() {
@@ -259,17 +261,16 @@ function getCssVar(name: string, fallback: string): string {
 function renderRealtimeMarkers() {
   for (const item of vehicles.value) {
     const key = vehicleKey(item);
-    const point = pointOf(item);
+    const lngLat = lngLatOf(item);
     let marker = markerMap.get(key);
     if (marker) {
-      moveMarker(marker, point);
+      provider.moveMarker(marker, lngLat);
     } else {
-      // GL 版 Label 是独立覆盖物（构造需position），不支持 marker.setLabel
-      marker = createLabeledMarker(map, BMap, point, item.licensePlate || item.name || "", {
+      marker = provider.createLabeledMarker(map, lngLat, item.licensePlate || item.name || "", {
         background: getCssVar("--el-color-primary", "#FF0033"),
         onClick: () => {
           activeKey.value = key;
-          openInfoWindow(item, point);
+          openInfoWindow(item, lngLat);
         },
       });
       markerMap.set(key, marker);
@@ -278,12 +279,12 @@ function renderRealtimeMarkers() {
   // 首次有数据时自适应视野
   if (vehicles.value.length && !firstFitDone) {
     firstFitDone = true;
-    map.setViewport(vehicles.value.map(pointOf));
+    provider.fitViewport(map, vehicles.value.map(lngLatOf));
   }
 }
 let firstFitDone = false;
 
-function openInfoWindow(item: LocationRecordItem, point: any) {
+function openInfoWindow(item: LocationRecordItem, lngLat: LngLat) {
   const rows = [
     ["车牌", item.licensePlate],
     ["司机", item.name],
@@ -295,7 +296,7 @@ function openInfoWindow(item: LocationRecordItem, point: any) {
   const html = rows
     .map(([k, v]) => `<div class="monitor-iw-row"><span>${k}</span>${v}</div>`)
     .join("");
-  map.openInfoWindow(new BMap.InfoWindow(html, { width: 220 }), point);
+  provider.openInfoWindow(map, lngLat, html, { width: 220 });
 }
 
 // ===== 交互 =====
@@ -305,9 +306,9 @@ function onSelectVehicle(item: LocationRecordItem) {
     activeKey.value = key;
     const marker = markerMap.get(key);
     if (marker) {
-      const point = pointOf(item);
-      map.panTo(point);
-      openInfoWindow(item, point);
+      const lngLat = lngLatOf(item);
+      provider.panTo(map, lngLat);
+      openInfoWindow(item, lngLat);
     }
     return;
   }
@@ -340,47 +341,36 @@ async function loadReplay(item: LocationRecordItem) {
 }
 
 function drawReplay() {
-  const points = replayPoints.value.map(pointOf);
+  const points = replayPoints.value.map(lngLatOf);
   if (points.length >= 2) {
-    replayPolyline = new BMap.Polyline(points, {
+    replayPolyline = provider.drawPolyline(map, points, {
       strokeColor: "#FF0033",
       strokeWeight: 4,
       strokeOpacity: 0.8,
     });
-    map.addOverlay(replayPolyline);
   }
   // 起终点标注：GL 版不支持 marker.setLabel，改为独立 Label 覆盖物
-  const startLabel = makeEndpointLabel("起点", points[0]);
-  const endLabel = makeEndpointLabel("终点", points[points.length - 1]);
-  map.addOverlay(startLabel);
-  map.addOverlay(endLabel);
-  replayStartMark = startLabel;
-  replayEndMark = endLabel;
-  replayMarker = new BMap.Marker(points[0]);
-  map.addOverlay(replayMarker);
-  replayOverlays.push(replayPolyline, startLabel, endLabel, replayMarker);
-  fitViewport(map, points);
-}
-
-function makeEndpointLabel(text: string, position: any) {
-  const label = new BMap.Label(text, { position, offset: new BMap.Size(14, -10) });
-  label.setStyle({
+  const endpointStyle = {
     padding: "2px 6px",
     fontSize: "12px",
     color: "#fff",
     background: "#FF0033",
     border: "none",
     borderRadius: "4px",
-  });
-  return label;
+  };
+  const startLabel = provider.createLabel(map, "起点", points[0], endpointStyle);
+  const endLabel = provider.createLabel(map, "终点", points[points.length - 1], endpointStyle);
+  replayStartMark = startLabel;
+  replayEndMark = endLabel;
+  replayMarker = provider.createMarker(map, points[0]);
+  replayOverlays.push(replayPolyline, startLabel, endLabel, replayMarker);
+  provider.fitViewport(map, points);
 }
 
 function clearReplayOverlays() {
   pauseReplay();
   for (const overlay of replayOverlays) {
-    if (overlay) {
-      map.removeOverlay(overlay);
-    }
+    provider.removeOverlay(map, overlay);
   }
   replayOverlays.length = 0;
   replayPolyline = null;
@@ -407,8 +397,9 @@ function moveReplayTo(index: number) {
   if (!point || !replayMarker || !map) {
     return;
   }
-  replayMarker.setPosition(pointOf(point));
-  map.panTo(pointOf(point));
+  const lngLat = lngLatOf(point);
+  provider.moveMarker(replayMarker, lngLat);
+  provider.panTo(map, lngLat);
 }
 
 function replayTooltip(index: number) {
@@ -449,12 +440,12 @@ watch(mode, (next) => {
   if (next === "replay") {
     // 回放：停轮询、隐藏实时车辆点，避免遮挡轨迹
     stopPolling();
-    markerMap.forEach((marker) => marker.hide());
+    markerMap.forEach((marker) => provider.setMarkerVisible(marker, false));
   } else {
     // 回到实时：清回放覆盖物、恢复车辆点与轮询
     clearReplayOverlays();
     activeKey.value = "";
-    markerMap.forEach((marker) => marker.show());
+    markerMap.forEach((marker) => provider.setMarkerVisible(marker, true));
     if (map) {
       startPolling();
     }
