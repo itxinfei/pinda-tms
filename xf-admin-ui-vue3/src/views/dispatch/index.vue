@@ -473,12 +473,32 @@ onBeforeUnmount(() => {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 8px;
+
+    // 标题「待调度订单（0/2）」：窄空间省略防与按钮挤压，计数数字等宽不跳动
+    > span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    :deep(.el-button) {
+      flex-shrink: 0;
+    }
   }
 
   &__stats {
     display: flex;
-    gap: 6px;
+    flex-wrap: wrap;
+    gap: 8px;
     margin-bottom: 8px;
+
+    // 统计数字等宽，刷新跳变时标签不抖
+    :deep(.el-tag) {
+      font-variant-numeric: tabular-nums;
+    }
   }
 
   &__search {
@@ -488,23 +508,30 @@ onBeforeUnmount(() => {
   &__list {
     flex: 1;
     min-height: 0;
-    margin-top: 6px;
+    margin-top: 8px;
   }
 
   &__group {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
     width: 100%;
   }
 
   &__order {
     display: flex;
-    gap: 6px;
+    align-items: flex-start;
+    gap: 8px;
     padding: 8px;
     border: 1px solid var(--el-border-color-lighter);
     border-radius: 6px;
     cursor: pointer;
+
+    // 勾选框与首行文字顶对齐（checkbox 默认固定高度会把首行往下顶）
+    :deep(.el-checkbox) {
+      height: auto;
+      margin-right: 0;
+    }
 
     &.is-active {
       border-color: var(--el-color-primary);
@@ -517,17 +544,32 @@ onBeforeUnmount(() => {
     min-width: 0;
   }
 
+  // 长订单号单行省略，防撑破 320px 侧栏
   &__order-no {
     font-size: 13px;
     font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
   }
 
-  &__order-meta,
+  // 发件人→收件人：块级单行省略。
+  // 此前用 display:flex 包纯文本节点，文本失去换行/省略能力，长名字溢出挤压即「文字乱」根因
+  &__order-meta {
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   &__order-org {
     display: flex;
     align-items: center;
     gap: 6px;
-    margin-top: 2px;
+    margin-top: 4px;
     font-size: 12px;
     color: var(--el-text-color-secondary);
   }
