@@ -61,10 +61,10 @@
             <template #default="scope">
               <el-button
                 v-if="scope.row.handleStatus === HandleStatus.PENDING"
+                v-hasPerm="['order:exception']"
                 type="primary"
                 link
                 size="small"
-                v-hasPerm="['order:exception']"
                 @click="openHandle(scope.row as OrderExceptionRecord)"
               >处理</el-button>
               <el-button type="primary" link size="small" @click="openRegister(scope.row.orderId)">再次登记</el-button>
@@ -87,7 +87,7 @@
       </div>
 
       <div class="page-toolbar">
-        <el-button type="primary" v-hasPerm="['order:exception']" @click="openRegister()">登记异常</el-button>
+        <el-button v-hasPerm="['order:exception']" type="primary" @click="openRegister()">登记异常</el-button>
       </div>
     </el-card>
 

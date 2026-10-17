@@ -18,7 +18,7 @@
         :date-range="trendDateRange"
         @retry="loadTrend"
         @view-all="goOrders"
-        @update:dateRange="trendDateRange = $event"
+        @update:date-range="trendDateRange = $event"
         @click-date="onTrendClick"
       />
 

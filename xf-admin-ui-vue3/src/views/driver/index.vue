@@ -44,10 +44,10 @@
             <template #default="scope">
               <el-button type="primary" link size="small" @click="openDetail(scope.row as DriverRecord)">详情</el-button>
               <el-button
+                v-hasPerm="['driver:update']"
                 type="primary"
                 link
                 size="small"
-                v-hasPerm="['driver:update']"
                 @click="openEdit(scope.row as DriverRecord)"
               >编辑</el-button>
             </template>

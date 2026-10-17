@@ -76,10 +76,10 @@
               <el-button type="primary" link size="small" @click="openDetail(scope.row as TransportOrderRecord)">详情</el-button>
               <el-button
                 v-if="scope.row.mergeStatus === 'merged'"
+                v-hasPerm="['transport:split']"
                 type="warning"
                 link
                 size="small"
-                v-hasPerm="['transport:split']"
                 @click="openSplit(scope.row as TransportOrderRecord)"
               >拆单</el-button>
             </template>
@@ -89,9 +89,9 @@
 
       <div class="page-toolbar">
         <el-button
+          v-hasPerm="['transport:merge']"
           type="primary"
           :disabled="selectedRows.length < 2"
-          v-hasPerm="['transport:merge']"
           @click="openMerge"
         >合单（已选 {{ selectedRows.length }}）</el-button>
         <span class="page-toolbar__tip">仅待调度运单可参与合拆；合单校验口径：同目的网点 + 同收件区县</span>
@@ -113,7 +113,8 @@
 
     <!-- 合单弹窗 -->
     <el-dialog v-model="mergeVisible" title="运单合单" width="560px" append-to-body destroy-on-close>
-      <el-alert type="info" :closable="false" class="merge-alert"
+      <el-alert
+        type="info" :closable="false" class="merge-alert"
         title="将选中的待调度运单归入一个主运单统一调度；校验口径：同目的网点 + 同收件区县" />
       <el-form label-width="90px">
         <el-form-item label="已选运单">

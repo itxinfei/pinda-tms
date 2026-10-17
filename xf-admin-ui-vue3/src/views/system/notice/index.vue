@@ -179,11 +179,12 @@
         </el-table>
       </div>
 
-      <pagination class="page-pagination"
-        v-if="total > 0"
+      <pagination
+      v-if="total > 0"
         v-model:total="total"
         v-model:page="params.pageNum"
         v-model:limit="params.pageSize"
+        class="page-pagination"
         @pagination="fetchData"
       />
     </el-card>

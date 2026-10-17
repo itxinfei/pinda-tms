@@ -84,10 +84,10 @@
       </div>
 
       <pagination
-        class="page-pagination"
         v-model:total="total"
         v-model:page="queryParams.pageNo"
         v-model:limit="queryParams.size"
+        class="page-pagination"
         @pagination="loadPage"
       />
     </el-card>

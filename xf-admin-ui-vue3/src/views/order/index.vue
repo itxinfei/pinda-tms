@@ -100,21 +100,21 @@
               <el-button type="primary" link size="small" @click="goCargo(scope.row as OrderRecord)">货物</el-button>
               <el-button
                 v-if="canPay(scope.row as OrderRecord)"
+                v-hasPerm="['order:pay']"
                 type="success"
                 link
                 size="small"
                 :loading="payingId === scope.row.id"
-                v-hasPerm="['order:pay']"
                 @click="handlePay(scope.row as OrderRecord)"
               >
                 支付
               </el-button>
               <el-button
                 v-if="canReprice(scope.row.status)"
+                v-hasPerm="['order:reprice']"
                 type="warning"
                 link
                 size="small"
-                v-hasPerm="['order:reprice']"
                 @click="openReprice(scope.row as OrderRecord)"
               >
                 改价
@@ -275,17 +275,17 @@
         <div class="dialog-footer">
           <el-button
             v-if="detail && canPay(detail)"
+            v-hasPerm="['order:pay']"
             type="success"
             :loading="payingId === detail.id"
-            v-hasPerm="['order:pay']"
             @click="handlePay(detail)"
           >
             支付确认
           </el-button>
           <el-button
             v-if="detail && canReprice(detail.status)"
-            type="warning"
             v-hasPerm="['order:reprice']"
+            type="warning"
             @click="openReprice(detail)"
           >
             改价

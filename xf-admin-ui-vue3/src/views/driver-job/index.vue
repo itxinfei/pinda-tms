@@ -52,10 +52,10 @@
             <template #default="scope">
               <el-button type="primary" link size="small" @click="openDetail(scope.row as DriverJobRecord)">详情</el-button>
               <el-button
+                v-hasPerm="['driverJob:update']"
                 type="primary"
                 link
                 size="small"
-                v-hasPerm="['driverJob:update']"
                 @click="openFix(scope.row as DriverJobRecord)"
               >干预</el-button>
             </template>
