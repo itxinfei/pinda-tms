@@ -179,15 +179,15 @@ const statusBars = computed<OverviewBar[]>(() => {
       label: "待处理",
       valueText: `${formatNumber(p)} 单 · ${pct(p)}%`,
       percent: pct(p),
-      color: getCssVar("--el-color-primary", "#FF0033"),
-      gradient: `linear-gradient(90deg, ${getCssVar("--el-color-primary", "#FF0033")}, ${getCssVar("--el-color-primary-light-5", "#6ea1ff")})`,
+      color: getCssVar("--el-color-warning", "#ff7d00"),
+      gradient: `linear-gradient(90deg, ${getCssVar("--el-color-warning", "#ff7d00")}, ${getCssVar("--el-color-warning-light-5", "#ffc96b")})`,
     },
     {
       label: "运输中",
       valueText: `${formatNumber(t)} 单 · ${pct(t)}%`,
       percent: pct(t),
-      color: getCssVar("--el-color-warning", "#ff7d00"),
-      gradient: `linear-gradient(90deg, ${getCssVar("--el-color-warning", "#ff7d00")}, ${getCssVar("--el-color-warning-light-5", "#ffc96b")})`,
+      color: getCssVar("--el-color-primary", "#FF0033"),
+      gradient: `linear-gradient(90deg, ${getCssVar("--el-color-primary", "#FF0033")}, ${getCssVar("--el-color-primary-light-5", "#6ea1ff")})`,
     },
     {
       label: "已签收",
@@ -254,7 +254,7 @@ const lineRankOptions = computed<EChartsOption>(() => {
             textAlign: "center",
             borderRadius: 3,
             color: "#fff",
-            fontSize: 10,
+            fontSize: 12,
             backgroundColor: primary,
           },
           rank: {
@@ -265,7 +265,7 @@ const lineRankOptions = computed<EChartsOption>(() => {
             textAlign: "center",
             borderRadius: 3,
             color: textSecondary,
-            fontSize: 10,
+            fontSize: 12,
             backgroundColor: fillLight,
           },
           name: { color: textRegular, fontSize: 12 },
@@ -333,7 +333,7 @@ const taskPieOptions = computed<EChartsOption>(() => {
       itemHeight: 7,
       itemGap: 4,
       // canvas 不认 CSS var()，需取计算值；图例带数量 + 占比
-      textStyle: { fontSize: 10, color: textSecondary },
+      textStyle: { fontSize: 12, color: textSecondary },
       formatter: (name: string) => {
         const item = items.find((i) => i.name === name);
         if (!item) return name;
@@ -360,7 +360,7 @@ const taskPieOptions = computed<EChartsOption>(() => {
         top: "50%",
         style: {
           text: `今日新增 ${Number(overview.todayTaskCount) || 0}`,
-          fontSize: 11,
+          fontSize: 12,
           fill: textSecondary,
           textAlign: "center",
         },
@@ -415,7 +415,7 @@ function renderTrend(points: OrderTrendPoint[]) {
       type: "category",
       data: points.map((p) => dayLabel(p.date)),
       axisLabel: {
-        fontSize: 11,
+        fontSize: 12,
         color: textSecondary,
         interval: dense ? 1 : 0,
         rotate: dense ? 35 : 0,
@@ -426,7 +426,7 @@ function renderTrend(points: OrderTrendPoint[]) {
     yAxis: {
       type: "value",
       minInterval: 1,
-      axisLabel: { fontSize: 11, color: textSecondary },
+      axisLabel: { fontSize: 12, color: textSecondary },
       splitLine: { lineStyle: { type: "dashed", color: borderLighter } },
     },
     series: [
@@ -441,7 +441,7 @@ function renderTrend(points: OrderTrendPoint[]) {
         // 7 天点数少：直接标注数值，一眼可读
         label: dense
           ? { show: false }
-          : { show: true, position: "top", fontSize: 10, color: textSecondary, formatter: "{c}" },
+          : { show: true, position: "top", fontSize: 12, color: textSecondary, formatter: "{c}" },
         lineStyle: { color: primary, width: 2.4 },
         itemStyle: { color: primary, borderColor: "#fff", borderWidth: 1.5 },
         areaStyle: {
@@ -461,13 +461,13 @@ function renderTrend(points: OrderTrendPoint[]) {
           silent: true,
           symbol: "none",
           lineStyle: { type: "dashed", color: getCssVar("--el-color-primary-light-5", "#b9c6e6"), width: 1 },
-          label: { formatter: "均值 {c}", fontSize: 11, color: textSecondary },
+          label: { formatter: "均值 {c}", fontSize: 12, color: textSecondary },
           data: [{ type: "average", name: "均值" }],
         },
         markPoint: {
           symbol: "pin",
           symbolSize: 34,
-          label: { fontSize: 11, color: "#fff", fontWeight: 600 },
+          label: { fontSize: 12, color: "#fff", fontWeight: 600 },
           itemStyle: { color: primary },
           data: [{ type: "max", name: "峰值" }],
         },
@@ -482,7 +482,7 @@ function renderTrend(points: OrderTrendPoint[]) {
         showSymbol: true,
         label: dense
           ? { show: false }
-          : { show: true, position: "bottom", fontSize: 10, color: textSecondary, formatter: "{c}" },
+          : { show: true, position: "bottom", fontSize: 12, color: textSecondary, formatter: "{c}" },
         lineStyle: { color: success, width: 2 },
         itemStyle: { color: success, borderColor: "#fff", borderWidth: 1.5 },
         areaStyle: {
@@ -655,5 +655,5 @@ onMounted(() => {
 </script>
 
 <style lang="scss">
-@use "./components/dashboard-card.scss";
+@use "./components/dashboard-card";
 </style>

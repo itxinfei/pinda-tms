@@ -43,6 +43,12 @@
           height="100%"
           highlight-current-row
         >
+          <template #empty>
+            <el-empty v-if="error" description="加载失败">
+              <el-button type="primary" @click="fetchData">重试</el-button>
+            </el-empty>
+            <el-empty v-else description="暂无数据" />
+          </template>
           <el-table-column label="键名" prop="key" min-width="320" show-overflow-tooltip />
           <el-table-column label="类型" prop="type" width="100" align="center">
             <template #default="{ row }">
@@ -63,12 +69,7 @@
                 @confirm="handleDelete(row as CacheKeyItem)"
               >
                 <template #reference>
-                  <el-button
-                    v-hasPerm="['sys:cache:delete']"
-                    type="danger"
-                    link
-                    size="small"
-                  >
+                  <el-button v-hasPerm="['sys:cache:delete']" type="danger" link size="small">
                     删除
                   </el-button>
                 </template>
@@ -100,17 +101,15 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const { loading, list, total, params, fetchData, handleQuery, handleResetQuery } = usePageTable<
-  CacheKeyItem,
-  CacheKeyQueryParams
->({
-  initialParams: {
-    pageNum: 1,
-    pageSize: 10,
-    pattern: "",
-  },
-  request: CacheAPI.getPage,
-});
+const { loading, error, list, total, params, fetchData, handleQuery, handleResetQuery } =
+  usePageTable<CacheKeyItem, CacheKeyQueryParams>({
+    initialParams: {
+      pageNum: 1,
+      pageSize: 10,
+      pattern: "",
+    },
+    request: CacheAPI.getPage,
+  });
 
 const formatTtl = (ttl: number) => {
   if (ttl === -1) return "永不过期";

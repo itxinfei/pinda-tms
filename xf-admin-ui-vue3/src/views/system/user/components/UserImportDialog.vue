@@ -54,6 +54,7 @@
           </el-button>
           <el-button
             type="primary"
+            :loading="importing"
             :disabled="importFormData.files.length === 0"
             @click="handleUpload"
           >
@@ -72,7 +73,7 @@
       />
       <el-table :data="resultData as any" style="width: 100%; max-height: 400px">
         <el-table-column prop="index" align="center" width="100" type="index" label="序号" />
-        <el-table-column prop="message" label="错误信息" width="400">
+        <el-table-column prop="message" label="错误信息" min-width="400" show-overflow-tooltip>
           <template #default="scope">
             {{ scope.row }}
           </template>
@@ -112,6 +113,8 @@ const resultVisible = ref(false);
 const resultData = ref<string[]>([]);
 const invalidCount = ref(0);
 const validCount = ref(0);
+// 上传中：确定按钮 loading，防止重复提交
+const importing = ref(false);
 
 // 表单引用
 const importFormRef = ref(null);
@@ -163,17 +166,22 @@ async function handleUpload(): Promise<void> {
     return;
   }
 
-  const result = await UserAPI.import(importFormData.files[0].raw as File);
-  if (result.code === ApiCodeEnum.SUCCESS && result.invalidCount === 0) {
-    ElMessage.success("导入成功，导入数据：" + result.validCount + "条");
-    emit("import-success");
-    closeDialog();
-  } else {
-    ElMessage.error("上传失败");
-    resultVisible.value = true;
-    resultData.value = result.messageList;
-    invalidCount.value = result.invalidCount;
-    validCount.value = result.validCount;
+  importing.value = true;
+  try {
+    const result = await UserAPI.import(importFormData.files[0].raw as File);
+    if (result.code === ApiCodeEnum.SUCCESS && result.invalidCount === 0) {
+      ElMessage.success("导入成功，导入数据：" + result.validCount + "条");
+      emit("import-success");
+      closeDialog();
+    } else {
+      ElMessage.error("上传失败");
+      resultVisible.value = true;
+      resultData.value = result.messageList;
+      invalidCount.value = result.invalidCount;
+      validCount.value = result.validCount;
+    }
+  } finally {
+    importing.value = false;
   }
 }
 

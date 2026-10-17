@@ -74,8 +74,14 @@
           :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
           @selection-change="handleSelectionChange"
         >
+          <template #empty>
+            <el-empty v-if="loadError" description="加载失败">
+              <el-button type="primary" @click="fetchData">重试</el-button>
+            </el-empty>
+            <el-empty v-else description="暂无数据" />
+          </template>
           <el-table-column type="selection" width="55" align="center" />
-          <el-table-column prop="name" label="部门名称" min-width="200" />
+          <el-table-column prop="name" label="部门名称" min-width="200" show-overflow-tooltip />
           <el-table-column prop="code" label="部门编号" width="200" />
           <el-table-column prop="status" label="状态" width="100" align="center">
             <template #default="scope">
@@ -84,7 +90,7 @@
             </template>
           </el-table-column>
 
-          <el-table-column prop="sort" label="排序" width="100" />
+          <el-table-column prop="sort" label="排序" width="100" align="right" />
 
           <el-table-column label="操作" fixed="right" align="center" width="200">
             <template #default="scope">
@@ -201,6 +207,7 @@ const tableRef = ref<TableInstance>();
 const expandAll = ref(true);
 
 const loading = ref(false);
+const loadError = ref(false);
 const list = ref<DeptItem[]>([]);
 const queryParams = reactive<DeptQueryParams>({
   keywords: "",
@@ -239,8 +246,12 @@ const rules: FormRules<DeptForm> = {
  */
 async function fetchData(): Promise<void> {
   loading.value = true;
+  loadError.value = false;
   try {
     list.value = await DeptAPI.getList(queryParams);
+  } catch {
+    loadError.value = true;
+    list.value = [];
   } finally {
     loading.value = false;
   }

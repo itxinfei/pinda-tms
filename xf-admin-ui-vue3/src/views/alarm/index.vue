@@ -41,7 +41,10 @@
       <div class="page-table-wrapper">
         <el-table v-loading="loading" :data="list" class="page-table" border height="100%">
           <template #empty>
-            <el-empty description="暂无告警记录" :image-size="56" />
+            <el-empty v-if="loadError" description="加载失败" :image-size="56">
+              <el-button type="primary" @click="loadList">重试</el-button>
+            </el-empty>
+            <el-empty v-else description="暂无告警记录" :image-size="56" />
           </template>
           <el-table-column type="index" label="#" width="50" align="center" />
           <el-table-column label="告警类型" min-width="120" align="center">
@@ -165,6 +168,7 @@ function formatTime(value?: string | number[] | null): string {
 
 /** 查询与列表状态 */
 const loading = ref(false);
+const loadError = ref(false);
 const list = ref<AlarmRecord[]>([]);
 const total = ref(0);
 const pendingCount = ref(0);
@@ -186,12 +190,14 @@ function buildParams(): AlarmPageQuery {
 
 async function loadList() {
   loading.value = true;
+  loadError.value = false;
   try {
     const res = await AlarmAPI.page(buildParams());
     list.value = res?.items ?? [];
     total.value = res?.total ?? 0;
   } catch {
-    // 错误提示由请求拦截器统一弹出；列表保留上次数据
+    // 错误提示由请求拦截器统一弹出；列表保留上次数据，空列表时展示"加载失败 + 重试"
+    loadError.value = true;
   } finally {
     loading.value = false;
   }

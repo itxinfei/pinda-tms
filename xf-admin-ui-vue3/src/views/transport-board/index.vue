@@ -22,7 +22,16 @@
     <div v-else v-loading="loading" element-loading-text="加载中…" class="board-body">
       <el-row :gutter="12" class="stage-row">
         <el-col v-for="(stage, index) in board.stages" :key="stage.key" :xs="12" :sm="8" :md="4">
-          <el-card shadow="hover" class="stage-card" @click="openDrill(stage)">
+          <el-card
+            shadow="hover"
+            class="stage-card"
+            role="button"
+            tabindex="0"
+            :aria-label="`阶段 ${stage.name}，${stage.count ?? 0} 项，点击下钻`"
+            @click="openDrill(stage)"
+            @keydown.enter.prevent="openDrill(stage)"
+            @keydown.space.prevent="openDrill(stage)"
+          >
             <div class="stage-card__head">
               <span class="stage-card__index">{{ index + 1 }}</span>
               <span class="stage-card__name">{{ stage.name }}</span>
@@ -73,7 +82,9 @@
           </el-table-column>
           <el-table-column label="状态" width="100" align="center">
             <template #default="{ row }">
-              <el-tag effect="plain" size="small">{{ taskStatusName(row.status) }}</el-tag>
+              <el-tag effect="plain" size="small" :type="statusTagType(taskStatusName(row.status))">
+                {{ taskStatusName(row.status) }}
+              </el-tag>
             </template>
           </el-table-column>
           <el-table-column prop="planDepartureTime" label="计划发车" width="165" />
@@ -101,7 +112,9 @@
           </el-table-column>
           <el-table-column label="状态" width="120" align="center">
             <template #default="{ row }">
-              <el-tag effect="plain" size="small">{{ orderStatusName(row.status) }}</el-tag>
+              <el-tag effect="plain" size="small" :type="statusTagType(orderStatusName(row.status))">
+                {{ orderStatusName(row.status) }}
+              </el-tag>
             </template>
           </el-table-column>
           <el-table-column prop="createTime" label="创建时间" width="170" />
@@ -135,7 +148,9 @@
           <el-descriptions title="基本信息" :column="2" border>
             <el-descriptions-item label="任务号" :span="2">{{ taskDetail.id }}</el-descriptions-item>
             <el-descriptions-item label="状态">
-              <el-tag effect="plain" size="small">{{ taskStatusName(taskDetail.status) }}</el-tag>
+              <el-tag effect="plain" size="small" :type="statusTagType(taskStatusName(taskDetail.status))">
+                {{ taskStatusName(taskDetail.status) }}
+              </el-tag>
             </el-descriptions-item>
             <el-descriptions-item label="车次">{{ taskDetail.transportTrips?.name || "-" }}</el-descriptions-item>
             <el-descriptions-item label="车辆">{{ taskDetail.truck?.licensePlate || "-" }}</el-descriptions-item>
@@ -164,7 +179,9 @@
           <el-descriptions title="基本信息" :column="2" border>
             <el-descriptions-item label="运单号" :span="2">{{ orderDetail.id }}</el-descriptions-item>
             <el-descriptions-item label="状态">
-              <el-tag effect="plain" size="small">{{ orderStatusName(orderDetail.status) }}</el-tag>
+              <el-tag effect="plain" size="small" :type="statusTagType(orderStatusName(orderDetail.status))">
+                {{ orderStatusName(orderDetail.status) }}
+              </el-tag>
             </el-descriptions-item>
             <el-descriptions-item label="创建时间">{{ orderDetail.createTime || "-" }}</el-descriptions-item>
             <el-descriptions-item label="寄件人">{{ orderDetail.order?.senderName || "-" }}</el-descriptions-item>
@@ -221,6 +238,19 @@ const taskStatusNameMap = computed(() => new Map(board.value.taskStatusCounts.ma
 const orderStatusNameMap = computed(() => new Map(board.value.transportOrderStatusCounts.map((i) => [i.code, i.name])));
 const taskStatusName = (code?: number) => (code == null ? "-" : taskStatusNameMap.value.get(code) ?? "未知");
 const orderStatusName = (code?: number) => (code == null ? "-" : orderStatusNameMap.value.get(code) ?? "未知");
+
+type TagType = "primary" | "success" | "info" | "warning" | "danger";
+
+/** 状态标签色（《14》状态色映射）：只按后端已下发的状态中文名归类，不引入新状态码 */
+const STATUS_TAG_RULES: [RegExp, TagType][] = [
+  [/拒收|失败|异常/, "danger"],
+  [/取消|作废/, "info"],
+  [/签收|完成/, "success"],
+  [/待|新建|未/, "warning"],
+  [/已装车|到达|进行中|运输|派送|出库|发车|在途/, "primary"],
+];
+const statusTagType = (name?: string): TagType =>
+  STATUS_TAG_RULES.find(([pattern]) => pattern.test(name ?? ""))?.[1] ?? "info";
 
 const driverNames = (row: { drivers?: { name?: string }[] }) =>
   row.drivers?.map((d) => d.name).filter(Boolean).join("、") || "-";
@@ -406,7 +436,7 @@ onMounted(loadBoard);
   }
 
   :deep(.el-card__body) {
-    padding: 14px 16px;
+    padding: 12px 16px;
   }
 
   &__head {
@@ -438,9 +468,9 @@ onMounted(loadBoard);
     margin-top: 10px;
     font-size: 26px;
     font-weight: 700;
+    font-variant-numeric: tabular-nums;
     line-height: 1;
     color: var(--el-color-primary);
-    font-variant-numeric: tabular-nums;
   }
 
   &__hint {
@@ -494,6 +524,6 @@ onMounted(loadBoard);
 <style lang="scss">
 /* 二级抽屉遮罩降浅（《14》§4.3.1 二级弹层侧滑面板感） */
 .board-detail-modal {
-  background: rgb(0 0 0 / 25%);
+  background: var(--el-overlay-color-lighter);
 }
 </style>

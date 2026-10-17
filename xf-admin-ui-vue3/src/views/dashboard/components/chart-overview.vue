@@ -2,7 +2,7 @@
   <div class="card card--link" @click="emit('click')">
     <div class="card__head">
       <h3 class="card__title">订单状态概览</h3>
-      <el-tag type="primary" size="small" effect="plain">{{ headTag }}</el-tag>
+      <el-tag type="warning" size="small" effect="plain">{{ headTag }}</el-tag>
     </div>
     <div class="card__body overview-card">
       <el-skeleton v-if="loading" :rows="3" animated class="dash-chart__skeleton" />
@@ -56,5 +56,5 @@ const emit = defineEmits<{ retry: []; click: [] }>();
 </script>
 
 <style lang="scss">
-@use "./dashboard-card.scss";
+@use "./dashboard-card";
 </style>

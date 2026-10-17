@@ -16,6 +16,8 @@
               v-hasPerm="['sys:dict:create']"
               type="primary"
               :icon="Plus"
+              title="新增字典"
+              aria-label="新增字典"
               @click="handleCreateClick()"
             />
           </div>
@@ -37,6 +39,7 @@
                   v-hasPerm="['sys:dict:update']"
                   link
                   type="primary"
+                  aria-label="编辑"
                   @click.stop="handleEditClick(row.id)"
                 >
                   <el-icon><Edit /></el-icon>
@@ -45,6 +48,7 @@
                   v-hasPerm="['sys:dict:delete']"
                   link
                   type="danger"
+                  aria-label="删除"
                   @click.stop="handleDelete(row.id)"
                 >
                   <el-icon><Delete /></el-icon>
@@ -55,8 +59,10 @@
             <el-empty
               v-if="!loading && list.length === 0"
               :image-size="60"
-              description="暂无字典"
-            />
+              :description="error ? '加载失败' : '暂无字典'"
+            >
+              <el-button v-if="error" type="primary" @click="fetchTypes()">重试</el-button>
+            </el-empty>
           </el-scrollbar>
 
           <div class="flex items-center justify-between gap-2 pt-2">
@@ -160,16 +166,17 @@ const dictFormRef = ref<FormInstance>();
 const currentType = ref<DictTypeItem>();
 
 // 字典类型列表分页数据管理
-const { loading, list, total, params, fetchData } = usePageTable<DictTypeItem, DictTypeQueryParams>(
-  {
-    initialParams: {
-      pageNum: 1,
-      pageSize: 20,
-      keywords: "",
-    },
-    request: DictAPI.getPage,
-  }
-);
+const { loading, error, list, total, params, fetchData } = usePageTable<
+  DictTypeItem,
+  DictTypeQueryParams
+>({
+  initialParams: {
+    pageNum: 1,
+    pageSize: 20,
+    keywords: "",
+  },
+  request: DictAPI.getPage,
+});
 
 /**
  * 拉取字典类型并保持右侧选中项有效
@@ -362,7 +369,7 @@ onMounted(() => {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 7px 8px;
+    padding: 8px;
     cursor: pointer;
     border-radius: 6px;
     transition: background-color 0.15s;

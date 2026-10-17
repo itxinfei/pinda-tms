@@ -41,6 +41,12 @@
 
       <div class="page-table-wrapper">
         <el-table v-loading="loading" :data="list" class="page-table" border height="100%">
+          <template #empty>
+            <el-empty v-if="loadError" description="加载失败">
+              <el-button type="primary" @click="loadList">重试</el-button>
+            </el-empty>
+            <el-empty v-else description="暂无数据" />
+          </template>
           <el-table-column prop="licensePlate" label="车牌" min-width="120" show-overflow-tooltip />
           <el-table-column prop="brand" label="品牌" min-width="120" show-overflow-tooltip />
           <el-table-column label="车辆类型" min-width="120">
@@ -200,6 +206,7 @@ const truckTypeOptions = ref<TruckTypeSimple[]>([]);
 
 /** 查询与列表状态 */
 const loading = ref(false);
+const loadError = ref(false);
 const list = ref<TruckRecord[]>([]);
 const total = ref(0);
 const query = ref<TruckPageQuery>({ page: 1, pageSize: 10 });
@@ -218,10 +225,13 @@ function buildParams(): TruckPageQuery {
 
 async function loadList() {
   loading.value = true;
+  loadError.value = false;
   try {
     const res = await TruckAPI.page(buildParams());
     list.value = res?.items ?? [];
     total.value = res?.counts ?? 0;
+  } catch {
+    loadError.value = true;
   } finally {
     loading.value = false;
   }
@@ -420,7 +430,7 @@ onMounted(() => {
   display: block;
   max-width: 100%;
   max-height: 280px;
-  border-radius: var(--card-radius);
   border: 1px solid var(--card-border);
+  border-radius: var(--card-radius);
 }
 </style>

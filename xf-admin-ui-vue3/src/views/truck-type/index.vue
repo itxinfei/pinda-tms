@@ -27,6 +27,12 @@
 
       <div class="page-table-wrapper">
         <el-table v-loading="loading" :data="list" class="page-table" border height="100%">
+          <template #empty>
+            <el-empty v-if="loadError" description="加载失败">
+              <el-button type="primary" @click="loadList">重试</el-button>
+            </el-empty>
+            <el-empty v-else description="暂无数据" />
+          </template>
           <el-table-column type="index" label="#" width="50" align="center" />
           <el-table-column prop="name" label="名称" min-width="140" show-overflow-tooltip />
           <el-table-column label="准载重(t)" min-width="100" align="right">
@@ -210,6 +216,7 @@ const goodsTypeOptions = ref<GoodsTypeSimple[]>([]);
 
 /** 查询与列表状态 */
 const loading = ref(false);
+const loadError = ref(false);
 const list = ref<TruckTypeRecord[]>([]);
 const total = ref(0);
 const query = ref<TruckTypePageQuery>({ page: 1, pageSize: 10 });
@@ -228,11 +235,14 @@ function buildParams(): TruckTypePageQuery {
 
 async function loadList() {
   loading.value = true;
+  loadError.value = false;
   try {
     const res = await TruckTypeAPI.page(buildParams());
     // 统一剔除 BFF 富化缺失产生的 null，保证列表标签/折叠 +N/tooltip 渲染安全
     list.value = (res?.items ?? []).map((item) => ({ ...item, goodsTypes: validGoodsTypes(item.goodsTypes) }));
     total.value = res?.counts ?? 0;
+  } catch {
+    loadError.value = true;
   } finally {
     loading.value = false;
   }

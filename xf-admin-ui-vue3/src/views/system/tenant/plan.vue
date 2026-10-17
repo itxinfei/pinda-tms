@@ -28,11 +28,7 @@
     <el-card class="page-content" shadow="never">
       <div class="page-toolbar">
         <div class="page-toolbar__left">
-          <el-button
-            v-hasPerm="['sys:tenant:create']"
-            type="primary"
-            @click="handleCreateClick()"
-          >
+          <el-button v-hasPerm="['sys:tenant:create']" type="primary" @click="handleCreateClick()">
             新增
           </el-button>
         </div>
@@ -59,17 +55,23 @@
           highlight-current-row
           border
         >
-          <el-table-column type="index" label="序号" width="60" />
-          <el-table-column label="套餐名称" prop="name" min-width="120" />
-          <el-table-column label="套餐编码" prop="code" width="160" />
+          <template #empty>
+            <el-empty v-if="error" description="加载失败">
+              <el-button type="primary" @click="fetchData">重试</el-button>
+            </el-empty>
+            <el-empty v-else description="暂无数据" />
+          </template>
+          <el-table-column type="index" label="序号" width="60" align="center" />
+          <el-table-column label="套餐名称" prop="name" min-width="120" show-overflow-tooltip />
+          <el-table-column label="套餐编码" prop="code" width="160" show-overflow-tooltip />
           <el-table-column label="状态" width="100" align="center">
             <template #default="scope">
               <el-tag v-if="scope.row.status === CommonStatus.ENABLED" type="success">启用</el-tag>
               <el-tag v-else type="info">停用</el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="排序" prop="sort" width="80" align="center" />
-          <el-table-column label="备注" prop="remark" min-width="140" />
+          <el-table-column label="排序" prop="sort" width="80" align="right" />
+          <el-table-column label="备注" prop="remark" min-width="140" show-overflow-tooltip />
           <el-table-column label="创建时间" prop="createTime" width="180" />
           <el-table-column fixed="right" label="操作" width="240" align="center">
             <template #default="scope">
@@ -107,7 +109,7 @@
       </div>
 
       <pagination
-      v-if="total > 0"
+        v-if="total > 0"
         v-model:total="total"
         v-model:page="params.pageNum"
         v-model:limit="params.pageSize"
@@ -257,18 +259,16 @@ const planFormRef = ref<FormInstance>();
 const menuTreeRef = ref<TreeInstance>();
 
 // 分页表格数据管理
-const { loading, list, total, params, fetchData, handleQuery, handleResetQuery } = usePageTable<
-  TenantPlanItem,
-  TenantPlanQueryParams
->({
-  initialParams: {
-    pageNum: 1,
-    pageSize: 10,
-    keywords: "",
-  },
-  request: (query) => TenantPlanAPI.getPage(query),
-  onBeforeReset: () => queryFormRef.value?.resetFields(),
-});
+const { loading, error, list, total, params, fetchData, handleQuery, handleResetQuery } =
+  usePageTable<TenantPlanItem, TenantPlanQueryParams>({
+    initialParams: {
+      pageNum: 1,
+      pageSize: 10,
+      keywords: "",
+    },
+    request: (query) => TenantPlanAPI.getPage(query),
+    onBeforeReset: () => queryFormRef.value?.resetFields(),
+  });
 
 const dialogState = reactive({
   title: "",

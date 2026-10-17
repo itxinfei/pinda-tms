@@ -72,20 +72,26 @@
           height="100%"
           @selection-change="handleSelectionChange"
         >
+          <template #empty>
+            <el-empty v-if="error" description="加载失败">
+              <el-button type="primary" @click="fetchData">重试</el-button>
+            </el-empty>
+            <el-empty v-else description="暂无数据" />
+          </template>
           <el-table-column
             type="selection"
             width="55"
             align="center"
             :selectable="isTenantSelectable"
           />
-          <el-table-column label="租户名称" prop="name" min-width="140" />
-          <el-table-column label="租户编码" prop="code" width="120" />
-          <el-table-column label="租户套餐" min-width="120">
+          <el-table-column label="租户名称" prop="name" min-width="140" show-overflow-tooltip />
+          <el-table-column label="租户编码" prop="code" width="120" show-overflow-tooltip />
+          <el-table-column label="租户套餐" min-width="120" show-overflow-tooltip>
             <template #default="scope">
               <span>{{ resolvePlanLabel(scope.row.planId) }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="域名" prop="domain" min-width="140" />
+          <el-table-column label="域名" prop="domain" min-width="140" show-overflow-tooltip />
           <el-table-column label="联系人" prop="contactName" width="100" />
           <el-table-column label="电话" prop="contactPhone" width="120" />
           <el-table-column label="状态" width="90" align="center">
@@ -159,7 +165,7 @@
       </div>
 
       <pagination
-      v-if="total > 0"
+        v-if="total > 0"
         v-model:total="total"
         v-model:page="params.pageNum"
         v-model:limit="params.pageSize"
@@ -291,7 +297,7 @@
       <div class="mb-3">
         <div class="mb-2 font-medium">升级场景</div>
         <div class="mb-3">升级套餐后，将解锁更多功能菜单，需在套餐功能配置中手动启用。</div>
-        <div class="mb-2 font-medium">降级场景（红色 / warning）</div>
+        <div class="mb-2 font-medium">降级区域（请优先调度）</div>
         <el-alert
           type="warning"
           :closable="false"
@@ -406,28 +412,26 @@ const tenantFormRef = ref<FormInstance>();
 const menuTreeRef = ref<InstanceType<typeof ElTree>>();
 
 // 分页表格数据管理
-const { loading, list, total, params, fetchData, handleQuery, handleResetQuery } = usePageTable<
-  TenantItem,
-  TenantQueryParams
->({
-  initialParams: {
-    pageNum: 1,
-    pageSize: 10,
-    keywords: "",
-  },
-  request: async (queryParams) => {
-    // 后端返回的 planId 可能是字符串，这里统一转成 number
-    const data = await TenantAPI.getPage(queryParams);
-    return {
-      list: data.list.map((item) => ({
-        ...item,
-        planId: item.planId != null ? Number(item.planId) : undefined,
-      })),
-      total: data.total,
-    };
-  },
-  onBeforeReset: () => queryFormRef.value?.resetFields(),
-});
+const { loading, error, list, total, params, fetchData, handleQuery, handleResetQuery } =
+  usePageTable<TenantItem, TenantQueryParams>({
+    initialParams: {
+      pageNum: 1,
+      pageSize: 10,
+      keywords: "",
+    },
+    request: async (queryParams) => {
+      // 后端返回的 planId 可能是字符串，这里统一转成 number
+      const data = await TenantAPI.getPage(queryParams);
+      return {
+        list: data.list.map((item) => ({
+          ...item,
+          planId: item.planId != null ? Number(item.planId) : undefined,
+        })),
+        total: data.total,
+      };
+    },
+    onBeforeReset: () => queryFormRef.value?.resetFields(),
+  });
 
 const { selectedIds, hasSelection, handleSelectionChange } = useTableSelection<TenantItem>();
 

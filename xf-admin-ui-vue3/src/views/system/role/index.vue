@@ -17,6 +17,8 @@
               v-hasPerm="'sys:role:create'"
               type="primary"
               :icon="Plus"
+              title="新增角色"
+              aria-label="新增角色"
               @click="handleCreateClick()"
             />
           </div>
@@ -38,6 +40,7 @@
                   v-hasPerm="'sys:role:update'"
                   link
                   type="primary"
+                  aria-label="编辑"
                   @click.stop="handleEditClick(row.id)"
                 >
                   <el-icon><Edit /></el-icon>
@@ -46,6 +49,7 @@
                   v-hasPerm="'sys:role:delete'"
                   link
                   type="danger"
+                  aria-label="删除"
                   @click.stop="handleDelete(row.id)"
                 >
                   <el-icon><Delete /></el-icon>
@@ -56,8 +60,10 @@
             <el-empty
               v-if="!loading && list.length === 0"
               :image-size="60"
-              description="暂无角色"
-            />
+              :description="error ? '加载失败' : '暂无角色'"
+            >
+              <el-button v-if="error" type="primary" @click="fetchRoles()">重试</el-button>
+            </el-empty>
           </el-scrollbar>
 
           <div class="flex items-center justify-between gap-2 pt-2">
@@ -161,13 +167,16 @@
                 <div
                   class="role-perm__cell"
                   :class="{ 'is-group': row.group }"
-                  :style="{ paddingLeft: `${row.depth * 18}px` }"
+                  :style="{ paddingLeft: `${row.depth * 16}px` }"
                 >
                   <el-icon
                     v-if="row.group"
                     class="role-perm__caret"
                     :size="14"
+                    tabindex="0"
+                    aria-label="展开或收起"
                     @click.stop="toggleGroup(row.id)"
+                    @keydown.enter.prevent="toggleGroup(row.id)"
                   >
                     <CaretBottom v-if="!collapsedIds.has(row.id)" />
                     <CaretRight v-else />
@@ -311,7 +320,7 @@ const { toggle: toggleFullscreen } = useFullscreen(permWrapperRef);
 const dataScopeOptions = [{ label: "全部数据", value: 1 }];
 
 // 左侧角色列表分页数据管理
-const { loading, list, total, params, fetchData } = usePageTable<RoleItem, RoleQueryParams>({
+const { loading, error, list, total, params, fetchData } = usePageTable<RoleItem, RoleQueryParams>({
   initialParams: {
     pageNum: 1,
     pageSize: 20,
@@ -849,7 +858,7 @@ onMounted(() => {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 7px 8px;
+    padding: 8px;
     cursor: pointer;
     border-radius: 6px;
     transition: background-color 0.15s;

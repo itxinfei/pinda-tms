@@ -58,6 +58,12 @@
           :indent="28"
           :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
         >
+          <template #empty>
+            <el-empty v-if="loadError" description="加载失败">
+              <el-button type="primary" @click="fetchData">重试</el-button>
+            </el-empty>
+            <el-empty v-else description="暂无数据" />
+          </template>
           <el-table-column class-name="menu-name-column" label="菜单名称" min-width="200">
             <template #default="scope">
               <div class="menu-name-cell">
@@ -75,6 +81,7 @@
                 <span
                   class="menu-name-cell__text"
                   :class="{ 'is-catalog': scope.row.type === MenuTypeEnum.CATALOG }"
+                  :title="scope.row.name"
                 >
                   {{ scope.row.name }}
                 </span>
@@ -141,7 +148,7 @@
               <el-tag v-else type="info">隐藏</el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="排序" align="center" width="80" prop="sort" />
+          <el-table-column label="排序" align="right" width="80" prop="sort" />
           <el-table-column fixed="right" align="center" label="操作" width="220">
             <template #default="scope">
               <el-button
@@ -581,6 +588,7 @@ const queryFormRef = ref<FormInstance>();
 const menuFormRef = ref<FormInstance>();
 
 const loading = ref(false);
+const loadError = ref(false);
 const list = ref<MenuItem[]>([]);
 const tableRef = ref<TableInstance>();
 // 是否展开全部菜单层级，默认折叠只显示顶级菜单
@@ -876,11 +884,15 @@ const rules: FormRules<MenuForm> = {
  */
 async function fetchData(): Promise<void> {
   loading.value = true;
+  loadError.value = false;
   try {
     list.value = await MenuAPI.getList(queryParams);
     // 表格渲染出树节点后再应用展开状态
     await nextTick();
     applyExpansion();
+  } catch {
+    loadError.value = true;
+    list.value = [];
   } finally {
     loading.value = false;
   }
@@ -1524,7 +1536,7 @@ onMounted(() => {
 
 .menu-name-cell {
   display: flex;
-  gap: 6px;
+  gap: 4px;
   align-items: center;
   min-width: 0;
 }
@@ -1560,7 +1572,7 @@ onMounted(() => {
 
 /* 字段带说明文字，压缩默认间距避免抽屉出现滚动条 */
 .menu-form :deep(.el-form-item) {
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .menu-form :deep(.el-form-item__label) {
@@ -1630,7 +1642,7 @@ onMounted(() => {
   display: flex;
   gap: 8px;
   align-items: center;
-  padding: 10px 12px;
+  padding: 8px 12px;
   margin-bottom: 20px;
   font-size: 12px;
   line-height: 1.6;

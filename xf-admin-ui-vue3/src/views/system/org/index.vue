@@ -3,7 +3,9 @@
     <el-card class="page-content" shadow="never">
       <div class="page-toolbar">
         <div class="page-toolbar__left">
-          <el-button v-hasPerm="['sys:org:create']" type="primary" @click="openDialog('root')">新增组织</el-button>
+          <el-button v-hasPerm="['sys:org:create']" type="primary" @click="openDialog('root')">
+            新增组织
+          </el-button>
         </div>
         <div class="page-toolbar__right">
           <el-tooltip :content="expandAll ? '折叠全部' : '展开全部'" placement="top">
@@ -33,7 +35,13 @@
           height="100%"
           :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
         >
-          <el-table-column prop="name" label="组织名称" min-width="220" />
+          <template #empty>
+            <el-empty v-if="loadError" description="加载失败">
+              <el-button type="primary" @click="loadTree">重试</el-button>
+            </el-empty>
+            <el-empty v-else description="暂无数据" />
+          </template>
+          <el-table-column prop="name" label="组织名称" min-width="220" show-overflow-tooltip />
           <el-table-column prop="orgType" label="组织类型" width="150" align="center">
             <template #default="scope">
               <el-tag :type="orgTagType(scope.row.orgType)">
@@ -42,7 +50,7 @@
             </template>
           </el-table-column>
           <el-table-column prop="contractNumber" label="联系电话" width="150" />
-          <el-table-column prop="sortValue" label="排序" width="90" align="center" />
+          <el-table-column prop="sortValue" label="排序" width="90" align="right" />
           <el-table-column prop="status" label="状态" width="90" align="center">
             <template #default="scope">
               <el-tag v-if="scope.row.status === CommonStatus.ENABLED" type="success">正常</el-tag>
@@ -84,12 +92,7 @@
       </div>
     </el-card>
 
-    <el-dialog
-      v-model="dialog.visible"
-      :title="dialog.title"
-      width="600px"
-      @closed="resetForm"
-    >
+    <el-dialog v-model="dialog.visible" :title="dialog.title" width="600px" @closed="resetForm">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="92px">
         <el-form-item label="上级组织" prop="parentId">
           <el-tree-select
@@ -177,12 +180,17 @@ const ORG_TAG_TYPE: Record<OrgType, "primary" | "success" | "warning" | "info"> 
 const orgTagType = (type: OrgType) => ORG_TAG_TYPE[type] ?? "info";
 
 const loading = ref(false);
+const loadError = ref(false);
 const tree = ref<OrgNode[]>([]);
 
 async function loadTree() {
   loading.value = true;
+  loadError.value = false;
   try {
     tree.value = (await OrgAPI.getTree()) ?? [];
+  } catch {
+    loadError.value = true;
+    tree.value = [];
   } finally {
     loading.value = false;
   }

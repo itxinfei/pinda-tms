@@ -54,7 +54,8 @@
             :loading="exporting"
             @click="handleExport"
           >
-            <el-icon style="margin-right: 4px"><Download /></el-icon>导出
+            <el-icon style="margin-right: 4px"><Download /></el-icon>
+            导出
           </el-button>
           <el-tooltip content="刷新" placement="top">
             <el-button class="page-icon-btn" @click="fetchData">
@@ -77,6 +78,12 @@
           highlight-current-row
           border
         >
+          <template #empty>
+            <el-empty v-if="error" description="加载失败">
+              <el-button type="primary" @click="fetchData">重试</el-button>
+            </el-empty>
+            <el-empty v-else description="暂无数据" />
+          </template>
           <el-table-column label="操作标题" prop="title" min-width="180" show-overflow-tooltip />
           <el-table-column label="状态" prop="status" width="80" align="center">
             <template #default="{ row }">
@@ -99,7 +106,7 @@
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="执行时间(ms)" prop="executionTime" width="120" align="center" />
+          <el-table-column label="执行时间(ms)" prop="executionTime" width="120" align="right" />
           <el-table-column label="操作人" prop="operatorName" width="120" />
           <el-table-column label="操作时间" prop="createTime" width="180" />
           <el-table-column label="操作" width="80" align="center" fixed="right">
@@ -113,7 +120,7 @@
       </div>
 
       <pagination
-      v-if="total > 0"
+        v-if="total > 0"
         v-model:total="total"
         v-model:page="params.pageNum"
         v-model:limit="params.pageSize"
@@ -183,20 +190,18 @@ const queryFormRef = ref<FormInstance>();
 const LOG_STATUS_SUCCESS = 1;
 
 // 分页表格数据管理
-const { loading, list, total, params, fetchData, handleQuery, handleResetQuery } = usePageTable<
-  LogItem,
-  LogQueryParams
->({
-  initialParams: {
-    pageNum: 1,
-    pageSize: 10,
-    keywords: "",
-    createTime: undefined,
-    logType: undefined,
-  },
-  request: LogAPI.getPage,
-  onBeforeReset: () => queryFormRef.value?.resetFields(),
-});
+const { loading, error, list, total, params, fetchData, handleQuery, handleResetQuery } =
+  usePageTable<LogItem, LogQueryParams>({
+    initialParams: {
+      pageNum: 1,
+      pageSize: 10,
+      keywords: "",
+      createTime: undefined,
+      logType: undefined,
+    },
+    request: LogAPI.getPage,
+    onBeforeReset: () => queryFormRef.value?.resetFields(),
+  });
 
 // 导出（D-30 可导出审计痕迹）：按当前筛选条件下载 xlsx
 const exporting = ref(false);

@@ -36,11 +36,17 @@
           height="100%"
           highlight-current-row
         >
-          <el-table-column label="账号" prop="account" width="140" />
+          <template #empty>
+            <el-empty v-if="error" description="加载失败">
+              <el-button type="primary" @click="fetchData">重试</el-button>
+            </el-empty>
+            <el-empty v-else description="暂无数据" />
+          </template>
+          <el-table-column label="账号" prop="account" width="140" show-overflow-tooltip />
           <el-table-column label="姓名" prop="name" width="120" />
           <el-table-column label="租户" prop="tenantCode" width="100" />
           <el-table-column label="用户ID" prop="userId" width="120" />
-          <el-table-column label="会话凭证" prop="tokenMask" width="140" />
+          <el-table-column label="会话凭证" prop="tokenMask" width="140" show-overflow-tooltip />
           <el-table-column label="登录时间" prop="loginTime" width="180" />
           <el-table-column label="操作" width="120" align="center" fixed="right">
             <template #default="{ row }">
@@ -51,12 +57,7 @@
                 @confirm="handleKickout(row as OnlineItem)"
               >
                 <template #reference>
-                  <el-button
-                    v-hasPerm="['sys:online:kickout']"
-                    type="danger"
-                    link
-                    size="small"
-                  >
+                  <el-button v-hasPerm="['sys:online:kickout']" type="danger" link size="small">
                     强制下线
                   </el-button>
                 </template>
@@ -88,17 +89,15 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const { loading, list, total, params, fetchData, handleQuery, handleResetQuery } = usePageTable<
-  OnlineItem,
-  OnlineQueryParams
->({
-  initialParams: {
-    pageNum: 1,
-    pageSize: 10,
-    keywords: "",
-  },
-  request: OnlineAPI.getPage,
-});
+const { loading, error, list, total, params, fetchData, handleQuery, handleResetQuery } =
+  usePageTable<OnlineItem, OnlineQueryParams>({
+    initialParams: {
+      pageNum: 1,
+      pageSize: 10,
+      keywords: "",
+    },
+    request: OnlineAPI.getPage,
+  });
 
 const handleKickout = async (row: OnlineItem) => {
   await OnlineAPI.kickout(row.token);

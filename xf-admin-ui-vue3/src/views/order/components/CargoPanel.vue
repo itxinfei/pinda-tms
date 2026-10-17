@@ -342,10 +342,11 @@ defineExpose({ reload: loadList });
 <style scoped lang="scss">
 .cargo-panel__summary {
   display: flex;
-  align-items: center;
   gap: 4px;
-  padding-bottom: 10px;
+  align-items: center;
+  padding-bottom: 8px;
   font-size: 13px;
+  font-variant-numeric: tabular-nums;
   color: var(--el-text-color-regular);
 
   &-right {
@@ -358,7 +359,7 @@ defineExpose({ reload: loadList });
 }
 
 .cargo-panel__unit {
-  margin-left: 2px;
+  margin-left: 4px;
   color: var(--el-text-color-secondary);
 }
 </style>

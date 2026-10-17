@@ -84,6 +84,9 @@
               >拆单</el-button>
             </template>
           </el-table-column>
+          <template #empty>
+            <el-empty description="暂无数据" :image-size="60" />
+          </template>
         </el-table>
       </div>
 
@@ -137,7 +140,12 @@
     <!-- 运单详情 -->
     <el-drawer v-model="detailVisible" title="运单详情" size="660px">
       <div v-loading="detailLoading" class="transport-detail">
-        <template v-if="detail">
+        <el-result v-if="detailError" icon="error" title="详情加载失败" sub-title="请检查网络后重试">
+          <template #extra>
+            <el-button type="primary" @click="reloadDetail">重新加载</el-button>
+          </template>
+        </el-result>
+        <template v-else-if="detail">
           <el-descriptions title="基本信息" :column="2" border>
             <el-descriptions-item label="运单号" :span="2">{{ detail.id }}</el-descriptions-item>
             <el-descriptions-item label="运单状态">
@@ -227,8 +235,8 @@ type TagType = "primary" | "success" | "info" | "warning" | "danger";
 
 /** 运单状态选项（搜索下拉 + 标签） */
 const ORDER_STATUS_OPTIONS: { value: TransportOrderStatus; label: string; type: TagType }[] = [
-  { value: TransportOrderStatus.CREATED, label: "新建", type: "info" },
-  { value: TransportOrderStatus.LOADED, label: "已装车", type: "warning" },
+  { value: TransportOrderStatus.CREATED, label: "新建", type: "warning" },
+  { value: TransportOrderStatus.LOADED, label: "已装车", type: "primary" },
   { value: TransportOrderStatus.ARRIVED, label: "到达", type: "primary" },
   { value: TransportOrderStatus.AT_TERMINAL, label: "到达终端网点", type: "primary" },
   { value: TransportOrderStatus.RECEIVED, label: "已签收", type: "success" },
@@ -246,7 +254,7 @@ const schedulingStatusLabel = (status?: number) =>
     status ?? -1
   ] ?? "-";
 const schedulingTagType = (status?: number): TagType =>
-  status === SchedulingStatus.SCHEDULED ? "success" : status === SchedulingStatus.NO_LINE ? "danger" : "info";
+  status === SchedulingStatus.SCHEDULED ? "success" : status === SchedulingStatus.NO_LINE ? "danger" : "warning";
 
 /** 取派件任务相关文案 */
 const pickupTaskStatusLabel = (status?: number) =>
@@ -258,7 +266,7 @@ const assignedStatusLabel = (status?: number) =>
 const taskStatusLabel = (status?: number) =>
   ({ 1: "待执行", 2: "进行中", 3: "待确认", 4: "已完成", 5: "已取消" } as Record<number, string>)[status ?? -1] ?? "-";
 const taskStatusTagType = (status?: number): TagType =>
-  ({ 1: "info", 2: "warning", 3: "warning", 4: "success", 5: "info" } as Record<number, TagType>)[status ?? -1] ?? "info";
+  ({ 1: "warning", 2: "primary", 3: "warning", 4: "success", 5: "info" } as Record<number, TagType>)[status ?? -1] ?? "info";
 
 /** 表单查询条件（扁平，提交时寄件字段组装进 order 子对象） */
 const query = ref<{
@@ -378,16 +386,30 @@ function openSplit(row: TransportOrderRecord) {
 /** 详情 */
 const detailVisible = ref(false);
 const detailLoading = ref(false);
+const detailError = ref(false);
 const detail = ref<TransportOrderDetail>();
+/** 当前查看的行：详情失败时供"重新加载"复用 */
+const detailRow = ref<TransportOrderRecord>();
 
 async function openDetail(row: TransportOrderRecord) {
+  detailRow.value = row;
   detailVisible.value = true;
   detailLoading.value = true;
   detail.value = undefined;
+  detailError.value = false;
   try {
     detail.value = await TransportOrderAPI.getDetail(row.id);
+  } catch {
+    // 抽屉内展示错误态与重试入口，错误 toast 由拦截器统一处理
+    detailError.value = true;
   } finally {
     detailLoading.value = false;
+  }
+}
+
+function reloadDetail() {
+  if (detailRow.value) {
+    openDetail(detailRow.value);
   }
 }
 
@@ -435,8 +457,8 @@ onMounted(loadList);
 
 .page-toolbar {
   display: flex;
-  align-items: center;
   gap: 12px;
+  align-items: center;
   margin-top: 12px;
 }
 

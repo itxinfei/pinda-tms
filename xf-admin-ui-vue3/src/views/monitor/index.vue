@@ -23,7 +23,12 @@
             :key="`${item.businessId}-${item.businessType}`"
             class="vehicle-item"
             :class="{ 'is-active': isActiveVehicle(item) }"
+            role="button"
+            tabindex="0"
+            :aria-label="`车辆 ${item.licensePlate || item.name || item.businessId}`"
             @click="onSelectVehicle(item)"
+            @keydown.enter.prevent="onSelectVehicle(item)"
+            @keydown.space.prevent="onSelectVehicle(item)"
           >
             <div class="vehicle-item__plate">
               {{ item.licensePlate || item.name || `ID ${item.businessId}` }}
@@ -58,6 +63,7 @@
             circle
             type="primary"
             :disabled="replayPoints.length < 2"
+            :aria-label="replayPlaying ? '暂停回放' : '播放回放'"
             @click="togglePlay"
           />
           <div class="replay-bar__slider">
@@ -243,6 +249,12 @@ function stopPolling() {
   }
 }
 
+/** 从 CSS 变量取实际色值（marker label 为 DOM 渲染，canvas/原生覆盖物内联 var() 不生效） */
+function getCssVar(name: string, fallback: string): string {
+  if (typeof window === "undefined") return fallback;
+  return getComputedStyle(document.documentElement).getPropertyValue(name)?.trim() || fallback;
+}
+
 /** 实时 marker 增量更新：已存在则挪点，否则创建（含车牌 label 与点击弹窗） */
 function renderRealtimeMarkers() {
   for (const item of vehicles.value) {
@@ -254,7 +266,7 @@ function renderRealtimeMarkers() {
     } else {
       // GL 版 Label 是独立覆盖物（构造需position），不支持 marker.setLabel
       marker = createLabeledMarker(map, BMap, point, item.licensePlate || item.name || "", {
-        background: "#2b6cff",
+        background: getCssVar("--el-color-primary", "#FF0033"),
         onClick: () => {
           activeKey.value = key;
           openInfoWindow(item, point);
@@ -465,7 +477,7 @@ watch(mode, (next) => {
 .monitor-aside__head {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   padding: 12px;
   border-bottom: 1px solid var(--card-border);
 }
@@ -478,7 +490,7 @@ watch(mode, (next) => {
 }
 
 .vehicle-item {
-  padding: 8px 10px;
+  padding: 8px 12px;
   cursor: pointer;
   border-radius: 6px;
   transition: background 0.15s;
@@ -573,6 +585,7 @@ watch(mode, (next) => {
 
 .replay-bar__count {
   margin-top: 2px;
+  font-variant-numeric: tabular-nums;
   color: var(--el-text-color-placeholder);
 }
 </style>

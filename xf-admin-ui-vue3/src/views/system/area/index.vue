@@ -32,14 +32,22 @@
                 @click="handleResultClick(item)"
               >
                 <div class="area-result__row">
-                  <span class="area-result__name">{{ item.name }}</span>
+                  <span class="area-result__name" :title="item.name">{{ item.name }}</span>
                   <el-tag :type="levelTag(item.level)" size="small" effect="light" round>
                     {{ levelLabel(item.level) }}
                   </el-tag>
                 </div>
-                <div class="area-result__sub">{{ item.mergerName || item.name }}</div>
+                <div class="area-result__sub" :title="item.mergerName || item.name">
+                  {{ item.mergerName || item.name }}
+                </div>
               </div>
-              <el-empty v-if="!searching && results.length === 0" description="未找到相关区划" :image-size="80" />
+              <el-empty
+                v-if="!searching && results.length === 0"
+                :description="searchError ? '加载失败' : '未找到相关区划'"
+                :image-size="80"
+              >
+                <el-button v-if="searchError" type="primary" @click="handleSearch">重试</el-button>
+              </el-empty>
             </ElScrollbar>
           </template>
 
@@ -67,7 +75,11 @@
           </el-tree>
         </div>
       </div>
-      <button class="page-aside__toggle" @click="asideCollapsed = !asideCollapsed">
+      <button
+        class="page-aside__toggle"
+        :title="asideCollapsed ? '展开区划列表' : '收起区划列表'"
+        @click="asideCollapsed = !asideCollapsed"
+      >
         <el-icon :size="14">
           <Fold v-if="!asideCollapsed" />
           <Expand v-else />
@@ -113,7 +125,9 @@
               </el-icon>
             </span>
           </el-descriptions-item>
-          <el-descriptions-item label="城市编码">{{ current.cityCode || "-" }}</el-descriptions-item>
+          <el-descriptions-item label="城市编码">
+            {{ current.cityCode || "-" }}
+          </el-descriptions-item>
           <el-descriptions-item label="邮政编码">{{ current.zipCode || "-" }}</el-descriptions-item>
           <el-descriptions-item label="拼音">{{ current.pinyin || "-" }}</el-descriptions-item>
           <el-descriptions-item label="经纬度">
@@ -131,7 +145,9 @@
         <div class="area-children__toolbar">
           <span class="area-children__title">
             直属下级
-            <el-tag v-if="current" type="info" size="small" effect="plain" round>{{ childrenList.length }}</el-tag>
+            <el-tag v-if="current" type="info" size="small" effect="plain" round>
+              {{ childrenList.length }}
+            </el-tag>
           </span>
           <el-tooltip content="刷新" placement="top">
             <el-button class="page-icon-btn" :loading="childrenLoading" @click="reloadChildren">
@@ -234,15 +250,22 @@ async function handleNodeClick(data: Area) {
 const keyword = ref("");
 const searchMode = ref(false);
 const searching = ref(false);
+const searchError = ref(false);
 const results = ref<Area[]>([]);
 
 async function handleSearch() {
   const name = keyword.value.trim();
   if (!name) return;
   searching.value = true;
+  searchError.value = false;
   try {
     results.value = (await AreaAPI.search(name)) ?? [];
     searchMode.value = true;
+  } catch {
+    results.value = [];
+    searchError.value = true;
+    searchMode.value = true;
+    ElMessage.error("加载失败");
   } finally {
     searching.value = false;
   }
@@ -251,6 +274,7 @@ async function handleSearch() {
 function resetSearch() {
   keyword.value = "";
   searchMode.value = false;
+  searchError.value = false;
   results.value = [];
 }
 
@@ -368,7 +392,7 @@ onMounted(async () => {
 .area-aside {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   height: 100%;
   padding: 12px;
 }
@@ -386,7 +410,7 @@ onMounted(async () => {
 .area-node {
   display: flex;
   flex: 1;
-  gap: 6px;
+  gap: 4px;
   align-items: center;
   min-width: 0;
   padding-right: 6px;
@@ -414,7 +438,7 @@ onMounted(async () => {
 }
 
 .area-result {
-  padding: 8px 10px;
+  padding: 8px 12px;
   cursor: pointer;
   border-radius: 6px;
   transition: background-color 0.15s;
@@ -444,7 +468,7 @@ onMounted(async () => {
 }
 
 .area-result__sub {
-  margin-top: 2px;
+  margin-top: 4px;
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: 12px;
@@ -524,7 +548,7 @@ onMounted(async () => {
   flex-shrink: 0;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .area-children__title {

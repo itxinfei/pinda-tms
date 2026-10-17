@@ -8,6 +8,7 @@
 
     <el-tree
       ref="deptTreeRef"
+      v-loading="loading"
       class="dept-card__tree"
       :data="deptList"
       :props="{ children: 'children', label: 'label', disabled: '' }"
@@ -15,7 +16,11 @@
       :filter-node-method="handleFilter"
       default-expand-all
       @node-click="handleNodeClick"
-    />
+    >
+      <template #empty>
+        <el-empty description="暂无部门" :image-size="60" />
+      </template>
+    </el-tree>
   </el-card>
 </template>
 
@@ -37,6 +42,7 @@ const props = defineProps({
 const deptList = ref<OptionItem[]>();
 const deptTreeRef = ref();
 const deptName = ref("");
+const loading = ref(false);
 
 /**
  * 选中部门时上抛部门 ID
@@ -73,9 +79,17 @@ function handleNodeClick(data: OptionItem): void {
 }
 
 onBeforeMount(() => {
-  OrgAPI.getOptions().then((data) => {
-    deptList.value = data;
-  });
+  loading.value = true;
+  OrgAPI.getOptions()
+    .then((data) => {
+      deptList.value = data;
+    })
+    .catch(() => {
+      deptList.value = [];
+    })
+    .finally(() => {
+      loading.value = false;
+    });
 });
 </script>
 
@@ -97,7 +111,7 @@ onBeforeMount(() => {
 }
 
 .dept-card__search {
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .dept-card__tree {

@@ -60,6 +60,9 @@
               <el-button type="danger" link size="small" @click="handleDelete(scope.row as TransportLineRecord)">删除</el-button>
             </template>
           </el-table-column>
+          <template #empty>
+            <el-empty description="暂无数据" :image-size="60" />
+          </template>
         </el-table>
       </div>
 
@@ -182,7 +185,12 @@
     <!-- 线路详情 -->
     <el-drawer v-model="detailVisible" title="线路详情" size="640px">
       <div v-loading="detailLoading" class="transport-line-detail">
-        <template v-if="detail">
+        <el-result v-if="detailError" icon="error" title="详情加载失败" sub-title="请检查网络后重试">
+          <template #extra>
+            <el-button type="primary" @click="reloadDetail">重新加载</el-button>
+          </template>
+        </el-result>
+        <template v-else-if="detail">
           <el-descriptions title="基本信息" :column="2" border>
             <el-descriptions-item label="线路名称">{{ detail.name || "-" }}</el-descriptions-item>
             <el-descriptions-item label="线路编号">{{ detail.lineNumber || "-" }}</el-descriptions-item>
@@ -404,16 +412,30 @@ async function handleDelete(row: TransportLineRecord) {
 /** 详情 */
 const detailVisible = ref(false);
 const detailLoading = ref(false);
+const detailError = ref(false);
 const detail = ref<TransportLineRecord>();
+/** 当前查看的行：详情失败时供"重新加载"复用 */
+const detailRow = ref<TransportLineRecord>();
 
 async function openDetail(row: TransportLineRecord) {
+  detailRow.value = row;
   detailVisible.value = true;
   detailLoading.value = true;
   detail.value = undefined;
+  detailError.value = false;
   try {
     detail.value = await TransportLineAPI.getDetail(row.id);
+  } catch {
+    // 抽屉内展示错误态与重试入口，错误 toast 由拦截器统一处理
+    detailError.value = true;
   } finally {
     detailLoading.value = false;
+  }
+}
+
+function reloadDetail() {
+  if (detailRow.value) {
+    openDetail(detailRow.value);
   }
 }
 

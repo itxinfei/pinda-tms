@@ -58,7 +58,7 @@
             <span v-else class="dict-item-panel__plain">文本</span>
           </template>
         </el-table-column>
-        <el-table-column label="排序" prop="sort" align="center" width="80" />
+        <el-table-column label="排序" prop="sort" align="right" width="80" />
         <el-table-column label="状态" align="center" width="100">
           <template #default="scope">
             <el-tag :type="scope.row.status === CommonStatus.ENABLED ? 'success' : 'info'">
@@ -148,7 +148,7 @@
             </el-tag>
           </template>
           <el-option v-for="type in tagTypeOptions" :key="type" :label="type" :value="type">
-            <div flex-y-center gap-10px>
+            <div flex-y-center gap-2>
               <el-tag :type="type">{{ formData.label ?? "字典标签" }}</el-tag>
               <span>{{ type }}</span>
             </div>

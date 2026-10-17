@@ -27,13 +27,19 @@
 
       <div class="page-table-wrapper">
         <el-table v-loading="loading" :data="list" class="page-table" border height="100%">
-          <el-table-column prop="name" label="姓名" min-width="100" />
+          <template #empty>
+            <el-empty v-if="loadError" description="加载失败">
+              <el-button type="primary" @click="loadList">重试</el-button>
+            </el-empty>
+            <el-empty v-else description="暂无数据" />
+          </template>
+          <el-table-column prop="name" label="姓名" min-width="100" show-overflow-tooltip />
           <el-table-column prop="workNumber" label="工号" min-width="110" show-overflow-tooltip />
-          <el-table-column prop="mobile" label="手机号" min-width="130" />
-          <el-table-column label="车队" min-width="120">
+          <el-table-column prop="mobile" label="手机号" min-width="130" show-overflow-tooltip />
+          <el-table-column label="车队" min-width="120" show-overflow-tooltip>
             <template #default="scope">{{ scope.row.fleet?.name || "-" }}</template>
           </el-table-column>
-          <el-table-column label="使用车辆" min-width="110">
+          <el-table-column label="使用车辆" min-width="110" show-overflow-tooltip>
             <template #default="scope">{{ scope.row.truck?.licensePlate || "-" }}</template>
           </el-table-column>
           <el-table-column label="线路" min-width="160" show-overflow-tooltip>
@@ -184,6 +190,7 @@ const fleetOptions = ref<FleetSimple[]>([]);
 
 /** 查询与列表状态 */
 const loading = ref(false);
+const loadError = ref(false);
 const list = ref<DriverRecord[]>([]);
 const total = ref(0);
 const query = ref<DriverPageQuery>({ page: 1, pageSize: 10 });
@@ -202,10 +209,13 @@ function buildParams(): DriverPageQuery {
 
 async function loadList() {
   loading.value = true;
+  loadError.value = false;
   try {
     const res = await DriverAPI.page(buildParams());
     list.value = res?.items ?? [];
     total.value = res?.counts ?? 0;
+  } catch {
+    loadError.value = true;
   } finally {
     loading.value = false;
   }
@@ -361,7 +371,7 @@ async function handleSaveEdit() {
   display: block;
   max-width: 100%;
   max-height: 280px;
-  border-radius: var(--card-radius);
   border: 1px solid var(--card-border);
+  border-radius: var(--card-radius);
 }
 </style>

@@ -27,8 +27,14 @@
 
       <div class="page-table-wrapper">
         <el-table v-loading="loading" :data="list" class="page-table" border height="100%">
+          <template #empty>
+            <el-empty v-if="loadError" description="加载失败">
+              <el-button type="primary" @click="loadList">重试</el-button>
+            </el-empty>
+            <el-empty v-else description="暂无数据" />
+          </template>
           <el-table-column prop="id" label="任务号" min-width="160" show-overflow-tooltip />
-          <el-table-column label="司机" min-width="140">
+          <el-table-column label="司机" min-width="140" show-overflow-tooltip>
             <template #default="scope">{{ driverNames(scope.row as TaskTransportRecord) }}</template>
           </el-table-column>
           <el-table-column label="车次" min-width="140" show-overflow-tooltip>
@@ -201,8 +207,8 @@ type TagType = "primary" | "success" | "info" | "warning" | "danger";
 
 /** 任务状态选项（搜索下拉 + 标签） */
 const TASK_STATUS_OPTIONS: { value: TransportTaskStatus; label: string; type: TagType }[] = [
-  { value: TransportTaskStatus.PENDING, label: "待执行", type: "info" },
-  { value: TransportTaskStatus.PROCESSING, label: "进行中", type: "warning" },
+  { value: TransportTaskStatus.PENDING, label: "待执行", type: "warning" },
+  { value: TransportTaskStatus.PROCESSING, label: "进行中", type: "primary" },
   { value: TransportTaskStatus.TO_CONFIRM, label: "待确认", type: "warning" },
   { value: TransportTaskStatus.FINISHED, label: "已完成", type: "success" },
   { value: TransportTaskStatus.CANCELLED, label: "已取消", type: "info" },
@@ -235,8 +241,14 @@ const routeText = (row: TaskTransportRecord) => {
   return `${start ?? ""} → ${end ?? ""}`;
 };
 
+function getCssVar(name: string, fallback: string) {
+  if (typeof window === "undefined") return fallback;
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+}
+
 /** 查询与列表状态 */
 const loading = ref(false);
+const loadError = ref(false);
 const list = ref<TaskTransportRecord[]>([]);
 const total = ref(0);
 const query = ref<TaskTransportPageQuery>({ page: 1, pageSize: 10 });
@@ -255,10 +267,13 @@ function buildPayload(): TaskTransportPageQuery {
 
 async function loadList() {
   loading.value = true;
+  loadError.value = false;
   try {
     const res = await TransportTaskAPI.page(buildPayload());
     list.value = res?.items ?? [];
     total.value = res?.counts ?? 0;
+  } catch {
+    loadError.value = true;
   } finally {
     loading.value = false;
   }
@@ -357,10 +372,10 @@ const pointMapOption = computed<echarts.EChartsCoreOption>(() => {
           show: true,
           formatter: "{b}",
           position: "right",
-          fontSize: 11,
+          fontSize: 12,
           color: "#303133",
         },
-        itemStyle: { color: "#e15536" },
+        itemStyle: { color: getCssVar("--el-color-primary", "#FF0033") },
       },
     ],
   };
@@ -417,9 +432,9 @@ onMounted(loadList);
 /* 途经点地图预览：在表格下方给出地理散点，限制高度避免撑爆抽屉 */
 .task-detail__map {
   margin-top: 12px;
+  background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 4px;
-  background: #fff;
 }
 
 /* 任务进度步骤条（T-046）：与描述区块视觉密度一致；已取消提示条与步骤条留白 */

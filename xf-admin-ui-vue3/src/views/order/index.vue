@@ -511,15 +511,15 @@ const PAYMENT_METHOD_OPTIONS = [
 
 /** 订单状态选项（搜索下拉 + 标签） */
 const ORDER_STATUS_OPTIONS: { value: OrderStatus; label: string; type: TagType }[] = [
-  { value: OrderStatus.PENDING_PICKUP, label: "待取件", type: "info" },
+  { value: OrderStatus.PENDING_PICKUP, label: "待取件", type: "warning" },
   { value: OrderStatus.PICKED_UP, label: "已取件", type: "primary" },
   { value: OrderStatus.SELF_SHIPPED, label: "网点自寄", type: "primary" },
   { value: OrderStatus.INBOUND, label: "网点入库", type: "primary" },
   { value: OrderStatus.PENDING_LOADING, label: "待装车", type: "warning" },
-  { value: OrderStatus.TRANSPORTING, label: "运输中", type: "warning" },
-  { value: OrderStatus.OUTBOUND, label: "网点出库", type: "warning" },
+  { value: OrderStatus.TRANSPORTING, label: "运输中", type: "primary" },
+  { value: OrderStatus.OUTBOUND, label: "网点出库", type: "primary" },
   { value: OrderStatus.PENDING_DELIVERY, label: "待派送", type: "warning" },
-  { value: OrderStatus.DELIVERING, label: "派送中", type: "warning" },
+  { value: OrderStatus.DELIVERING, label: "派送中", type: "primary" },
   { value: OrderStatus.SIGNED, label: "已签收", type: "success" },
   { value: OrderStatus.REJECTED, label: "拒收", type: "danger" },
   { value: OrderStatus.CANCELLED, label: "已取消", type: "info" },
@@ -1104,9 +1104,9 @@ onMounted(loadList);
 
 /* 复制按钮贴在编号/ID 文本之后，去除按钮自身的高度与左右内边距 */
 .order-detail__copy {
-  margin-left: 4px;
-  padding: 0;
   height: auto;
+  padding: 0;
+  margin-left: 4px;
 }
 
 /* 取件 / 派件两个任务子块 */
@@ -1129,7 +1129,7 @@ onMounted(loadList);
   padding-left: 4px;
 
   :deep(.el-timeline-item) {
-    padding-bottom: 6px;
+    padding-bottom: 8px;
   }
 
   :deep(.el-timeline-item__content) {
@@ -1142,6 +1142,7 @@ onMounted(loadList);
   margin-right: auto;
   font-size: 16px;
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
   color: var(--el-color-danger);
 }
 

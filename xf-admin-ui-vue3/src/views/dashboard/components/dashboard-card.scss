@@ -1,6 +1,6 @@
 // 仪表盘公共样式（非 scoped，由 index.vue 及各展示组件共享）
 // 布局/卡片/列表/图表容器全部类名在此统一定义，避免组件拆分后样式漂移。
-$gap: 10px;
+$gap: 8px;
 $pad: 8px;
 
 %card {
@@ -65,9 +65,9 @@ $pad: 8px;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 
   &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
     border-color: color-mix(in srgb, var(--el-color-primary) 35%, var(--card-border));
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
   }
 
   &__body {
@@ -101,33 +101,33 @@ $pad: 8px;
   &__num {
     font-size: 24px;
     font-weight: 600;
-    line-height: 1;
     font-variant-numeric: tabular-nums;
+    line-height: 1;
   }
 
   &__spark {
+    flex-shrink: 0;
     width: 96px;
     height: 24px;
-    flex-shrink: 0;
   }
 
   &__badge {
     flex-shrink: 0;
     padding: 2px 8px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
-    border-radius: 999px;
-    background: var(--el-fill-color-light);
     color: var(--el-text-color-secondary);
+    background: var(--el-fill-color-light);
+    border-radius: 999px;
 
     &--on {
-      background: color-mix(in srgb, var(--el-color-success) 10%, #fff);
       color: var(--el-color-success);
+      background: color-mix(in srgb, var(--el-color-success) 10%, var(--el-color-white));
     }
 
     &--danger {
-      background: color-mix(in srgb, var(--el-color-danger) 10%, #fff);
       color: var(--el-color-danger);
+      background: color-mix(in srgb, var(--el-color-danger) 10%, var(--el-color-white));
     }
   }
 
@@ -174,7 +174,7 @@ $pad: 8px;
     align-items: center;
     justify-content: space-between;
     min-height: 42px;
-    padding: 9px 16px;
+    padding: 8px 16px;
     border-bottom: 1px solid var(--card-border);
   }
 
@@ -184,9 +184,9 @@ $pad: 8px;
     transition: box-shadow 0.2s ease, transform 0.2s ease;
 
     &:hover {
+      border-color: color-mix(in srgb, var(--el-color-primary) 35%, var(--card-border));
       box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
       transform: translateY(-1px);
-      border-color: color-mix(in srgb, var(--el-color-primary) 35%, var(--card-border));
     }
   }
 
@@ -253,7 +253,7 @@ $pad: 8px;
   &__item {
     display: flex;
     flex-direction: column;
-    gap: 7px;
+    gap: 8px;
   }
 
   &__meta {
@@ -361,13 +361,13 @@ $pad: 8px;
 .feed {
   display: flex;
   flex-direction: column;
-  padding: 8px 18px 12px;
+  padding: 8px 16px 12px;
 
   &__item {
     display: flex;
     gap: 8px;
     align-items: center;
-    padding: 7px 0;
+    padding: 8px 0;
     cursor: pointer;
     border-radius: 4px;
     transition: background 0.2s ease;
@@ -389,18 +389,18 @@ $pad: 8px;
     flex: 1;
     min-width: 0;
     overflow: hidden;
+    text-overflow: ellipsis;
     font-size: 13px;
     line-height: 1.4;
     color: var(--el-text-color-regular);
-    text-overflow: ellipsis;
     white-space: nowrap;
   }
 
   &__time {
     flex-shrink: 0;
     font-size: 12px;
-    color: var(--el-text-color-secondary);
     font-variant-numeric: tabular-nums;
+    color: var(--el-text-color-secondary);
 
     &.is-over {
       font-weight: 600;
@@ -428,8 +428,8 @@ $pad: 8px;
 
 @media (max-width: 768px) {
   .dash {
-    gap: 10px;
-    padding: 10px;
+    gap: 8px;
+    padding: 8px;
   }
 
   .dash-stats {

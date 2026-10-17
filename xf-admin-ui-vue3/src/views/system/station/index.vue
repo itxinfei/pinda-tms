@@ -33,7 +33,9 @@
     <el-card class="page-content" shadow="never">
       <div class="page-toolbar">
         <div class="page-toolbar__left">
-          <el-button v-hasPerm="['sys:station:create']" type="primary" @click="openDialog()">新增岗位</el-button>
+          <el-button v-hasPerm="['sys:station:create']" type="primary" @click="openDialog()">
+            新增岗位
+          </el-button>
         </div>
         <div class="page-toolbar__right">
           <el-tooltip content="刷新" placement="top">
@@ -46,9 +48,17 @@
 
       <div class="page-table-wrapper">
         <el-table v-loading="loading" :data="list" class="page-table" border height="100%">
+          <template #empty>
+            <el-empty v-if="loadError" description="加载失败">
+              <el-button type="primary" @click="loadPage">重试</el-button>
+            </el-empty>
+            <el-empty v-else description="暂无数据" />
+          </template>
           <el-table-column prop="name" label="岗位名称" min-width="180" />
-          <el-table-column prop="orgId" label="所属组织" min-width="200">
-            <template #default="scope">{{ orgNameMap.get(scope.row.orgId) ?? scope.row.orgId }}</template>
+          <el-table-column prop="orgId" label="所属组织" min-width="200" show-overflow-tooltip>
+            <template #default="scope">
+              {{ orgNameMap.get(scope.row.orgId) ?? scope.row.orgId }}
+            </template>
           </el-table-column>
           <el-table-column prop="status" label="状态" width="100" align="center">
             <template #default="scope">
@@ -92,12 +102,7 @@
       />
     </el-card>
 
-    <el-dialog
-      v-model="dialog.visible"
-      :title="dialog.title"
-      width="520px"
-      @closed="resetForm"
-    >
+    <el-dialog v-model="dialog.visible" :title="dialog.title" width="520px" @closed="resetForm">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="92px">
         <el-form-item label="岗位名称" prop="name">
           <el-input v-model="form.name" placeholder="请输入岗位名称" />
@@ -146,6 +151,7 @@ import type { OrgNode } from "@/api/org";
 import { CommonStatus } from "@/enums";
 
 const loading = ref(false);
+const loadError = ref(false);
 const list = ref<Station[]>([]);
 const total = ref(0);
 const orgTree = ref<OrgNode[]>([]);
@@ -164,7 +170,12 @@ const orgNameMap = computed(() => {
   return map;
 });
 
-const queryParams = reactive({ pageNo: 1, size: 10, name: "", orgId: undefined as number | undefined });
+const queryParams = reactive({
+  pageNo: 1,
+  size: 10,
+  name: "",
+  orgId: undefined as number | undefined,
+});
 
 async function loadOrgTree() {
   orgTree.value = (await OrgAPI.getTree()) ?? [];
@@ -172,6 +183,7 @@ async function loadOrgTree() {
 
 async function loadPage() {
   loading.value = true;
+  loadError.value = false;
   try {
     const result = await StationAPI.page({
       pageNo: queryParams.pageNo,
@@ -181,6 +193,10 @@ async function loadPage() {
     });
     list.value = result.records ?? [];
     total.value = result.total ?? 0;
+  } catch {
+    loadError.value = true;
+    list.value = [];
+    total.value = 0;
   } finally {
     loading.value = false;
   }

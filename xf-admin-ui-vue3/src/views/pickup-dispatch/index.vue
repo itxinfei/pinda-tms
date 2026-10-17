@@ -36,6 +36,12 @@
 
       <div class="page-table-wrapper">
         <el-table v-loading="loading" :data="list" class="page-table" border height="100%">
+          <template #empty>
+            <el-empty v-if="loadError" description="加载失败">
+              <el-button type="primary" @click="loadList">重试</el-button>
+            </el-empty>
+            <el-empty v-else description="暂无数据" />
+          </template>
           <el-table-column prop="id" label="任务号" min-width="160" show-overflow-tooltip />
           <el-table-column prop="taskType" label="类型" width="90" align="center">
             <template #default="scope">
@@ -215,7 +221,7 @@ type TagType = "primary" | "success" | "info" | "warning" | "danger";
 
 /** 任务状态选项（搜索下拉 + 标签；状态 2 为保留态，不列出） */
 const STATUS_OPTIONS: { value: PickupDispatchStatus; label: string; type: TagType }[] = [
-  { value: PickupDispatchStatus.PENDING, label: "待执行", type: "info" },
+  { value: PickupDispatchStatus.PENDING, label: "待执行", type: "warning" },
   { value: PickupDispatchStatus.TO_CONFIRM, label: "待确认", type: "warning" },
   { value: PickupDispatchStatus.FINISHED, label: "已完成", type: "success" },
   { value: PickupDispatchStatus.CANCELLED, label: "已取消", type: "info" },
@@ -272,15 +278,19 @@ function buildPayload(): PickupDispatchPageQuery {
 
 /** 查询与列表状态 */
 const loading = ref(false);
+const loadError = ref(false);
 const list = ref<PickupDispatchRecord[]>([]);
 const total = ref(0);
 
 async function loadList() {
   loading.value = true;
+  loadError.value = false;
   try {
     const res = await PickupDispatchAPI.page(buildPayload());
     list.value = res?.items ?? [];
     total.value = res?.counts ?? 0;
+  } catch {
+    loadError.value = true;
   } finally {
     loading.value = false;
   }

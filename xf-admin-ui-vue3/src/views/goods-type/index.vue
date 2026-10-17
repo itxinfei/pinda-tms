@@ -27,6 +27,12 @@
 
       <div class="page-table-wrapper">
         <el-table v-loading="loading" :data="list" class="page-table" border height="100%">
+          <template #empty>
+            <el-empty v-if="loadError" description="加载失败">
+              <el-button type="primary" @click="loadList">重试</el-button>
+            </el-empty>
+            <el-empty v-else description="暂无数据" />
+          </template>
           <el-table-column type="index" label="#" width="50" align="center" />
           <el-table-column prop="name" label="名称" min-width="160" show-overflow-tooltip />
           <el-table-column label="默认重量(kg)" min-width="130" align="right">
@@ -131,6 +137,7 @@ import { formatNumber } from "@/utils/format";
 
 /** 查询与列表状态 */
 const loading = ref(false);
+const loadError = ref(false);
 const list = ref<GoodsTypeRecord[]>([]);
 const total = ref(0);
 const query = ref<GoodsTypePageQuery>({ page: 1, pageSize: 10 });
@@ -149,10 +156,13 @@ function buildParams(): GoodsTypePageQuery {
 
 async function loadList() {
   loading.value = true;
+  loadError.value = false;
   try {
     const res = await GoodsTypeAPI.page(buildParams());
     list.value = res?.items ?? [];
     total.value = res?.counts ?? 0;
+  } catch {
+    loadError.value = true;
   } finally {
     loading.value = false;
   }

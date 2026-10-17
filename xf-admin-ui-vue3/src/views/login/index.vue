@@ -91,6 +91,7 @@
                   <el-input
                     v-model.trim="loginFormData.username"
                     :placeholder="t('login.usernamePlaceholder')"
+                    :aria-label="t('login.usernamePlaceholder')"
                     :prefix-icon="UserIcon"
                   />
                 </el-form-item>
@@ -100,6 +101,7 @@
                     <el-input
                       v-model.trim="loginFormData.password"
                       :placeholder="t('login.passwordPlaceholder')"
+                      :aria-label="t('login.passwordPlaceholder')"
                       type="password"
                       show-password
                       :prefix-icon="LockIcon"
@@ -114,30 +116,22 @@
                     <el-input
                       v-model.trim="loginFormData.captchaCode"
                       :placeholder="t('login.captchaPlaceholder')"
+                      :aria-label="t('login.captchaPlaceholder')"
                       style="flex: 1; min-width: 0;"
                       @keyup.enter="handleLoginSubmit"
                     />
-                    <div 
-                      class="login-card__captcha" 
-                      style="
-                        width: 120px;
-                        height: 40px;
-                        flex-shrink: 0;
-                        overflow: hidden;
-                        cursor: pointer;
-                        background: var(--el-fill-color-blank);
-                        border: 1px solid var(--el-border-color);
-                        border-radius: var(--el-border-radius-base);
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                      "
+                    <div
+                      class="login-card__captcha"
+                      role="button"
+                      tabindex="0"
+                      aria-label="刷新验证码"
                       @click="getCaptcha"
+                      @keydown.enter.prevent="getCaptcha"
                     >
                       <el-icon v-if="codeLoading" class="is-loading" :size="16">
                         <Loading />
                       </el-icon>
-                      <img v-else-if="captchaBase64" :src="captchaBase64" alt="验证码" style="width: 100%; height: 100%; object-fit: contain;" />
+                      <img v-else-if="captchaBase64" :src="captchaBase64" alt="验证码" />
                       <el-icon v-else :size="16"><Refresh /></el-icon>
                     </div>
                   </div>
@@ -311,7 +305,7 @@ $navy-bot: color-mix(in srgb, var(--el-color-primary), #0b1020 84%);
 
 .login-toolbar {
   position: fixed;
-  top: 28px;
+  top: 24px;
   right: 32px;
   z-index: 10;
   display: flex;
@@ -370,16 +364,16 @@ $navy-bot: color-mix(in srgb, var(--el-color-primary), #0b1020 84%);
   /* 运单跟踪演示面板（玻璃拟态卡 + 浮动数据徽标） */
   &__panel {
     position: absolute;
-    z-index: 1;
     top: 46%;
     right: 7%;
     left: 7%;
+    z-index: 1;
   }
 
   /* ---------- 运单跟踪卡 ---------- */
   .track-card {
     width: min(520px, 100%);
-    padding: 18px 22px 20px;
+    padding: 16px 24px 20px;
     margin: 0 auto;
     background: rgb(255 255 255 / 8%);
     border: 1px solid rgb(255 255 255 / 14%);
@@ -394,7 +388,7 @@ $navy-bot: color-mix(in srgb, var(--el-color-primary), #0b1020 84%);
     gap: 12px;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 18px;
+    margin-bottom: 16px;
   }
 
   .track-card__waybill {
@@ -407,12 +401,12 @@ $navy-bot: color-mix(in srgb, var(--el-color-primary), #0b1020 84%);
 
     b {
       overflow: hidden;
+      text-overflow: ellipsis;
       font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
       font-size: 14px;
       font-weight: 600;
       color: #fff;
       letter-spacing: 0.5px;
-      text-overflow: ellipsis;
       white-space: nowrap;
     }
   }
@@ -421,9 +415,9 @@ $navy-bot: color-mix(in srgb, var(--el-color-primary), #0b1020 84%);
   .track-card__pill {
     display: inline-flex;
     flex-shrink: 0;
-    gap: 6px;
+    gap: 8px;
     align-items: center;
-    padding: 3px 10px;
+    padding: 4px 8px;
     font-size: 12px;
     color: #fff;
     background: linear-gradient(135deg, var(--brand-light) 0%, $brand-red 100%);
@@ -441,7 +435,7 @@ $navy-bot: color-mix(in srgb, var(--el-color-primary), #0b1020 84%);
 
   .track-card__route {
     display: flex;
-    gap: 14px;
+    gap: 16px;
     align-items: center;
   }
 
@@ -449,9 +443,9 @@ $navy-bot: color-mix(in srgb, var(--el-color-primary), #0b1020 84%);
     flex-shrink: 0;
     max-width: 96px;
     overflow: hidden;
+    text-overflow: ellipsis;
     font-size: 13px;
     color: rgb(255 255 255 / 88%);
-    text-overflow: ellipsis;
     white-space: nowrap;
 
     &--end {
@@ -471,13 +465,13 @@ $navy-bot: color-mix(in srgb, var(--el-color-primary), #0b1020 84%);
       position: absolute;
       inset: 0;
       content: "";
-      opacity: 0.45;
       background: repeating-linear-gradient(
         90deg,
         rgb(255 255 255 / 40%) 0 10px,
         transparent 10px 20px
       );
       border-radius: inherit;
+      opacity: 0.45;
       animation: brand-dash-flow 1.2s linear infinite;
     }
 
@@ -532,21 +526,21 @@ $navy-bot: color-mix(in srgb, var(--el-color-primary), #0b1020 84%);
     display: flex;
     justify-content: space-between;
     padding: 0;
-    margin: 16px 2px 0;
+    margin: 16px 4px 0;
     list-style: none;
   }
 
   .track-step {
     display: flex;
-    gap: 6px;
+    gap: 8px;
     align-items: center;
     font-size: 12px;
     color: rgb(255 255 255 / 42%);
 
     &__dot {
+      flex-shrink: 0;
       width: 8px;
       height: 8px;
-      flex-shrink: 0;
       background: rgb(255 255 255 / 28%);
       border-radius: 50%;
       /* 错峰点亮：delay 按 23.8% × 14s ≈ 3.33s 递增；backwards 使延迟期间保持 0% 未点亮帧 */
@@ -560,7 +554,7 @@ $navy-bot: color-mix(in srgb, var(--el-color-primary), #0b1020 84%);
     display: inline-flex;
     gap: 8px;
     align-items: center;
-    padding: 10px 14px;
+    padding: 8px 16px;
     font-size: 12px;
     color: rgb(255 255 255 / 65%);
     background: rgb(255 255 255 / 8%);
@@ -578,8 +572,8 @@ $navy-bot: color-mix(in srgb, var(--el-color-primary), #0b1020 84%);
       margin-left: 4px;
       font-size: 15px;
       font-weight: 700;
-      color: #fff;
       font-variant-numeric: tabular-nums;
+      color: #fff;
     }
 
     &--a {
@@ -602,31 +596,31 @@ $navy-bot: color-mix(in srgb, var(--el-color-primary), #0b1020 84%);
 
   &__slogan {
     position: absolute;
-    z-index: 1;
-    left: 7%;
     top: 12%;
+    left: 7%;
+    z-index: 1;
     font-family: "STXingkai", "STKaiti", "KaiTi", "楷体", serif;
     font-size: 68px;
     font-weight: 700;
     line-height: 1.2;
     color: #fff;
+    letter-spacing: 8px;
+    white-space: nowrap;
     text-shadow:
       0 2px 4px rgb(0 0 0 / 30%),
       0 6px 22px rgb(0 0 0 / 45%);
-    letter-spacing: 8px;
-    white-space: nowrap;
     user-select: none;
   }
 
   &__copyright {
     position: absolute;
-    z-index: 1;
-    bottom: 26px;
-    left: 0;
     right: 0;
+    bottom: 24px;
+    left: 0;
+    z-index: 1;
     font-size: 12px;
-    text-align: center;
     color: rgb(255 255 255 / 55%);
+    text-align: center;
   }
 }
 
@@ -833,18 +827,18 @@ $navy-bot: color-mix(in srgb, var(--el-color-primary), #0b1020 84%);
   &__brand {
     display: flex;
     justify-content: center;
-    margin-bottom: 26px;
+    margin-bottom: 24px;
   }
 
   /* Logo 放大：登录页门面，品牌识别要够醒目 */
   &__logo-full {
-    height: 68px;
-    width: auto;
     display: block;
+    width: auto;
+    height: 68px;
   }
 
   &__title {
-    margin: 0 0 10px;
+    margin: 0 0 8px;
     font-size: 28px;
     font-weight: 750;
     line-height: 1.1;
@@ -853,7 +847,7 @@ $navy-bot: color-mix(in srgb, var(--el-color-primary), #0b1020 84%);
   }
 
   &__desc {
-    margin: 10px 0 28px;
+    margin: 8px 0 24px;
     font-size: 15px;
     color: $text-muted;
   }
@@ -896,7 +890,7 @@ $navy-bot: color-mix(in srgb, var(--el-color-primary), #0b1020 84%);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 22px;
+    margin-bottom: 20px;
     font-size: 14px;
     color: $text-secondary;
 
@@ -939,7 +933,7 @@ $navy-bot: color-mix(in srgb, var(--el-color-primary), #0b1020 84%);
     margin-top: 20px;
 
     &-title {
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       font-size: 12px;
       color: $text-muted;
     }
@@ -990,13 +984,13 @@ $navy-bot: color-mix(in srgb, var(--el-color-primary), #0b1020 84%);
 
   /* 半透明白底按钮，在渐变背景上保持可见；hover 时提实并加深投影 */
   &__alt {
-    margin-top: 28px;
+    margin-top: 24px;
 
     &-divider {
       display: flex;
       gap: 12px;
       align-items: center;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       font-size: 13px;
       color: $text-muted;
 
@@ -1047,7 +1041,7 @@ $navy-bot: color-mix(in srgb, var(--el-color-primary), #0b1020 84%);
 }
 
 :deep(.el-form-item) {
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 :deep(.el-input__wrapper) {
@@ -1156,7 +1150,7 @@ $navy-bot: color-mix(in srgb, var(--el-color-primary), #0b1020 84%);
 
 .fade-slide-enter-active,
 .fade-slide-leave-active {
-  transition: all 0.2s ease;
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 .fade-slide-enter-from,
@@ -1239,7 +1233,7 @@ $navy-bot: color-mix(in srgb, var(--el-color-primary), #0b1020 84%);
   }
 
   .login-brand {
-    padding: 24px 24px 28px;
+    padding: 24px;
   }
 
   .login-card {

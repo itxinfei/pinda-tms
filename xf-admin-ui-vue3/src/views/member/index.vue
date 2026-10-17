@@ -33,6 +33,12 @@
 
       <div class="page-table-wrapper">
         <el-table v-loading="loading" :data="list" class="page-table" border height="100%">
+          <template #empty>
+            <el-empty v-if="loadError" description="加载失败">
+              <el-button type="primary" @click="loadList">重试</el-button>
+            </el-empty>
+            <el-empty v-else description="暂无数据" />
+          </template>
           <el-table-column prop="phone" label="手机号" min-width="140" show-overflow-tooltip />
           <el-table-column label="姓名" min-width="120" show-overflow-tooltip>
             <template #default="scope">{{ scope.row.name || "-" }}</template>
@@ -151,6 +157,7 @@ function verifyTagType(status?: number): "success" | "danger" | "info" {
 
 /** 查询与列表状态 */
 const loading = ref(false);
+const loadError = ref(false);
 const list = ref<MemberRecord[]>([]);
 const total = ref(0);
 const query = ref<MemberPageQuery>({ page: 1, pageSize: 10 });
@@ -169,10 +176,13 @@ function buildParams(): MemberPageQuery {
 
 async function loadList() {
   loading.value = true;
+  loadError.value = false;
   try {
     const res = await MemberAPI.page(buildParams());
     list.value = res?.items ?? [];
     total.value = res?.counts ?? 0;
+  } catch {
+    loadError.value = true;
   } finally {
     loading.value = false;
   }

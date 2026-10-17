@@ -76,16 +76,40 @@
           highlight-current-row
           @selection-change="handleSelectionChange"
         >
+          <template #empty>
+            <el-empty v-if="error" description="加载失败">
+              <el-button type="primary" @click="fetchData">重试</el-button>
+            </el-empty>
+            <el-empty v-else description="暂无数据" />
+          </template>
           <el-table-column type="selection" width="55" align="center" />
-          <el-table-column type="index" label="序号" width="60" />
-          <el-table-column key="appName" label="应用名称" prop="appName" min-width="140" />
-          <el-table-column key="appCode" label="应用编码" prop="appCode" min-width="120" />
+          <el-table-column type="index" label="序号" width="60" align="center" />
+          <el-table-column
+            key="appName"
+            label="应用名称"
+            prop="appName"
+            min-width="140"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            key="appCode"
+            label="应用编码"
+            prop="appCode"
+            min-width="120"
+            show-overflow-tooltip
+          />
           <el-table-column key="platform" label="平台" width="130" align="center">
             <template #default="scope">
               <el-tag>{{ resolvePlatformLabel(scope.row.platform) }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column key="appId" label="AppId" prop="appId" min-width="160" />
+          <el-table-column
+            key="appId"
+            label="AppId"
+            prop="appId"
+            min-width="160"
+            show-overflow-tooltip
+          />
           <el-table-column label="状态" width="90" align="center">
             <template #default="scope">
               <el-switch
@@ -267,20 +291,18 @@ const initialFormData: AppForm = {
 };
 
 // 应用表格数据
-const { loading, list, total, params, fetchData, handleQuery, handleResetQuery } = usePageTable<
-  AppItem,
-  AppQueryParams
->({
-  initialParams: {
-    pageNum: 1,
-    pageSize: 10,
-    keywords: "",
-    status: undefined,
-    platform: undefined,
-  },
-  request: AppAPI.getPage,
-  onBeforeReset: () => queryFormRef.value?.resetFields(),
-});
+const { loading, error, list, total, params, fetchData, handleQuery, handleResetQuery } =
+  usePageTable<AppItem, AppQueryParams>({
+    initialParams: {
+      pageNum: 1,
+      pageSize: 10,
+      keywords: "",
+      status: undefined,
+      platform: undefined,
+    },
+    request: AppAPI.getPage,
+    onBeforeReset: () => queryFormRef.value?.resetFields(),
+  });
 
 const { selectedIds, hasSelection, handleSelectionChange } = useTableSelection<AppItem>();
 
@@ -342,11 +364,26 @@ async function handleEditClick(id: string): Promise<void> {
 async function handleStatusChange(row: AppItem): Promise<void> {
   const id = String(row.id);
   const status = row.status as number;
+  const previous = status === CommonStatus.ENABLED ? CommonStatus.DISABLED : CommonStatus.ENABLED;
+  try {
+    await ElMessageBox.confirm(
+      status === CommonStatus.DISABLED ? "确认停用该应用吗？" : "确认启用该应用吗？",
+      "提示",
+      {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning",
+      }
+    );
+  } catch {
+    row.status = previous;
+    return;
+  }
   try {
     await AppAPI.updateStatus(id, status);
     ElMessage.success("状态已更新");
   } catch {
-    row.status = status === CommonStatus.ENABLED ? CommonStatus.DISABLED : CommonStatus.ENABLED;
+    row.status = previous;
   }
 }
 

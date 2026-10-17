@@ -5,7 +5,9 @@
       <el-card class="dispatch-board__side" shadow="never">
         <template #header>
           <div class="dispatch-board__side-header">
-            <span>待调度订单（{{ selected.length }}/{{ orders.length }}）</span>
+            <el-tooltip :content="`待调度订单（${selected.length}/${orders.length}）`" placement="top">
+              <span>待调度订单（{{ selected.length }}/{{ orders.length }}）</span>
+            </el-tooltip>
             <el-button
               v-hasPerm="['dispatch:board:assign']"
               type="primary"
@@ -47,14 +49,26 @@
               :key="item.id"
               class="dispatch-board__order"
               :class="{ 'is-active': activeOrderId === item.id }"
+              role="button"
+              tabindex="0"
+              :aria-label="`订单 ${item.orderNo || item.id}，${item.senderName || '-'} 至 ${item.receiverName || '-'}`"
               @click="activeOrderId = item.id"
+              @keydown.enter.prevent="activeOrderId = item.id"
+              @keydown.space.prevent="activeOrderId = item.id"
             >
-              <el-checkbox :value="item.id" @click.stop />
+              <el-checkbox :value="item.id" @click.stop @keydown.space.stop />
               <div class="dispatch-board__order-body">
-                <div class="dispatch-board__order-no">{{ item.orderNo || item.id }}</div>
-                <div class="dispatch-board__order-meta">
-                  {{ item.senderName || "-" }} → {{ item.receiverName || "-" }}
-                </div>
+                <el-tooltip :content="item.orderNo || item.id" placement="top">
+                  <div class="dispatch-board__order-no">{{ item.orderNo || item.id }}</div>
+                </el-tooltip>
+                <el-tooltip
+                  :content="`${item.senderName || '-'} → ${item.receiverName || '-'}`"
+                  placement="top"
+                >
+                  <div class="dispatch-board__order-meta">
+                    {{ item.senderName || "-" }} → {{ item.receiverName || "-" }}
+                  </div>
+                </el-tooltip>
                 <div class="dispatch-board__order-org">
                   <el-tag size="small" type="info" effect="plain">
                     {{ item.currentOrgName || item.currentOrgId || "-" }}
@@ -312,7 +326,7 @@ function renderTrucks() {
       return;
     }
     const marker = createLabeledMarker(instance, BMap, point, item.licensePlate || item.name || "车辆", {
-      background: "#2b6cff",
+      background: cssVar("--el-color-primary", "#FF0033"),
       onClick: () => {
         activeTruck.value = item;
       },
@@ -463,25 +477,25 @@ onBeforeUnmount(() => {
   height: calc(100vh - 130px);
 
   &__side {
-    width: 320px;
-    flex-shrink: 0;
     display: flex;
+    flex-shrink: 0;
     flex-direction: column;
+    width: 320px;
   }
 
   &__side-header {
     display: flex;
+    gap: 8px;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
 
     // 标题「待调度订单（0/2）」：窄空间省略防与按钮挤压，计数数字等宽不跳动
     > span {
       min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
-      white-space: nowrap;
       font-variant-numeric: tabular-nums;
+      white-space: nowrap;
     }
 
     :deep(.el-button) {
@@ -520,12 +534,12 @@ onBeforeUnmount(() => {
 
   &__order {
     display: flex;
-    align-items: flex-start;
     gap: 8px;
+    align-items: flex-start;
     padding: 8px;
+    cursor: pointer;
     border: 1px solid var(--el-border-color-lighter);
     border-radius: 6px;
-    cursor: pointer;
 
     // 勾选框与首行文字顶对齐（checkbox 默认固定高度会把首行往下顶）
     :deep(.el-checkbox) {
@@ -534,8 +548,8 @@ onBeforeUnmount(() => {
     }
 
     &.is-active {
-      border-color: var(--el-color-primary);
       background: var(--el-color-primary-light-9);
+      border-color: var(--el-color-primary);
     }
   }
 
@@ -546,29 +560,29 @@ onBeforeUnmount(() => {
 
   // 长订单号单行省略，防撑破 320px 侧栏
   &__order-no {
-    font-size: 13px;
-    font-weight: 600;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
+    font-size: 13px;
+    font-weight: 600;
     font-variant-numeric: tabular-nums;
+    white-space: nowrap;
   }
 
   // 发件人→收件人：块级单行省略。
   // 此前用 display:flex 包纯文本节点，文本失去换行/省略能力，长名字溢出挤压即「文字乱」根因
   &__order-meta {
     margin-top: 4px;
-    font-size: 12px;
-    color: var(--el-text-color-secondary);
     overflow: hidden;
     text-overflow: ellipsis;
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
     white-space: nowrap;
   }
 
   &__order-org {
     display: flex;
+    gap: 4px;
     align-items: center;
-    gap: 6px;
     margin-top: 4px;
     font-size: 12px;
     color: var(--el-text-color-secondary);
@@ -579,10 +593,10 @@ onBeforeUnmount(() => {
   }
 
   &__map-card {
-    flex: 1;
-    min-width: 0;
     display: flex;
+    flex: 1;
     flex-direction: column;
+    min-width: 0;
   }
 
   &__map-header {
@@ -597,8 +611,8 @@ onBeforeUnmount(() => {
 
   &__legend {
     display: flex;
-    align-items: center;
     gap: 12px;
+    align-items: center;
     font-size: 12px;
     color: var(--el-text-color-secondary);
   }

@@ -71,9 +71,15 @@
           highlight-current-row
           @selection-change="handleSelectionChange"
         >
+          <template #empty>
+            <el-empty v-if="error" description="加载失败">
+              <el-button type="primary" @click="fetchData">重试</el-button>
+            </el-empty>
+            <el-empty v-else description="暂无数据" />
+          </template>
           <el-table-column type="selection" width="55" align="center" />
-          <el-table-column type="index" label="序号" width="60" />
-          <el-table-column label="通知标题" prop="title" min-width="200" />
+          <el-table-column type="index" label="序号" width="60" align="center" />
+          <el-table-column label="通知标题" prop="title" min-width="200" show-overflow-tooltip />
           <el-table-column align="center" label="通知类型" width="150">
             <template #default="scope">
               <DictTag v-model="scope.row.type" :code="'notice_type'" />
@@ -180,7 +186,7 @@
       </div>
 
       <pagination
-      v-if="total > 0"
+        v-if="total > 0"
         v-model:total="total"
         v-model:page="params.pageNum"
         v-model:limit="params.pageSize"
@@ -202,13 +208,13 @@
         <div class="flex-x-between">
           <span>{{ dialogState.title }}</span>
           <div class="dialog-toolbar">
-            <el-button circle @click="toggleDialogFullscreen">
+            <el-button circle aria-label="切换全屏" @click="toggleDialogFullscreen">
               <template #icon>
                 <FullScreen v-if="!dialogState.fullscreen" />
                 <CopyDocument v-else />
               </template>
             </el-button>
-            <el-button circle @click="closeDialog">
+            <el-button circle aria-label="关闭" @click="closeDialog">
               <template #icon>
                 <Close />
               </template>
@@ -262,9 +268,7 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button type="primary" :loading="submitting" @click="handleSubmit()">
-            确定
-          </el-button>
+          <el-button type="primary" :loading="submitting" @click="handleSubmit()">确定</el-button>
           <el-button :disabled="submitting" @click="closeDialog()">取消</el-button>
         </div>
       </template>
@@ -280,7 +284,7 @@
         <div class="flex-x-between">
           <span>通知公告详情</span>
           <div class="dialog-toolbar">
-            <el-button circle @click="closeDetailDialog">
+            <el-button circle aria-label="关闭" @click="closeDetailDialog">
               <template #icon>
                 <Close />
               </template>
@@ -350,19 +354,17 @@ const NOTICE_TARGET_ALL = 1;
 const NOTICE_TARGET_SPECIFIED = 2;
 
 // 分页表格数据管理
-const { loading, list, total, params, fetchData, handleQuery, handleResetQuery } = usePageTable<
-  NoticeItem,
-  NoticeQueryParams
->({
-  initialParams: {
-    pageNum: 1,
-    pageSize: 10,
-    title: "",
-    publishStatus: undefined,
-  },
-  request: NoticeAPI.getPage,
-  onBeforeReset: () => queryFormRef.value?.resetFields(),
-});
+const { loading, error, list, total, params, fetchData, handleQuery, handleResetQuery } =
+  usePageTable<NoticeItem, NoticeQueryParams>({
+    initialParams: {
+      pageNum: 1,
+      pageSize: 10,
+      title: "",
+      publishStatus: undefined,
+    },
+    request: NoticeAPI.getPage,
+    onBeforeReset: () => queryFormRef.value?.resetFields(),
+  });
 
 const { selectedIds, hasSelection, handleSelectionChange } = useTableSelection<NoticeItem>();
 
@@ -405,10 +407,7 @@ const rules: FormRules<NoticeForm> = {
     {
       trigger: "change",
       validator: (_rule, value: number[], callback) => {
-        if (
-          formData.targetType === NOTICE_TARGET_SPECIFIED &&
-          (!value || value.length === 0)
-        ) {
+        if (formData.targetType === NOTICE_TARGET_SPECIFIED && (!value || value.length === 0)) {
           callback(new Error("请选择指定用户"));
         } else {
           callback();
@@ -662,15 +661,15 @@ onMounted(() => {
 /* 对话框头部工具行：圆形按钮横向排列 */
 .dialog-toolbar {
   display: flex;
-  align-items: center;
   gap: 8px;
+  align-items: center;
 }
 
 /* 公告富文本正文：基础排版，图片自适应 */
 .notice-content {
   line-height: 1.7;
-  word-break: break-word;
   color: var(--el-text-color-regular);
+  overflow-wrap: anywhere;
 
   :deep(p) {
     margin: 0 0 8px;

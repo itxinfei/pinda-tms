@@ -13,6 +13,7 @@ export function usePageTable<T, Q extends BaseQueryParams = BaseQueryParams>(
   const { initialParams, request, onBeforeReset } = options;
 
   const loading = ref(false);
+  const error = ref(false);
   const list = ref<T[]>([]) as Ref<T[]>;
   const total = ref(0);
   const params = reactive({ ...initialParams }) as Q;
@@ -20,12 +21,18 @@ export function usePageTable<T, Q extends BaseQueryParams = BaseQueryParams>(
   /**
    * 拉取当前查询参数对应的分页数据
    * 只负责请求和回填，不处理弹窗、路由或消息提示
+   * 请求失败置 error=true，供页面渲染"加载失败+重试"空态
    */ async function fetchData(): Promise<void> {
     loading.value = true;
+    error.value = false;
     try {
       const data = await request(params);
       list.value = data.list ?? [];
       total.value = data.total ?? 0;
+    } catch {
+      error.value = true;
+      list.value = [];
+      total.value = 0;
     } finally {
       loading.value = false;
     }
@@ -56,6 +63,7 @@ export function usePageTable<T, Q extends BaseQueryParams = BaseQueryParams>(
 
   return {
     loading,
+    error,
     list,
     total,
     params,
@@ -82,6 +90,8 @@ export interface UsePageTableOptions<T, Q extends BaseQueryParams> {
 export interface UsePageTableReturn<T, Q extends BaseQueryParams> {
   /** 加载状态 */
   loading: Ref<boolean>;
+  /** 请求失败标记（三态：空数据 vs 加载失败） */
+  error: Ref<boolean>;
   /** 当前页数据列表 */
   list: Ref<T[]>;
   /** 数据总条数 */

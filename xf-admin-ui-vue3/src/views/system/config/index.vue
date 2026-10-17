@@ -34,7 +34,9 @@
     <el-card ref="tableWrapperRef" class="page-content" shadow="never">
       <div class="page-toolbar">
         <div class="page-toolbar__left">
-          <el-button v-hasPerm="['sys:config:create']" type="primary" @click="openDialog()">新增参数</el-button>
+          <el-button v-hasPerm="['sys:config:create']" type="primary" @click="openDialog()">
+            新增参数
+          </el-button>
         </div>
         <div class="page-toolbar__right">
           <el-tooltip content="刷新" placement="top">
@@ -60,10 +62,22 @@
           highlight-current-row
           border
         >
-          <el-table-column type="index" label="序号" width="60" />
+          <template #empty>
+            <el-empty v-if="error" description="加载失败">
+              <el-button type="primary" @click="fetchData">重试</el-button>
+            </el-empty>
+            <el-empty v-else description="暂无数据" />
+          </template>
+          <el-table-column type="index" label="序号" width="60" align="center" />
           <el-table-column key="configName" label="参数名称" prop="configName" min-width="140" />
-          <el-table-column key="configKey" label="参数键" prop="configKey" min-width="160" />
-          <el-table-column label="参数值" min-width="180">
+          <el-table-column
+            key="configKey"
+            label="参数键"
+            prop="configKey"
+            min-width="160"
+            show-overflow-tooltip
+          />
+          <el-table-column label="参数值" min-width="180" show-overflow-tooltip>
             <template #default="{ row }">
               <span v-if="row.isSensitive === 1" class="config-value--secret">
                 {{ row.valueMasked || "（未设置）" }}
@@ -76,7 +90,7 @@
               <el-tag size="small" type="info">{{ row.valueType }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="敏感" width="80">
+          <el-table-column label="敏感" width="80" align="center">
             <template #default="{ row }">
               <el-tag size="small" :type="row.isSensitive === 1 ? 'danger' : 'info'">
                 {{ row.isSensitive === 1 ? "是" : "否" }}
@@ -85,12 +99,18 @@
           </el-table-column>
           <el-table-column label="状态" width="80" align="center">
             <template #default="{ row }">
-              <el-tag size="small" :type="row.status === 1 ? 'success' : 'warning'">
+              <el-tag size="small" :type="row.status === 1 ? 'success' : 'info'">
                 {{ row.status === 1 ? "启用" : "停用" }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column key="remark" label="备注" prop="remark" min-width="120" />
+          <el-table-column
+            key="remark"
+            label="备注"
+            prop="remark"
+            min-width="120"
+            show-overflow-tooltip
+          />
           <el-table-column fixed="right" label="操作" width="160" align="center">
             <template #default="scope">
               <el-button
@@ -162,7 +182,9 @@
             <el-radio :value="0">否</el-radio>
             <el-radio :value="1">是（加密存储，列表脱敏）</el-radio>
           </el-radio-group>
-          <span v-if="!!formData.id" class="config-sensitive-hint">切换后存量参数值将自动按新设置重新加密/解密存储</span>
+          <span v-if="!!formData.id" class="config-sensitive-hint">
+            切换后存量参数值将自动按新设置重新加密/解密存储
+          </span>
         </el-form-item>
         <el-form-item label="参数值" prop="configValue">
           <div class="config-value-field">
@@ -236,14 +258,12 @@ const queryFormRef = ref<FormInstance>();
 const dataFormRef = ref<FormInstance>();
 
 // 分页表格数据管理
-const { loading, list, total, params, fetchData, handleQuery, handleResetQuery } = usePageTable<
-  ConfigItem,
-  ConfigQueryParams
->({
-  initialParams: { pageNum: 1, pageSize: 10, keywords: "", status: "" },
-  request: ConfigAPI.getPage,
-  onBeforeReset: () => queryFormRef.value?.resetFields(),
-});
+const { loading, error, list, total, params, fetchData, handleQuery, handleResetQuery } =
+  usePageTable<ConfigItem, ConfigQueryParams>({
+    initialParams: { pageNum: 1, pageSize: 10, keywords: "", status: "" },
+    request: ConfigAPI.getPage,
+    onBeforeReset: () => queryFormRef.value?.resetFields(),
+  });
 
 const dialogState = reactive({ title: "", visible: false });
 
@@ -402,8 +422,8 @@ onMounted(() => {
 <style scoped>
 .config-value--secret {
   font-family: var(--el-font-family-monospace, monospace);
-  letter-spacing: 1px;
   color: var(--el-text-color-secondary);
+  letter-spacing: 1px;
 }
 .config-value-field {
   display: flex;

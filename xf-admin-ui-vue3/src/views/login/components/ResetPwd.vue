@@ -4,7 +4,7 @@
     <el-form ref="formRef" :model="model" :rules="rules" size="large">
       <!-- 用户名"-->
       <el-form-item prop="username">
-        <el-input v-model.trim="model.username" :placeholder="t('login.username')">
+        <el-input v-model.trim="model.username" :placeholder="t('login.username')" :aria-label="t('login.username')">
           <template #prefix>
             <el-icon><User /></el-icon>
           </template>

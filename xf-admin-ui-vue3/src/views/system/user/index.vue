@@ -5,7 +5,11 @@
       <div class="page-aside__inner">
         <UserDeptTree v-model="params.deptId" @node-click="handleQuery" />
       </div>
-      <button class="page-aside__toggle" @click="sidebarCollapsed = !sidebarCollapsed">
+      <button
+        class="page-aside__toggle"
+        :title="sidebarCollapsed ? '展开部门树' : '收起部门树'"
+        @click="sidebarCollapsed = !sidebarCollapsed"
+      >
         <el-icon :size="14">
           <ArrowLeft v-if="!sidebarCollapsed" />
           <ArrowRight v-else />
@@ -107,8 +111,14 @@
             row-key="id"
             @selection-change="handleSelectionChange"
           >
+            <template #empty>
+              <el-empty v-if="error" description="加载失败">
+                <el-button type="primary" @click="fetchData">重试</el-button>
+              </el-empty>
+              <el-empty v-else description="暂无数据" />
+            </template>
             <el-table-column type="selection" width="42" fixed="left" align="center" />
-            <el-table-column label="昵称" min-width="140" fixed="left">
+            <el-table-column label="昵称" min-width="140" fixed="left" show-overflow-tooltip>
               <template #default="scope">
                 <div class="user-name-cell">
                   <el-avatar v-if="scope.row.avatar" :src="scope.row.avatar" :size="24" />
@@ -140,7 +150,7 @@
                   v-if="
                     scope.row.gender === UserGender.MALE || scope.row.gender === UserGender.FEMALE
                   "
-                  :type="scope.row.gender === UserGender.MALE ? 'primary' : 'danger'"
+                  type="info"
                   size="small"
                 >
                   <el-icon>
@@ -257,7 +267,12 @@
         </el-form-item>
 
         <el-form-item label="性别" prop="gender">
-          <el-select v-model="formData.gender" placeholder="请选择性别" clearable style="width: 100%">
+          <el-select
+            v-model="formData.gender"
+            placeholder="请选择性别"
+            clearable
+            style="width: 100%"
+          >
             <el-option label="男" :value="UserGender.MALE" />
             <el-option label="女" :value="UserGender.FEMALE" />
           </el-select>
@@ -388,17 +403,15 @@ const resetPasswordFormRef = ref<FormInstance>();
 const sidebarCollapsed = ref(false);
 
 // 分页表格数据管理
-const { loading, list, total, params, fetchData, handleQuery, handleResetQuery } = usePageTable<
-  UserItem,
-  UserQueryParams
->({
-  initialParams: {
-    pageNum: 1,
-    pageSize: 10,
-  },
-  request: UserAPI.getPage,
-  onBeforeReset: () => queryFormRef.value?.resetFields(),
-});
+const { loading, error, list, total, params, fetchData, handleQuery, handleResetQuery } =
+  usePageTable<UserItem, UserQueryParams>({
+    initialParams: {
+      pageNum: 1,
+      pageSize: 10,
+    },
+    request: UserAPI.getPage,
+    onBeforeReset: () => queryFormRef.value?.resetFields(),
+  });
 
 const { selectedIds, hasSelection, handleSelectionChange } = useTableSelection<UserItem>();
 
@@ -512,6 +525,20 @@ function handleDeptChange(deptId?: string): void {
 async function handleStatusChange(row: UserItem): Promise<void> {
   const target = row.status === CommonStatus.ENABLED ? CommonStatus.DISABLED : CommonStatus.ENABLED;
   const status = row.status ?? CommonStatus.DISABLED;
+  try {
+    await ElMessageBox.confirm(
+      status === CommonStatus.DISABLED ? "确认停用该用户吗？" : "确认启用该用户吗？",
+      "提示",
+      {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning",
+      }
+    );
+  } catch {
+    row.status = target;
+    return;
+  }
   try {
     await UserAPI.changeStatus(String(row.id), status);
     ElMessage.success(status === CommonStatus.ENABLED ? "已启用" : "已禁用");

@@ -27,6 +27,12 @@
 
       <div class="page-table-wrapper">
         <el-table v-loading="loading" :data="list" class="page-table" border height="100%">
+          <template #empty>
+            <el-empty v-if="loadError" description="加载失败">
+              <el-button type="primary" @click="loadList">重试</el-button>
+            </el-empty>
+            <el-empty v-else description="暂无数据" />
+          </template>
           <el-table-column prop="id" label="作业单号" min-width="160" show-overflow-tooltip />
           <el-table-column label="司机" min-width="120">
             <template #default="scope">
@@ -126,7 +132,7 @@
             <el-option label="复位为待执行" :value="DriverJobStatus.PENDING" />
             <el-option label="作废" :value="DriverJobStatus.CANCELLED" />
           </el-select>
-          <div class="page-text-sub" style="line-height: 1.5; margin-top: 4px">
+          <div class="page-text-sub" style=" margin-top: 4px;line-height: 1.5">
             仅允许复位待执行或作废；进行中/改派/已完成由司机端流转产生，管理端不可伪造
           </div>
         </el-form-item>
@@ -155,8 +161,8 @@ type TagType = "primary" | "success" | "info" | "warning" | "danger";
 
 /** 作业状态选项（搜索下拉 + 标签） */
 const STATUS_OPTIONS: { value: DriverJobStatus; label: string; type: TagType }[] = [
-  { value: DriverJobStatus.PENDING, label: "待执行", type: "info" },
-  { value: DriverJobStatus.PROCESSING, label: "进行中", type: "warning" },
+  { value: DriverJobStatus.PENDING, label: "待执行", type: "warning" },
+  { value: DriverJobStatus.PROCESSING, label: "进行中", type: "primary" },
   { value: DriverJobStatus.REASSIGNED, label: "改派", type: "warning" },
   { value: DriverJobStatus.FINISHED, label: "已完成", type: "success" },
   { value: DriverJobStatus.CANCELLED, label: "已作废", type: "info" },
@@ -190,15 +196,19 @@ function buildPayload(): DriverJobPageQuery {
 
 /** 查询与列表状态 */
 const loading = ref(false);
+const loadError = ref(false);
 const list = ref<DriverJobRecord[]>([]);
 const total = ref(0);
 
 async function loadList() {
   loading.value = true;
+  loadError.value = false;
   try {
     const res = await DriverJobAPI.page(buildPayload());
     list.value = res?.items ?? [];
     total.value = res?.counts ?? 0;
+  } catch {
+    loadError.value = true;
   } finally {
     loading.value = false;
   }
