@@ -25,7 +25,7 @@
       </view>
       <u-switch
         :value="reporting"
-        activeColor="#E15536"
+        activeColor="var(--c-primary)"
         @change="toggleReport"
       ></u-switch>
     </view>
@@ -33,19 +33,19 @@
     <!-- 功能入口 -->
     <view class="card entry-grid">
       <view class="entry" @click="goWait">
-        <u-icon name="list" size="44" color="#E15536"></u-icon>
+        <u-icon name="list" size="44" color="var(--c-primary)"></u-icon>
         <text class="entry-text">待提货</text>
       </view>
       <view class="entry" @click="goOnTheWay">
-        <u-icon name="car" size="44" color="#E15536"></u-icon>
+        <u-icon name="car" size="44" color="var(--c-primary)"></u-icon>
         <text class="entry-text">在途</text>
       </view>
       <view class="entry" @click="goCar">
-        <u-icon name="grid" size="44" color="#E15536"></u-icon>
+        <u-icon name="grid" size="44" color="var(--c-primary)"></u-icon>
         <text class="entry-text">车辆信息</text>
       </view>
       <view class="entry" @click="goHistory">
-        <u-icon name="clock" size="44" color="#E15536"></u-icon>
+        <u-icon name="clock" size="44" color="var(--c-primary)"></u-icon>
         <text class="entry-text">历史任务</text>
       </view>
     </view>

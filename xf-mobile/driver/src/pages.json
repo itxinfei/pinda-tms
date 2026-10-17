@@ -97,7 +97,7 @@
 	],
 	"tabBar": {
 		"color": "#86909C",
-		"selectedColor": "#E15536",
+		"selectedColor": "#FF0033",
 		"backgroundColor": "#FFFFFF",
 		"borderStyle": "black",
 		"list": [
@@ -118,7 +118,7 @@
 	"globalStyle": {
 		"navigationBarTextStyle": "white",
 		"navigationBarTitleText": "心飞司机宝",
-		"navigationBarBackgroundColor": "#E15536",
+		"navigationBarBackgroundColor": "#FF0033",
 		"backgroundColor": "#F5F7FA"
 	},
 	"condition": {

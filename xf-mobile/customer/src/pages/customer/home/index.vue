@@ -1,6 +1,6 @@
 <template>
   <view class="page home-page">
-    <u-navbar :title="'心飞物流'" :back="false" :borderBottom="false" bgColor="#E15536" placeholder>
+    <u-navbar :title="'心飞物流'" :back="false" :borderBottom="false" bgColor="var(--c-primary)" placeholder>
       <template #left><view /></template>
     </u-navbar>
 
@@ -16,27 +16,27 @@
     <!-- 功能入口 -->
     <view class="home-entries">
       <view class="entry-card" @click="goMailing">
-        <view class="entry-icon"><u-icon name="box" color="#E15536" size="40" /></view>
+        <view class="entry-icon"><u-icon name="box" color="var(--c-primary)" size="40" /></view>
         <view class="entry-name">我要寄件</view>
         <view class="entry-desc">在线下单 · 运费即时试算</view>
       </view>
       <view class="entry-card" @click="goList">
-        <view class="entry-icon"><u-icon name="search" color="#E15536" size="40" /></view>
+        <view class="entry-icon"><u-icon name="search" color="var(--c-primary)" size="40" /></view>
         <view class="entry-name">查快递</view>
         <view class="entry-desc">运单列表 · 轨迹查询</view>
       </view>
       <view class="entry-card" @click="goAddress">
-        <view class="entry-icon"><u-icon name="map" color="#E15536" size="40" /></view>
+        <view class="entry-icon"><u-icon name="map" color="var(--c-primary)" size="40" /></view>
         <view class="entry-name">地址簿</view>
         <view class="entry-desc">常用地址管理</view>
       </view>
       <view class="entry-card" @click="goAgency">
-        <view class="entry-icon"><u-icon name="location" color="#E15536" size="40" /></view>
+        <view class="entry-icon"><u-icon name="location" color="var(--c-primary)" size="40" /></view>
         <view class="entry-name">网点查询</view>
         <view class="entry-desc">附近网点自寄参考</view>
       </view>
       <view class="entry-card" @click="goPriceQuery">
-        <view class="entry-icon"><u-icon name="rmb" color="#E15536" size="40" /></view>
+        <view class="entry-icon"><u-icon name="rmb" color="var(--c-primary)" size="40" /></view>
         <view class="entry-name">运费查询</view>
         <view class="entry-desc">快速估算寄递费用</view>
       </view>
@@ -90,7 +90,7 @@ onShow(() => {
   padding: 0;
 }
 .home-hero {
-  background: linear-gradient(160deg, #E15536 0%, #B53D22 100%);
+  background: linear-gradient(135deg, #FF0033 0%, #CC0029 100%);
   padding: 40rpx 48rpx 64rpx;
   color: #fff;
 }

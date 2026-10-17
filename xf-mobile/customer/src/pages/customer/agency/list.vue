@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <u-navbar :title="'网点查询'" :back="true" :borderBottom="false" bgColor="#E15536" placeholder />
+    <u-navbar :title="'网点查询'" :back="true" :borderBottom="false" bgColor="var(--c-primary)" placeholder />
 
     <view class="filter-bar">
       <u-search v-model="keyword" placeholder="搜索网点名称/地址" :showAction="false" bgColor="#FFFFFF" @change="reload" @clear="reload" />

@@ -175,7 +175,7 @@ async function onLogin() {
   height: 92rpx;
   line-height: 92rpx;
   border-radius: 24rpx;
-  background: #e15536;
+  background: var(--c-primary);
   color: #ffffff;
   font-size: 32rpx;
   font-weight: 600;

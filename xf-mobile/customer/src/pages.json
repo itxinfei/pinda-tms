@@ -77,7 +77,7 @@
 	"globalStyle": {
 		"navigationBarTextStyle": "white",
 		"navigationBarTitleText": "心飞速运",
-		"navigationBarBackgroundColor": "#E15536",
+		"navigationBarBackgroundColor": "#FF0033",
 		"backgroundColor": "#F5F6F8"
 	}
 }

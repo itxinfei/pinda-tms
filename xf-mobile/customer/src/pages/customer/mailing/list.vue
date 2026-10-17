@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <u-navbar :title="'我的运单'" :back="true" :borderBottom="false" bgColor="#E15536" placeholder />
+    <u-navbar :title="'我的运单'" :back="true" :borderBottom="false" bgColor="var(--c-primary)" placeholder />
 
     <!-- 筛选 -->
     <view class="filter-bar">
