@@ -6,6 +6,12 @@
       <u-search v-model="keyword" placeholder="搜索网点名称/地址" :showAction="false" bgColor="#FFFFFF" @change="reload" @clear="reload" />
     </view>
 
+    <!-- 定位排序（《70》§3.1①）：取当前位置→后端按距离升序 -->
+    <view class="loc-bar">
+      <text class="loc-text">{{ locReady ? '已按距离由近到远排序' : '开启定位，优先展示附近网点' }}</text>
+      <text class="loc-btn" @click="onLocate">{{ locReady ? '重新定位' : '开启定位' }}</text>
+    </view>
+
     <u-skeleton v-if="loading && list.length === 0" class="sk" :rows="4" title animated />
     <view v-else-if="error" class="state-wrap">
       <u-empty mode="network" text="加载失败，请检查网络后重试" />
@@ -59,6 +65,30 @@ const pageNum = ref(1);
 const pageSize = 10;
 const total = ref(0);
 const loadStatus = ref('loadmore');
+const locReady = ref(false);
+const coords = ref({ latitude: '', longitude: '' });
+
+// 取当前位置（wgs84，与库内坐标口径一致）；失败/拒绝则优雅回退为默认排序
+const locate = () =>
+  new Promise((resolve) => {
+    uni.getLocation({
+      type: 'wgs84',
+      success: (res) => {
+        coords.value = { latitude: String(res.latitude), longitude: String(res.longitude) };
+        locReady.value = true;
+        resolve(true);
+      },
+      fail: () => {
+        locReady.value = false;
+        resolve(false);
+      },
+    });
+  });
+
+const onLocate = async () => {
+  const ok = await locate();
+  if (ok) reload();
+};
 
 const loadList = async (reset = false) => {
   if (loading.value) return;
@@ -69,11 +99,16 @@ const loadList = async (reset = false) => {
   loading.value = true;
   error.value = false;
   try {
-    const data = await agencyPage({
+    const params = {
       keyword: keyword.value,
       page: pageNum.value,
       pagesize: pageSize,
-    });
+    };
+    if (locReady.value) {
+      params.latitude = coords.value.latitude;
+      params.longitude = coords.value.longitude;
+    }
+    const data = await agencyPage(params);
     const items = (data && data.items) || [];
     total.value = (data && data.counts) || 0;
     list.value = reset ? items : list.value.concat(items);
@@ -117,12 +152,30 @@ onReachBottom(() => {
   loadList(false);
 });
 
-reload();
+// 首屏：先尝试定位（成功才带坐标），再拉列表
+(async () => {
+  await locate();
+  reload();
+})();
 </script>
 
 <style lang="scss" scoped>
 .filter-bar {
   padding: 16rpx 24rpx 0;
+}
+.loc-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12rpx 24rpx 0;
+}
+.loc-text {
+  font-size: var(--f-tip);
+  color: var(--c-text-3);
+}
+.loc-btn {
+  font-size: var(--f-tip);
+  color: var(--c-primary);
 }
 .state-wrap { padding-top: 120rpx; }
 .retry-wrap { display: flex; justify-content: center; padding: 32rpx 0; }
