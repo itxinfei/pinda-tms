@@ -7,15 +7,15 @@
       <view class="hero-sub">取件派件 · 扫码接单 · 实时追踪</view>
     </view>
 
-    <!-- 待执行 / 进行中 计数（容错，失败不阻塞） -->
+    <!-- 取件 / 派件任务量（count 契约已归一 data 包裹，《70》§3.3①） -->
     <view class="card stat-card" v-if="stat">
       <view class="stat-item">
-        <text class="stat-num">{{ pending }}</text>
-        <text class="stat-label">待执行</text>
+        <text class="stat-num">{{ pickupCount }}</text>
+        <text class="stat-label">取件任务</text>
       </view>
       <view class="stat-item">
-        <text class="stat-num">{{ processing }}</text>
-        <text class="stat-label">进行中</text>
+        <text class="stat-num">{{ dispatchCount }}</text>
+        <text class="stat-label">派件任务</text>
       </view>
     </view>
 
@@ -51,16 +51,15 @@
 
 <script setup lang="ts">
 // 任务大厅：hero + 待执行/进行中计数 + 取派双标签 + 扫码接单 + 我的任务入口
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { courierCount } from '@/common/api/courier'
 import { onShow } from '@dcloudio/uni-app'
 
 const tabs = [{ name: '取件' }, { name: '派件' }]
 const tabIndex = ref(0)
 const stat = ref<any>(null)
-// 计数容错：字段名不确定，统一 ?.xxx ?? 0
-const pending = computed(() => stat.value?.pending ?? stat.value?.waitExecute ?? stat.value?.todo ?? 0)
-const processing = computed(() => stat.value?.processing ?? stat.value?.progress ?? stat.value?.doing ?? 0)
+const pickupCount = ref(0)
+const dispatchCount = ref(0)
 
 function goTab(path: string) {
   uni.switchTab({ url: '/' + path })
@@ -85,10 +84,16 @@ function onTab(e: any) {
   tabIndex.value = e.index
 }
 
-// 首页计数（可选，失败不阻塞）
+// 首页计数：taskType 1=取件 2=派件（可选，失败不阻塞）
 async function loadCount() {
   try {
-    stat.value = await courierCount({})
+    const [p, d] = await Promise.all([
+      courierCount({ taskType: 1 }),
+      courierCount({ taskType: 2 }),
+    ])
+    pickupCount.value = Number(p) || 0
+    dispatchCount.value = Number(d) || 0
+    stat.value = true
   } catch (e) {
     stat.value = null
   }

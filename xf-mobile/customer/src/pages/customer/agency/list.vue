@@ -6,14 +6,12 @@
       <u-search v-model="keyword" placeholder="搜索网点名称/地址" :showAction="false" bgColor="#FFFFFF" @change="reload" @clear="reload" />
     </view>
 
-    <view v-if="loading && list.length === 0" class="state-wrap">
-      <u-loading-page :loading="true" :bgColor="'var(--c-bg)'" />
-    </view>
+    <u-skeleton v-if="loading && list.length === 0" class="sk" :rows="4" title animated />
     <view v-else-if="list.length === 0" class="state-wrap">
       <u-empty mode="list" text="未找到网点" />
     </view>
     <view v-else class="agency-list">
-      <view v-for="item in list" :key="item.id" class="card agency-card">
+      <view v-for="item in list" :key="item.id" class="card agency-card" hover-class="card-hover">
         <view class="agency-head">
           <text class="agency-name">{{ item.name || '-' }}</text>
           <u-tag v-if="item.orgType === 1" text="营业网点" type="primary" :plain="true" size="mini" />
@@ -30,6 +28,10 @@
         <view v-if="item.manager" class="agency-row">
           <u-icon name="account" color="var(--c-text-3)" size="16" />
           <text class="agency-text">负责人：{{ maskName(item.manager) }}</text>
+        </view>
+        <view class="agency-foot" hover-class="nav-hover" @click.stop="navToAgency(item)">
+          <u-icon name="arrow-right" color="var(--c-primary)" size="14" />
+          <text class="nav-text">地图导航</text>
         </view>
       </view>
       <u-loadmore :status="loadStatus" />
@@ -80,6 +82,21 @@ const reload = () => {
   loadList(true);
 };
 
+// 网点卡片→地图导航（按地址文本检索；网点无坐标契约，《70》§3.1②）
+const navToAgency = (item) => {
+  const addr = (item && (item.fullAddress || item.address)) || '';
+  if (!addr) return;
+  // #ifdef H5
+  window.open(`https://uri.amap.com/search?keyword=${encodeURIComponent(addr)}`, '_blank');
+  // #endif
+  // #ifndef H5
+  uni.setClipboardData({
+    data: addr,
+    success: () => uni.showToast({ title: '地址已复制', icon: 'none' }),
+  });
+  // #endif
+};
+
 onPullDownRefresh(async () => {
   await loadList(true);
   uni.stopPullDownRefresh();
@@ -99,10 +116,30 @@ reload();
   padding: 16rpx 24rpx 0;
 }
 .state-wrap { padding-top: 120rpx; }
+.sk { padding: 16rpx 24rpx; }
 .agency-list {
   padding: 16rpx 24rpx;
 }
 .agency-card { padding: 24rpx; }
+.card-hover {
+  background-color: rgba(255, 0, 51, 0.04);
+}
+.agency-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4rpx;
+  margin-top: 16rpx;
+  padding-top: 12rpx;
+  border-top: 1rpx solid var(--c-border);
+}
+.nav-hover {
+  background-color: rgba(255, 0, 51, 0.04);
+}
+.nav-text {
+  font-size: var(--f-tip);
+  color: var(--c-primary);
+}
 .agency-head {
   display: flex;
   justify-content: space-between;

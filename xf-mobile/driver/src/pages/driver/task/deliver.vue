@@ -33,6 +33,11 @@
         name="file"
         multiple
       ></u-upload>
+      <view class="scan-row" hover-class="row-hover" @click="onVerifyScan">
+        <u-icon name="scan" color="var(--c-primary)" size="20"></u-icon>
+        <text class="scan-text">扫码核对运单号</text>
+        <u-icon name="arrow-right" color="var(--c-text-4)" size="16"></u-icon>
+      </view>
     </view>
 
     <view class="action-bar">
@@ -50,7 +55,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { cargoFinish, attachmentUpload } from '@/common/api/driver'
+import { cargoFinish, cargoDetail, attachmentUpload } from '@/common/api/driver'
 import { onLoad } from '@dcloudio/uni-app'
 
 const id = ref('')
@@ -60,6 +65,24 @@ const lng = ref<number | null>(null)
 const lat = ref<number | null>(null)
 const locReady = ref(false)
 const submitting = ref(false)
+// 任务运单号（扫码核对基准，《70》§3.2）
+const expectOrderNo = ref('')
+
+// 扫码核对：扫到的文本与任务运单号比对提示
+function onVerifyScan() {
+  uni.scanCode({
+    success: (res) => {
+      const scanned = (res.result || '').trim()
+      if (!scanned) return
+      if (expectOrderNo.value && scanned === String(expectOrderNo.value).trim()) {
+        uni.showToast({ title: '运单号核对一致', icon: 'success' })
+      } else {
+        uni.showToast({ title: '与任务运单号不一致', icon: 'none' })
+      }
+    },
+    fail: () => {},
+  })
+}
 
 // 修改点：经纬度必须来自定位，禁止手填
 function getLocation() {
@@ -130,6 +153,14 @@ async function onConfirm() {
 
 onLoad((opt: any) => {
   id.value = opt.taskTransportId || opt.id || ''
+  // 取任务运单号作核对基准（失败不阻塞送达流程）
+  if (id.value) {
+    cargoDetail(id.value)
+      .then((t: any) => {
+        expectOrderNo.value = (t && t.tranOrderNum) || ''
+      })
+      .catch(() => {})
+  }
 })
 </script>
 
@@ -162,5 +193,21 @@ onLoad((opt: any) => {
 }
 .upload-card {
   padding: var(--s-4);
+}
+.scan-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin-top: var(--s-3);
+  padding-top: var(--s-3);
+  border-top: 1rpx solid var(--c-border);
+}
+.scan-text {
+  flex: 1;
+  font-size: var(--f-body);
+  color: var(--c-text-1);
+}
+.row-hover {
+  background-color: rgba(255, 0, 51, 0.04);
 }
 </style>
