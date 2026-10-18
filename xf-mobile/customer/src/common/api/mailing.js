@@ -27,3 +27,6 @@ export const route = (id) => request({ url: '/web-customer/mailing/route', data:
 
 /** 计数 GET /mailing/count */
 export const count = () => request({ url: '/web-customer/mailing/count' });
+
+/** 状态筛选档位 GET /mailing/status-filters → [{key,label,statusList}] */
+export const statusFilters = () => request({ url: '/web-customer/mailing/status-filters' });

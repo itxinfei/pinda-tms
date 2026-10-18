@@ -14,6 +14,15 @@
           @click="switchType(t.value)"
         >{{ t.label }}</view>
       </view>
+      <view class="mail-type-tabs">
+        <view
+          v-for="t in statusTabs"
+          :key="t.key"
+          class="mail-type-tab"
+          :class="{ active: statusKey === t.key }"
+          @click="switchStatus(t.key)"
+        >{{ t.label }}</view>
+      </view>
     </view>
 
     <!-- 列表 -->
@@ -60,7 +69,7 @@
 <script setup>
 import { ref } from 'vue';
 import { onShow, onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app';
-import { page } from '../../../common/api/mailing.js';
+import { page, statusFilters } from '../../../common/api/mailing.js';
 import { statusInfo, payMethodLabel, fmtTime } from '../../../common/utils/order.js';
 import { useUserStore } from '../../../stores/user.js';
 
@@ -78,6 +87,28 @@ const pageSize = 10;
 const total = ref(0);
 const loadStatus = ref('loadmore');
 
+// 状态筛选档位（后端 status-filters 下发，禁前端硬编码；失败保底"全部"）
+const statusTabs = ref([{ key: 'all', label: '全部', statusList: null }]);
+const statusKey = ref('all');
+let statusTabsLoaded = false;
+const loadStatusTabs = async () => {
+  if (statusTabsLoaded) return;
+  statusTabsLoaded = true;
+  try {
+    const data = await statusFilters();
+    if (Array.isArray(data) && data.length) {
+      statusTabs.value = data;
+    }
+  } catch (e) {
+    /* 保底全部档 */
+  }
+};
+const switchStatus = (key) => {
+  if (statusKey.value === key) return;
+  statusKey.value = key;
+  reload();
+};
+
 const loadList = async (reset = false) => {
   if (loading.value) return;
   if (reset) {
@@ -86,12 +117,17 @@ const loadList = async (reset = false) => {
   }
   loading.value = true;
   try {
-    const data = await page({
+    const params = {
       keyword: keyword.value,
       page: pageNum.value,
       pagesize: pageSize,
       mailType: mailType.value,
-    });
+    };
+    const curStatus = statusTabs.value.find((t) => t.key === statusKey.value);
+    if (curStatus && Array.isArray(curStatus.statusList) && curStatus.statusList.length) {
+      params.statusList = curStatus.statusList.join(',');
+    }
+    const data = await page(params);
     const items = (data && data.items) || [];
     total.value = (data && data.counts) || 0;
     list.value = reset ? items : list.value.concat(items);
@@ -133,6 +169,7 @@ onShow(() => {
     uni.reLaunch({ url: '/pages/customer/login/index' });
     return;
   }
+  loadStatusTabs();
   loadList(true);
 });
 </script>

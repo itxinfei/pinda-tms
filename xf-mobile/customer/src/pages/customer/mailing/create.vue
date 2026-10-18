@@ -95,7 +95,7 @@
 
 <script setup>
 import { ref, reactive, computed } from 'vue';
-import { onShow } from '@dcloudio/uni-app';
+import { onShow, onLoad } from '@dcloudio/uni-app';
 import { totalPrice, createOrder } from '../../../common/api/mailing.js';
 import { goodsTypeAll } from '../../../common/api/index.js';
 import { maskName, maskPhone } from '../../../common/utils/mask.js';
@@ -235,6 +235,21 @@ onShow(() => {
     // 由地址簿返回时通过 uni.$emit 传递，见 address/list.vue
   }
   loadGoodsTypes();
+});
+
+// 再来一单：从详情带出原地址预填（《70》§3.1③）
+onLoad((options) => {
+  if (!options || options.again !== '1') return;
+  const decode = (v) => {
+    if (!v) return '';
+    try {
+      return decodeURIComponent(v);
+    } catch (e) {
+      return v;
+    }
+  };
+  if (options.senderAddress) form.sendAddress = decode(options.senderAddress);
+  if (options.receiverAddress) form.receiptAddress = decode(options.receiverAddress);
 });
 
 uni.$on('addressSelected', (payload) => {

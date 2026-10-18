@@ -59,6 +59,7 @@
         <u-button v-if="canPay" type="primary" shape="circle" text="去支付" class="action-btn" @click="handlePay" />
         <u-button v-if="canCancel" type="error" shape="circle" plain text="取消订单" class="action-btn" @click="handleCancel" />
         <u-button type="primary" shape="circle" plain text="查看实时轨迹" class="action-btn" @click="goTrack" />
+        <u-button type="primary" shape="circle" plain text="再来一单" class="action-btn" @click="goAgain" />
       </view>
       <view style="height: 140rpx"></view>
     </template>
@@ -135,6 +136,20 @@ const handleCancel = async () => {
 };
 
 const goTrack = () => uni.navigateTo({ url: `/pages/customer/mailing/track?id=${id.value}` });
+
+// 再来一单：带原寄件/收件地址跳下单页预填（《70》§3.1③）
+const goAgain = () => {
+  const d = detail.value;
+  if (!d) return;
+  const sender = d.senderFullAddress || d.senderAddress || '';
+  const receiver = d.receiverFullAddress || d.receiverAddress || '';
+  uni.navigateTo({
+    url:
+      '/pages/customer/mailing/create?again=1' +
+      '&senderAddress=' + encodeURIComponent(sender) +
+      '&receiverAddress=' + encodeURIComponent(receiver),
+  });
+};
 
 const copyOrderNo = () => {
   const no = detail.value && detail.value.tranOrderId;
@@ -233,6 +248,7 @@ onLoad((options) => {
 }
 .detail-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 16rpx;
   padding-bottom: 24rpx;
 }
