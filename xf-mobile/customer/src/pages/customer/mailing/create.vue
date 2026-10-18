@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <u-navbar :title="'我要寄件'" :back="true" :borderBottom="false" bgColor="var(--c-primary)" placeholder />
+    <u-navbar :title="'我要寄件'" :back="true" :borderBottom="false" bgColor="#FFFFFF" title-color="#000000" left-icon-color="var(--c-text-1)" placeholder />
 
     <!-- 地址选择 -->
     <view class="card">
@@ -11,7 +11,7 @@
           <view class="addr-name">{{ sendAddr ? sendAddr.fullAddress || '已选择' : '选择发件地址' }}</view>
           <view v-if="sendAddr" class="addr-contact">{{ maskName(sendAddr.name) }} {{ maskPhone(sendAddr.phoneNumber) }}</view>
         </view>
-        <u-icon name="arrow-right" color="#86909C" size="20" />
+        <u-icon name="arrow-right" color="var(--c-text-3)" size="20" />
       </view>
       <view class="addr-row" @click="pickAddress('receipt')">
         <view class="addr-icon recv">收</view>
@@ -19,7 +19,7 @@
           <view class="addr-name">{{ recvAddr ? recvAddr.fullAddress || '已选择' : '选择收件地址' }}</view>
           <view v-if="recvAddr" class="addr-contact">{{ maskName(recvAddr.name) }} {{ maskPhone(recvAddr.phoneNumber) }}</view>
         </view>
-        <u-icon name="arrow-right" color="#86909C" size="20" />
+        <u-icon name="arrow-right" color="var(--c-text-3)" size="20" />
       </view>
     </view>
 
@@ -37,7 +37,7 @@
         <text class="form-label">取件时间</text>
         <view class="time-picker" @click="showTimePicker = true">
           <text class="time-value">{{ form.pickUpTime || '选择时间段（如 09:00-18:00）' }}</text>
-          <u-icon name="clock" color="#86909C" size="18" />
+          <u-icon name="clock" color="var(--c-text-3)" size="18" />
         </view>
       </view>
     </view>
@@ -49,7 +49,7 @@
         <text class="form-label">物品类型</text>
         <view class="time-picker" @click="showGoodsPicker = true">
           <text class="time-value">{{ goodsTypeName || '选择物品类型' }}</text>
-          <u-icon name="arrow-down" color="#86909C" size="18" />
+          <u-icon name="arrow-down" color="var(--c-text-3)" size="18" />
         </view>
       </view>
       <view class="form-row">

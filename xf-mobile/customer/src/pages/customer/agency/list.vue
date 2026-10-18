@@ -1,13 +1,13 @@
 <template>
   <view class="page">
-    <u-navbar :title="'网点查询'" :back="true" :borderBottom="false" bgColor="var(--c-primary)" placeholder />
+    <u-navbar :title="'网点查询'" :back="true" :borderBottom="false" bgColor="#FFFFFF" title-color="#000000" left-icon-color="var(--c-text-1)" placeholder />
 
     <view class="filter-bar">
       <u-search v-model="keyword" placeholder="搜索网点名称/地址" :showAction="false" bgColor="#FFFFFF" @change="reload" @clear="reload" />
     </view>
 
     <view v-if="loading && list.length === 0" class="state-wrap">
-      <u-loading-page :loading="true" :bgColor="'#F5F6F8'" />
+      <u-loading-page :loading="true" :bgColor="'var(--c-bg)'" />
     </view>
     <view v-else-if="list.length === 0" class="state-wrap">
       <u-empty mode="list" text="未找到网点" />
@@ -20,15 +20,15 @@
           <u-tag v-else text="分拨/转运" type="info" :plain="true" size="mini" />
         </view>
         <view class="agency-row">
-          <u-icon name="map" color="#86909C" size="16" />
+          <u-icon name="map" color="var(--c-text-3)" size="16" />
           <text class="agency-text">{{ item.fullAddress || '-' }}</text>
         </view>
         <view class="agency-row">
-          <u-icon name="phone" color="#86909C" size="16" />
+          <u-icon name="phone" color="var(--c-text-3)" size="16" />
           <text class="agency-text">{{ maskPhone(item.contractNumber) }}</text>
         </view>
         <view v-if="item.manager" class="agency-row">
-          <u-icon name="account" color="#86909C" size="16" />
+          <u-icon name="account" color="var(--c-text-3)" size="16" />
           <text class="agency-text">负责人：{{ maskName(item.manager) }}</text>
         </view>
       </view>

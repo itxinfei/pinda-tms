@@ -25,12 +25,12 @@
 	margin-top: 32rpx;
 	font-size: 40rpx;
 	font-weight: 600;
-	color: #1a1a1a;
+	color: var(--c-text-1);
 }
 
 .desc {
 	margin-top: 12rpx;
 	font-size: 28rpx;
-	color: #909399;
+	color: var(--c-text-3);
 }
 </style>

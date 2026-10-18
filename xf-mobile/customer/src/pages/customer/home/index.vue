@@ -1,12 +1,9 @@
 <template>
   <view class="page home-page">
-    <u-navbar :title="'心飞物流'" :back="false" :borderBottom="false" bgColor="var(--c-primary)" placeholder>
-      <template #left><view /></template>
-    </u-navbar>
-
-    <!-- 欢迎区 -->
+    <!-- 沉浸式品牌渐变头（页级 navigationStyle:custom，替代原生栏与 u-navbar） -->
     <view class="home-hero">
-      <view class="home-title">您好，欢迎使用心飞物流</view>
+      <view class="hero-bar"><text class="hero-brand">心飞物流</text></view>
+      <view class="home-title">{{ greeting }}</view>
       <view class="home-count">
         <view class="count-num">{{ countNum }}</view>
         <view class="count-label">当前进行中的订单</view>
@@ -42,6 +39,9 @@
       </view>
     </view>
 
+    <!-- 主操作悬浮：立即寄件 -->
+    <u-button class="fab-apply" text="立即寄件" shape="circle" color="var(--c-primary)" @click="goMailing" />
+
     <u-tabbar :value="0" :fixed="true" :placeholder="true" :safeAreaInsetBottom="true">
       <u-tabbar-item text="首页" icon="home" @click="goHome" />
       <u-tabbar-item text="我的运单" icon="list" @click="goList" />
@@ -51,13 +51,21 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { count } from '../../../common/api/mailing.js';
 import { useUserStore } from '../../../stores/user.js';
 
 const userStore = useUserStore();
 const countNum = ref('-');
+
+const greeting = computed(() => {
+  const h = new Date().getHours();
+  const part = h < 6 ? '凌晨好' : h < 9 ? '早上好' : h < 12 ? '上午好' : h < 14 ? '中午好' : h < 18 ? '下午好' : h < 22 ? '晚上好' : '夜深了';
+  const info = userStore.userInfo;
+  const name = info && (info.name || info.nickname);
+  return name ? `${part}，${name}` : part;
+});
 
 const loadCount = async () => {
   try {
@@ -88,10 +96,22 @@ onShow(() => {
 <style lang="scss" scoped>
 .home-page {
   padding: 0;
+  padding-bottom: calc(var(--window-bottom) + 160rpx);
 }
 .home-hero {
   background: linear-gradient(135deg, #FF0033 0%, #CC0029 100%);
-  padding: 40rpx 48rpx 64rpx;
+  padding: calc(24rpx + env(safe-area-inset-top)) 48rpx 64rpx;
+  color: #fff;
+}
+.hero-bar {
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hero-brand {
+  font-size: 34rpx;
+  font-weight: 600;
   color: #fff;
 }
 .home-title {
@@ -148,5 +168,12 @@ onShow(() => {
   margin-top: 6rpx;
   font-size: var(--f-tip);
   color: var(--c-text-3);
+}
+.fab-apply {
+  position: fixed;
+  left: 48rpx;
+  right: 48rpx;
+  bottom: calc(var(--window-bottom) + 24rpx);
+  z-index: 10;
 }
 </style>

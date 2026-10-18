@@ -6,7 +6,7 @@
       <picker mode="date" :value="date" :end="today" @change="onDateChange">
         <view class="date-cell">
           <text class="date-value">{{ date }}</text>
-          <u-icon name="calendar" color="#86909C" size="18" />
+          <u-icon name="calendar" color="var(--c-text-3)" size="18" />
         </view>
       </picker>
     </view>

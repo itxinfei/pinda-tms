@@ -11,12 +11,14 @@
 		{
 			"path": "pages/courier/home/index",
 			"style": {
+				"navigationStyle": "custom",
 				"navigationBarTitleText": "快递员工作台"
 			}
 		},
 		{
 			"path": "pages/courier/login/index",
 			"style": {
+				"navigationStyle": "custom",
 				"navigationBarTitleText": "登录"
 			}
 		},
@@ -102,9 +104,9 @@
 		]
 	},
 	"globalStyle": {
-		"navigationBarTextStyle": "white",
+		"navigationBarTextStyle": "black",
 		"navigationBarTitleText": "心飞物流",
-		"navigationBarBackgroundColor": "#FF0033",
+		"navigationBarBackgroundColor": "#FFFFFF",
 		"backgroundColor": "#F5F7FA"
 	},
 	"condition": {

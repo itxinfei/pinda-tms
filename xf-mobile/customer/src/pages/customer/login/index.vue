@@ -1,12 +1,10 @@
 <template>
   <view class="page login-page">
-    <!-- 全屏背景插画（神领橙系） -->
-    <image class="login-bg" src="/static/login-bg.png" mode="aspectFill" />
-
-    <!-- 品牌区：放大 logo + 端名 -->
+    <!-- 品牌区：放大 logo + 端名 + slogan -->
     <view class="login-brand">
       <image class="login-logo" src="/static/logo-full-login.png" mode="widthFix" />
       <view class="login-end">心飞速运</view>
+      <view class="login-slogan">心飞物流，让货运更简单</view>
     </view>
 
     <!-- 表单卡 -->
@@ -120,20 +118,12 @@ onMounted(() => {
 .login-page {
   position: relative;
   min-height: 100vh;
-  background: #1a1c41;
-}
-.login-bg {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
+  background: linear-gradient(160deg, var(--c-primary) 0%, var(--c-primary-dark) 100%);
 }
 .login-brand {
   position: relative;
   z-index: 1;
-  padding-top: 96rpx;
+  padding-top: calc(96rpx + env(safe-area-inset-top));
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -151,6 +141,12 @@ onMounted(() => {
   font-weight: 600;
   letter-spacing: 2rpx;
   text-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.4);
+}
+.login-slogan {
+  margin-top: 10rpx;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: var(--f-aux);
+  letter-spacing: 2rpx;
 }
 .login-card {
   position: relative;
@@ -174,8 +170,8 @@ onMounted(() => {
 .field {
   margin-top: 28rpx;
   height: 92rpx;
-  background: #f7f8fa;
-  border: 2rpx solid #e7e9ee;
+  background: var(--c-bg);
+  border: 2rpx solid var(--c-border);
   border-radius: 20rpx;
   padding: 0 26rpx;
   display: flex;

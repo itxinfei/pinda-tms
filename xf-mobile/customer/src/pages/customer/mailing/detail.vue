@@ -1,10 +1,10 @@
 <template>
   <view class="page">
-    <u-navbar :title="'运单详情'" :back="true" :borderBottom="false" bgColor="var(--c-primary)" placeholder />
+    <u-navbar :title="'运单详情'" :back="true" :borderBottom="false" bgColor="#FFFFFF" title-color="#000000" left-icon-color="var(--c-text-1)" placeholder />
 
     <!-- 加载/空态 -->
     <view v-if="loading && !detail" class="state-wrap">
-      <u-loading-page :loading="true" :bgColor="'#F5F6F8'" />
+      <u-loading-page :loading="true" :bgColor="'var(--c-bg)'" />
     </view>
     <view v-else-if="!detail" class="state-wrap">
       <u-empty mode="data" text="运单不存在" />

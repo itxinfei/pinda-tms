@@ -1,8 +1,9 @@
 <template>
   <view class="page">
-    <!-- 顶部 hero：欢迎 + 角色标识 -->
+    <!-- 顶部 hero：品牌标题栏 + 欢迎语（页级 navigationStyle:custom） -->
     <view class="hero">
-      <view class="hero-title">快递员工作台</view>
+      <view class="hero-bar"><text class="hero-brand">快递员工作台</text></view>
+      <view class="hero-title">您好，快递员</view>
       <view class="hero-sub">取件派件 · 扫码接单 · 实时追踪</view>
     </view>
 
@@ -30,28 +31,21 @@
 
     <u-gap height="16"></u-gap>
 
-    <!-- 扫码接单入口 -->
-    <view class="card scan-card" @click="onScan">
-      <u-icon name="scan" size="44" color="var(--c-primary)"></u-icon>
-      <text class="scan-text">扫码接单</text>
-      <text class="scan-tip">扫描运单条码快速接单</text>
+    <!-- 功能宫格：扫码接单 / 我的任务 / 绩效统计 -->
+    <view class="card entry-grid">
+      <view class="entry" @click="onScan">
+        <view class="entry-icon"><u-icon name="scan" size="40" color="var(--c-primary)"></u-icon></view>
+        <text class="entry-text">扫码接单</text>
+      </view>
+      <view class="entry" @click="goTab('pages/courier/task/list')">
+        <view class="entry-icon"><u-icon name="list" size="40" color="var(--c-primary)"></u-icon></view>
+        <text class="entry-text">我的任务</text>
+      </view>
+      <view class="entry" @click="goTab('pages/courier/stats/index')">
+        <view class="entry-icon"><u-icon name="rmb" size="40" color="var(--c-primary)"></u-icon></view>
+        <text class="entry-text">绩效统计</text>
+      </view>
     </view>
-
-    <u-gap height="20"></u-gap>
-    <u-button
-      type="primary"
-      text="我的任务"
-      shape="circle"
-      @click="goTab('pages/courier/task/list')"
-    ></u-button>
-    <u-gap height="16"></u-gap>
-    <u-button
-      type="primary"
-      :plain="true"
-      text="绩效统计"
-      shape="circle"
-      @click="goTab('pages/courier/stats/index')"
-    ></u-button>
   </view>
 </template>
 
@@ -105,9 +99,19 @@ onShow(() => loadCount())
 
 <style lang="scss">
 .hero {
-  background: var(--c-primary);
+  background: linear-gradient(135deg, #FF0033 0%, #CC0029 100%);
   margin: calc(var(--s-4) * -1) calc(var(--s-4) * -1) var(--s-4);
-  padding: var(--s-8) var(--s-6);
+  padding: calc(var(--s-8) + env(safe-area-inset-top)) var(--s-6) var(--s-8);
+}
+.hero-bar {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--s-2);
+}
+.hero-brand {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #fff;
 }
 .hero-title {
   color: var(--c-surface);
@@ -138,21 +142,27 @@ onShow(() => loadCount())
   color: var(--c-text-3);
   margin-top: var(--s-1);
 }
-.scan-card {
+.entry-grid {
+  display: flex;
+  justify-content: space-around;
+}
+.entry {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: var(--s-8) var(--s-4);
 }
-.scan-text {
-  font-size: var(--f-sub);
-  color: var(--c-text-1);
-  font-weight: bold;
+.entry-icon {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: var(--r-md);
+  background: var(--c-primary-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.entry-text {
+  font-size: 26rpx;
+  color: var(--c-text-2);
   margin-top: var(--s-2);
-}
-.scan-tip {
-  font-size: var(--f-tip);
-  color: var(--c-text-3);
-  margin-top: var(--s-1);
 }
 </style>

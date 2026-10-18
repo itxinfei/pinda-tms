@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <u-navbar :title="'我的运单'" :back="true" :borderBottom="false" bgColor="var(--c-primary)" placeholder />
+    <u-navbar :title="'我的运单'" :back="true" :borderBottom="false" bgColor="#FFFFFF" title-color="#000000" left-icon-color="var(--c-text-1)" placeholder />
 
     <!-- 筛选 -->
     <view class="filter-bar">
@@ -18,7 +18,7 @@
 
     <!-- 列表 -->
     <view v-if="loading && list.length === 0" class="state-wrap">
-      <u-loading-page :loading="true" :bgColor="'#F5F6F8'" />
+      <u-loading-page :loading="true" :bgColor="'var(--c-bg)'" />
     </view>
     <view v-else-if="list.length === 0" class="state-wrap">
       <u-empty mode="list" text="暂无运单" />

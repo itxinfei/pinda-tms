@@ -11,7 +11,7 @@
           <view class="addr-name">{{ sendAddr ? sendAddr.fullAddress || '已选择' : '选择发件地址' }}</view>
           <view v-if="sendAddr" class="addr-contact">{{ maskName(sendAddr.name) }} {{ maskPhone(sendAddr.phoneNumber) }}</view>
         </view>
-        <u-icon name="arrow-right" color="#86909C" size="20" />
+        <u-icon name="arrow-right" color="var(--c-text-3)" size="20" />
       </view>
       <view class="addr-row" @click="pickAddress('receipt')">
         <view class="addr-icon recv">收</view>
@@ -19,7 +19,7 @@
           <view class="addr-name">{{ recvAddr ? recvAddr.fullAddress || '已选择' : '选择收件地址' }}</view>
           <view v-if="recvAddr" class="addr-contact">{{ maskName(recvAddr.name) }} {{ maskPhone(recvAddr.phoneNumber) }}</view>
         </view>
-        <u-icon name="arrow-right" color="#86909C" size="20" />
+        <u-icon name="arrow-right" color="var(--c-text-3)" size="20" />
       </view>
     </view>
 
@@ -30,7 +30,7 @@
         <text class="form-label">物品类型</text>
         <view class="picker-cell" @click="showGoodsPicker = true">
           <text class="picker-value" :class="{ placeholder: !goodsTypeName }">{{ goodsTypeName || '选择物品类型' }}</text>
-          <u-icon name="arrow-down" color="#86909C" size="18" />
+          <u-icon name="arrow-down" color="var(--c-text-3)" size="18" />
         </view>
       </view>
       <view class="form-row">

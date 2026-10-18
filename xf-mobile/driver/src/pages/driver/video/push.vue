@@ -1,7 +1,7 @@
 <template>
   <view class="page">
     <view class="card placeholder">
-      <u-icon name="video" size="72" color="#C9CDD4"></u-icon>
+      <u-icon name="video" size="72" color="var(--c-text-4)"></u-icon>
       <text class="ph-title">车载视频推流</text>
       <text class="ph-desc">后端推流服务待建设，本入口暂未开放</text>
       <!-- 修改点：后端待建，按钮置灰 disabled，不接前端 RTC -->

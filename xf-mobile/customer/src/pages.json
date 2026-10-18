@@ -6,6 +6,7 @@
 		{
 			"path": "pages/customer/home/index",
 			"style": {
+				"navigationStyle": "custom",
 				"navigationBarTitleText": "心飞速运",
 				"enablePullDownRefresh": false
 			}
@@ -13,6 +14,7 @@
 		{
 			"path": "pages/customer/login/index",
 			"style": {
+				"navigationStyle": "custom",
 				"navigationBarTitleText": "登录"
 			}
 		},
@@ -75,9 +77,9 @@
 		}
 	],
 	"globalStyle": {
-		"navigationBarTextStyle": "white",
+		"navigationBarTextStyle": "black",
 		"navigationBarTitleText": "心飞速运",
-		"navigationBarBackgroundColor": "#FF0033",
+		"navigationBarBackgroundColor": "#FFFFFF",
 		"backgroundColor": "#F5F6F8"
 	}
 }

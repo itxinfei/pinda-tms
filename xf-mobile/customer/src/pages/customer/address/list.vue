@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <u-navbar :title="'地址簿'" :back="true" :borderBottom="false" bgColor="var(--c-primary)" placeholder />
+    <u-navbar :title="'地址簿'" :back="true" :borderBottom="false" bgColor="#FFFFFF" title-color="#000000" left-icon-color="var(--c-text-1)" placeholder />
 
     <!-- 搜索 -->
     <view class="filter-bar">
@@ -9,7 +9,7 @@
 
     <!-- 三态 -->
     <view v-if="loading && list.length === 0" class="state-wrap">
-      <u-loading-page :loading="true" :bgColor="'#F5F6F8'" />
+      <u-loading-page :loading="true" :bgColor="'var(--c-bg)'" />
     </view>
     <view v-else-if="list.length === 0" class="state-wrap">
       <u-empty mode="list" text="暂无地址，点下方按钮添加" />
@@ -24,7 +24,7 @@
           </view>
           <view v-if="!selectMode" class="addr-ops">
             <u-icon name="edit-pen" color="var(--c-primary)" size="20" @click.stop="goEdit(item.id)" />
-            <u-icon name="trash" color="#F53F3F" size="20" @click.stop="handleDelete(item)" />
+            <u-icon name="trash" color="var(--c-error)" size="20" @click.stop="handleDelete(item)" />
           </view>
         </view>
         <view class="addr-detail">{{ item.fullAddress || item.address || '-' }}</view>

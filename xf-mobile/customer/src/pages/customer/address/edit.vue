@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <u-navbar :title="id ? '编辑地址' : '新增地址'" :back="true" :borderBottom="false" bgColor="var(--c-primary)" placeholder />
+    <u-navbar :title="id ? '编辑地址' : '新增地址'" :back="true" :borderBottom="false" bgColor="#FFFFFF" title-color="#000000" left-icon-color="var(--c-text-1)" placeholder />
 
     <view class="card">
       <u-form :model="form" :rules="rules" ref="formRef">
@@ -13,7 +13,7 @@
         <u-form-item label="所在地区" prop="area" borderBottom>
           <view class="area-picker" @click="showAreaPicker = true">
             <text class="area-text">{{ areaText || '选择省 / 市 / 区' }}</text>
-            <u-icon name="arrow-down" color="#86909C" size="18" />
+            <u-icon name="arrow-down" color="var(--c-text-3)" size="18" />
           </view>
         </u-form-item>
         <u-form-item label="详细地址" prop="address" borderBottom>

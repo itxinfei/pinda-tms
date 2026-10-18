@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <u-navbar :title="'我的'" :back="false" :borderBottom="false" bgColor="var(--c-primary)" placeholder />
+    <u-navbar :title="'我的'" :back="false" :borderBottom="false" bgColor="#FFFFFF" title-color="#000000" left-icon-color="var(--c-text-1)" placeholder />
 
     <!-- 用户信息 -->
     <view class="profile-hero">
@@ -19,22 +19,22 @@
       <view class="menu-row" @click="goAddress">
         <u-icon name="list-dot" color="var(--c-primary)" size="20" />
         <text class="menu-text">地址簿</text>
-        <u-icon name="arrow-right" color="#C9CDD4" size="18" />
+        <u-icon name="arrow-right" color="var(--c-text-4)" size="18" />
       </view>
       <view class="menu-row" @click="goMailingList">
         <u-icon name="order" color="var(--c-primary)" size="20" />
         <text class="menu-text">我的运单</text>
-        <u-icon name="arrow-right" color="#C9CDD4" size="18" />
+        <u-icon name="arrow-right" color="var(--c-text-4)" size="18" />
       </view>
       <view class="menu-row" @click="goAgency">
         <u-icon name="map" color="var(--c-primary)" size="20" />
         <text class="menu-text">网点查询</text>
-        <u-icon name="arrow-right" color="#C9CDD4" size="18" />
+        <u-icon name="arrow-right" color="var(--c-text-4)" size="18" />
       </view>
       <view class="menu-row" @click="goAbout">
         <u-icon name="info-circle" color="var(--c-primary)" size="20" />
         <text class="menu-text">关于心飞</text>
-        <u-icon name="arrow-right" color="#C9CDD4" size="18" />
+        <u-icon name="arrow-right" color="var(--c-text-4)" size="18" />
       </view>
     </view>
 

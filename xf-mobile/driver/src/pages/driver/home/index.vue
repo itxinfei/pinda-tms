@@ -1,6 +1,7 @@
 <template>
   <view class="page">
     <view class="hero">
+      <view class="hero-bar"><text class="hero-brand">心飞司机宝</text></view>
       <view class="hero-title">您好，{{ maskName(userInfo?.name) || '司机' }}</view>
       <view class="hero-sub">运输任务 · 实时定位</view>
     </view>
@@ -14,6 +15,10 @@
       <view class="stat-item" @click="goOnTheWay">
         <text class="stat-num">{{ onTheWayCount }}</text>
         <text class="stat-label">在途任务</text>
+      </view>
+      <view class="stat-item" @click="goHistory">
+        <text class="stat-num">{{ doneCount }}</text>
+        <text class="stat-label">已完成</text>
       </view>
     </view>
 
@@ -33,19 +38,19 @@
     <!-- 功能入口 -->
     <view class="card entry-grid">
       <view class="entry" @click="goWait">
-        <u-icon name="list" size="44" color="var(--c-primary)"></u-icon>
+        <view class="entry-icon"><u-icon name="list" size="40" color="var(--c-primary)"></u-icon></view>
         <text class="entry-text">待提货</text>
       </view>
       <view class="entry" @click="goOnTheWay">
-        <u-icon name="car" size="44" color="var(--c-primary)"></u-icon>
+        <view class="entry-icon"><u-icon name="car" size="40" color="var(--c-primary)"></u-icon></view>
         <text class="entry-text">在途</text>
       </view>
       <view class="entry" @click="goCar">
-        <u-icon name="grid" size="44" color="var(--c-primary)"></u-icon>
+        <view class="entry-icon"><u-icon name="grid" size="40" color="var(--c-primary)"></u-icon></view>
         <text class="entry-text">车辆信息</text>
       </view>
       <view class="entry" @click="goHistory">
-        <u-icon name="clock" size="44" color="var(--c-primary)"></u-icon>
+        <view class="entry-icon"><u-icon name="clock" size="40" color="var(--c-primary)"></u-icon></view>
         <text class="entry-text">历史任务</text>
       </view>
     </view>
@@ -57,6 +62,7 @@ import { ref, computed, onUnmounted } from 'vue'
 import {
   cargoWait,
   cargoOnTheWay,
+  cargoHistory,
   locationPush,
 } from '@/common/api/driver'
 import { useUserStore } from '@/common/store/user'
@@ -67,6 +73,7 @@ const userStore = useUserStore()
 const userInfo = computed(() => userStore.userInfo)
 const waitCount = ref(0)
 const onTheWayCount = ref(0)
+const doneCount = ref(0)
 
 // ============ 定位上报 ============
 const reporting = ref(false)
@@ -152,6 +159,13 @@ async function loadCount() {
   } catch (e) {
     onTheWayCount.value = 0
   }
+  try {
+    // 已完成任务总数（历史分页 count）
+    const doneRes = await cargoHistory({ page: 1, pagesize: 1 })
+    doneCount.value = (doneRes && doneRes.counts) || 0
+  } catch (e) {
+    doneCount.value = 0
+  }
 }
 
 onShow(() => loadCount())
@@ -162,9 +176,19 @@ onUnmounted(() => {
 
 <style lang="scss">
 .hero {
-  background: var(--c-primary);
+  background: linear-gradient(135deg, #FF0033 0%, #CC0029 100%);
   margin: calc(var(--s-4) * -1) calc(var(--s-4) * -1) var(--s-4);
-  padding: var(--s-8) var(--s-6);
+  padding: calc(var(--s-8) + env(safe-area-inset-top)) var(--s-6) var(--s-8);
+}
+.hero-bar {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--s-2);
+}
+.hero-brand {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #fff;
 }
 .hero-title {
   color: var(--c-surface);
@@ -223,8 +247,17 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
 }
+.entry-icon {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: var(--r-md);
+  background: var(--c-primary-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .entry-text {
-  font-size: var(--f-aux);
+  font-size: 26rpx;
   color: var(--c-text-2);
   margin-top: var(--s-2);
 }
