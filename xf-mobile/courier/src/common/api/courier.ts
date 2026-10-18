@@ -10,7 +10,7 @@ import {
   TOKEN_HEADER,
   TENANT_CODE,
 } from '../config'
-import { get, post, put } from '../request'
+import { get, post, put, handle401 } from '../request'
 // 签收二态 / 异常类型常量（定义在 constants.ts，便于页面从本模块统一引入）
 export { DELIVERED_SIGN, DELIVERED_REJECT, COURIER_EXCEPTION_TYPES } from '../constants'
 
@@ -70,8 +70,19 @@ export function attachmentUpload(
       formData: { businessType },
       header,
       success: (res) => {
+        // token 过期：清 token 回登录页（与 request 封装一致；文件上传不走 request 封装）
+        if (res.statusCode === 401) {
+          handle401()
+          reject(new Error('登录已过期'))
+          return
+        }
         try {
           const body = JSON.parse(res.data)
+          if (body.code === 401) {
+            handle401()
+            reject(new Error('登录已过期'))
+            return
+          }
           if (body.code === 0 || body.code === undefined) resolve(body.data)
           else {
             uni.showToast({ title: body.msg || '上传失败', icon: 'none' })

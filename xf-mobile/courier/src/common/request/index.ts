@@ -8,7 +8,7 @@ export interface ApiResult<T = any> {
   data: T
 }
 
-function handle401() {
+export function handle401() {
   uni.removeStorageSync(TOKEN_KEY)
   uni.reLaunch({ url: LOGIN_PAGE })
 }

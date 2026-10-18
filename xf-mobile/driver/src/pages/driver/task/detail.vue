@@ -36,7 +36,15 @@
         </view>
         <view class="row">
           <text class="label">目的网点</text>
-          <text class="value">{{ (task.endAgency && task.endAgency.name) || '—' }}</text>
+          <view class="value-link" @click="navToEnd">
+            <text class="value">{{ (task.endAgency && task.endAgency.name) || '—' }}</text>
+            <u-icon
+              v-if="task.endAgency && task.endAgency.name"
+              name="arrow-right"
+              color="var(--c-primary)"
+              size="14"
+            />
+          </view>
         </view>
       </view>
 
@@ -174,7 +182,16 @@ function goException() {
 
 // 导航到起始网点：任务 DTO 无网点坐标，按地名检索（《70》§3.2②）
 function navToStart() {
-  const name = task.value?.startAgency?.name
+  navToAgencyName(task.value?.startAgency?.name)
+}
+
+// 导航到目的网点（《70》§3.2② 起点/终点双导航）
+function navToEnd() {
+  navToAgencyName(task.value?.endAgency?.name)
+}
+
+// 网点导航公共实现：任务 DTO 无坐标，按地名检索
+function navToAgencyName(name?: string) {
   if (!name) return
   // #ifdef H5
   window.open(`https://uri.amap.com/search?keyword=${encodeURIComponent(name)}`, '_blank')
