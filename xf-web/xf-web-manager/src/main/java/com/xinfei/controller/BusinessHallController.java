@@ -8,8 +8,8 @@ import com.xinfei.DTO.angency.AgencyScopeDto;
 import com.xinfei.DTO.base.GoodsTypeDto;
 import com.xinfei.DTO.truck.TruckTypeDto;
 import com.xinfei.DTO.user.CourierScopeDto;
+import com.xinfei.common.geo.GeoClient;
 import com.xinfei.common.utils.Constant;
-import com.xinfei.common.utils.EntCoordSyncJob;
 import com.xinfei.common.utils.PageResponse;
 import com.xinfei.common.utils.Result;
 import com.xinfei.constant.StaticStation;
@@ -49,6 +49,9 @@ import java.util.stream.Collectors;
 @Tag(name = "网点管理")
 @Slf4j
 public class BusinessHallController {
+    // 地理服务客户端（批3 收敛，替代 EntCoordSyncJob 静态 HTTP 调用）
+    @Autowired
+    private GeoClient geoClient;
     @Autowired
     private GoodsTypeFeign goodsTypeFeign;
     @Autowired
@@ -249,7 +252,7 @@ public class BusinessHallController {
                         for(int i=0;i<listMap.size();i++){
                             Map pointMap = listMap.get(i);
                             String point = getPoint(pointMap);
-                            Map map = EntCoordSyncJob.getLocationByPosition(point);
+                            Map map = geoClient.reverseGeocode(point);
                             String adcode = map.getOrDefault("adcode", "").toString();
                             if (StringUtils.isBlank(adcode)) {
                                 return Result.error(5000, "根据地图获取区划编码为空");

@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.xinfei.DTO.OrderDTO;
 import com.xinfei.DTO.OrderSearchDTO;
-import com.xinfei.common.utils.BaiduMapUtils;
+import com.xinfei.common.geo.GeoClient;
 import com.xinfei.common.utils.IdConverter;
 import com.xinfei.entity.Order;
 import com.xinfei.entity.fact.AddressCheckResult;
@@ -50,9 +50,11 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     @Autowired
     private ReloadDroolsRulesService reloadDroolsRulesService;
 
-    // 百度地图组件（CFG-01 起为 Spring Bean，AK 走参数配置表热读取）
+    // 地理服务客户端（批3 收敛）：D-66② 计费距离源显式锁定百度实现，
+    // 批4 切换展示地图厂商时不得静默改变计费源
     @Autowired
-    private BaiduMapUtils baiduMapUtils;
+    @org.springframework.beans.factory.annotation.Qualifier("baiduGeoClient")
+    private GeoClient geoClient;
 
     /**
      * 修改订单（重写以接入状态流转校验）
@@ -292,21 +294,21 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
      * @return 订单信息
      */
     public OrderDTO getDistance(OrderDTO orderDTO) {
-        //调用百度地图服务接口获取寄件人地址对应的坐标经纬度
-        String begin = baiduMapUtils.getCoordinate(orderDTO.getSenderAddress());
+        //调用地理服务获取寄件人地址对应的坐标经纬度（契约序 lng,lat）
+        String begin = geoClient.geocode(orderDTO.getSenderAddress());
         if (begin == null) {
             orderDTO.setSenderAddress("sender error msg");
             return orderDTO;
         }
 
-        //调用百度地图服务接口获取收件人地址对应的坐标经纬度
-        String end = baiduMapUtils.getCoordinate(orderDTO.getReceiverAddress());
+        //调用地理服务获取收件人地址对应的坐标经纬度（契约序 lng,lat）
+        String end = geoClient.geocode(orderDTO.getReceiverAddress());
         if (end == null) {
             orderDTO.setReceiverAddress("receiver error msg");
             return orderDTO;
         }
 
-        Double distance = baiduMapUtils.getDistance(begin, end);
+        Double distance = geoClient.drivingDistance(begin, end);
         DecimalFormat decimalFormat = new DecimalFormat("#.##");
         String distanceStr = decimalFormat.format(distance / 1000);
 

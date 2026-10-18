@@ -37,18 +37,26 @@ public class DynamicConfigAutoConfiguration {
     }
 
     /**
-     * 把动态配置链路接入静态工具 EntCoordSyncJob / LocationUtil（百度 AK 存库热读取）。
-     * 默认链路 = 参数库 sys_config → Environment(-D/环境变量)；DynamicConfigService 内部含 30s TTL 缓存。
+     * 把动态配置链路接入地理服务客户端 BaiduGeoClient（百度 AK 存库热读取，批3 收敛后唯一出口）。
+     * 默认链路 = 参数库 sys_config → Environment(-D/环境变量)；DynamicConfigService 内部含 30s TTL 缓存；
+     * 百度 status!=0 时经第二参 evict 参数库 AK 本地缓存。
      * BFF 等无库服务可注册同名 Bean 覆盖为「Feign 读 xf-auth」链路。
      */
     @Bean
     @ConditionalOnMissingBean
     public BaiduAkBridge baiduAkBridge(ObjectProvider<DynamicConfigService> dynamicConfigProvider) {
-        return new BaiduAkBridge(() -> {
-            DynamicConfigService service = dynamicConfigProvider.getIfAvailable();
-            return service != null
-                    ? service.get(BaiduAkBridge.CONFIG_KEY_BAIDU_AK, "")
-                    : System.getProperty(BaiduAkBridge.CONFIG_KEY_BAIDU_AK, "");
-        });
+        return new BaiduAkBridge(
+                () -> {
+                    DynamicConfigService service = dynamicConfigProvider.getIfAvailable();
+                    return service != null
+                            ? service.get(BaiduAkBridge.CONFIG_KEY_BAIDU_AK, "")
+                            : System.getProperty(BaiduAkBridge.CONFIG_KEY_BAIDU_AK, "");
+                },
+                key -> {
+                    DynamicConfigService service = dynamicConfigProvider.getIfAvailable();
+                    if (service != null) {
+                        service.evict(key);
+                    }
+                });
     }
 }

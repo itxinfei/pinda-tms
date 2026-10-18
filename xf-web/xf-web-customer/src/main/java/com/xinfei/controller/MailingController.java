@@ -6,6 +6,7 @@ import com.google.common.collect.Maps;
 import com.xinfei.DTO.*;
 import com.xinfei.DTO.angency.AgencyScopeDto;
 import com.xinfei.DTO.user.CourierScopeDto;
+import com.xinfei.common.geo.GeoClient;
 import com.xinfei.common.utils.DateUtils;
 import com.xinfei.common.utils.EntCoordSyncJob;
 import com.xinfei.common.utils.OwnershipAssert;
@@ -58,6 +59,9 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("mailing")
 public class MailingController {
+    // 地理服务客户端（批3 收敛，替代 EntCoordSyncJob 静态 HTTP 调用）
+    @org.springframework.beans.factory.annotation.Autowired
+    private GeoClient geoClient;
     private final AgencyScopeFeign agencyScopeFeign;
     private final OrgFeign orgFeign;
     private final TransportTaskFeign transportTaskFeign;
@@ -337,14 +341,14 @@ public class MailingController {
         if (StringUtils.isBlank(address)) {
             return Result.error("下单时收货地址不能为空");
         }
-        String location = EntCoordSyncJob.getCoordinate(address);
+        String location = geoClient.geocode(address);
         log.info("订单收货地址和坐标-->" + address + "--" + location);
         if (StringUtils.isBlank(location)) {
             // 收货侧百度地图不可用：按收货行政区域确定性分配网点
             return resolveAgencyByArea(orderDTO.getReceiverCountyId());
         }
         //根据坐标获取区域检查区域是否正常
-        Map map = EntCoordSyncJob.getLocationByPosition(location);
+        Map map = geoClient.reverseGeocode(location);
         if (ObjectUtils.isEmpty(map)) {
             return Result.error("根据地图获取区域信息为空");
         }
@@ -465,14 +469,14 @@ public class MailingController {
         if (StringUtils.isBlank(address)) {
             return Result.error("下单时发货地址不能为空");
         }
-        String location = EntCoordSyncJob.getCoordinate(address);
+        String location = geoClient.geocode(address);
         log.info("订单发货地址和坐标-->" + address + "--" + location);
         if (StringUtils.isBlank(location)) {
             // 百度地图不可用（AK未配置或外网不通）：按行政区域确定性分配网点
             return resolveAgencyByArea(orderDTO.getSenderCountyId());
         }
         //根据坐标获取区域检查区域是否正常
-        Map map = EntCoordSyncJob.getLocationByPosition(location);
+        Map map = geoClient.reverseGeocode(location);
         if (ObjectUtils.isEmpty(map)) {
             return Result.error("根据地图获取区域信息为空");
         }

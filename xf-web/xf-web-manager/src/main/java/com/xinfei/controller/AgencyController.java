@@ -6,7 +6,7 @@ import com.xinfei.DTO.OrgDTO;
 import com.xinfei.DTO.OrgTreeDTO;
 import com.xinfei.DTO.UserDTO;
 import com.xinfei.DTO.angency.AgencyScopeDto;
-import com.xinfei.common.utils.EntCoordSyncJob;
+import com.xinfei.common.geo.GeoClient;
 import com.xinfei.common.utils.PageResponse;
 import com.xinfei.common.utils.Result;
 import com.xinfei.enums.org.OrgType;
@@ -39,6 +39,9 @@ import java.util.stream.Collectors;
 @Tag(name = "组织管理")
 @Slf4j
 public class AgencyController {
+    // 地理服务客户端（批3 收敛，替代 EntCoordSyncJob 静态 HTTP 调用）
+    @Autowired
+    private GeoClient geoClient;
     @Autowired
     private OrgFeign orgFeign;
     @Autowired
@@ -154,7 +157,7 @@ public class AgencyController {
                         for(int i=0;i<listMap.size();i++){
                             Map pointMap = listMap.get(i);
                             String point = getPoint(pointMap);
-                            Map map = EntCoordSyncJob.getLocationByPosition(point);
+                            Map map = geoClient.reverseGeocode(point);
                             String adcode = map.getOrDefault("adcode", "").toString();
                             if (StringUtils.isBlank(adcode)) {
                                 return Result.error(5000, "根据地图获取区划编码为空");

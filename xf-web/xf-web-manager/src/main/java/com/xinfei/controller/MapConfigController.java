@@ -37,7 +37,7 @@ import java.io.Serializable;
 public class MapConfigController {
 
     /**
-     * sys_config 配置键（与 BaiduMapUtils.CONFIG_KEY_BAIDU_AK 同键，同源读取）。
+     * sys_config 配置键（与 {@code BaiduGeoClient.CONFIG_KEY_BAIDU_AK} 同键，同源读取，批3 收敛后地理 HTTP 唯一出口）。
      * <p>⚠️ 百度 AK 分类型：后端 REST（geocoding/directionlite）必须用<b>服务端</b>类型 AK；
      * 前端 BMapGL JS API 必须<b>浏览器端</b>类型 AK，一把不能两用。故本控制器优先读
      * {@link #CONFIG_KEY_BROWSER}（浏览器端键），未配置时回落到服务端键（兼容仅配一把的场景，

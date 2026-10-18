@@ -5,6 +5,7 @@ import com.xinfei.DTO.OrderClassifyGroupDTO;
 import com.xinfei.DTO.OrderSearchDTO;
 import com.xinfei.DTO.angency.AgencyScopeDto;
 import com.xinfei.DTO.AreaDTO;
+import com.xinfei.common.geo.GeoClient;
 import com.xinfei.common.utils.EntCoordSyncJob;
 import com.xinfei.common.utils.Result;
 import com.xinfei.DTO.OrderDTO;
@@ -56,6 +57,8 @@ import java.util.stream.Collectors;
 public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
     @Autowired
     private OrderFeign orderFeign;
+    @Autowired
+    private GeoClient geoClient;
     @Autowired
     private AgencyScopeFeign agencyScopeFeign;
     @Autowired
@@ -569,7 +572,7 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
         if (cached != null) {
             return cached;
         }
-        String coordinate = EntCoordSyncJob.getCoordinate(address);
+        String coordinate = geoClient.geocode(address);
         if (coordinate != null) {
             coordinateCache.put(address, coordinate);
         }
@@ -590,7 +593,7 @@ public class TaskOrderClassifyServiceImpl implements ITaskOrderClassifyService {
         if (cached != null) {
             return cached;
         }
-        Map result = EntCoordSyncJob.getLocationByPosition(location);
+        Map result = geoClient.reverseGeocode(location);
         if (result != null) {
             reverseGeoCache.put(location, result);
         }

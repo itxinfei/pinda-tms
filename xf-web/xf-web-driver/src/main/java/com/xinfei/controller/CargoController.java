@@ -9,7 +9,7 @@ import com.xinfei.constant.StaticStation;
 import com.xinfei.common.context.RequestContext;
 import com.xinfei.common.enums.ErrorCode;
 import com.xinfei.common.exception.XfException;
-import com.xinfei.common.utils.EntCoordSyncJob;
+import com.xinfei.common.geo.GeoClient;
 import com.xinfei.common.utils.OwnershipAssert;
 import com.xinfei.common.utils.PageQuery;
 import com.xinfei.common.utils.PageResponse;
@@ -62,6 +62,9 @@ import java.util.stream.Collectors;
 @RequestMapping("business/cargo")
 public class CargoController {
 
+    // 地理服务客户端（批3 收敛，替代 EntCoordSyncJob 静态 HTTP 调用）
+    @org.springframework.beans.factory.annotation.Autowired
+    private GeoClient geoClient;
 
     private final DriverJobFeign driverJobFeign;
 
@@ -736,7 +739,7 @@ public class CargoController {
         if(courierScopeDtoList==null || courierScopeDtoList.size()==0){
             return "";
         }
-        String location = EntCoordSyncJob.getCoordinate(orderDTO.getReceiverAddress());
+        String location = geoClient.geocode(orderDTO.getReceiverAddress());
         Result res = calcuateCourier(location, courierScopeDtoList);
         if (!res.get("code").toString().equals("0")) {
             // 百度地图不可用导致点选失败：确定性取收件区县配置的第一个快递员，
@@ -756,7 +759,7 @@ public class CargoController {
                 for (List<Map> list : mutiPoints) {
                     for (Map map :list) {
                         String point = getPoint(map);
-                        Double distance = EntCoordSyncJob.getDistance(location,point);
+                        Double distance = geoClient.drivingDistance(location, point);
                         courierMap.put(courierScopeDto.getUserId(),distance);
                     }
                 }
