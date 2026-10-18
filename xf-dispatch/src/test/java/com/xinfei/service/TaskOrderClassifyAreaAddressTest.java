@@ -11,6 +11,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -29,7 +31,8 @@ import static org.mockito.Mockito.when;
  * 日志只有 "Map.get(Object) is null"，无法定位缺失层级。现实现要求：任何区划数据异常都必须
  * 转成带层级的业务异常（RuntimeException + 明确文案），由上层单订单 try-catch 隔离跳过。</p>
  *
- * <p>被测方法为 private，通过反射调用；AreaFeign 用 Mockito mock 后反射注入
+ * <p>被测方法为 private，通过反射组合调用（getAreaMap 批量取区划 + buildFullAddress 拼接，
+ * 6bd0ef9d 区划批量优化后的链路形态）；AreaFeign 用 Mockito mock 后反射注入
  * （生产类是 {@code @Autowired} 字段注入，风格与 {@link SmsNotificationServiceTest} 一致）。</p>
  */
 public class TaskOrderClassifyAreaAddressTest {
@@ -50,14 +53,22 @@ public class TaskOrderClassifyAreaAddressTest {
         field.set(service, areaFeign);
     }
 
-    /** 反射调用 private buildFullAddress(role, 省, 市, 区, 详细地址) */
+    /**
+     * 反射组合调用生产链路（6bd0ef9d 区划批量优化后的新形态）：
+     * getAreaMap(ids) 批量取区划映射 → buildFullAddress(map, role, 省, 市, 区, 详细地址)。
+     */
     private String invoke(String role, String province, String city, String county, String detail)
             throws Exception {
-        Method m = TaskOrderClassifyServiceImpl.class.getDeclaredMethod(
-                "buildFullAddress", String.class, String.class, String.class, String.class, String.class);
-        m.setAccessible(true);
+        Set<Long> areaIds = Set.of(PROVINCE, CITY, COUNTY);
+        Method getMap = TaskOrderClassifyServiceImpl.class.getDeclaredMethod("getAreaMap", Set.class);
+        getMap.setAccessible(true);
+        Method build = TaskOrderClassifyServiceImpl.class.getDeclaredMethod(
+                "buildFullAddress", Map.class, String.class, String.class, String.class, String.class, String.class);
+        build.setAccessible(true);
         try {
-            return (String) m.invoke(service, role, province, city, county, detail);
+            @SuppressWarnings("unchecked")
+            Map<Long, AreaDTO> areaMap = (Map<Long, AreaDTO>) getMap.invoke(service, areaIds);
+            return (String) build.invoke(service, areaMap, role, province, city, county, detail);
         } catch (InvocationTargetException e) {
             Throwable cause = e.getCause();
             if (cause instanceof RuntimeException re) {
