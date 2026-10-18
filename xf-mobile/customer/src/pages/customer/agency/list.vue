@@ -7,6 +7,12 @@
     </view>
 
     <u-skeleton v-if="loading && list.length === 0" class="sk" :rows="4" title animated />
+    <view v-else-if="error" class="state-wrap">
+      <u-empty mode="network" text="加载失败，请检查网络后重试" />
+      <view class="retry-wrap">
+        <u-button type="primary" size="small" shape="circle" text="重试" @click="reload" />
+      </view>
+    </view>
     <view v-else-if="list.length === 0" class="state-wrap">
       <u-empty mode="list" text="未找到网点" />
     </view>
@@ -48,6 +54,7 @@ import { maskName, maskPhone } from '../../../common/utils/mask.js';
 const keyword = ref('');
 const list = ref([]);
 const loading = ref(false);
+const error = ref(false);
 const pageNum = ref(1);
 const pageSize = 10;
 const total = ref(0);
@@ -60,6 +67,7 @@ const loadList = async (reset = false) => {
     list.value = [];
   }
   loading.value = true;
+  error.value = false;
   try {
     const data = await agencyPage({
       keyword: keyword.value,
@@ -72,6 +80,7 @@ const loadList = async (reset = false) => {
     loadStatus.value = list.value.length >= total.value ? 'nomore' : 'loadmore';
   } catch (e) {
     loadStatus.value = 'loadmore';
+    if (list.value.length === 0) error.value = true;
   } finally {
     loading.value = false;
   }
@@ -116,6 +125,7 @@ reload();
   padding: 16rpx 24rpx 0;
 }
 .state-wrap { padding-top: 120rpx; }
+.retry-wrap { display: flex; justify-content: center; padding: 32rpx 0; }
 .sk { padding: 16rpx 24rpx; }
 .agency-list {
   padding: 16rpx 24rpx;

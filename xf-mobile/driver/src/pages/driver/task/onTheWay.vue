@@ -1,6 +1,13 @@
 <template>
   <view class="page">
-    <u-empty v-if="!loading && !hasData" mode="list" text="当前无在途任务"></u-empty>
+    <u-skeleton v-if="loading && !hasData" :rows="3" title animated />
+    <view v-else-if="error" class="state-wrap">
+      <u-empty mode="network" text="加载失败，请检查网络后重试"></u-empty>
+      <view class="retry-wrap">
+        <u-button type="primary" size="small" shape="circle" text="重试" @click="loadData()"></u-button>
+      </view>
+    </view>
+    <u-empty v-else-if="!hasData" mode="list" text="当前无在途任务"></u-empty>
 
     <!-- 修改点：在途为单对象 CargoTranTaskDTO，存在则展示一个卡片 -->
     <view
@@ -62,6 +69,7 @@ import { transportTaskStatusView } from '@/common/constants'
 import { onShow } from '@dcloudio/uni-app'
 
 const loading = ref(false)
+const error = ref(false)
 const raw = ref<any>(null)
 const list = ref<any[]>([])
 
@@ -76,6 +84,7 @@ function taskStatusView(s?: number) {
 
 async function loadData() {
   loading.value = true
+  error.value = false
   try {
     const res = await cargoOnTheWay()
     raw.value = res
@@ -83,6 +92,7 @@ async function loadData() {
   } catch (e) {
     raw.value = null
     list.value = []
+    error.value = true
   } finally {
     loading.value = false
   }
@@ -96,6 +106,14 @@ onShow(() => loadData())
 </script>
 
 <style lang="scss">
+.state-wrap {
+  padding-top: 120rpx;
+}
+.retry-wrap {
+  display: flex;
+  justify-content: center;
+  padding: var(--s-4) 0;
+}
 .order-card {
   padding: var(--s-4);
 }

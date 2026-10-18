@@ -15,6 +15,12 @@
 
     <view class="list-wrap">
       <u-skeleton v-if="loading && list.length === 0" :rows="4" title animated />
+      <view v-else-if="error" class="state-wrap">
+        <u-empty mode="network" text="加载失败，请检查网络后重试"></u-empty>
+        <view class="retry-wrap">
+          <u-button type="primary" size="small" shape="circle" text="重试" @click="loadData()"></u-button>
+        </view>
+      </view>
       <u-empty v-else-if="list.length === 0" mode="list" text="暂无历史任务"></u-empty>
       <view
         v-for="item in list"
@@ -49,6 +55,7 @@ import { onShow, onReachBottom, onPullDownRefresh } from '@dcloudio/uni-app'
 
 const list = ref<any[]>([])
 const loading = ref(false)
+const error = ref(false)
 const loadStatus = ref('loadmore')
 const keyword = ref('')
 const page = ref(1)
@@ -65,6 +72,7 @@ async function loadData(refresh = true) {
     list.value = []
   }
   loading.value = true
+  error.value = false
   try {
     // 分页 pagesize 全小写，读 res.items / res.counts
     const res = await cargoHistory({
@@ -77,6 +85,7 @@ async function loadData(refresh = true) {
     total.value = (res && res.counts) || 0
     loadStatus.value = list.value.length >= total.value ? 'nomore' : 'loadmore'
   } catch (e) {
+    if (list.value.length === 0) error.value = true
   } finally {
     loading.value = false
     uni.stopPullDownRefresh()
@@ -104,6 +113,14 @@ onReachBottom(() => {
 }
 .list-wrap {
   margin-top: var(--s-3);
+}
+.state-wrap {
+  padding-top: 120rpx;
+}
+.retry-wrap {
+  display: flex;
+  justify-content: center;
+  padding: var(--s-4) 0;
 }
 .order-card {
   padding: var(--s-4);
