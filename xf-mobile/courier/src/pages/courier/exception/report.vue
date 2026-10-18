@@ -1,5 +1,14 @@
 <template>
   <view class="page">
+    <!-- 自动带定位（《70》§3.3）：上报时附带当前位置 -->
+    <view class="card loc-card">
+      <view class="loc-row">
+        <u-icon name="map-fill" color="var(--c-primary)" size="16"></u-icon>
+        <text class="loc-text">{{ locText }}</text>
+        <text v-if="locState === 'fail'" class="loc-retry" @click="captureLocation">重新定位</text>
+      </view>
+    </view>
+
     <view class="card">
       <view class="order-no">运单号：{{ orderNumber || tranOrderId }}</view>
     </view>
@@ -54,7 +63,7 @@
 <script setup lang="ts">
 // 异常上报：接 tranOrderId/orderNumber/transportTaskId（容错）；
 // 异常类型用 COURIER_EXCEPTION_TYPES 三选一；附件至少 1 张；remark 必填；reporterId 由 token 取，前端不传
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { attachmentUpload, exceptionReport, COURIER_EXCEPTION_TYPES } from '@/common/api/courier'
 import { onLoad } from '@dcloudio/uni-app'
 
@@ -67,10 +76,34 @@ const photos = ref<any[]>([]) // {url, id}
 const remark = ref('')
 const loading = ref(false)
 
+// 自动定位：wgs84（与后端存库口径一致），失败不阻塞上报
+const loc = ref<{ longitude?: number; latitude?: number }>({})
+const locState = ref<'pending' | 'ok' | 'fail'>('pending')
+const locText = computed(() => {
+  if (locState.value === 'ok') {
+    return `已定位：${loc.value.latitude?.toFixed(5)}, ${loc.value.longitude?.toFixed(5)}`
+  }
+  return locState.value === 'pending' ? '正在获取当前位置…' : '定位失败，将不带位置上报'
+})
+function captureLocation() {
+  locState.value = 'pending'
+  uni.getLocation({
+    type: 'wgs84',
+    success: (res) => {
+      loc.value = { longitude: res.longitude, latitude: res.latitude }
+      locState.value = 'ok'
+    },
+    fail: () => {
+      locState.value = 'fail'
+    },
+  })
+}
+
 onLoad((options: any) => {
   tranOrderId.value = options?.tranOrderId || ''
   orderNumber.value = options?.orderNumber || ''
   transportTaskId.value = options?.transportTaskId || ''
+  captureLocation()
 })
 
 function onChoosePhoto() {
@@ -115,6 +148,8 @@ async function onSubmit() {
       attachmentIds: photos.value.map((p) => p.id).filter(Boolean),
       remark: remark.value.trim(),
       transportTaskId: transportTaskId.value || undefined,
+      longitude: loc.value.longitude,
+      latitude: loc.value.latitude,
       // 修改点：reporterId / courier 由后端依据 token 解析，前端不传
     })
     uni.showToast({ title: '上报成功', icon: 'success' })
@@ -127,6 +162,23 @@ async function onSubmit() {
 </script>
 
 <style lang="scss">
+.loc-card {
+  padding: var(--s-3) var(--s-4);
+}
+.loc-row {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+.loc-text {
+  flex: 1;
+  font-size: var(--f-aux);
+  color: var(--c-text-2);
+}
+.loc-retry {
+  font-size: var(--f-tip);
+  color: var(--c-primary);
+}
 .order-no {
   font-size: var(--f-body);
   color: var(--c-text-1);

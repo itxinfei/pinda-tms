@@ -128,6 +128,8 @@ export function exceptionReport(data: {
   attachmentIds: string[]
   remark: string
   transportTaskId?: string
+  longitude?: number
+  latitude?: number
 }) {
   return post(BASE_URL + '/business/cargo/exception/report', data)
 }
