@@ -14,27 +14,21 @@
       </view>
     </view>
 
-    <!-- 功能入口 -->
-    <view class="card menu-card">
-      <view class="menu-row" @click="goAddress">
-        <u-icon name="list-dot" color="var(--c-primary)" size="20" />
-        <text class="menu-text">地址簿</text>
-        <u-icon name="arrow-right" color="var(--c-text-4)" size="18" />
-      </view>
-      <view class="menu-row" @click="goMailingList">
-        <u-icon name="order" color="var(--c-primary)" size="20" />
-        <text class="menu-text">我的运单</text>
-        <u-icon name="arrow-right" color="var(--c-text-4)" size="18" />
-      </view>
-      <view class="menu-row" @click="goAgency">
-        <u-icon name="map" color="var(--c-primary)" size="20" />
-        <text class="menu-text">网点查询</text>
-        <u-icon name="arrow-right" color="var(--c-text-4)" size="18" />
-      </view>
-      <view class="menu-row" @click="goAbout">
-        <u-icon name="info-circle" color="var(--c-primary)" size="20" />
-        <text class="menu-text">关于心飞</text>
-        <u-icon name="arrow-right" color="var(--c-text-4)" size="18" />
+    <!-- 功能入口：分组卡片（《70》§3.1） -->
+    <view v-for="(group, gi) in menuGroups" :key="group.title" class="menu-group">
+      <view class="group-title">{{ group.title }}</view>
+      <view class="card menu-card" :class="{ 'menu-card-first': gi === 0 }">
+        <view
+          v-for="item in group.items"
+          :key="item.text"
+          class="menu-row"
+          hover-class="menu-hover"
+          @click="item.click"
+        >
+          <u-icon :name="item.icon" color="var(--c-primary)" size="20" />
+          <text class="menu-text">{{ item.text }}</text>
+          <u-icon name="arrow-right" color="var(--c-text-4)" size="18" />
+        </view>
       </view>
     </view>
 
@@ -81,8 +75,31 @@ const goAddress = () => uni.navigateTo({ url: '/pages/customer/address/list' });
 const goMailingList = () => uni.reLaunch({ url: '/pages/customer/mailing/list' });
 const goAgency = () => uni.navigateTo({ url: '/pages/customer/agency/list' });
 const goAbout = () => uni.showToast({ title: '心飞物流TMS v1.0', icon: 'none' });
+const goService = () => uni.showToast({ title: '客服热线即将开放', icon: 'none' });
 const goHome = () => uni.reLaunch({ url: '/pages/customer/home/index' });
 const goProfile = () => uni.reLaunch({ url: '/pages/customer/profile/index' });
+
+// 菜单分组（《70》§3.1：寄件服务 / 设置 / 关于）
+const menuGroups = [
+  {
+    title: '寄件服务',
+    items: [
+      { text: '我的运单', icon: 'order', click: goMailingList },
+      { text: '网点查询', icon: 'map', click: goAgency },
+    ],
+  },
+  {
+    title: '设置',
+    items: [
+      { text: '地址簿', icon: 'list-dot', click: goAddress },
+      { text: '联系客服', icon: 'server', click: goService },
+    ],
+  },
+  {
+    title: '关于',
+    items: [{ text: '关于心飞', icon: 'info-circle', click: goAbout }],
+  },
+];
 
 const handleLogout = () => {
   uni.showModal({
@@ -137,9 +154,20 @@ onShow(() => {
   color: rgba(255, 255, 255, 0.85);
   font-size: var(--f-aux);
 }
+.menu-group {
+  margin-top: 8rpx;
+}
+.group-title {
+  margin: 0 32rpx 12rpx;
+  font-size: var(--f-tip);
+  color: var(--c-text-3);
+}
 .menu-card {
-  margin: -24rpx 24rpx 0;
+  margin: 0 24rpx 20rpx;
   padding: 8rpx 24rpx;
+}
+.menu-card-first {
+  margin-top: -24rpx;
 }
 .menu-row {
   display: flex;
@@ -148,6 +176,9 @@ onShow(() => {
   border-bottom: 1rpx solid var(--c-border);
 }
 .menu-row:last-child { border-bottom: none; }
+.menu-hover {
+  background-color: rgba(255, 0, 51, 0.04);
+}
 .menu-text {
   flex: 1;
   margin-left: 16rpx;

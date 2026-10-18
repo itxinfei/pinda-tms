@@ -18,4 +18,9 @@ export default {
 @import "uview-plus/index.scss";
 /* 业务设计 Token */
 @import "@/common/styles/variables.scss";
+
+/* 微交互：按钮按压态统一按压红（《70》§2.6） */
+.u-button--active {
+  background-color: var(--c-primary-dark) !important;
+}
 </style>

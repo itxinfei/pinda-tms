@@ -12,11 +12,13 @@
 
     <!-- 任务列表 -->
     <view class="list-wrap">
-      <u-empty v-if="!loading && list.length === 0" mode="list" text="暂无任务"></u-empty>
+      <u-skeleton v-if="loading && list.length === 0" :rows="4" title animated />
+      <u-empty v-else-if="list.length === 0" mode="list" text="暂无任务"></u-empty>
       <view
         v-for="item in list"
         :key="item.id"
         class="card task-card"
+        hover-class="card-hover"
         @click="goDetail(item.id)"
       >
         <view class="task-head">
@@ -132,6 +134,9 @@ onShow(() => loadData())
 }
 .task-card {
   padding: var(--s-4);
+}
+.card-hover {
+  background-color: rgba(255, 0, 51, 0.04);
 }
 .task-head {
   display: flex;

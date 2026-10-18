@@ -16,18 +16,26 @@
     <view class="card addr-card">
       <text class="addr-title">寄件人</text>
       <view class="addr-row"><text class="addr-key">姓名</text><text class="addr-val">{{ maskName(sender?.name) }}</text></view>
-      <view class="addr-row"><text class="addr-key">电话</text><text class="addr-val">{{ maskPhone(sender?.phoneNumber) }}</text></view>
+      <view class="addr-row" hover-class="row-hover" @click="callPhone(sender?.phoneNumber)">
+        <text class="addr-key">电话</text><text class="addr-val addr-link">{{ maskPhone(sender?.phoneNumber) }}</text>
+      </view>
       <view class="addr-row"><text class="addr-key">单位</text><text class="addr-val">{{ sender?.company || '—' }}</text></view>
-      <view class="addr-row"><text class="addr-key">地址</text><text class="addr-val">{{ sender?.address || '—' }}</text></view>
+      <view class="addr-row" hover-class="row-hover" @click="navTo(sender?.address)">
+        <text class="addr-key">地址</text><text class="addr-val addr-link">{{ sender?.address || '—' }}</text>
+      </view>
     </view>
 
     <!-- 收件人 -->
     <view class="card addr-card">
       <text class="addr-title">收件人</text>
       <view class="addr-row"><text class="addr-key">姓名</text><text class="addr-val">{{ maskName(receiver?.name) }}</text></view>
-      <view class="addr-row"><text class="addr-key">电话</text><text class="addr-val">{{ maskPhone(receiver?.phoneNumber) }}</text></view>
+      <view class="addr-row" hover-class="row-hover" @click="callPhone(receiver?.phoneNumber)">
+        <text class="addr-key">电话</text><text class="addr-val addr-link">{{ maskPhone(receiver?.phoneNumber) }}</text>
+      </view>
       <view class="addr-row"><text class="addr-key">单位</text><text class="addr-val">{{ receiver?.company || '—' }}</text></view>
-      <view class="addr-row"><text class="addr-key">地址</text><text class="addr-val">{{ receiver?.address || '—' }}</text></view>
+      <view class="addr-row" hover-class="row-hover" @click="navTo(receiver?.address)">
+        <text class="addr-key">地址</text><text class="addr-val addr-link">{{ receiver?.address || '—' }}</text>
+      </view>
     </view>
 
     <!-- 货物信息（详情才有） -->
@@ -142,6 +150,27 @@ function goVerify() {
   })
 }
 
+// 联系客户（展示脱敏，拨号用原值，《70》§3.3）
+function callPhone(phone?: string) {
+  if (!phone) return
+  uni.makePhoneCall({ phoneNumber: String(phone), fail: () => {} })
+}
+
+// 地图导航（地址文本检索，任务侧无坐标契约）
+function navTo(address?: string) {
+  const addr = (address || '').trim()
+  if (!addr) return
+  // #ifdef H5
+  window.open(`https://uri.amap.com/search?keyword=${encodeURIComponent(addr)}`, '_blank')
+  // #endif
+  // #ifndef H5
+  uni.setClipboardData({
+    data: addr,
+    success: () => uni.showToast({ title: '地址已复制', icon: 'none' }),
+  })
+  // #endif
+}
+
 // onLoad 直接接收页面参数（uni-app 自动注入，不能从 'vue' 导入）
 onLoad((options: any) => {
   id.value = options?.id || ''
@@ -192,6 +221,12 @@ onLoad((options: any) => {
 .addr-val {
   flex: 1;
   color: var(--c-text-2);
+}
+.addr-link {
+  color: var(--c-primary);
+}
+.row-hover {
+  background-color: rgba(255, 0, 51, 0.04);
 }
 .addr-val.amount {
   color: var(--c-error);

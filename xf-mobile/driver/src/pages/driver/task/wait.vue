@@ -1,11 +1,13 @@
 <template>
   <view class="page">
     <view class="list-wrap">
-      <u-empty v-if="!loading && list.length === 0" mode="list" text="暂无待提货任务"></u-empty>
+      <u-skeleton v-if="loading && list.length === 0" :rows="4" title animated />
+      <u-empty v-else-if="list.length === 0" mode="list" text="暂无任务，请保持接单状态"></u-empty>
       <view
         v-for="item in list"
         :key="item.id"
         class="card order-card"
+        hover-class="card-hover"
         @click="goDetail(item.id)"
       >
         <view class="order-head">
@@ -96,6 +98,9 @@ onReachBottom(() => {
 }
 .order-card {
   padding: var(--s-4);
+}
+.card-hover {
+  background-color: rgba(255, 0, 51, 0.04);
 }
 .order-head {
   display: flex;

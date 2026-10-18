@@ -31,6 +31,16 @@
     </view>
 
     <u-gap height="20"></u-gap>
+    <view class="card">
+      <view class="row menu-row" hover-class="row-hover" @click="goCarInfo">
+        <text class="label">我的车辆</text>
+        <view class="menu-right">
+          <u-icon name="arrow-right" color="var(--c-text-4)" size="16" />
+        </view>
+      </view>
+    </view>
+
+    <u-gap height="20"></u-gap>
     <u-button
       type="error"
       text="退出登录"
@@ -38,6 +48,8 @@
       plain
       @click="onLogout"
     ></u-button>
+
+    <view class="version">心飞司机宝 v{{ appVersion }}</view>
   </view>
 </template>
 
@@ -48,6 +60,7 @@ import { useUserStore } from '@/common/store/user'
 import { LOGIN_PAGE } from '@/common/config'
 import { maskName, maskPhone } from '@/common/utils/desensitive'
 import { onShow } from '@dcloudio/uni-app'
+import { version as appVersion } from '../../../../package.json'
 
 const userStore = useUserStore()
 const userInfo = computed(() => userStore.userInfo)
@@ -59,6 +72,10 @@ async function loadProfile() {
   } catch (e) {
     profile.value = {}
   }
+}
+
+function goCarInfo() {
+  uni.navigateTo({ url: '/pages/driver/car/info' })
 }
 
 function onLogout() {
@@ -80,7 +97,7 @@ onShow(() => loadProfile())
 
 <style lang="scss">
 .hero {
-  background: var(--c-primary);
+  background: linear-gradient(135deg, var(--c-primary) 0%, var(--c-primary-dark) 100%);
   margin: calc(var(--s-4) * -1) calc(var(--s-4) * -1) var(--s-4);
   padding: var(--s-8) var(--s-6);
   display: flex;
@@ -114,5 +131,18 @@ onShow(() => loadProfile())
 .value {
   font-size: var(--f-body);
   color: var(--c-text-1);
+}
+.menu-right {
+  display: flex;
+  align-items: center;
+}
+.row-hover {
+  background-color: rgba(255, 0, 51, 0.04);
+}
+.version {
+  margin-top: var(--s-4);
+  text-align: center;
+  font-size: var(--f-tip);
+  color: var(--c-text-3);
 }
 </style>

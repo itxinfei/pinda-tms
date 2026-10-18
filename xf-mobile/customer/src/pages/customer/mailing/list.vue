@@ -17,14 +17,12 @@
     </view>
 
     <!-- 列表 -->
-    <view v-if="loading && list.length === 0" class="state-wrap">
-      <u-loading-page :loading="true" :bgColor="'var(--c-bg)'" />
-    </view>
+    <u-skeleton v-if="loading && list.length === 0" class="sk" :rows="4" title animated />
     <view v-else-if="list.length === 0" class="state-wrap">
       <u-empty mode="list" text="暂无运单" />
     </view>
     <view v-else class="order-list">
-      <view v-for="item in list" :key="item.id" class="card order-card" @click="goDetail(item.id)">
+      <view v-for="item in list" :key="item.id" class="card order-card" hover-class="card-hover" @click="goDetail(item.id)">
         <view class="order-head">
           <view class="order-no">单号 {{ item.id }}</view>
           <u-tag :text="statusInfo(item.status).label" :type="statusInfo(item.status).type" :plain="false" />
@@ -161,6 +159,12 @@ onShow(() => {
 }
 .state-wrap {
   padding-top: 120rpx;
+}
+.sk {
+  padding: 16rpx 24rpx;
+}
+.card-hover {
+  background-color: rgba(255, 0, 51, 0.04);
 }
 .order-list {
   padding: 16rpx 24rpx;

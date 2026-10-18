@@ -8,14 +8,19 @@
     </view>
 
     <!-- 三态 -->
-    <view v-if="loading && list.length === 0" class="state-wrap">
-      <u-loading-page :loading="true" :bgColor="'var(--c-bg)'" />
-    </view>
+    <u-skeleton v-if="loading && list.length === 0" class="sk" :rows="4" title animated />
     <view v-else-if="list.length === 0" class="state-wrap">
       <u-empty mode="list" text="暂无地址，点下方按钮添加" />
     </view>
     <view v-else class="addr-list">
-      <view v-for="item in list" :key="item.id" class="card addr-card" @click="onItemClick(item)">
+      <view
+        v-for="item in list"
+        :key="item.id"
+        class="card addr-card"
+        :class="{ 'addr-default': item.isDefault === 1 }"
+        hover-class="card-hover"
+        @click="onItemClick(item)"
+      >
         <view class="addr-head">
           <view class="addr-person">
             <text class="addr-name">{{ maskName(item.name) }}</text>
@@ -139,10 +144,18 @@ onReachBottom(() => {
   padding: 16rpx 24rpx 0;
 }
 .state-wrap { padding-top: 120rpx; }
+.sk { padding: 16rpx 24rpx; }
 .addr-list {
   padding: 16rpx 24rpx;
 }
 .addr-card { padding: 24rpx; }
+.addr-default {
+  background-color: rgba(255, 0, 51, 0.04);
+  border-color: rgba(255, 0, 51, 0.16);
+}
+.card-hover {
+  background-color: rgba(255, 0, 51, 0.08);
+}
 .addr-head {
   display: flex;
   justify-content: space-between;

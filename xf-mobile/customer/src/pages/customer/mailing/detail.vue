@@ -20,7 +20,13 @@
       <view class="card">
         <view class="card-title">订单信息</view>
         <view class="info-row"><text class="info-label">订单号</text><text class="info-value">{{ detail.id }}</text></view>
-        <view class="info-row"><text class="info-label">运单号</text><text class="info-value">{{ detail.tranOrderId || '-' }}</text></view>
+        <view class="info-row">
+          <text class="info-label">运单号</text>
+          <view class="info-copy" @click.stop="copyOrderNo">
+            <text class="info-value">{{ detail.tranOrderId || '-' }}</text>
+            <text v-if="detail.tranOrderId" class="copy-btn">复制</text>
+          </view>
+        </view>
         <view class="info-row"><text class="info-label">计划取件</text><text class="info-value">{{ fmtTime(detail.planPickUpTime) }}</text></view>
         <view class="info-row"><text class="info-label">派送完成</text><text class="info-value">{{ fmtTime(detail.actualDispathedTime) }}</text></view>
         <view class="info-row"><text class="info-label">取消时间</text><text class="info-value">{{ fmtTime(detail.cancelTime) }}</text></view>
@@ -130,6 +136,15 @@ const handleCancel = async () => {
 
 const goTrack = () => uni.navigateTo({ url: `/pages/customer/mailing/track?id=${id.value}` });
 
+const copyOrderNo = () => {
+  const no = detail.value && detail.value.tranOrderId;
+  if (!no) return;
+  uni.setClipboardData({
+    data: String(no),
+    success: () => uni.showToast({ title: '运单号已复制', icon: 'success' }),
+  });
+};
+
 onLoad((options) => {
   id.value = options.id || '';
   loadDetail();
@@ -167,6 +182,15 @@ onLoad((options) => {
 }
 .info-label { color: var(--c-text-3); }
 .info-value { color: var(--c-text-1); }
+.info-copy {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+.copy-btn {
+  font-size: var(--f-tip);
+  color: var(--c-primary);
+}
 .route-empty {
   padding: 32rpx 0;
   text-align: center;

@@ -24,7 +24,15 @@
         </view>
         <view class="row">
           <text class="label">起始网点</text>
-          <text class="value">{{ (task.startAgency && task.startAgency.name) || '—' }}</text>
+          <view class="value-link" @click="navToStart">
+            <text class="value">{{ (task.startAgency && task.startAgency.name) || '—' }}</text>
+            <u-icon
+              v-if="task.startAgency && task.startAgency.name"
+              name="arrow-right"
+              color="var(--c-primary)"
+              size="14"
+            />
+          </view>
         </view>
         <view class="row">
           <text class="label">目的网点</text>
@@ -164,6 +172,21 @@ function goException() {
   })
 }
 
+// 导航到起始网点：任务 DTO 无网点坐标，按地名检索（《70》§3.2②）
+function navToStart() {
+  const name = task.value?.startAgency?.name
+  if (!name) return
+  // #ifdef H5
+  window.open(`https://uri.amap.com/search?keyword=${encodeURIComponent(name)}`, '_blank')
+  // #endif
+  // #ifndef H5
+  uni.setClipboardData({
+    data: name,
+    success: () => uni.showToast({ title: '网点名称已复制', icon: 'none' }),
+  })
+  // #endif
+}
+
 onLoad((opt: any) => {
   id.value = opt.id || ''
   loadAll()
@@ -190,6 +213,11 @@ onLoad((opt: any) => {
 .value {
   font-size: var(--f-body);
   color: var(--c-text-1);
+}
+.value-link {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
 }
 .order-item {
   display: flex;

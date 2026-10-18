@@ -15,6 +15,11 @@ export default {
 <style lang="scss">
 /* uview-plus 全局样式 */
 @import "uview-plus/index.scss";
-/* 设计 Token（颜色 / 间距 / 字号 / 全局 class）唯一真源，全局注入一次 */
+/* 业务 Token：品牌色 / 间距 / 字号 / 全局 class（唯一来源，全端注入一份） */
 @import "./common/styles/variables.scss";
+
+/* 微交互：按钮按压态统一按压红（《70》§2.6） */
+.u-button--active {
+  background-color: var(--c-primary-dark) !important;
+}
 </style>

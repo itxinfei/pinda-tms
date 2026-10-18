@@ -65,6 +65,14 @@
     /* 小程序特有相关 */
     "mp-weixin" : {
         "appid" : "",
+        "requiredPrivateInfos" : [
+            "getLocation"
+        ],
+        "permission" : {
+            "scope.userLocation" : {
+                "desc" : "用于网点查询与轨迹展示"
+            }
+        },
         "setting" : {
             "urlCheck" : false
         },
