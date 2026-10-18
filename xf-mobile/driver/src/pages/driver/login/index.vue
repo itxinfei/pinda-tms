@@ -23,6 +23,13 @@
         <image class="captcha-img" :src="captchaUrl" mode="aspectFill" @click="refreshCaptcha" />
       </view>
 
+      <view class="field-remember" @click="remember = !remember">
+        <view class="remember-box" :class="{ on: remember }">
+          <u-icon v-if="remember" name="checkmark" color="#ffffff" size="12"></u-icon>
+        </view>
+        <text class="remember-text">记住账号</text>
+      </view>
+
       <view class="login-btn" :class="{ 'is-loading': loading }" @click="onLogin">
         {{ loading ? '登录中...' : '登 录' }}
       </view>
@@ -45,6 +52,15 @@ const key = ref('')
 const loading = ref(false)
 const userStore = useUserStore()
 const captchaUrl = ref('')
+
+// 记住账号（《70》§3.4.1）：成功登录后保留账号，下次自动回填
+const REMEMBER_KEY = 'xf_remember_account'
+const remember = ref(false)
+const savedAccount = uni.getStorageSync(REMEMBER_KEY)
+if (savedAccount) {
+  form.account = savedAccount
+  remember.value = true
+}
 
 // 刷新验证码（每次生成独立 key 防止缓存）
 function refreshCaptcha() {
@@ -76,6 +92,8 @@ async function onLogin() {
     }
     userStore.setToken(token)
     if (res.user) userStore.setUserInfo(res.user)
+    if (remember.value) uni.setStorageSync(REMEMBER_KEY, form.account)
+    else uni.removeStorageSync(REMEMBER_KEY)
     uni.showToast({ title: '登录成功', icon: 'success' })
     // 修改点：司机端登录成功跳首页（tabBar）
     setTimeout(() => {
@@ -182,6 +200,29 @@ async function onLogin() {
 }
 .login-btn.is-loading {
   opacity: 0.7;
+}
+.field-remember {
+  margin-top: 24rpx;
+  display: flex;
+  align-items: center;
+}
+.remember-box {
+  width: 34rpx;
+  height: 34rpx;
+  border-radius: 50%;
+  border: 2rpx solid var(--c-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12rpx;
+}
+.remember-box.on {
+  background: var(--c-primary);
+  border-color: var(--c-primary);
+}
+.remember-text {
+  font-size: var(--f-aux);
+  color: var(--c-text-3);
 }
 .login-agree {
   margin-top: 32rpx;

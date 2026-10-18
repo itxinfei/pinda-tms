@@ -164,7 +164,7 @@ onReachBottom(() => {
   border-color: rgba(255, 0, 51, 0.16);
 }
 .card-hover {
-  background-color: rgba(255, 0, 51, 0.08);
+  background-color: rgba(255, 0, 51, 0.04);
 }
 .addr-head {
   display: flex;
