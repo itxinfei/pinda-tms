@@ -180,14 +180,29 @@ public class ScheduleJobServiceImpl extends ServiceImpl<ScheduleJobMapper, Sched
 
     @Override
     public void runByOrgId(Long orgId) {
-        LambdaQueryWrapper<ScheduleJobEntity> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(ScheduleJobEntity::getBusinessId, orgId);
-        ScheduleJobEntity scheduleJob = baseMapper.selectOne(wrapper);
-        if (scheduleJob == null) {
-            log.warn("机构[{}]未配置调度任务，跳过执行", orgId);
-            return;
+        // 系统态租户绑定前置：XXL 回调线程无登录态与请求头，多租户拦截器（DispTenantLineHandler）
+        // 三级解析全部落空后回落 tenant_id=0，若先查库会按租户0过滤导致查不到任何非0租户的调度任务
+        // （2026-10-18 TC-05 实测：机构1001 已配置却 WARN「未配置调度任务，跳过」）。
+        // 先按机构解析并绑定租户再查库；与 executeWithRetry 内部绑定语义一致，重复 set 无副作用。
+        Long tenantId = 0L;
+        try {
+            tenantId = orgTenantResolver.resolve(orgId);
+        } catch (Exception e) {
+            log.warn("XXL 调度入口解析租户失败，回落租户0，机构id：{}", orgId, e);
         }
-        executeWithRetry(scheduleJob);
+        TenantContextHolder.setTenantId(tenantId);
+        try {
+            LambdaQueryWrapper<ScheduleJobEntity> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(ScheduleJobEntity::getBusinessId, orgId);
+            ScheduleJobEntity scheduleJob = baseMapper.selectOne(wrapper);
+            if (scheduleJob == null) {
+                log.warn("机构[{}]未配置调度任务，跳过执行", orgId);
+                return;
+            }
+            executeWithRetry(scheduleJob);
+        } finally {
+            TenantContextHolder.clear();
+        }
     }
 
     /**
