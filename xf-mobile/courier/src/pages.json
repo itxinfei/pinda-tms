@@ -25,7 +25,8 @@
 		{
 			"path": "pages/courier/task/list",
 			"style": {
-				"navigationBarTitleText": "取派任务"
+				"navigationBarTitleText": "取派任务",
+				"enablePullDownRefresh": true
 			}
 		},
 		{
