@@ -106,10 +106,17 @@ public class OrderSearchDTO extends OrderDTO {
     private String memberId;
 
     /**
-     * 公用搜索字段
+     * 检索关键字
      */
-    @Schema(description = "公用搜索字段")
+    @Schema(description = "检索关键字")
     private String keyword;
+
+    /**
+     * 订单状态筛选（显式 code 列表，空=不筛；档位映射见 /mailing/status-filters，禁前端区间判断）
+     */
+    @Schema(description = "订单状态筛选列表")
+    private List<Integer> statusList;
+
 
     public Integer getPage() {
         return page == null ? 1 : page;

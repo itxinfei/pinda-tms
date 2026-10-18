@@ -211,6 +211,10 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         orderQueryWrapper.eq(orderSearchDTO.getReceiverPhone() != null
                         && !orderSearchDTO.getReceiverPhone().isEmpty(),
                 Order::getReceiverPhone, orderSearchDTO.getReceiverPhone());
+        // 状态档位筛选：显式 code 列表 in 查询（映射由 status-filters 端点下发，禁区间判断）
+        List<Integer> statusList = orderSearchDTO.getStatusList();
+        orderQueryWrapper.in(statusList != null && !statusList.isEmpty(),
+                Order::getStatus, statusList);
         orderQueryWrapper.orderByDesc(Order::getCreateTime);
         return page(ipage, orderQueryWrapper);
     }

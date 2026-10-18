@@ -897,6 +897,38 @@ public class MailingController {
     }
 
 
+    @Operation(summary = "订单状态筛选档位（客户视图，档位→显式code查表下发）")
+    @GetMapping("status-filters")
+    public Result statusFilters() {
+        List<Map<String, Object>> filters = new ArrayList<>();
+        filters.add(statusFilterItem("all", "全部", null));
+        filters.add(statusFilterItem("doing", "进行中", Arrays.asList(
+                OrderStatus.PENDING.getCode(),
+                OrderStatus.PICKED_UP.getCode(),
+                OrderStatus.OUTLETS_SINCE_SENT.getCode(),
+                OrderStatus.OUTLETS_WAREHOUSE.getCode(),
+                OrderStatus.FOR_LOADING.getCode(),
+                OrderStatus.IN_TRANSIT.getCode(),
+                OrderStatus.OUTLETS_EX_WAREHOUSE.getCode(),
+                OrderStatus.TO_BE_DISPATCHED.getCode(),
+                OrderStatus.DISPATCHING.getCode())));
+        // 拒收(11)与签收同为流程完结终态，归"已完成"档（四档口径下无单独拒收档，决策点见台账）
+        filters.add(statusFilterItem("done", "已完成", Arrays.asList(
+                OrderStatus.RECEIVED.getCode(),
+                OrderStatus.REJECTION.getCode())));
+        filters.add(statusFilterItem("cancelled", "已取消", Arrays.asList(
+                OrderStatus.CANCELLED.getCode())));
+        return Result.ok().put("data", filters);
+    }
+
+    private Map<String, Object> statusFilterItem(String key, String label, List<Integer> statusList) {
+        Map<String, Object> item = new LinkedHashMap<>();
+        item.put("key", key);
+        item.put("label", label);
+        item.put("statusList", statusList);
+        return item;
+    }
+
     @Operation(summary = "待处理数量查询")
     @GetMapping("count")
     public Result count(MailingQueryDTO dto) {
@@ -944,6 +976,10 @@ public class MailingController {
         orderSearchDto.setPage(dto.getPage());
         orderSearchDto.setPageSize(dto.getPagesize());
         orderSearchDto.setKeyword(dto.getKeyword());
+        // 状态档位筛选（档位→显式 code 列表，映射定义见 status-filters，前端禁区间硬编码）
+        if (!CollectionUtils.isEmpty(dto.getStatusList())) {
+            orderSearchDto.setStatusList(dto.getStatusList());
+        }
         // mailType 缺省（如首页计数不传参）按 0=我寄的 处理，避免 Integer 为 null 拆箱 NPE
         if (dto.getMailType() == null || dto.getMailType() == 0) {
             // 我寄的
