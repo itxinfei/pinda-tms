@@ -37,7 +37,7 @@
     </view>
     <view style="height: 140rpx"></view>
 
-    <u-tabbar :value="2" :fixed="true" :placeholder="true" :safeAreaInsetBottom="true">
+    <u-tabbar :value="2" :fixed="true" :placeholder="true" :safeAreaInsetBottom="true" activeColor="var(--c-primary)" inactiveColor="#86909C">
       <u-tabbar-item text="首页" icon="home" @click="goHome" />
       <u-tabbar-item text="我的运单" icon="list" @click="goMailingList" />
       <u-tabbar-item text="我的" icon="account" @click="goProfile" />

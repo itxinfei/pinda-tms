@@ -105,15 +105,21 @@
 		"list": [
 			{
 				"pagePath": "pages/driver/home/index",
-				"text": "首页"
+				"text": "首页",
+				"iconPath": "static/tabbar/home.png",
+				"selectedIconPath": "static/tabbar/home-active.png"
 			},
 			{
 				"pagePath": "pages/driver/task/wait",
-				"text": "任务"
+				"text": "任务",
+				"iconPath": "static/tabbar/task.png",
+				"selectedIconPath": "static/tabbar/task-active.png"
 			},
 			{
 				"pagePath": "pages/driver/profile/index",
-				"text": "我的"
+				"text": "我的",
+				"iconPath": "static/tabbar/mine.png",
+				"selectedIconPath": "static/tabbar/mine-active.png"
 			}
 		]
 	},

@@ -64,7 +64,7 @@
       <u-loadmore :status="loadStatus" />
     </view>
 
-    <u-tabbar :value="1" :fixed="true" :placeholder="true" :safeAreaInsetBottom="true">
+    <u-tabbar :value="1" :fixed="true" :placeholder="true" :safeAreaInsetBottom="true" activeColor="var(--c-primary)" inactiveColor="#86909C">
       <u-tabbar-item text="首页" icon="home" @click="goHome" />
       <u-tabbar-item text="我的运单" icon="list" @click="goList" />
       <u-tabbar-item text="我的" icon="account" @click="goProfile" />
