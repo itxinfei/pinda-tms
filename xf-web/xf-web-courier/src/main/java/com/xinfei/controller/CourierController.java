@@ -206,10 +206,10 @@ public class CourierController {
 
         PageResponse<TaskPickupDispatchDTO> result = appCourierFeign.findByPage(appCourierQueryDTO);
         if (result.getItems() == null || result.getItems().size() == 0) {
-            return Result.ok().put("count", 0);
+            return Result.ok().put("data", 0);
         }
         log.info("查询数量 params:{} result：{}", appCourierQueryDTO, result.getCounts());
-        return Result.ok().put("count", result.getCounts());
+        return Result.ok().put("data", result.getCounts());
     }
 
     @SneakyThrows
