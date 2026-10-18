@@ -792,6 +792,7 @@ public class CourierController {
      * @return 落库后的告警记录（含 id 供前端追单）
      */
     @Operation(summary = "异常上报（破损/拒收/地址错误）")
+    @ResponseBody
     @PostMapping("exception/report")
     public Result reportException(@RequestBody ExceptionReportFeignDTO dto) {
         String courierId = RequestContext.getUserId();

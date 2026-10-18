@@ -798,6 +798,7 @@ public class CargoController {
      * @return 落库后的告警记录（含 id 供前端追单）
      */
     @Operation(summary = "在途异常上报（车辆故障/货物损失/延误）")
+    @ResponseBody
     @PostMapping("exception/report")
     public Result reportException(@RequestBody DriverExceptionReportDTO dto) {
         String driverId = RequestContext.getUserId();
