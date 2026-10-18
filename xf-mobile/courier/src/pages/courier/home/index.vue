@@ -31,7 +31,7 @@
 
     <u-gap height="16"></u-gap>
 
-    <!-- 功能宫格：扫码接单 / 我的任务 / 绩效统计 -->
+    <!-- 功能宫格：扫码接单 / 我的任务 / 绩效统计 / 批量入库 -->
     <view class="card entry-grid">
       <view class="entry" @click="onScan">
         <view class="entry-icon"><u-icon name="scan" size="40" color="var(--c-primary)"></u-icon></view>
@@ -44,6 +44,10 @@
       <view class="entry" @click="goTab('pages/courier/stats/index')">
         <view class="entry-icon"><u-icon name="rmb" size="40" color="var(--c-primary)"></u-icon></view>
         <text class="entry-text">绩效统计</text>
+      </view>
+      <view class="entry" @click="goWarehousing">
+        <view class="entry-icon"><u-icon name="box" size="40" color="var(--c-primary)"></u-icon></view>
+        <text class="entry-text">批量入库</text>
       </view>
     </view>
   </view>
@@ -82,6 +86,11 @@ function onScan() {
 
 function onTab(e: any) {
   tabIndex.value = e.index
+}
+
+// 批量入库：非 tabBar 页，走 navigateTo
+function goWarehousing() {
+  uni.navigateTo({ url: '/pages/courier/task/warehousing' })
 }
 
 // 首页计数：taskType 1=取件 2=派件（可选，失败不阻塞）
