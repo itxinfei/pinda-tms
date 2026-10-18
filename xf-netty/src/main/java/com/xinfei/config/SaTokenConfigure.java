@@ -14,8 +14,15 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  *       堵住绕过网关直连 8192 端口访问轨迹/告警接口；</li>
  *   <li>登录校验：xf-netty 的 HTTP 端点（轨迹查询/回放、告警查询处理、HTTP 上报）均为登录后前端调用，全部要求登录。</li>
  * </ol>
- * 注意：TCP 设备上报（NettyServer 8194 长连接）与 RabbitMQ 消费不经过 Spring MVC，不受本拦截器影响；
- * 服务间无入站 Feign/HTTP 调用 xf-netty（xf-netty 只出站调 xf-base），故无需 /internal 放行。
+ * 注意：TCP 设备上报（NettyServer 8194 长连接）与 RabbitMQ 消费不经过 Spring MVC，不受本拦截器影响。
+ *
+ * <p>服务间例外（2026-10-18）：BFF 经 Feign 调用 xf-netty 时只携带 Same-Token（无登录 token），
+ * 需将对应端点排除登录校验，否则第二道拦截器必 401：
+ * <ul>
+ *   <li>{@code /alarm/report}：xf-web-courier（D-41）/ xf-web-driver（D-57）异常上报转发；</li>
+ *   <li>{@code /trace/byTasks}：xf-web-customer（凭订单查在途轨迹）转发。</li>
+ * </ul>
+ * 安全性不变：外部流量仍受网关登录闸门约束，且第一道 Same-Token 校验对上述路径照常生效（防绕网关直连）。</p>
  */
 @Configuration
 public class SaTokenConfigure implements WebMvcConfigurer {
@@ -29,9 +36,10 @@ public class SaTokenConfigure implements WebMvcConfigurer {
                 .addPathPatterns("/**")
                 .excludePathPatterns("/favicon.ico", "/actuator/**");
 
-        // 登录校验：xf-netty 无匿名 HTTP 端点，全部要求登录
+        // 登录校验：xf-netty 无匿名 HTTP 端点，默认全部要求登录；
+        // 例外为服务间 Feign 转发端点（见类注释），不携带登录 token。
         registry.addInterceptor(new SaInterceptor(handle -> StpUtil.checkLogin()))
                 .addPathPatterns("/**")
-                .excludePathPatterns("/actuator/**");
+                .excludePathPatterns("/actuator/**", "/alarm/report", "/trace/byTasks");
     }
 }
