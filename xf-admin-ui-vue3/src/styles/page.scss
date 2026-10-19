@@ -130,6 +130,11 @@
     padding: 12px 16px;
     overflow: hidden;
   }
+
+  // 搜索表单直接内嵌在内容卡片时（区别于独立 page-search 卡片），与下方表格保持与 page-toolbar 一致的间距
+  .page-search {
+    margin-bottom: var(--page-gap);
+  }
 }
 
 .page-toolbar {
