@@ -213,6 +213,10 @@
             />
           </div>
 
+          <div class="order-detail__block">
+            <OrderFeePanel :order-id="detail.id" />
+          </div>
+
           <el-descriptions title="收件信息" :column="2" border class="order-detail__block">
             <el-descriptions-item label="收件人">{{ detail.receiverName || "-" }}</el-descriptions-item>
             <el-descriptions-item label="电话">{{ detail.receiverPhone || "-" }}</el-descriptions-item>
@@ -486,6 +490,7 @@ import {
 import AreaAPI, { type Area } from "@/api/area";
 import CommonSimpleAPI, { type GoodsTypeSimple } from "@/api/common-simple";
 import CargoPanel from "./components/CargoPanel.vue";
+import OrderFeePanel from "./components/OrderFeePanel.vue";
 import { TransportOrderStatus, SchedulingStatus } from "@/api/transport-order";
 import {
   OrderType,

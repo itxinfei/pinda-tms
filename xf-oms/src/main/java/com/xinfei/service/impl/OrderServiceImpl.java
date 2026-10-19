@@ -56,6 +56,11 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     @org.springframework.beans.factory.annotation.Qualifier("baiduGeoClient")
     private GeoClient geoClient;
 
+    // FIN-1.1 / POD-06 客户价格协议：Drools 之前优先匹配协议价（命中跳过规则引擎，未命中原路走 Drools）
+    @Autowired
+    @Lazy
+    private com.xinfei.service.IPriceAgreementService priceAgreementService;
+
     /**
      * 修改订单（重写以接入状态流转校验）
      *
@@ -246,6 +251,12 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
             return null;
         }
 
+        // FIN-1.1 / POD-06：协议价优先（fail-open——协议匹配异常不阻塞，回落 Drools 保业务连续）
+        Map agreementMap = tryCalculateByAgreement(orderDTO);
+        if (agreementMap != null) {
+            return agreementMap;
+        }
+
         KieContainer container = reloadDroolsRulesService.getKieContainer();
         if (container == null) {
             log.error("[订单价格计算] Drools规则引擎未初始化，无法计算订单价格");
@@ -289,6 +300,42 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         }
 
         return null;
+    }
+
+    /**
+     * FIN-1.1 / POD-06 客户价格协议优先计费（2026-10-19 第一期定稿）
+     *
+     * <p>命中协议（客户+重量段+业务日期）→ 直接按协议价返回（跳过 Drools），
+     * 返回 Map 形态与规则引擎分支一致（orderDto+amount）；未命中/无客户身份/匹配异常 →
+     * 返回 null 原路走 Drools（fail-open，散客与既有单据完全不受影响）。</p>
+     */
+    private Map tryCalculateByAgreement(OrderDTO orderDTO) {
+        try {
+            if (orderDTO.getMemberId() == null || orderDTO.getMemberId().isEmpty()) {
+                return null;
+            }
+            Long memberId = IdConverter.toLong(orderDTO.getMemberId());
+            if (memberId == null) {
+                return null;
+            }
+            BigDecimal totalWeight = orderDTO.getOrderCargoDto().getTotalWeight();
+            // 业务日期=下单日期（试算时=当日）；按"业务日期命中版本"而非最新版本
+            LocalDateTime businessTime = orderDTO.getCreateTime() != null ? orderDTO.getCreateTime() : LocalDateTime.now();
+            com.xinfei.entity.PriceAgreement agreement =
+                    priceAgreementService.matchAgreement(memberId, totalWeight, businessTime.toLocalDate());
+            if (agreement == null) {
+                return null;
+            }
+            BigDecimal amount = priceAgreementService.calcAgreementAmount(agreement, totalWeight);
+            orderDTO.setAmount(amount);
+            Map map = new HashMap();
+            map.put("orderDto", orderDTO);
+            map.put("amount", amount.toString());
+            return map;
+        } catch (Exception e) {
+            log.warn("[订单价格计算] 协议价匹配异常，回落默认规则计费: {}", e.getMessage());
+            return null;
+        }
     }
 
     /**
