@@ -44,6 +44,12 @@ x-ulimits: &app-ulimits
 
 # JVM 档位
 x-jvm-core: &jvm-core
+  # dev 测试数据生成器第二把锁（2026-10-19，见 com.xinfei.mock.MockGuardCondition）：
+  # 缺省 false（锁死）；仅 dev 部署侧经 /data/ci/apps.env 注入 XINFEI_MOCK_ENABLED=true 开启。
+  # 生产不带该变量即落 false——即使 Nacos dev 配置被误复制，第二把锁仍锁死。
+  # 放锚点不放服务段：YAML << 浅合并，服务段自写 environment 会整段覆盖 JVM 参数。
+  # 其余无 mock 包的服务带上此变量无任何消费者，无副作用。
+  XINFEI_MOCK_ENABLED: "${XINFEI_MOCK_ENABLED:-false}"
   # rabbit 健康指标默认关闭：全仓仅 oms/dispatch/netty 真用 rabbit（有 @RabbitListener，各自显式开 true），
   # 其余服务的 spring-rabbit 均系传递依赖误入，指标连 localhost 必 DOWN 造成 /actuator/health 503 假告警
   MANAGEMENT_HEALTH_RABBIT_ENABLED: "false"
