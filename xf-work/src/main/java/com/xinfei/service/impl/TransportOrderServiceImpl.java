@@ -122,9 +122,26 @@ public class TransportOrderServiceImpl extends
         return list(wrapper);
     }
 
+    /**
+     * 按订单 id 查运单
+     *
+     * <p>L-9 修复：同一订单存在多条运单（历史脏数据）时，getOne 会抛
+     * TooManyResultsException，经 Feign 传导到 xf-dispatch 调度链路后
+     * 中断整轮调度，导致新订单漏推 网点入库(4)→待装车(5)。改为按 id
+     * 倒序取最新一条并告警，让调度流程继续，脏数据留待清理。</p>
+     *
+     * @param orderId 订单 id
+     * @return 最新一条运单；不存在时返回 null
+     */
     @Override
     public TransportOrder findByOrderId(Long orderId) {
-        return getOne(new LambdaQueryWrapper<TransportOrder>()
-                .eq(TransportOrder::getOrderId, orderId));
+        List<TransportOrder> orders = list(new LambdaQueryWrapper<TransportOrder>()
+                .eq(TransportOrder::getOrderId, orderId)
+                .orderByDesc(TransportOrder::getId));
+        if (orders.size() > 1) {
+            log.warn("订单[{}]存在{}条运单（历史脏数据），取最新一条[id={}]继续，其余待清理",
+                    orderId, orders.size(), orders.get(0).getId());
+        }
+        return orders.isEmpty() ? null : orders.get(0);
     }
 }
