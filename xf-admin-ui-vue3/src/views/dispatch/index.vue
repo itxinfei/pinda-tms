@@ -1,6 +1,14 @@
 <template>
   <div class="page-container">
     <div class="dispatch-board">
+      <!-- 顶部统计条（三栏共享） -->
+      <div class="dispatch-board__stats" role="status" aria-label="调度概览统计">
+        <el-tag type="warning" size="small" effect="plain">待调度 {{ summary.pendingOrderCount }}</el-tag>
+        <el-tag type="info" size="small" effect="plain">线路 {{ summary.lineCount }}</el-tag>
+        <el-tag type="success" size="small" effect="plain">网点 {{ summary.orgCount }}</el-tag>
+      </div>
+
+      <div class="dispatch-board__main">
       <!-- 左：待调度订单 -->
       <el-card class="dispatch-board__side" shadow="never">
         <template #header>
@@ -19,14 +27,6 @@
             </el-button>
           </div>
         </template>
-
-        <div class="dispatch-board__stats">
-          <el-tag type="warning" size="small" effect="plain">
-            待调度 {{ summary.pendingOrderCount }}
-          </el-tag>
-          <el-tag type="info" size="small" effect="plain">线路 {{ summary.lineCount }}</el-tag>
-          <el-tag type="success" size="small" effect="plain">网点 {{ summary.orgCount }}</el-tag>
-        </div>
 
         <el-input
           v-model="keyword"
@@ -75,18 +75,28 @@
                   </el-tag>
                   <span v-if="!hasCoord(item)" class="dispatch-board__order-warn">无坐标</span>
                 </div>
+                <!-- 货物摘要（board 聚合 quantity/totalWeight/totalVolume） -->
+                <div class="dispatch-board__order-cargo" :class="{ 'is-empty': !hasCargo(item) }">
+                  {{ cargoSummary(item) }}
+                </div>
               </div>
             </div>
           </el-checkbox-group>
           <el-empty v-if="!filteredOrders.length" description="暂无待调度订单" :image-size="60" />
         </el-scrollbar>
+
+        <!-- 勾选聚合条：右栏载重匹配的输入源 -->
+        <div v-if="selected.length" class="dispatch-board__agg" aria-live="polite">
+          已选 {{ selected.length }} 单 · 总重 {{ formatNum(selectedWeight) }} kg · 总体积
+          {{ formatNum(selectedVolume) }} m³
+        </div>
       </el-card>
 
       <!-- 右：地图 -->
       <el-card class="dispatch-board__map-card" shadow="never">
         <template #header>
           <div class="dispatch-board__map-header">
-            <span class="dispatch-board__title">调度一张图</span>
+            <span class="dispatch-board__title">调度工作台</span>
             <div class="dispatch-board__legend">
               <span><i class="dot dot--order" />待调度订单 {{ orders.length }}</span>
               <span><i class="dot dot--truck" />在途车辆 {{ trucks.length }}</span>
@@ -95,6 +105,9 @@
                 已选车辆：{{ truckLabel(activeTruck) }}
               </el-tag>
               <el-button size="small" :icon="Refresh" @click="loadAll">刷新</el-button>
+              <el-button size="small" @click="showTruckPanel = !showTruckPanel">
+                {{ showTruckPanel ? "收起车辆栏" : "展开车辆栏" }}
+              </el-button>
             </div>
           </div>
         </template>
@@ -109,6 +122,49 @@
         />
         <div v-else ref="mapRef" v-loading="loading" class="dispatch-board__map"></div>
       </el-card>
+
+      <!-- 右：候选车辆（实时位置 ⋈ 档案载重匹配） -->
+      <el-card v-show="showTruckPanel" class="dispatch-board__trucks" shadow="never">
+        <template #header>
+          <div class="dispatch-board__trucks-header">
+            <span>候选车辆（{{ visibleTruckCards.length }}/{{ truckCards.length }}）</span>
+            <el-checkbox v-model="assignableOnly" size="small">仅看可派</el-checkbox>
+          </div>
+        </template>
+        <el-scrollbar class="dispatch-board__truck-list">
+          <div
+            v-for="card in visibleTruckCards"
+            :key="card.key"
+            class="dispatch-board__truck"
+            :class="{ 'is-active': isActiveTruck(card), 'is-disabled': !card.selectable }"
+            role="button"
+            tabindex="0"
+            :aria-label="`${card.label}，${card.statusLabel}，${card.matchLabel}`"
+            :title="card.disabledReason || undefined"
+            @click="pickTruckCard(card)"
+            @keydown.enter.prevent="pickTruckCard(card)"
+          >
+            <div class="dispatch-board__truck-top">
+              <span class="dispatch-board__truck-plate">{{ card.label }}</span>
+              <el-tag :type="card.statusTag" size="small" effect="plain">{{ card.statusLabel }}</el-tag>
+            </div>
+            <div class="dispatch-board__truck-meta">{{ card.fleetName || "-" }} · {{ card.truckTypeName || "-" }}</div>
+            <div class="dispatch-board__truck-load">
+              载重 {{ formatNum(card.allowableLoad, "未知") }} kg / 容积
+              {{ formatNum(card.allowableVolume, "未知") }} m³
+            </div>
+            <div class="dispatch-board__truck-badges">
+              <el-tag :type="card.matchTag" size="small" effect="light">{{ card.matchLabel }}</el-tag>
+              <el-tag v-if="card.onDuty" type="warning" size="small" effect="plain">在途</el-tag>
+            </div>
+          </div>
+          <el-empty v-if="!visibleTruckCards.length" description="暂无候选车辆" :image-size="60" />
+        </el-scrollbar>
+        <div v-if="activeTruck" class="dispatch-board__truck-selected" aria-live="polite">
+          已选：{{ truckLabel(activeTruck) }}
+        </div>
+      </el-card>
+      </div>
     </div>
 
     <!-- 派单确认 -->
@@ -116,6 +172,9 @@
       <el-descriptions :column="1" border size="small">
         <el-descriptions-item label="待调度订单">
           {{ selected.length }} 张<template v-if="startOrgName"> （起始网点：{{ startOrgName }}）</template>
+        </el-descriptions-item>
+        <el-descriptions-item label="货物合计">
+          {{ formatNum(selectedWeight) }} kg / {{ formatNum(selectedVolume) }} m³
         </el-descriptions-item>
         <el-descriptions-item label="承运车辆">
           <el-select
@@ -143,7 +202,7 @@
             </el-option>
           </el-select>
           <div v-if="activeTruck" class="dispatch-board__truck-hint">
-            地图点选：{{ truckLabel(activeTruck) }}
+            已由车辆栏/地图点选：{{ truckLabel(activeTruck) }}
           </div>
         </el-descriptions-item>
         <el-descriptions-item label="目的网点">{{ targetLine?.endOrgName || "按线路自动匹配" }}</el-descriptions-item>
@@ -192,6 +251,9 @@ import {
 /** 车辆轮询间隔外部化（红线：轮询间隔禁硬编码），与在途监控共用同一 env，缺省兜底仅防 env 漏配 */
 const POLL_INTERVAL_MS = Number(import.meta.env.VITE_MAP_POLL_INTERVAL_MS || 10000);
 
+/** GPS 在线判定阈值（分钟）外部化，与后端 gps.offline.timeout.minutes 同源口径；缺省兜底仅防 env 漏配 */
+const GPS_OFFLINE_TIMEOUT_MS = Number(import.meta.env.VITE_GPS_OFFLINE_TIMEOUT_MINUTES || 30) * 60_000;
+
 /** 从 CSS 变量取实际色值（Polyline 为 canvas 渲染，内联 var() 不生效；DOM label 可直接用 var()） */
 function cssVar(name: string, fallback: string): string {
   const value = getComputedStyle(document.documentElement).getPropertyValue(name)?.trim();
@@ -221,6 +283,12 @@ const assignVisible = ref(false);
 const truckOptions = ref<TruckRecord[]>([]);
 const truckLoading = ref(false);
 const selectedTruckId = ref("");
+/** 右栏候选车辆面板（窄屏默认收起，onMounted 判定） */
+const showTruckPanel = ref(true);
+/** 仅看可派：隐藏离线/无定位/超限车辆，默认开 */
+const assignableOnly = ref(true);
+/** 车辆档案（TruckAPI 分页全量，补 latestAll 缺失的载重/容积/车队），key=truckId */
+const truckArchives = ref<Map<string, TruckRecord>>(new Map());
 
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 const orderMarkers = new Map<string, any>();
@@ -250,6 +318,163 @@ const targetLine = computed<DispatchLine | undefined>(() =>
   lines.value.find((line) => line.startOrgId === startOrgId.value)
 );
 
+/** 数值格式化：空值回退占位（载重/容积档案缺失时显示"未知"） */
+function formatNum(value: number | undefined | null, fallback = "0"): string {
+  if (value == null || !Number.isFinite(Number(value))) return fallback;
+  const num = Number(value);
+  return num % 1 === 0 ? String(num) : num.toFixed(1);
+}
+
+/** 货物汇总是否有效（board 聚合 quantity/totalWeight/totalVolume，无数据显示 —） */
+function hasCargo(item: DispatchOrderPoint): boolean {
+  return Number(item.quantity) > 0 || Number(item.totalWeight) > 0 || Number(item.totalVolume) > 0;
+}
+
+function cargoSummary(item: DispatchOrderPoint): string {
+  if (!hasCargo(item)) return "—";
+  const parts: string[] = [];
+  if (Number(item.quantity) > 0) parts.push(`${formatNum(item.quantity)}件`);
+  if (Number(item.totalWeight) > 0) parts.push(`${formatNum(item.totalWeight)}kg`);
+  if (Number(item.totalVolume) > 0) parts.push(`${formatNum(item.totalVolume)}m³`);
+  return parts.join(" / ") || "—";
+}
+
+/** 勾选订单货物聚合（右栏载重匹配的输入源） */
+const selectedWeight = computed(() =>
+  orders.value
+    .filter((item) => selected.value.includes(item.id))
+    .reduce((sum, item) => sum + (Number(item.totalWeight) || 0), 0)
+);
+const selectedVolume = computed(() =>
+  orders.value
+    .filter((item) => selected.value.includes(item.id))
+    .reduce((sum, item) => sum + (Number(item.totalVolume) || 0), 0)
+);
+
+// ===== 右栏：候选车辆载重匹配 =====
+/** 右栏卡片视图模型（latestAll 实时位置 ⋈ TruckAPI 档案合并后的展示态） */
+interface TruckCardVM {
+  key: string;
+  label: string;
+  /** latestAll 实时记录（有定位），无定位车辆为 null */
+  live: LocationRecordItem | null;
+  online: boolean;
+  statusLabel: string;
+  statusTag: "success" | "info" | "danger";
+  matchLabel: string;
+  matchTag: "success" | "danger" | "warning" | "info";
+  /** 硬约束：超限（DSP-04 口径）+ 离线/无定位（R2-2/FR-36 同口径）禁选 */
+  selectable: boolean;
+  disabledReason: string;
+  onDuty: boolean;
+  allowableLoad?: number;
+  allowableVolume?: number;
+  fleetName?: string;
+  truckTypeName?: string;
+}
+
+function isTruckOnline(item: LocationRecordItem): boolean {
+  const time = Date.parse(String(item.reportTime || "").replace(/-/g, "/"));
+  if (!Number.isFinite(time)) return false;
+  return Date.now() - time <= GPS_OFFLINE_TIMEOUT_MS;
+}
+
+const truckCards = computed<TruckCardVM[]>(() => {
+  const cards: TruckCardVM[] = [];
+  // 1) 有实时定位的车辆，档案补载重/容积/车队
+  trucks.value.forEach((item) => {
+    const truckId = item.businessId == null ? "" : String(item.businessId);
+    const archive = truckArchives.value.get(truckId);
+    const online = isTruckOnline(item);
+    const load = archive?.allowableLoad;
+    const volume = archive?.allowableVolume;
+    let matchLabel = "载重未知";
+    let matchTag: TruckCardVM["matchTag"] = "info";
+    let overLimit = false;
+    if (load != null && Number(load) > 0) {
+      if (selectedWeight.value > Number(load)) {
+        matchLabel = "超重";
+        matchTag = "danger";
+        overLimit = true;
+      } else if (volume != null && Number(volume) > 0 && selectedVolume.value > Number(volume)) {
+        matchLabel = "超容积";
+        matchTag = "warning";
+        overLimit = true;
+      } else {
+        matchLabel = "可装";
+        matchTag = "success";
+      }
+    }
+    const onDuty = Boolean(item.transportTaskId);
+    cards.push({
+      key: `${item.businessId}#${item.businessType}`,
+      label: item.licensePlate || item.name || truckId || "-",
+      live: item,
+      online,
+      statusLabel: online ? "在线" : "离线",
+      statusTag: online ? "success" : "danger",
+      matchLabel,
+      matchTag,
+      selectable: online && !overLimit,
+      disabledReason: !online
+        ? "GPS 离线，禁止派单（FR-36 口径）"
+        : overLimit
+          ? "已选订单超出准载限制，禁止派单（DSP-04 口径）"
+          : "",
+      onDuty,
+      allowableLoad: load,
+      allowableVolume: volume,
+      fleetName: archive?.fleet?.name,
+      truckTypeName: archive?.truckType?.name,
+    });
+  });
+  // 2) 有档案但无实时定位的车辆：无定位禁选，置底保留档案可见性
+  truckArchives.value.forEach((archive, truckId) => {
+    if (trucks.value.some((item) => String(item.businessId ?? "") === truckId)) return;
+    cards.push({
+      key: `archive#${truckId}`,
+      label: archive.licensePlate || truckId,
+      live: null,
+      online: false,
+      statusLabel: "无定位",
+      statusTag: "info",
+      matchLabel: "载重未知",
+      matchTag: "info",
+      selectable: false,
+      disabledReason: "无实时定位，禁止派单（FR-36 口径）",
+      onDuty: false,
+      allowableLoad: archive.allowableLoad,
+      allowableVolume: archive.allowableVolume,
+      fleetName: archive.fleet?.name,
+      truckTypeName: archive.truckType?.name,
+    });
+  });
+  // 排序：可派 → 在途 → 不可派（离线/超限/无定位）
+  const rank = (card: TruckCardVM) => (card.selectable ? (card.onDuty ? 1 : 0) : 2);
+  return cards.sort((a, b) => rank(a) - rank(b));
+});
+
+const visibleTruckCards = computed(() =>
+  assignableOnly.value ? truckCards.value.filter((card) => card.selectable) : truckCards.value
+);
+
+function isActiveTruck(card: TruckCardVM): boolean {
+  return Boolean(
+    activeTruck.value && card.live && `${activeTruck.value.businessId}#${activeTruck.value.businessType}` === card.key
+  );
+}
+
+/** 右栏点选车辆（与地图点选同一入口，回写派单下拉） */
+function pickTruckCard(card: TruckCardVM) {
+  if (!card.selectable) {
+    ElMessage.warning(card.disabledReason || "该车辆当前不可派");
+    return;
+  }
+  if (card.live) {
+    selectTruck(card.live);
+  }
+}
+
 function hasCoord(item: DispatchOrderPoint): boolean {
   return Number.isFinite(Number(item.longitude)) && Number.isFinite(Number(item.latitude));
 }
@@ -268,11 +493,21 @@ async function loadTrucks() {
   trucks.value = list ?? [];
 }
 
+/** 车辆档案全量（分页拉取，补载重/容积/车队供右栏匹配；档案变更低频，仅首载+手动刷新） */
+async function loadTruckArchives() {
+  const res = await TruckAPI.page({ page: 1, pageSize: 200 });
+  const map = new Map<string, TruckRecord>();
+  (res?.items ?? []).forEach((item) => map.set(String(item.id), item));
+  truckArchives.value = map;
+}
+
 async function loadAll() {
   loading.value = true;
   try {
     await loadBoard();
     await loadTrucks();
+    // 档案拉取失败不阻断工作台：右栏降级为"载重未知"
+    await loadTruckArchives().catch(() => {});
     await nextTick();
     renderAll();
   } finally {
@@ -508,6 +743,26 @@ async function doAssign() {
     ElMessage.warning("请选择承运车辆");
     return;
   }
+  // 兜底下拉选择的载重硬约束校验（右栏点选已在卡片层拦截；档案缺数据不阻断）
+  const archive = truckArchives.value.get(truckId);
+  if (archive?.allowableLoad != null && Number(archive.allowableLoad) > 0) {
+    if (selectedWeight.value > Number(archive.allowableLoad)) {
+      ElMessage.warning(
+        `所选车辆准载 ${formatNum(archive.allowableLoad)} kg，超出已选订单总重，禁止派单`
+      );
+      return;
+    }
+    if (
+      archive.allowableVolume != null &&
+      Number(archive.allowableVolume) > 0 &&
+      selectedVolume.value > Number(archive.allowableVolume)
+    ) {
+      ElMessage.warning(
+        `所选车辆准载体积 ${formatNum(archive.allowableVolume)} m³，超出已选订单总体积，禁止派单`
+      );
+      return;
+    }
+  }
   assigning.value = true;
   try {
     const result = (await DispatchAPI.assign({
@@ -527,6 +782,8 @@ async function doAssign() {
 
 // ===== 生命周期 =====
 onMounted(async () => {
+  // 窄屏默认收起右栏（规格：三栏 <1440px 可折叠）
+  showTruckPanel.value = window.innerWidth >= 1440;
   try {
     await initMap();
   } catch (error: any) {
@@ -557,14 +814,23 @@ onBeforeUnmount(() => {
 <style lang="scss" scoped>
 .dispatch-board {
   display: flex;
+  flex-direction: column;
   gap: 12px;
   height: calc(100vh - 130px);
+
+  // 三栏主体：左订单 / 中地图 / 右候选车辆
+  &__main {
+    display: flex;
+    gap: 12px;
+    flex: 1;
+    min-height: 0;
+  }
 
   &__side {
     display: flex;
     flex-shrink: 0;
     flex-direction: column;
-    width: 320px;
+    width: 312px;
   }
 
   &__side-header {
@@ -589,9 +855,9 @@ onBeforeUnmount(() => {
 
   &__stats {
     display: flex;
+    flex-shrink: 0;
     flex-wrap: wrap;
     gap: 8px;
-    margin-bottom: 8px;
 
     // 统计数字等宽，刷新跳变时标签不抖
     :deep(.el-tag) {
@@ -674,6 +940,130 @@ onBeforeUnmount(() => {
 
   &__order-warn {
     color: var(--el-color-warning);
+  }
+
+  // 订单卡货物摘要（board 聚合：件数/重量/体积）
+  &__order-cargo {
+    margin-top: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    color: var(--el-text-color-regular);
+    white-space: nowrap;
+
+    &.is-empty {
+      color: var(--el-text-color-placeholder);
+    }
+  }
+
+  // 勾选聚合条（右栏载重匹配的输入源）
+  &__agg {
+    flex-shrink: 0;
+    padding: 6px 8px;
+    margin-top: 8px;
+    overflow: hidden;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    color: var(--el-color-primary);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    background: var(--el-color-primary-light-9);
+    border-radius: 6px;
+  }
+
+  // 右栏：候选车辆
+  &__trucks {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    width: 312px;
+  }
+
+  &__trucks-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    > span {
+      overflow: hidden;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+  }
+
+  &__truck-list {
+    flex: 1;
+    min-height: 0;
+  }
+
+  &__truck {
+    padding: 8px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 6px;
+
+    &.is-active {
+      background: var(--el-color-primary-light-9);
+      border-color: var(--el-color-primary);
+    }
+
+    // 不可派车辆弱化展示，悬停提示禁选原因
+    &.is-disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+  }
+
+  &__truck-top {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__truck-plate {
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  &__truck-meta {
+    margin-top: 4px;
+    overflow: hidden;
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  &__truck-load {
+    margin-top: 4px;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    color: var(--el-text-color-regular);
+  }
+
+  &__truck-badges {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+  }
+
+  &__truck-selected {
+    flex-shrink: 0;
+    padding: 6px 8px;
+    margin-top: 8px;
+    overflow: hidden;
+    font-size: 12px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--el-color-success);
+    background: var(--el-color-success-light-9);
+    border-radius: 6px;
   }
 
   &__map-card {
