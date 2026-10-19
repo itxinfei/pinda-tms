@@ -16,7 +16,9 @@ import org.springframework.web.bind.annotation.RestController;
  * 管理端合规决策留痕—— 薄转发至 xf-oms，网关前缀 /api/manager/decision-log。
  *
  * <p>P0-9/FR-75 的网关暴露层（改派/调价/拒单留痕查询与监管导出）。
- * 权限码 {@code finance:decision:*}。</p>
+ * 权限码 {@code finance:decision:list/apply/export}（具体码，对齐全仓
+ * {@code @SaCheckPermission} 惯例与 sys_menu 按钮 perms；勿改回 {@code finance:decision:*}
+ * 通配——Sa-Token 注解通配要求用户持通配串，持具体码的角色反而会被 403）。</p>
  */
 @RestController
 @RequestMapping("decision-log")
@@ -28,7 +30,7 @@ public class DecisionLogController {
 
     @Operation(summary = "落留痕")
     @PostMapping("/apply")
-    @SaCheckPermission("finance:decision:*")
+    @SaCheckPermission("finance:decision:apply")
     public Result apply(@RequestParam("businessType") String businessType,
                         @RequestParam("businessId") Long businessId,
                         @RequestParam("reasonEnum") String reasonEnum,
@@ -38,7 +40,7 @@ public class DecisionLogController {
 
     @Operation(summary = "分页查询")
     @GetMapping("/page")
-    @SaCheckPermission("finance:decision:*")
+    @SaCheckPermission("finance:decision:list")
     public Result page(@RequestParam(value = "page", required = false) Integer page,
                        @RequestParam(value = "pageSize", required = false) Integer pageSize,
                        @RequestParam(value = "businessType", required = false) String businessType,
@@ -48,7 +50,7 @@ public class DecisionLogController {
 
     @Operation(summary = "监管导出")
     @GetMapping("/export")
-    @SaCheckPermission("finance:decision:*")
+    @SaCheckPermission("finance:decision:export")
     public Result export(@RequestParam(value = "businessType", required = false) String businessType,
                          @RequestParam(value = "businessId", required = false) Long businessId,
                          @RequestParam(value = "beginTime", required = false) String beginTime,
