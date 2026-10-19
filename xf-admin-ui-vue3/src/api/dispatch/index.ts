@@ -1,7 +1,7 @@
 import request from "@/utils/request";
 
 /**
- * 调度一张图（FR-04 / DSP-03）
+ * 调度工作台（FR-04 / DSP-03，原"调度一张图"，2026-10-19 菜单 IA 优化更名）
  *
  * 经网关 /api/manager 前缀访问 xf-web-manager 的 DispatchBoardController：
  * - POST /dispatch/board/page   待调度订单 + 可用线路聚合
@@ -102,7 +102,7 @@ export interface DispatchAssignResult {
 }
 
 const DispatchAPI = {
-  /** 调度一张图聚合数据 */
+  /** 调度工作台聚合数据 */
   board(currentAgencyId?: string) {
     return request<unknown, DispatchBoard>({
       url: `${DISPATCH_BASE_URL}/board/page`,

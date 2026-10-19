@@ -3,7 +3,7 @@
     <!-- 页头：标题 + 主操作（刷新） -->
     <div class="page-toolbar board-toolbar">
       <div class="page-toolbar__left">
-        <span class="board-title">运输闭环看板</span>
+        <span class="board-title">运输看板</span>
         <span class="board-subtitle">调度 → 分配 → 发车 → 在途 → 到达 → 交付 全链路实时视图</span>
       </div>
       <div class="page-toolbar__right">

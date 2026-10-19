@@ -1,7 +1,7 @@
 import request from "@/utils/request";
 
 /**
- * 运输闭环看板（DSP-01）
+ * 运输看板（DSP-01，原"运输闭环看板"，2026-10-19 菜单 IA 优化更名）
  *
  * 聚合接口由 xf-web-manager 提供（经网关 /api/manager 前缀），数据源 xf-aggregation。
  * 阶段/状态的中文名与下钻参数均由后端按枚举真源下发，前端不做状态码映射与硬编码。
@@ -31,7 +31,7 @@ export interface StatusCount {
   count: number;
 }
 
-/** 运输闭环看板聚合数据 */
+/** 运输看板聚合数据 */
 export interface TransportBoard {
   stages: BoardStage[];
   taskStatusCounts: StatusCount[];
