@@ -32,6 +32,12 @@ export interface DispatchOrderPoint {
   latitude?: string;
   /** 下单时间 */
   createTime?: string;
+  /** 货物件数（OrderCargo 汇总，右栏候选车辆载重匹配用） */
+  quantity?: number;
+  /** 货物总重 kg */
+  totalWeight?: number;
+  /** 货物总体积 m³ */
+  totalVolume?: number;
 }
 
 /** 线路 */

@@ -38,8 +38,10 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 订单
@@ -367,7 +369,58 @@ public class OrderController {
         wrapper.eq(IdConverter.toLong(orderSearchDTO.getCurrentAgencyId()) != null,
                 Order::getCurrentOrgId, IdConverter.toLong(orderSearchDTO.getCurrentAgencyId()));
 
-        return orderConverter.toDtoList(orderService.list(wrapper));
+        List<OrderDTO> dtoList = orderConverter.toDtoList(orderService.list(wrapper));
+        attachCargoSummary(dtoList);
+        return dtoList;
+    }
+
+    /**
+     * 批量装配货物汇总（调度一张图右栏载重匹配数据源）
+     *
+     * <p>本 list 端点当前唯一生产调用方是 xf-web-manager 调度一张图聚合
+     * （DispatchBoardController），装配 orderCargoDto 的数量/总重/总体积
+     * 供前端按车辆准载重量做匹配建议。一单一条 cargo 为常态；脏数据多条时
+     * 数量/总重/总体积求和，避免载重误判。</p>
+     */
+    private void attachCargoSummary(List<OrderDTO> dtoList) {
+        if (dtoList == null || dtoList.isEmpty()) {
+            return;
+        }
+        List<Long> orderIds = dtoList.stream()
+                .map(dto -> IdConverter.toLong(dto.getId()))
+                .filter(id -> id != null)
+                .collect(Collectors.toList());
+        if (orderIds.isEmpty()) {
+            return;
+        }
+        List<OrderCargo> cargos = orderCargoService.list(new LambdaQueryWrapper<OrderCargo>()
+                .in(OrderCargo::getOrderId, orderIds));
+        Map<Long, OrderCargoDto> cargoMap = new HashMap<>();
+        for (OrderCargo cargo : cargos) {
+            OrderCargoDto existing = cargoMap.get(cargo.getOrderId());
+            if (existing == null) {
+                cargoMap.put(cargo.getOrderId(), orderCargoConverter.toDto(cargo));
+            } else {
+                if (cargo.getQuantity() != null) {
+                    existing.setQuantity(existing.getQuantity() == null
+                            ? cargo.getQuantity() : existing.getQuantity() + cargo.getQuantity());
+                }
+                if (cargo.getTotalWeight() != null) {
+                    existing.setTotalWeight(existing.getTotalWeight() == null
+                            ? cargo.getTotalWeight() : existing.getTotalWeight().add(cargo.getTotalWeight()));
+                }
+                if (cargo.getTotalVolume() != null) {
+                    existing.setTotalVolume(existing.getTotalVolume() == null
+                            ? cargo.getTotalVolume() : existing.getTotalVolume().add(cargo.getTotalVolume()));
+                }
+            }
+        }
+        dtoList.forEach(dto -> {
+            OrderCargoDto cargo = cargoMap.get(IdConverter.toLong(dto.getId()));
+            if (cargo != null) {
+                dto.setOrderCargoDto(cargo);
+            }
+        });
     }
 
 

@@ -50,6 +50,12 @@ public class DispatchBoardVO implements Serializable {
         private String latitude;
         /** 下单时间 */
         private String createTime;
+        /** 货物件数（OrderCargo 汇总，多条脏数据已求和；右栏载重匹配用） */
+        private Integer quantity;
+        /** 货物总重 kg（同上） */
+        private BigDecimal totalWeight;
+        /** 货物总体积 m³（同上） */
+        private BigDecimal totalVolume;
     }
 
     /** 线路 */

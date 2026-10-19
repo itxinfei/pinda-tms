@@ -212,6 +212,12 @@ public class DispatchBoardController {
                 point.setLatitude(org.getLatitude());
             }
             point.setCreateTime(order.getCreateTime() == null ? null : order.getCreateTime().toString());
+            // 货物汇总（oms list 已装配）：供前端右栏候选车辆按准载重量做匹配建议
+            if (order.getOrderCargoDto() != null) {
+                point.setQuantity(order.getOrderCargoDto().getQuantity());
+                point.setTotalWeight(order.getOrderCargoDto().getTotalWeight());
+                point.setTotalVolume(order.getOrderCargoDto().getTotalVolume());
+            }
             return point;
         }).collect(Collectors.toList());
     }
