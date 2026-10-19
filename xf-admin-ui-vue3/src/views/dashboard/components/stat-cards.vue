@@ -96,7 +96,8 @@ function sparkPath(values: number[]): { line: string; area: string } | null {
   });
   return {
     line: pts.join(" "),
-    area: `${pts[0]} L${pts.slice(1).join(" L")} L100,24 L0,24 Z`,
+    // path 必须以 M(moveto) 开头，否则浏览器拒绝整个 d 属性（渐变面积不渲染+console报错）
+    area: `M${pts[0]} L${pts.slice(1).join(" L")} L100,24 L0,24 Z`,
   };
 }
 </script>
