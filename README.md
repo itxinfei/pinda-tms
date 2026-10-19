@@ -45,7 +45,7 @@
 > **心飞 TMS** 是一款**四端协同**（管理端 + 客户端 + 快递员端 + 司机端）的开源运输管理系统，基于 **JDK 21 + Spring Boot 3.5.7 + Vue 3.5** 构建，覆盖寄件 → 订单 → 智能调度 → 作业 → 轨迹 → 回单全链路。Drools 规则引擎驱动智能调度，Netty 自建轨迹接入，Sa-Token 多租户 SaaS 就绪。
 
 <p align="center">  
-<b><a href="#sec-tech"><code>14</code></a></b> 个微服务 · <b><code>4</code></b> 端协同 · <b><code>106</code></b> 条功能需求 · <b><code>55</code></b> 张数据表 · <b><code>27</code></b> 项技术栈 · 全链路业务闭环  
+<b><a href="#sec-tech"><code>14</code></a></b> 个微服务 · <b><code>4</code></b> 端协同 · <b><code>106</code></b> 条功能需求 · <b><code>71</code></b> 张数据表 · <b><code>27</code></b> 项技术栈 · 全链路业务闭环  
 </p>
 <p align="center">  
 🔗 <b>项目资料</b>：<a href="https://itxinfei.github.io/xinfei-tms/" target="_blank">https://itxinfei.github.io/xinfei-tms/</a> 
@@ -466,7 +466,7 @@ docker-compose up -d        # 起中间件：MySQL / Redis / RabbitMQ / Nacos
 <tr>  
 <td align="center" width="50%">  
   <img src="docs/screenshots/ops-mysql.png" alt="MySQL 数据库"/>  
-     <sub><b>MySQL 8.0 数据库</b> · 终端直连查询 · xinfei_tms 全部 55 张表（InnoDB）</sub>  
+     <sub><b>MySQL 8.0 数据库</b> · 终端直连查询 · xinfei_tms 全部 71 张表（InnoDB）</sub>  
 </td>  
 <td align="center" width="50%">  
   <img src="docs/screenshots/ops-redis.png" alt="Redis 键管理"/>  
