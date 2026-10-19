@@ -1,5 +1,6 @@
 package com.xinfei.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.spring.service.IService;
 import com.xinfei.entity.FreightBill;
 import com.xinfei.entity.SettlementOrder;
@@ -60,4 +61,16 @@ public interface IFreightBillService extends IService<FreightBill> {
      * 查询账单关联的结算单列表。
      */
     List<SettlementOrder> listSettlements(Long billId);
+
+    /**
+     * 账单分页列表（管理端列表页，2026-10-19 前端收口补齐）。
+     *
+     * @param page       页码（1 起）
+     * @param pageSize   页大小
+     * @param billNo     账单号（模糊，可空）
+     * @param customerId 客户id（精确，可空）
+     * @param status     状态（可空）
+     * @return 分页结果，createTime 倒序
+     */
+    IPage<FreightBill> page(Integer page, Integer pageSize, String billNo, String customerId, Integer status);
 }

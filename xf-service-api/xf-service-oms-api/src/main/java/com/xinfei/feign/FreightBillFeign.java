@@ -23,6 +23,13 @@ public interface FreightBillFeign {
                     @RequestParam("periodStart") String periodStart,
                     @RequestParam("periodEnd") String periodEnd);
 
+    @GetMapping("/page")
+    Result page(@RequestParam(value = "page", required = false) Integer page,
+                @RequestParam(value = "pageSize", required = false) Integer pageSize,
+                @RequestParam(value = "billNo", required = false) String billNo,
+                @RequestParam(value = "customerId", required = false) String customerId,
+                @RequestParam(value = "status", required = false) Integer status);
+
     @GetMapping("/{id}")
     Result reconcile(@PathVariable("id") Long id);
 

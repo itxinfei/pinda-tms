@@ -19,6 +19,13 @@ public class FreightBillFeignFallback implements FreightBillFeign {
     }
 
     @Override
+    public Result page(Integer page, Integer pageSize, String billNo, String customerId, Integer status) {
+        log.warn("远程调用 xf-oms 失败: page(page={}, pageSize={}, billNo={}, customerId={}, status={})",
+                page, pageSize, billNo, customerId, status);
+        return Result.error("服务降级，账单列表获取失败");
+    }
+
+    @Override
     public Result reconcile(Long id) {
         log.warn("远程调用 xf-oms 失败: reconcile(id={})", id);
         return Result.error("服务降级，对账视图获取失败");

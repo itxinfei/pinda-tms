@@ -67,6 +67,20 @@ public class FreightBillController {
         }
     }
 
+    @Operation(summary = "账单分页列表")
+    @GetMapping("/page")
+    public Result page(@RequestParam(value = "page", required = false) Integer page,
+                       @RequestParam(value = "pageSize", required = false) Integer pageSize,
+                       @RequestParam(value = "billNo", required = false) String billNo,
+                       @RequestParam(value = "customerId", required = false) String customerId,
+                       @RequestParam(value = "status", required = false) Integer status) {
+        Result deny = denyIfNoIdentity();
+        if (deny != null) {
+            return deny;
+        }
+        return Result.ok().put("data", freightBillService.page(page, pageSize, billNo, customerId, status));
+    }
+
     @Operation(summary = "对账视图（账单头+结算单列表+差异标记）")
     @GetMapping("/{id}")
     public Result reconcile(@PathVariable("id") Long id) {

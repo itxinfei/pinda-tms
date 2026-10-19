@@ -1,6 +1,8 @@
 package com.xinfei.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.xinfei.common.CustomIdGenerator;
 import com.xinfei.entity.FreightBill;
@@ -9,6 +11,7 @@ import com.xinfei.mapper.FreightBillMapper;
 import com.xinfei.service.IFreightBillService;
 import com.xinfei.service.ISettlementOrderService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -195,5 +198,15 @@ public class FreightBillServiceImpl extends ServiceImpl<FreightBillMapper, Freig
                 .eq(SettlementOrder::getBillId, billId)
                 .orderByDesc(SettlementOrder::getCreateTime)
                 .list();
+    }
+
+    @Override
+    public IPage<FreightBill> page(Integer page, Integer pageSize, String billNo, String customerId, Integer status) {
+        return lambdaQuery()
+                .like(StringUtils.isNotBlank(billNo), FreightBill::getBillNo, billNo)
+                .eq(StringUtils.isNotBlank(customerId), FreightBill::getCustomerId, customerId)
+                .eq(status != null, FreightBill::getStatus, status)
+                .orderByDesc(FreightBill::getCreateTime)
+                .page(new Page<>(page == null || page < 1 ? 1 : page, pageSize == null || pageSize < 1 ? 10 : pageSize));
     }
 }
