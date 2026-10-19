@@ -37,7 +37,9 @@ public interface DriverSettlementFeign {
                 @RequestParam(value = "pageSize", required = false) Integer pageSize,
                 @RequestParam(value = "settleNo", required = false) String settleNo,
                 @RequestParam(value = "driverId", required = false) Long driverId,
-                @RequestParam(value = "status", required = false) Integer status);
+                @RequestParam(value = "status", required = false) Integer status,
+                @RequestParam(value = "periodStart", required = false) String periodStart,
+                @RequestParam(value = "periodEnd", required = false) String periodEnd);
 
     @GetMapping("/{id}")
     Result detail(@PathVariable("id") Long id);

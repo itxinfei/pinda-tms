@@ -146,13 +146,17 @@ public class DriverSettlementServiceImpl extends ServiceImpl<DriverSettlementMap
     }
 
     @Override
-    public Page<DriverSettlement> page(Integer page, Integer pageSize, String settleNo, Long driverId, Integer status) {
+    public Page<DriverSettlement> page(Integer page, Integer pageSize, String settleNo, Long driverId, Integer status,
+                                       LocalDate periodStart, LocalDate periodEnd) {
         Page<DriverSettlement> p = new Page<>(page == null || page < 1 ? 1 : page,
                 pageSize == null || pageSize < 1 ? 10 : pageSize);
         LambdaQueryWrapper<DriverSettlement> wrapper = new LambdaQueryWrapper<>();
         wrapper.like(settleNo != null && !settleNo.isBlank(), DriverSettlement::getSettleNo, settleNo)
                 .eq(driverId != null, DriverSettlement::getDriverId, driverId)
                 .eq(status != null, DriverSettlement::getStatus, status)
+                // 账期重叠：结算单.period_start <= 筛选止 AND 结算单.period_end >= 筛选起
+                .le(periodEnd != null, DriverSettlement::getPeriodStart, periodEnd)
+                .ge(periodStart != null, DriverSettlement::getPeriodEnd, periodStart)
                 .orderByDesc(DriverSettlement::getCreateTime);
         return baseMapper.selectPage(p, wrapper);
     }

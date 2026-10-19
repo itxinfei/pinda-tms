@@ -50,6 +50,14 @@ export const CALC_TYPE_LABELS: Record<number, string> = {
   [FeeCalcType.RATIO]: "按运费比例",
 };
 
+/** 费用项状态（后端常量口径，禁硬编码扩展） */
+export enum FeeItemStatus {
+  /** 停用 */
+  DISABLED = 0,
+  /** 启用 */
+  ENABLED = 1,
+}
+
 /** 费用项记录（oms FeeItem 实体直出） */
 export interface FeeItemRecord {
   id: string;

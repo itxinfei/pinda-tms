@@ -77,8 +77,10 @@ public class DriverSettlementController {
                        @RequestParam(value = "pageSize", required = false) Integer pageSize,
                        @RequestParam(value = "settleNo", required = false) String settleNo,
                        @RequestParam(value = "driverId", required = false) Long driverId,
-                       @RequestParam(value = "status", required = false) Integer status) {
-        Result r = driverSettlementFeign.page(page, pageSize, settleNo, driverId, status);
+                       @RequestParam(value = "status", required = false) Integer status,
+                       @RequestParam(value = "periodStart", required = false) String periodStart,
+                       @RequestParam(value = "periodEnd", required = false) String periodEnd) {
+        Result r = driverSettlementFeign.page(page, pageSize, settleNo, driverId, status, periodStart, periodEnd);
         enrichPage(r);
         return r;
     }

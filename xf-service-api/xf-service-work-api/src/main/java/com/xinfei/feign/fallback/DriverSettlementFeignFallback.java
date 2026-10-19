@@ -28,7 +28,8 @@ public class DriverSettlementFeignFallback implements DriverSettlementFeign {
     }
 
     @Override
-    public Result page(Integer page, Integer pageSize, String settleNo, Long driverId, Integer status) {
+    public Result page(Integer page, Integer pageSize, String settleNo, Long driverId, Integer status,
+                       String periodStart, String periodEnd) {
         log.warn("远程调用 xf-work 失败: page(settleNo={})", settleNo);
         return Result.error("服务降级，结算单分页失败");
     }

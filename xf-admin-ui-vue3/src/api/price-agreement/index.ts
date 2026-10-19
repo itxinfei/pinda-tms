@@ -14,6 +14,14 @@ const BASE_URL = "/api/manager/price-agreement";
  * 计费口径：Drools 之前按 客户+重量段+业务日期 命中协议价，未命中走默认规则。
  */
 
+/** 协议状态（后端常量口径，禁硬编码扩展） */
+export enum AgreementStatus {
+  /** 停用 */
+  DISABLED = 0,
+  /** 生效 */
+  ACTIVE = 1,
+}
+
 /** 计价方式（后端 PriceAgreement 常量口径，禁硬编码扩展） */
 export enum PriceType {
   /** 按票 */

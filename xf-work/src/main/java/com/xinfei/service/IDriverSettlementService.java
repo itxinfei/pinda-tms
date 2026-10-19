@@ -28,9 +28,13 @@ public interface IDriverSettlementService {
     List<Map<String, Object>> candidateDrivers(LocalDate periodStart, LocalDate periodEnd);
 
     /**
-     * 结算单分页（settleNo 模糊 / driverId / status 过滤，orderByDesc createTime）
+     * 结算单分页（settleNo 模糊 / driverId / status / 账期重叠过滤，orderByDesc createTime）
+     *
+     * @param periodStart 账期筛选起（与结算单账期取交集，可空）
+     * @param periodEnd   账期筛选止（可空）
      */
-    Page<DriverSettlement> page(Integer page, Integer pageSize, String settleNo, Long driverId, Integer status);
+    Page<DriverSettlement> page(Integer page, Integer pageSize, String settleNo, Long driverId, Integer status,
+                                LocalDate periodStart, LocalDate periodEnd);
 
     /**
      * 详情：结算单头 + 逐趟明细

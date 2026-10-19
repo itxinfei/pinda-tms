@@ -80,6 +80,10 @@ export interface SettlementQuery {
   settleNo?: string;
   driverId?: string;
   status?: number;
+  /** 账期筛选起（与结算单账期取交集，yyyy-MM-dd） */
+  periodStart?: string;
+  /** 账期筛选止 */
+  periodEnd?: string;
 }
 
 export interface GenerateParams {

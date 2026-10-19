@@ -94,12 +94,15 @@ public class DriverSettlementController {
                        @RequestParam(value = "pageSize", required = false) Integer pageSize,
                        @RequestParam(value = "settleNo", required = false) String settleNo,
                        @RequestParam(value = "driverId", required = false) Long driverId,
-                       @RequestParam(value = "status", required = false) Integer status) {
+                       @RequestParam(value = "status", required = false) Integer status,
+                       @RequestParam(value = "periodStart", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate periodStart,
+                       @RequestParam(value = "periodEnd", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate periodEnd) {
         Result deny = denyIfNoIdentity();
         if (deny != null) {
             return deny;
         }
-        Page<DriverSettlement> p = driverSettlementService.page(page, pageSize, settleNo, driverId, status);
+        Page<DriverSettlement> p = driverSettlementService.page(page, pageSize, settleNo, driverId, status,
+                periodStart, periodEnd);
         return Result.ok().put("data", p);
     }
 
