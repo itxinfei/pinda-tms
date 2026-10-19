@@ -29,7 +29,7 @@ public class InvoiceController {
 
     @Operation(summary = "申请开票（按账单）")
     @PostMapping("/apply")
-    @SaCheckPermission("finance:invoice:*")
+    @SaCheckPermission("finance:invoice:apply")
     public Result apply(@RequestParam("billId") Long billId,
                         @RequestParam(value = "type", required = false) Integer type,
                         @RequestParam(value = "taxNo", required = false) String taxNo,
@@ -39,28 +39,28 @@ public class InvoiceController {
 
     @Operation(summary = "开具（自编发票号）")
     @PostMapping("/{id}/issue")
-    @SaCheckPermission("finance:invoice:*")
+    @SaCheckPermission("finance:invoice:issue")
     public Result issue(@PathVariable("id") Long id) {
         return invoiceFeign.issue(id);
     }
 
     @Operation(summary = "邮寄（3→4）")
     @PostMapping("/{id}/mail")
-    @SaCheckPermission("finance:invoice:*")
+    @SaCheckPermission("finance:invoice:mail")
     public Result mail(@PathVariable("id") Long id) {
         return invoiceFeign.mail(id);
     }
 
     @Operation(summary = "作废（→5，原因必填）")
     @PostMapping("/{id}/void")
-    @SaCheckPermission("finance:invoice:*")
+    @SaCheckPermission("finance:invoice:void")
     public Result voidInvoice(@PathVariable("id") Long id, @RequestParam("reason") String reason) {
         return invoiceFeign.voidInvoice(id, reason);
     }
 
     @Operation(summary = "分页查询")
     @GetMapping("/page")
-    @SaCheckPermission("finance:invoice:*")
+    @SaCheckPermission("finance:invoice:page")
     public Result page(@RequestParam(value = "page", required = false) Integer page,
                        @RequestParam(value = "pageSize", required = false) Integer pageSize,
                        @RequestParam(value = "customerId", required = false) String customerId,
