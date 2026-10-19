@@ -28,12 +28,13 @@
               class="stat-card__spark"
               viewBox="0 0 100 24"
               preserveAspectRatio="none"
+              :style="{ '--spark-color': SPARK_COLORS[card.tone] }"
               :aria-label="`近 7 日${card.label}趋势`"
             >
               <defs>
                 <linearGradient :id="`spark-${card.tone}`" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="var(--el-color-primary)" stop-opacity="0.18" />
-                  <stop offset="100%" stop-color="var(--el-color-primary)" stop-opacity="0" />
+                  <stop offset="0%" stop-color="var(--spark-color)" stop-opacity="0.18" />
+                  <stop offset="100%" stop-color="var(--spark-color)" stop-opacity="0" />
                 </linearGradient>
               </defs>
               <path
@@ -44,7 +45,7 @@
               <polyline
                 :points="sparkPath(card.spark)!.line"
                 fill="none"
-                stroke="var(--el-color-primary)"
+                stroke="var(--spark-color)"
                 stroke-width="1.5"
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -77,6 +78,17 @@ defineProps<{
   loading: boolean;
   error: boolean;
 }>();
+
+/**
+ * spark 迷你线颜色跟卡片语义走（原全用品牌红，签收率/告警曲线与下单混色难辨）：
+ * 签收率=success 绿、告警=danger、订单/在途车辆=品牌主色
+ */
+const SPARK_COLORS: Record<StatCardItem["tone"], string> = {
+  order: "var(--el-color-primary)",
+  truck: "var(--el-color-primary)",
+  alert: "var(--el-color-danger)",
+  rate: "var(--el-color-success)",
+};
 
 const emit = defineEmits<{ retry: [] }>();
 

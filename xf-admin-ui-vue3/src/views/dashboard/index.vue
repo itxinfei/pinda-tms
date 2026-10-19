@@ -408,11 +408,18 @@ function renderTrend(points: OrderTrendPoint[]) {
   // 30 天口径点数密集：斜排 + 隔点显示，防止标签重叠
   const dense = points.length > 15;
   trendChartOptions.value = {
-    tooltip: { trigger: "axis", valueFormatter: (value) => `${value} 单` },
+    tooltip: {
+      trigger: "axis",
+      axisPointer: { type: "line", lineStyle: { color: getCssVar("--el-border-color", "#dcdfe6") } },
+      valueFormatter: (value) => `${value} 单`,
+    },
     legend: { data: ["下单量", "签收量"], right: 4, top: 2, itemWidth: 14, itemHeight: 8, icon: "roundRect", textStyle: { fontSize: 12, color: textRegular } },
-    grid: { left: "0%", right: "3%", bottom: "4%", top: "18%", containLabel: true },
+    // boundaryGap:false 折线贴 Y 轴与右缘（category 轴默认 true 会首尾各空半格，线"浮"在中间）
+    // right 留 5%：贴边后末点峰值气泡/数值标签不溢出
+    grid: { left: "0%", right: "5%", bottom: "4%", top: "18%", containLabel: true },
     xAxis: {
       type: "category",
+      boundaryGap: false,
       data: points.map((p) => dayLabel(p.date)),
       axisLabel: {
         fontSize: 12,
@@ -426,6 +433,8 @@ function renderTrend(points: OrderTrendPoint[]) {
     yAxis: {
       type: "value",
       minInterval: 1,
+      // 数据偏小/全 0 时线压在轴上、上下标签互叠，拉高基线改善可读性
+      max: (value: { max: number }) => Math.max(value.max, 4),
       axisLabel: { fontSize: 12, color: textSecondary },
       splitLine: { lineStyle: { type: "dashed", color: borderLighter } },
     },
@@ -438,10 +447,10 @@ function renderTrend(points: OrderTrendPoint[]) {
         symbol: "circle",
         symbolSize: 6,
         showSymbol: true,
-        // 7 天点数少：直接标注数值，一眼可读
+        // 7 天点数少：直接标注数值；颜色跟系列色 + 半粗体，归属一眼可辨
         label: dense
           ? { show: false }
-          : { show: true, position: "top", fontSize: 12, color: textSecondary, formatter: "{c}" },
+          : { show: true, position: "top", distance: 6, fontSize: 12, fontWeight: 600, color: primary, formatter: "{c}" },
         lineStyle: { color: primary, width: 2.4 },
         itemStyle: { color: primary, borderColor: "#fff", borderWidth: 1.5 },
         areaStyle: {
@@ -461,12 +470,13 @@ function renderTrend(points: OrderTrendPoint[]) {
           silent: true,
           symbol: "none",
           lineStyle: { type: "dashed", color: getCssVar("--el-color-primary-light-5", "#b9c6e6"), width: 1 },
-          label: { formatter: "均值 {c}", fontSize: 12, color: textSecondary },
+          // insideEndTop：折线贴右缘后默认 end 位置的标签会溢出画布
+          label: { formatter: "均值 {c}", fontSize: 12, color: textSecondary, position: "insideEndTop" },
           data: [{ type: "average", name: "均值" }],
         },
         markPoint: {
           symbol: "pin",
-          symbolSize: 34,
+          symbolSize: 38,
           label: { fontSize: 12, color: "#fff", fontWeight: 600 },
           itemStyle: { color: primary },
           data: [{ type: "max", name: "峰值" }],
@@ -482,7 +492,7 @@ function renderTrend(points: OrderTrendPoint[]) {
         showSymbol: true,
         label: dense
           ? { show: false }
-          : { show: true, position: "bottom", fontSize: 12, color: textSecondary, formatter: "{c}" },
+          : { show: true, position: "bottom", distance: 6, fontSize: 12, fontWeight: 600, color: success, formatter: "{c}" },
         lineStyle: { color: success, width: 2 },
         itemStyle: { color: success, borderColor: "#fff", borderWidth: 1.5 },
         areaStyle: {

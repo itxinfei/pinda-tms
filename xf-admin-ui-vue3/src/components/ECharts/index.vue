@@ -25,8 +25,11 @@ import {
 } from "echarts/charts";
 import {
   GeoComponent,
+  GraphicComponent,
   GridComponent,
   LegendComponent,
+  MarkLineComponent,
+  MarkPointComponent,
   TooltipComponent,
   VisualMapComponent,
 } from "echarts/components";
@@ -36,6 +39,8 @@ import { CanvasRenderer } from "echarts/renderers";
 import { useResizeObserver } from "@vueuse/core";
 
 // 按需注册组件
+// 2026-10-19 补 MarkLine/MarkPoint/Graphic：缺注册时仪表盘均值线、峰值气泡、
+// 环形图中心数字等静默不渲染（ECharts 按需引入不报错，仅不生效）
 echarts.use([
   CanvasRenderer,
   BarChart,
@@ -49,6 +54,9 @@ echarts.use([
   LegendComponent,
   VisualMapComponent,
   GeoComponent,
+  MarkLineComponent,
+  MarkPointComponent,
+  GraphicComponent,
 ]);
 
 /**
