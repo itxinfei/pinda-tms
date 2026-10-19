@@ -155,6 +155,12 @@ public class Order implements Serializable {
     private LocalDateTime estimatedArrivalTime;
 
     /**
+     * 备注（dev mock 生成器清理键：AUTO-MOCK 前缀，见 com.xinfei.mock；
+     * 业务侧禁用该前缀，否则会被 mock 清理误删）
+     */
+    private String remark;
+
+    /**
      * 取消原因（status=12 已取消时填写）
      */
     private String cancelReason;

@@ -13,7 +13,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * sa-token.token-name（全端统一 token，教训见 xf-dispatch application.yml 注释）。</p>
  *
  * <p>放行清单：/actuator/**（compose HTTP 探活无凭证——《12》§8 部署红线，恒放行）、
- * favicon/error/swagger 文档；其余路径校验失败返回 401（见 SameTokenAuthInterceptor）。</p>
+ * favicon/error/swagger 文档、/mock/**（dev 测试数据生成器手动直调入口，
+ * MockGuardCondition 三把锁守门、生产 Bean 不装配即 404，见 com.xinfei.mock 包注释）；
+ * 其余路径校验失败返回 401（见 SameTokenAuthInterceptor）。</p>
  */
 @Configuration
 public class SameTokenConfigure implements WebMvcConfigurer {
@@ -23,6 +25,6 @@ public class SameTokenConfigure implements WebMvcConfigurer {
         registry.addInterceptor(new SameTokenAuthInterceptor())
                 .addPathPatterns("/**")
                 .excludePathPatterns("/actuator/**", "/favicon.ico", "/error",
-                        "/swagger-ui/**", "/v3/api-docs/**", "/webjars/**");
+                        "/swagger-ui/**", "/v3/api-docs/**", "/webjars/**", "/mock/**");
     }
 }

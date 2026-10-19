@@ -23,6 +23,10 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  *   <li>{@code /trace/byTasks}：xf-web-customer（凭订单查在途轨迹）转发。</li>
  * </ul>
  * 安全性不变：外部流量仍受网关登录闸门约束，且第一道 Same-Token 校验对上述路径照常生效（防绕网关直连）。</p>
+ *
+ * <p>dev 例外（2026-10-19）：{@code /mock/**} 测试数据生成器手动直调入口（docker exec 容器内
+ * curl，无网关凭证亦无登录 token），两道拦截均放行；生产侧由 MockGuardCondition 三把锁
+ * 拦住——Bean 不装配即 404，放行清单不构成攻击面（见 com.xinfei.mock 包）。</p>
  */
 @Configuration
 public class SaTokenConfigure implements WebMvcConfigurer {
@@ -34,12 +38,12 @@ public class SaTokenConfigure implements WebMvcConfigurer {
         // （run#297 auto-deploy 网关修后轮到 netty 探活失败全量回滚的根因，2026-10-14）
         registry.addInterceptor(new SaInterceptor(handle -> SaSameUtil.checkCurrentRequestToken()))
                 .addPathPatterns("/**")
-                .excludePathPatterns("/favicon.ico", "/actuator/**");
+                .excludePathPatterns("/favicon.ico", "/actuator/**", "/mock/**");
 
         // 登录校验：xf-netty 无匿名 HTTP 端点，默认全部要求登录；
         // 例外为服务间 Feign 转发端点（见类注释），不携带登录 token。
         registry.addInterceptor(new SaInterceptor(handle -> StpUtil.checkLogin()))
                 .addPathPatterns("/**")
-                .excludePathPatterns("/actuator/**", "/alarm/report", "/trace/byTasks");
+                .excludePathPatterns("/actuator/**", "/alarm/report", "/trace/byTasks", "/mock/**");
     }
 }
