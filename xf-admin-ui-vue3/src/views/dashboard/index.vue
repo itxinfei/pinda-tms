@@ -233,7 +233,8 @@ const lineRankOptions = computed<EChartsOption>(() => {
         return `第 ${rank} 名 ${p.name}<br/>运输任务 ${p.value} 个`;
       },
     },
-    grid: { left: "2%", right: "10%", bottom: "2%", top: "4%", containLabel: true },
+    // right 48px：数值标签右置的最小留白（原 10% 比例留白随卡宽波动且偏大）
+    grid: { left: "2%", right: 48, bottom: "2%", top: "4%", containLabel: true },
     xAxis: { type: "value", show: false },
     yAxis: {
       type: "category",
@@ -342,22 +343,23 @@ const taskPieOptions = computed<EChartsOption>(() => {
     },
     color: taskStatusColors,
     graphic: [
+      // 中心文字三段：随图高 170px 按环心(42%)比例排布，保持居中环内
       {
         type: "text",
         left: "center",
-        top: "30%",
+        top: "28%",
         style: { text: "任务总数", fontSize: 12, fill: textSecondary, textAlign: "center" },
       },
       {
         type: "text",
         left: "center",
-        top: "37%",
+        top: "36%",
         style: { text: String(total), fontSize: 22, fontWeight: 700, fill: textPrimary, textAlign: "center" },
       },
       {
         type: "text",
         left: "center",
-        top: "50%",
+        top: "51%",
         style: {
           text: `今日新增 ${Number(overview.todayTaskCount) || 0}`,
           fontSize: 12,
@@ -369,7 +371,7 @@ const taskPieOptions = computed<EChartsOption>(() => {
     series: [
       {
         type: "pie",
-        radius: ["52%", "72%"],
+        radius: ["50%", "68%"],
         center: ["50%", "42%"],
         avoidLabelOverlap: true,
         emphasis: { scaleSize: 4, itemStyle: { shadowBlur: 12, shadowColor: "rgba(0,0,0,0.15)" } },
@@ -415,8 +417,8 @@ function renderTrend(points: OrderTrendPoint[]) {
     },
     legend: { data: ["下单量", "签收量"], right: 4, top: 2, itemWidth: 14, itemHeight: 8, icon: "roundRect", textStyle: { fontSize: 12, color: textRegular } },
     // boundaryGap:false 折线贴 Y 轴与右缘（category 轴默认 true 会首尾各空半格，线"浮"在中间）
-    // right 留 5%：贴边后末点峰值气泡/数值标签不溢出
-    grid: { left: "0%", right: "5%", bottom: "4%", top: "18%", containLabel: true },
+    // right 固定 22px = 末点峰值气泡半径(19px)+缓冲：视觉贴右缘且 pin 不被 canvas 裁切
+    grid: { left: "0%", right: 22, bottom: "4%", top: "18%", containLabel: true },
     xAxis: {
       type: "category",
       boundaryGap: false,

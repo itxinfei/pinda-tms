@@ -13,7 +13,7 @@
           </template>
         </el-result>
         <el-empty v-else-if="empty" description="暂无线路运量数据" :image-size="56" />
-        <ECharts v-else :options="options" height="190px" />
+        <ECharts v-else :options="options" height="170px" />
       </template>
     </div>
   </div>

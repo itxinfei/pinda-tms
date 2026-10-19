@@ -21,7 +21,7 @@
           </template>
         </el-result>
         <el-empty v-else-if="empty" description="所选时段暂无订单数据" :image-size="64" />
-        <ECharts v-else :options="options" height="190px" @click="onChartClick" />
+        <ECharts v-else :options="options" height="170px" @click="onChartClick" />
       </template>
     </div>
   </div>
