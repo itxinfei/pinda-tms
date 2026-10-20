@@ -12,14 +12,14 @@
 #     build-check 预热的持久 /data/m2；基线之后改过的内部模块先 install 刷新；
 #     无基线 / 命中 pom.xml 变更 / 直接打包失败，三种情况自动回退 -am 全链构建（旧行为，稳妥兜底）。
 #     all（全量发布）维持 -pl 全模块 -am clean package。
-#   - 统一 deploy/apps/Dockerfile（运行时基镜像 xinfei/jre21-fontconfig:1），每服务独立上下文 .ctx/<svc>/app.jar
+#   - 统一 deploy/apps/Dockerfile（运行时基镜像 xinfei/jre25-fontconfig:1），每服务独立上下文 .ctx/<svc>/app.jar
 #   - DB 变更门禁 / PREV 回滚基线 / 逐服务健康检查（最长 4 分钟）/ 失败自动回滚 / 演练开关 / 清悬空镜像
 #
 # 前置（服务器侧，2026-10-09 起就绪）：
-#   - ci/xinfei-ci:latest          = JDK21 + Maven 3.9.9 + Docker CLI + Compose v2
+#   - ci/xinfei-ci:latest          = JDK25 + Maven 3.9.9 + Docker CLI + Compose v2
 #   - /data/ci/maven-settings.xml = 阿里云 Maven settings（挂为 /ci，只读）
 #   - /data/ci/apps.env           = 密钥（NACOS_*/REDIS_PASSWORD/XXL_JOB_ACCESS_TOKEN，0600）
-#   - xinfei/jre21-fontconfig:1    = 后端运行时基础镜像
+#   - xinfei/jre25-fontconfig:1    = 后端运行时基础镜像
 #   - compose 顶层 name: xinfei-apps；镜像 tag 支持 XF_<SVC>_TAG 逐服务覆盖
 #
 # 14 个可部署后端（compose 服务名 = 容器名 = 镜像名 xinfei/<svc>）：
@@ -411,7 +411,7 @@ jobs:
         # 构建产物不保留（代码在 git，可随时重构建）：
         #   1. 悬空层直接清；
         #   2. xinfei/xf-* 与遗留 xinfei/pd-* 应用镜像删除所有未被运行容器引用的 tag（当前版本、回滚基线自动受 docker ps 检查保护；
-        #      基础镜像 xinfei/jre21-fontconfig 不匹配 xinfei/[xf|pd]-* 前缀，天然不受影响）；
+        #      基础镜像 xinfei/jre25-fontconfig 不匹配 xinfei/[xf|pd]-* 前缀，天然不受影响）；
         #   3. 仅清悬空构建层（builder prune 不带 -a）——保留 BuildKit cache mount（pnpm store，id=pnpm-admin/pnpm-mobile）：
         #      带 -a 会把未被镜像引用的缓存连同 cache mount 一起删，下次 h5 构建冷装依赖约 5min 且更易撞外网 DNS 抖动（EAI_AGAIN）；
         #      Maven 依赖缓存在 /data/m2 持久共享，本来就不在 docker build cache 内，不受影响。

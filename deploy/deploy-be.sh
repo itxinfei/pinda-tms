@@ -24,7 +24,7 @@
 # 约定:
 #   - 不自动 git pull：服务器 compose/env 含本地-only 配置，自动拉取有冲突风险；
 #     部署前自行确认 /data/xinfei-tms 已检出目标提交（脚本会打印当前 HEAD）。
-#   - Maven 在 ci/xinfei-ci 容器内执行（与 Gitea Actions 同一 JDK21/Maven3.9.9/aliyun 源），
+#   - Maven 在 ci/xinfei-ci 容器内执行（与 Gitea Actions 同一 JDK25/Maven3.9.9/aliyun 源），
 #     镜像构建与 compose 在宿主执行。
 #   - compose 顶层 name: xinfei-apps；逐服务以 XF_<SVC>_TAG 覆盖镜像 tag。
 # ============================================================

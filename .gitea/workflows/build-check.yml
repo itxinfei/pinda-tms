@@ -3,7 +3,7 @@
 #
 # 策略（2026-10-12 提速改造）：
 # - 触发：push 到 master（每次推送兜底校验主干可编译）+ workflow_dispatch（可手动补跑）
-# - 执行：ci/xinfei-ci（JDK21 + Maven 3.9.9）
+# - 执行：ci/xinfei-ci（JDK25 + Maven 3.9.9）
 # - 容器内路径（act_runner config.yaml container.options 决定）：
 #     宿主 /data/m2 -> 容器 /root/.m2；宿主 /data/ci -> 容器 /ci:ro
 #   settings.xml 已写死 localRepository=/root/.m2/repository，缓存本就持久共享，
@@ -69,7 +69,7 @@ jobs:
           fi
           echo "::notice::密钥扫描通过（无私钥文件/私钥头）"
 
-      - name: Maven 全量 install（JDK21，编译门禁 + 刷新单服务发布的 m2 基线）
+      - name: Maven 全量 install（JDK25，编译门禁 + 刷新单服务发布的 m2 基线）
         run: |
           set -e
           ls -ld /root/.m2 || { echo "::error::/root/.m2 未挂载，检查 act_runner container.options"; exit 1; }

@@ -9,9 +9,9 @@
 # daemon，而 deploy/jars 里放着 14 个 fat jar，实测上下文 1.119GB、每个镜像白传一次
 # （14 个服务 ≈ 9GB 传输，单镜像多花约 70 秒）。上下文只放一个 jar 后是 ~80MB。
 #
-# 字体库/时区在 xinfei/jre21-fontconfig:1（见 Dockerfile.base，只建一次）。
+# 字体库/时区在 xinfei/jre25-fontconfig:1（见 Dockerfile.base，只建一次）。
 # ============================================
-FROM xinfei/jre21-fontconfig:1
+FROM xinfei/jre25-fontconfig:1
 
 # JVM 参数由运行时环境变量 JAVA_OPTS 注入（便于在 compose 中限制内存）
 COPY app.jar /app.jar
