@@ -16,7 +16,7 @@
 # 在该网络下均 short read / HTTP 22 中断，改为复制宿主机已装二进制（版本更新，
 # 功能只多不少），彻底移除构建期的外网依赖。
 # ============================================
-FROM maven:3.9.9-eclipse-temurin-25
+FROM maven:3.9-eclipse-temurin-25
 
 # Docker CLI + Compose v2 + Buildx 插件（来自宿主机，构建上下文提供）
 COPY docker /usr/local/bin/docker
