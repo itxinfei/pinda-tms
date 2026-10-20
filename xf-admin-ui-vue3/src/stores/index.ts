@@ -12,6 +12,7 @@ export function setupStore(app: App<Element>) {
 
 export * from "./app";
 export * from "./dict";
+export * from "./license";
 export * from "./permission";
 export * from "./settings";
 export * from "./tags-view";

@@ -163,6 +163,9 @@ public class GpsTraceController {
         wrapper.orderByAsc(LocationRecord::getTransportTaskId);
         wrapper.orderByAsc(LocationRecord::getReportTime);
         List<LocationRecord> records = locationRecordService.list(wrapper);
+        // 出口归一（与 page/latest/replay 同口径）：lng/lat 恒 WGS84、bd09Lng/bd09Lat 恒 BD09，
+        // 历史 BD09 落库行（coord_system=3）不归一会在移动端地图偏移
+        fillDisplayCoords(records);
         return Result.ok().put("data", records);
     }
 

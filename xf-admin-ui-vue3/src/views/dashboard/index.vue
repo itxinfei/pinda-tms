@@ -233,8 +233,10 @@ const lineRankOptions = computed<EChartsOption>(() => {
         return `第 ${rank} 名 ${p.name}<br/>运输任务 ${p.value} 个`;
       },
     },
-    // right 48px：数值标签右置的最小留白（原 10% 比例留白随卡宽波动且偏大）
-    grid: { left: "2%", right: 48, bottom: "2%", top: "4%", containLabel: true },
+    // 与趋势图/参考卡(订单状态概览)统一：grid 左右均取 0，containLabel 负责把"线路名+序号"标签
+    // 与条形末尾数值标签算进留白，绘图区左右贴满 16px 内容区，消除原 left:7%/right:24 的非对称空白。
+    // 数值标签改 position:insideRight（见 series.label）避免 right:0 时被画布右缘裁切。
+    grid: { left: 0, right: 0, bottom: "2%", top: "4%", containLabel: true },
     xAxis: { type: "value", show: false },
     yAxis: {
       type: "category",
@@ -280,7 +282,9 @@ const lineRankOptions = computed<EChartsOption>(() => {
         type: "bar",
         barWidth: 12,
         data: rows,
-        label: { show: true, position: "right", fontSize: 12, color: textSecondary, formatter: "{c}" },
+        // insideRight：条形末尾数值标签置于条内右端，配合 grid.right:0 不会被画布右缘裁切；
+        // 白字 + 深色描边光晕，保证浅色条上仍可读（与趋势图/参考卡同样的贴边对称效果）
+        label: { show: true, position: "insideRight", distance: 6, fontSize: 12, color: "#fff", textBorderColor: "rgba(0,0,0,0.35)", textBorderWidth: 2, formatter: "{c}" },
         itemStyle: {
           borderRadius: [0, 6, 6, 0],
           // 第 1 名主题色渐变强调，其余同色系浅渐变（跟随主题）
@@ -417,8 +421,10 @@ function renderTrend(points: OrderTrendPoint[]) {
     },
     legend: { data: ["下单量", "签收量"], right: 4, top: 2, itemWidth: 14, itemHeight: 8, icon: "roundRect", textStyle: { fontSize: 12, color: textRegular } },
     // boundaryGap:false 折线贴 Y 轴与右缘（category 轴默认 true 会首尾各空半格，线"浮"在中间）
-    // right 固定 22px = 末点峰值气泡半径(19px)+缓冲：视觉贴右缘且 pin 不被 canvas 裁切
-    grid: { left: "0%", right: 22, bottom: "4%", top: "18%", containLabel: true },
+    // left/right 一律取 0：containLabel=true 时 ECharts 已把「y 轴刻度宽」「末尾日期标签的半宽
+    // (≈18px)」算进留白，再叠加百分比只会让两侧多出无意义空白（原 4%/3% 在 1000px 卡上左右各多 30~40px）。
+    // 该半宽也正好覆盖峰值 pin(30px 直径/半径 15px)：末点即峰值时不会被画布右缘裁切，无需再留缓冲。
+    grid: { left: 0, right: 0, bottom: "4%", top: "18%", containLabel: true },
     xAxis: {
       type: "category",
       boundaryGap: false,
@@ -428,6 +434,12 @@ function renderTrend(points: OrderTrendPoint[]) {
         color: textSecondary,
         interval: dense ? 1 : 0,
         rotate: dense ? 35 : 0,
+        // alignMinLabel/alignMaxLabel：让首尾日期标签分别"左/右对齐"到各自刻度，
+        // 不再以刻度为中心向两侧各探出半字宽。否则真实字体下末尾标签半宽(~18px)被
+        // containLabel 算进留白，导致折线末端与画布右缘间凭空多出一段（原≈34px）。
+        // 改为右对齐后，末点 10/19 紧贴画布右缘，右侧空白仅剩卡片内边距 16px。
+        alignMinLabel: "left",
+        alignMaxLabel: "right",
       },
       axisLine: { lineStyle: { color: borderLighter } },
       axisTick: { show: false },
@@ -468,17 +480,9 @@ function renderTrend(points: OrderTrendPoint[]) {
             ],
           },
         },
-        markLine: {
-          silent: true,
-          symbol: "none",
-          lineStyle: { type: "dashed", color: getCssVar("--el-color-primary-light-5", "#b9c6e6"), width: 1 },
-          // insideEndTop：折线贴右缘后默认 end 位置的标签会溢出画布
-          label: { formatter: "均值 {c}", fontSize: 12, color: textSecondary, position: "insideEndTop" },
-          data: [{ type: "average", name: "均值" }],
-        },
         markPoint: {
           symbol: "pin",
-          symbolSize: 38,
+          symbolSize: 30,
           label: { fontSize: 12, color: "#fff", fontWeight: 600 },
           itemStyle: { color: primary },
           data: [{ type: "max", name: "峰值" }],

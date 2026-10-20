@@ -170,3 +170,9 @@ docs/测试/
 docs/promo-video/work/
 docs/promo-video/*.mp4
 /docs/promo-video
+
+# 授权签发工具产物（exe/私钥副本/签出的密钥，均不入库）
+tools/dist/
+
+# 签出的密钥文件（含客户实名/体验码批次，绝不入库）
+license-*.txt

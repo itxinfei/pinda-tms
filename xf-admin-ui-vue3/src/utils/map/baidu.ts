@@ -74,12 +74,35 @@ export class BaiduMapProvider implements MapProvider {
     moveMarker(marker, this.point(lngLat));
   }
 
+  onMapEvent(map: any, name: string, handler: () => void): void {
+    map.addEventListener(name, handler);
+  }
+
+  offMapEvent(map: any, name: string, handler: () => void): void {
+    map.removeEventListener(name, handler);
+  }
+
+  getZoom(map: any): number {
+    return map.getZoom();
+  }
+
+  setZoom(map: any, zoom: number): void {
+    map.setZoom(zoom);
+  }
+
+  /**
+   * 标注显隐：Marker 与其文字标签（createLabeledMarker 内是两个独立覆盖物）必须同步，
+   * 只藏 marker 会把车牌文字残留在地图上（模式切换场景实测问题）。
+   */
   setMarkerVisible(marker: any, visible: boolean): void {
     if (!marker) return;
-    if (visible && typeof marker.show === "function") {
-      marker.show();
-    } else if (!visible && typeof marker.hide === "function") {
-      marker.hide();
+    const targets = [marker, marker.__label].filter(Boolean);
+    for (const target of targets) {
+      if (visible && typeof target.show === "function") {
+        target.show();
+      } else if (!visible && typeof target.hide === "function") {
+        target.hide();
+      }
     }
   }
 
@@ -104,6 +127,12 @@ export class BaiduMapProvider implements MapProvider {
     );
     map.addOverlay(polyline);
     return polyline;
+  }
+
+  setPolylinePath(overlay: any, points: LngLat[]): void {
+    if (overlay && typeof overlay.setPath === "function") {
+      overlay.setPath(points.map((p) => this.point(p)));
+    }
   }
 
   createMarker(map: any, lngLat: LngLat): any {

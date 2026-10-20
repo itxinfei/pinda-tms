@@ -88,7 +88,7 @@ function buildMarkers() {
   }
 }
 
-const lastLatLng = ref<[number, number] | null>(null)
+const lastLatLng = ref<{ lng: number; lat: number } | null>(null)
 
 async function pollTrace() {
   // businessId 取当前快递员 id，容错
@@ -100,7 +100,7 @@ async function pollTrace() {
     if (ll) {
       // 后端存 WGS84，展示前转 GCJ-02
       lastLatLng.value = wgs84ToGcj02(ll[0], ll[1])
-      center.value = { lng: lastLatLng.value[0], lat: lastLatLng.value[1] }
+      center.value = { lng: lastLatLng.value.lng, lat: lastLatLng.value.lat }
       buildMarkers()
     }
   } catch (e) {

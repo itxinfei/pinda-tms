@@ -11,7 +11,7 @@
 <p>  
   <img src="docs/badges/license.svg" alt="License"/>  
   <img src="docs/badges/spring-cloud.svg" alt="Spring Cloud"/>  
-  <img src="docs/badges/jdk.svg" alt="JDK 21"/>  
+  <img src="docs/badges/jdk.svg" alt="JDK 25"/>  
   <img src="docs/badges/gateway.svg" alt="Spring Cloud Gateway"/>  
   <img src="docs/badges/sa-token.svg" alt="Sa-Token"/>  
   <img src="docs/badges/nacos.svg" alt="Nacos"/>  
@@ -42,7 +42,7 @@
 
 <p align="center"><b>简体中文</b> · <a href="README.en.md">English</a></p>
 
-> **心飞 TMS** 是一款**四端协同**（管理端 + 客户端 + 快递员端 + 司机端）的开源运输管理系统，基于 **JDK 21 + Spring Boot 3.5.7 + Vue 3.5** 构建，覆盖寄件 → 订单 → 智能调度 → 作业 → 轨迹 → 回单全链路。Drools 规则引擎驱动智能调度，Netty 自建轨迹接入，Sa-Token 多租户 SaaS 就绪。
+> **心飞 TMS** 是一款**四端协同**（管理端 + 客户端 + 快递员端 + 司机端）的开源运输管理系统，基于 **JDK 25 + Spring Boot 3.5.16 + Vue 3.5** 构建，覆盖寄件 → 订单 → 智能调度 → 作业 → 轨迹 → 回单全链路。Drools 规则引擎驱动智能调度，Netty 自建轨迹接入，Sa-Token 多租户 SaaS 就绪。
 
 <p align="center">  
 <b><a href="#sec-tech"><code>14</code></a></b> 个微服务 · <b><code>4</code></b> 端协同 · <b><code>106</code></b> 条功能需求 · <b><code>71</code></b> 张数据表 · <b><code>27</code></b> 项技术栈 · 全链路业务闭环  
@@ -101,7 +101,7 @@
 | 能力                       | 心飞 TMS            | 同类开源 TMS      | 商业 TMS     |
 | ------------------------ | ----------------- | ------------- | ---------- |
 | 四端协同（管理+客户+快递员+司机）       | ✅                 | ❌ 仅管理端        | ✅          |
-| JDK 21 + Spring Boot 3.5 | ✅                 | ❌ 多为 JDK 8    | 部分已升级      |
+| JDK 25 + Spring Boot 3.5 | ✅                 | ❌ 多为 JDK 8    | 部分已升级      |
 | 多租户 SaaS                 | ✅                 | ❌             | ✅          |
 | 智能调度（Drools 规则引擎）        | ✅                 | ❌ if-else 硬编码 | ✅          |
 | Netty 自建轨迹接入             | ✅                 | ❌             | ✅          |
@@ -263,7 +263,7 @@ xinfei-tms/
 
 ![技术架构](docs/tech-arch.png)
 
-> 后端 JDK 21 + Spring Boot 3.5.7 + Spring Cloud 2025.0.0 + MyBatis-Plus + Drools + XXL-Job；前端 Vue 3 + Vite + Element Plus + Pinia + ECharts；移动端 uni-app Vue3 + uview-plus；中间件 MySQL 8 + Redis 7 + RabbitMQ + Nacos + Docker Compose。
+> 后端 JDK 25 + Spring Boot 3.5.16 + Spring Cloud 2025.0.0 + MyBatis-Plus + Drools + XXL-Job；前端 Vue 3 + Vite + Element Plus + Pinia + ECharts；移动端 uni-app Vue3 + uview-plus；中间件 MySQL 8 + Redis 7 + RabbitMQ + Nacos + Docker Compose。
 
 ### 6.4 技术亮点
 
@@ -271,7 +271,7 @@ xinfei-tms/
 
 | 技术                            | 在系统中的作用                  |
 | ----------------------------- | ------------------------ |
-| **JDK 21 虚拟线程**               | 高并发 IO 场景吞吐提升，降低线程开销     |
+| **JDK 25 虚拟线程**               | 高并发 IO 场景吞吐提升，降低线程开销     |
 | **Drools 8.38 动态规则引擎**        | 运费计算与业务规则配置，规则可热更新       |
 | **XXL-Job 2.4.1 分布式任务调度**     | 统一编排智能调度等周期任务（替代 Quartz） |
 | **Sa-Token + JWT 多租户认证中心**    | 统一登录认证与无状态鉴权，支持多租户与验证码   |
@@ -559,6 +559,43 @@ docker-compose up -d        # 起中间件：MySQL / Redis / RabbitMQ / Nacos
 
 > 📌 **赞助联系**：添加 **QQ：`747011882`** 洽谈（赞助者名单将更新至 README）；微信 / 支付宝扫码入口准备中。
 
+### 11.5 📜 商业授权与商标
+
+- **协议性质**：本项目以 **BUSL-1.1** 授权（见 [LICENSE](LICENSE)），**不是 OSI 开源协议**——个人学习 / 研究 / 教学 / 毕设免费，但**任何营利性、生产环境或商用使用均须事先取得书面商业授权**。
+- **📄 商业授权条款与报价**：企业 / 组织商用须购买商业许可，授权范围、计费方式与报价单见 👉 [COMMERCIAL-AGREEMENT.md](COMMERCIAL-AGREEMENT.md)。
+- **🔍 自用还是商用，怎么算？** 见 👉 [COMMERCIAL-FAQ.md](COMMERCIAL-FAQ.md)（含灰色地带判定与违规后果）。
+- **™ 商标**：「心飞 TMS」「心飞物流」「心飞为你飞」及项目 Logo 为作者商标 / 品牌，**未经书面授权不得用于任何商业宣传、产品命名或二次分发标识**。
+- **合规提示**：正规企业如需发票、SLA、闭源二开授权，请主动联系作者签署商业协议——这是最省心、合规的路径。
+
+### 11.6 🔑 授权激活与体验流程
+
+#### ① 获取体验码（免费，7 天全功能）
+
+1. 关注作者的微信公众号，发送关键词 **`心飞物流`**，自动回复中复制体验密钥（形如 `xxx.yyy` 的签名串）；
+2. 登录管理端，进入 **系统管理 → 授权管理**；
+3. 将密钥粘贴到输入框，点击 **「激活授权」**；
+4. 激活成功后：全局「体验版」水印消失、体验提示不再弹出，**全部功能完整可用 7 天**（刷新 / 重新登录均保持生效）。
+
+#### ② 体验到期后（可无限续期）
+
+- 每轮体验 7 天，到期后页面恢复「体验版」水印，授权管理页显示红色"体验已到期"；
+- **无需新码**：点击「重新激活（同一体验码再体验 7 天）」按钮，或重新粘贴同一密钥，即可再获得一轮 7 天体验；
+- 顶部通知会提前提醒（每 3 天最多弹一次，不打扰使用）。
+
+#### ③ 购买正式授权（企业 / 商用）
+
+1. 联系作者（见 [11.5 商业授权与商标](#115--商业授权与商标) / [COMMERCIAL-AGREEMENT.md](COMMERCIAL-AGREEMENT.md））确认授权范围与报价；
+2. 付款后，作者通过**邮件单独发送**正式授权密钥（绑定付款主体全称，含授权类型 / 实例数 / 有效期）；
+3. 同样在 **系统管理 → 授权管理** 粘贴激活，即变更为"已授权"状态，长期有效；
+4. 正式授权的可公开验真记录见 [AUTH-REGISTRY.md](AUTH-REGISTRY.md)（密钥指纹登记簿，可自行校验授权真伪）。
+
+#### ④ 技术说明（透明度声明）
+
+- 密钥为 **RSA-2048 签名串**，激活与校验**全部在本地完成，无需联网**；签名锁定授权对象 / 类型 / 有效期，**篡改任意字符即验签失败**；
+- 体验版水印由前端全局水印组件实现，功能不受限，仅作授权状态提示，**不阻断任何业务接口**；
+- 授权状态接口仅返回状态与试用天数，**不收集 IP、业务数据等任何敏感信息**；
+- 机制设计与边界（含防滥用 / 防伪说明）详见 [LICENSE-KEY-DESIGN.md](LICENSE-KEY-DESIGN.md)；未授权版本仍受 BUSL-1.1 约束（见 [COMMERCIAL-FAQ.md](COMMERCIAL-FAQ.md)）。
+
 ---
 
 <a id="sec-milestones"></a>
@@ -568,7 +605,7 @@ docker-compose up -d        # 起中间件：MySQL / Redis / RabbitMQ / Nacos
 | 时间      | 进展                                                         |
 | ------- | ---------------------------------------------------------- |
 | 2026-09 | ✅ 项目立项：四端骨架 + 13 微服务 + 全链路业务闭环                             |
-| 2026-10 | ✅ 技术栈现代化：JDK 21 + SB 3.5.7 + Vue3 + Sa-Token 多租户 + XXL-Job |
+| 2026-10 | ✅ 技术栈现代化：JDK 25 + SB 3.5.16 + Vue3 + Sa-Token 多租户 + XXL-Job |
 | 2026-Q4 | 🔲 轨迹链路升级：Kafka + TDengine / 鹰眼 + ES 运单检索                  |
 | 2027-H1 | 🔲 智能排线 OR-Tools + MinIO 回单 + Doris 报表                     |
 | 2027-H2 | 🔲 Spring AI 智能客服 + 回单 OCR + 动态 ETA                        |
@@ -585,7 +622,7 @@ A: 个人学习、研究、教学、毕设免费；企业商用（生产环境�
 **Q: Gitee 仓库页为什么显示"未知许可证"？**  
 A: BUSL-1.1 是较新的协议，暂未被 Gitee 平台的许可证徽章收录，属平台限制；协议全文以仓库 [LICENSE](LICENSE) 文件为准，不影响授权效力。
 
-**Q: 技术栈为什么这么新（JDK 21 + Spring Boot 3.5）？**  
+**Q: 技术栈为什么这么新（JDK 25 + Spring Boot 3.5）？**  
 A: 2026 年的新项目没有历史包袱，直接采用最新 LTS，避免日后被迫升级。
 
 **Q: 有文档吗？**  
@@ -610,4 +647,4 @@ A: uni-app 三端架构（App / H5 / 小程序），当前以 H5 为主，小程
 
 ---
 
-<p align="center"><sub>心飞物流 TMS · 开源运输管理系统 · 全流程 · 四端协同 · 微服务架构 · Spring Cloud · JDK 21 · Vue 3 · uni-app</sub></p>
+<p align="center"><sub>心飞物流 TMS · 开源运输管理系统 · 全流程 · 四端协同 · 微服务架构 · Spring Cloud · JDK 25 · Vue 3 · uni-app</sub></p>

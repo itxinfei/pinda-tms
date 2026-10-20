@@ -68,7 +68,7 @@ public class LocationEntity {
      * 坐标系标识（P0-4 北斗字段最小改造 · D-13）
      * <p>取值见 {@link com.xinfei.enums.CoordSystem}：
      * WGS84 / GCJ02 / BD09 / CGCS2000。
-     * 缺失时由消费端兜底为 BD09（与后端 BaiduMapUtils 一致）。</p>
+     * 缺失时由消费端兜底为 BD09（与后端百度地理编码 GeoClient 口径一致，批3 收敛）。</p>
      */
     @Schema(description = "坐标系标识 WGS84/GCJ02/BD09/CGCS2000，缺失默认 BD09")
     private String coordSystem;

@@ -109,8 +109,8 @@ function getGps() {
   uni.getLocation({
     type: 'wgs84',
     success: (res) => {
-      const [lng, lat] = wgs84ToGcj02(res.longitude, res.latitude)
-      gpsText.value = `经度 ${lng.toFixed(5)} 纬度 ${lat.toFixed(5)}`
+      const gcj = wgs84ToGcj02(res.longitude, res.latitude)
+      gpsText.value = `经度 ${gcj.lng.toFixed(5)} 纬度 ${gcj.lat.toFixed(5)}`
     },
     fail: () => {
       gpsText.value = ''

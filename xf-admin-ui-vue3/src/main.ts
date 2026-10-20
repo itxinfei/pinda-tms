@@ -4,6 +4,8 @@ import "element-plus/es/components/message/style/css";
 import App from "./App.vue";
 
 import "element-plus/theme-chalk/dark/css-vars.css";
+// 全量 Element Plus 样式：一次性 SCSS 编译引入（替代 unplugin 逐组件 importStyle:"sass"，消除 dev 卡死）
+import "@/styles/element-plus/index.scss";
 import "@/styles/index.scss";
 import "uno.css";
 import "animate.css";

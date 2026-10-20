@@ -13,9 +13,11 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from "vue";
 import { useAppStore } from "@/stores";
 import { Monitor } from "@element-plus/icons-vue";
 import { resolveExternalUrl } from "@/utils/route";
+import { maybeShowLicenseTip } from "@/utils/licenseTip";
 
 const props = withDefaults(
   defineProps<{
@@ -41,6 +43,11 @@ const sidebarState = computed(() =>
 function openBigScreen() {
   window.open(resolveExternalUrl("/dashboard/bigscreen"), "_blank");
 }
+
+// 未授权时偶尔提示一次（频率限制在 util 内控制，默认每 3 天一次）
+onMounted(() => {
+  maybeShowLicenseTip();
+});
 </script>
 
 <style lang="scss" scoped>

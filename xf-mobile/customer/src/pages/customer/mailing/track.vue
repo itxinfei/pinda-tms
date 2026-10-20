@@ -1,6 +1,6 @@
 <template>
   <view class="page track-page">
-    <u-navbar :title="'实时轨迹'" :back="true" :borderBottom="false" bgColor="#E15536" />
+    <u-navbar :title="'实时轨迹'" :back="true" :borderBottom="false" bgColor="#FF0033" />
 
     <view v-if="loading" class="state-wrap">
       <u-loading-page :loading="true" :bgColor="'#F5F6F8'" />
@@ -36,7 +36,7 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { onLoad } from '@dcloudio/uni-app';
+import { onLoad, onShow, onHide, onUnload } from '@dcloudio/uni-app';
 import { trace } from '../../../common/api/index.js';
 import { safeToGcj02 } from '../../../common/utils/coord.js';
 import { statusInfo } from '../../../common/utils/order.js';
@@ -46,6 +46,22 @@ const loading = ref(false);
 const orderStatus = ref(null);
 const tracks = ref([]);
 const latestMsg = ref('加载中...');
+
+/** 轨迹轮询间隔（与司机端/快递员端 10s 口径一致） */
+const POLL_INTERVAL = 10000;
+let pollTimer = null;
+
+const stopPolling = () => {
+  if (pollTimer) {
+    clearInterval(pollTimer);
+    pollTimer = null;
+  }
+};
+
+const startPolling = () => {
+  stopPolling();
+  pollTimer = setInterval(() => load({ silent: true }), POLL_INTERVAL);
+};
 
 const hasTrack = computed(() => tracks.value && tracks.value.length > 0);
 
@@ -76,15 +92,16 @@ const markers = computed(() => {
       height: 20,
       label: { content: '起点', color: '#00B42A', fontSize: 12, anchorX: -8, anchorY: -28 },
     });
-    // 最新点
+    // 最新点（品牌图标 + 品牌红标签）
     const last = ps[ps.length - 1];
     arr.push({
       id: 2,
       latitude: last.lat,
       longitude: last.lng,
-      width: 20,
-      height: 20,
-      label: { content: '当前位置', color: '#E15536', fontSize: 12, anchorX: -20, anchorY: -28 },
+      iconPath: '/static/logo-mark-transparent.png',
+      width: 28,
+      height: 28,
+      label: { content: '当前位置', color: '#FF0033', fontSize: 12, anchorX: -20, anchorY: -34 },
     });
   }
   return arr;
@@ -95,15 +112,15 @@ const polyline = computed(() => {
   return [
     {
       points: points.value,
-      color: '#E15536',
+      color: '#FF0033',
       width: 4,
       dottedLine: false,
     },
   ];
 });
 
-const load = async () => {
-  loading.value = true;
+const load = async ({ silent = false } = {}) => {
+  if (!silent) loading.value = true;
   try {
     const data = await trace(id.value);
     orderStatus.value = data ? data.orderStatus : null;
@@ -111,19 +128,28 @@ const load = async () => {
     if (tracks.value.length > 0) {
       const last = tracks.value[tracks.value.length - 1];
       latestMsg.value = `更新于 ${last.time || ''}`;
-    } else {
+    } else if (!silent) {
       latestMsg.value = '暂无轨迹数据';
     }
   } catch (e) {
-    tracks.value = [];
+    // 首次失败清空展示空态；轮询失败静默保留旧轨迹
+    if (!silent) tracks.value = [];
   } finally {
-    loading.value = false;
+    if (!silent) loading.value = false;
   }
 };
 
 onLoad((options) => {
   id.value = options.id || '';
   load();
+  startPolling();
+});
+
+// 页面隐藏/卸载停轮询，回前台恢复（后台轮询白白消耗流量与电量）
+onHide(stopPolling);
+onUnload(stopPolling);
+onShow(() => {
+  if (id.value) startPolling();
 });
 </script>
 

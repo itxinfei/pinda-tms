@@ -455,11 +455,12 @@ onMounted(loadList);
   color: var(--el-text-color-primary);
 }
 
+/* 底部合拆操作栏：与表格间距统一走 --page-gap（与标准页 toolbar→表格 10px 一致，勿硬编码） */
 .page-toolbar {
   display: flex;
   gap: 12px;
   align-items: center;
-  margin-top: 12px;
+  margin-top: var(--page-gap);
 }
 
 .page-toolbar__tip {

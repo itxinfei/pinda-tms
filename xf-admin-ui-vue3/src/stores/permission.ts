@@ -23,6 +23,8 @@ export const usePermissionStore = defineStore("permission", () => {
   async function generateRoutes(): Promise<RouteRecordRaw[]> {
     try {
       const routeData = await MenuAPI.getRoutes();
+      // 「系统管理」置底 + 注入前端合成的「授权管理」入口（见 normalizeMenus）
+      normalizeMenus(routeData);
       // 菜单直接平级铺开，不做前端归组（不生成 el-sub-menu / el-sub-menu__title 分组标题层）；
       // 后端若下发真实 children 树，buildRoutes 仍正常渲染层级。
       const menuRoutes = buildRoutes(routeData);
@@ -143,6 +145,38 @@ const LAYOUT_COMPONENT = "Layout";
  * 顶层统一套 Layout：目录即容器，页面下沉为 path 为空的子路由
  */
 const buildRoutes = (menus: RouteItem[]): RouteRecordRaw[] => menus.map(buildTopLevelRoute);
+
+/** 「系统管理」目录标题（后端 sys_menu 下发的原样标题），置底与注入均按它匹配 */
+const SYSTEM_MANAGE_TITLE = "系统管理";
+
+/**
+ * 顶层菜单整理（体验版授权，2026-10-19）：
+ * 1. 「授权管理」入口由前端合成、注入「系统管理」目录末尾——授权校验是框架级能力，
+ *    不依赖后端 sys_menu 配置与角色授权过滤，所有登录用户（含体验用户）均可见可操作；
+ * 2. 「系统管理」强制置底，始终作为菜单栏最后一项；Array.sort 为稳定排序，其余菜单保持后端原序。
+ */
+function normalizeMenus(menus: RouteItem[]): void {
+  const licenseEntry: RouteItem = {
+    path: "license",
+    name: "License",
+    component: "system/license/index",
+    meta: { title: "授权管理", icon: "el-icon-Key" },
+    children: [],
+  };
+  menus.forEach((menu) => {
+    if (menu.meta?.title === SYSTEM_MANAGE_TITLE) {
+      menu.children = [
+        ...(menu.children ?? []).filter((child) => child.name !== "License"),
+        licenseEntry,
+      ];
+    }
+  });
+  menus.sort(
+    (a, b) =>
+      Number(a.meta?.title === SYSTEM_MANAGE_TITLE) -
+      Number(b.meta?.title === SYSTEM_MANAGE_TITLE)
+  );
+}
 
 /**
  * 套 Layout 壳承载顶层菜单，使页面具备侧边栏与顶栏

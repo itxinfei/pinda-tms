@@ -60,7 +60,9 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
         imports: ["vue", "@vueuse/core", "pinia", "vue-router", "vue-i18n"],
         resolvers: [
           // 导入 Element Plus函数，如：ElMessage, ElMessageBox 等
-          ElementPlusResolver({ importStyle: "sass" }),
+          // importStyle:false —— 关掉逐组件 SCSS 注入（dev 期 80+ 文件各 3~4.6s 的编译风暴 = 登录页卡死根因）；
+          // 全量 EP 样式改为在 src/styles/element-plus/index.scss 一次性编译引入
+          ElementPlusResolver({ importStyle: false }),
         ],
         eslintrc: {
           enabled: false,
@@ -76,7 +78,8 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
       Components({
         resolvers: [
           // 导入 Element Plus 组件
-          ElementPlusResolver({ importStyle: "sass" }),
+          // importStyle:false —— 同上，样式统一在 src/styles/element-plus/index.scss 全量引入（仅编译一次）
+          ElementPlusResolver({ importStyle: false }),
         ],
         // 指定自定义组件位置(默认:src/components)
         dirs: ["src/components", "src/**/components"],

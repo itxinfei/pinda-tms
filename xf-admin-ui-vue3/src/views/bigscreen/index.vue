@@ -40,7 +40,7 @@
                 :disabled="!vehicleOptions.length"
               >
                 <option v-for="o in vehicleOptions" :key="o.id" :value="o.id">
-                  {{ o.label }}（{{ o.count }}）
+                  {{ o.label }}
                 </option>
               </select>
             </template>
@@ -140,63 +140,68 @@ const pendingAlarmCount = ref(0);
 
 /**
  * 重点车辆轨迹回放（吸收中交兴路轨迹回放时间轴）。
- * 后端暂无历史轨迹端点，这里采用"跨轮询累积"方案：每次轮询拿到的在途车辆最新定位点，
- * 按 businessId 去重（同时间戳不重复）累积成轨迹，模拟回放所需的连续路径。
- * 待真实历史轨迹端点就绪，只需把 trailHistory 的来源替换为该端点即可（组件接口不变）。
+ * 数据源 = 真实历史轨迹端点 /trace/replay（批2 出口归一后 longitude/latitude 恒 WGS84，
+ * 与 china geo 底图同坐标系直画，不再用"跨轮询累积"模拟轨迹）。
+ * 选中车辆变化与每轮大屏刷新时拉取该车全量轨迹。
  */
-const trailHistory = ref<Record<string, TrailPoint[]>>({});
-const vehicleMeta = ref<Record<string, { name?: string; licensePlate?: string }>>({});
+const trailPoints = ref<TrailPoint[]>([]);
 const selectedVehicle = ref("");
 
-/** 单辆车轨迹最多保留点数，防止长时间运行内存膨胀 */
+/** 单辆车回放顶点上限（超长轨迹截最新一段，防 ECharts lines 顶点性能退化） */
 const TRAIL_MAX_POINTS = 120;
 
-/** 把本轮定位点累积进历史轨迹（同一车辆跨轮询连成路径） */
-const accumulateTrails = (items: LocationRecordItem[]) => {
-  const history: Record<string, TrailPoint[]> = { ...trailHistory.value };
-  const meta: Record<string, { name?: string; licensePlate?: string }> = { ...vehicleMeta.value };
-  for (const it of items) {
-    const lng = Number(it.longitude);
-    const lat = Number(it.latitude);
-    if (!it.businessId || !Number.isFinite(lng) || !Number.isFinite(lat)) continue;
-    const t = it.reportTime
-      ? new Date(it.reportTime).getTime()
-      : it.createTime
-        ? new Date(it.createTime).getTime()
-        : Date.now();
-    if (!Number.isFinite(t)) continue;
-    const arr = history[it.businessId] ? [...history[it.businessId]] : [];
-    if (!arr.some((p) => p.t === t)) {
-      arr.push({ lng, lat, t });
-      arr.sort((a, b) => a.t - b.t);
-      if (arr.length > TRAIL_MAX_POINTS) arr.splice(0, arr.length - TRAIL_MAX_POINTS);
-      history[it.businessId] = arr;
-    }
-    meta[it.businessId] = { name: it.name, licensePlate: it.licensePlate };
+/** 把定位记录映射为回放顶点（时间戳解析失败/坐标缺失的行丢弃） */
+const toTrail = (points: LocationRecordItem[] | null | undefined): TrailPoint[] => {
+  const trail = (points ?? [])
+    .map((p) => ({
+      lng: Number(p.longitude),
+      lat: Number(p.latitude),
+      t: p.reportTime ? new Date(String(p.reportTime).replace(" ", "T")).getTime() : NaN,
+    }))
+    .filter((p) => Number.isFinite(p.lng) && Number.isFinite(p.lat) && Number.isFinite(p.t))
+    .sort((a, b) => a.t - b.t);
+  if (trail.length > TRAIL_MAX_POINTS) {
+    trail.splice(0, trail.length - TRAIL_MAX_POINTS);
   }
-  trailHistory.value = history;
-  vehicleMeta.value = meta;
+  return trail;
 };
 
-/** 可选车辆列表：仅保留轨迹点数 ≥ 2 的车辆，按点数降序 */
+/** 拉取选中车辆真实历史轨迹（失败/空保留上次数据，大屏不弹错；切换车辆后丢弃过期响应） */
+const refreshTrail = async () => {
+  const id = selectedVehicle.value;
+  if (!id) {
+    trailPoints.value = [];
+    return;
+  }
+  try {
+    const points = await TraceAPI.replay({ businessId: id, type: "truck" });
+    if (selectedVehicle.value === id) {
+      trailPoints.value = toTrail(points);
+    }
+  } catch {
+    // 大屏无人值守：保持上次轨迹
+  }
+};
+
+watch(selectedVehicle, refreshTrail);
+
+/** 可选车辆列表：当前有定位的在途车辆（车牌优先展示） */
 const vehicleOptions = computed(() =>
-  Object.entries(trailHistory.value)
-    .filter(([, pts]) => pts.length >= 2)
-    .map(([id, pts]) => {
-      const m = vehicleMeta.value[id];
-      return {
-        id,
-        label: m?.licensePlate || m?.name || `车辆${id}`,
-        count: pts.length,
-      };
-    })
-    .sort((a, b) => b.count - a.count),
+  locations.value
+    .filter(
+      (it) =>
+        it.businessId && Number.isFinite(Number(it.longitude)) && Number.isFinite(Number(it.latitude))
+    )
+    .map((it) => ({
+      id: String(it.businessId),
+      label: it.licensePlate || it.name || `车辆${it.businessId}`,
+    })),
 );
 
-const selectedTrail = computed<TrailPoint[]>(() => trailHistory.value[selectedVehicle.value] ?? []);
+const selectedTrail = computed<TrailPoint[]>(() => trailPoints.value);
 const selectedVehicleName = computed(() => {
-  const m = vehicleMeta.value[selectedVehicle.value];
-  return m?.licensePlate || m?.name || (selectedVehicle.value ? `车辆${selectedVehicle.value}` : "");
+  const match = vehicleOptions.value.find((o) => o.id === selectedVehicle.value);
+  return match?.label ?? (selectedVehicle.value ? `车辆${selectedVehicle.value}` : "");
 });
 
 /** 无选中或选中车辆已无轨迹时，自动切到列表首项 */
@@ -299,7 +304,8 @@ const loadAll = async () => {
   }
   if (results[6].status === "fulfilled" && results[6].value) {
     locations.value = results[6].value.items ?? [];
-    accumulateTrails(locations.value);
+    // 每轮刷新同步更新选中车辆的真实轨迹（含最新上报点）
+    refreshTrail();
   }
   if (results[7].status === "fulfilled" && results[7].value) {
     orgPoints.value = flattenOrgs(results[7].value ?? []);

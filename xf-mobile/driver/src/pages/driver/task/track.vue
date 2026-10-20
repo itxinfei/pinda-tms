@@ -66,8 +66,8 @@ function pickLngLat(p: any): [number, number] | null {
 function toGcj02(p: any): { latitude: number; longitude: number } | null {
   const lw = pickLngLat(p)
   if (!lw) return null
-  const [glng, glat] = wgs84ToGcj02(lw[0], lw[1])
-  return { longitude: glng, latitude: glat }
+  const gcj = wgs84ToGcj02(lw[0], lw[1])
+  return { longitude: gcj.lng, latitude: gcj.lat }
 }
 
 async function refreshLatest() {

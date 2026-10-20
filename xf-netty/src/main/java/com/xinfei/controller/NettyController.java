@@ -33,7 +33,7 @@ public class NettyController {
      *
      * <p>校验与兜底逻辑：
      * <ul>
-     *   <li>坐标系 coordSystem 缺失时默认 BD09（与后端 BaiduMapUtils 一致）</li>
+     *   <li>坐标系 coordSystem 缺失时默认 BD09（与后端百度地理编码 GeoClient 口径一致，批3 收敛）</li>
      *   <li>坐标系不合法时拒绝上报（400）</li>
      *   <li>来源 source 缺失时默认 MOBILE（HTTP 入口默认移动端推送）</li>
      *   <li>来源不合法时拒绝上报（400）</li>

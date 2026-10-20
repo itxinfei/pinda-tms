@@ -22,11 +22,11 @@ export interface LocationRecordItem {
   phone?: string;
   /** 车牌号 */
   licensePlate?: string;
-  /** 经度（BD09，BigDecimal 可能序列化为字符串，消费时 Number() 转换） */
+  /** 经度（出口归一恒 WGS84，批2 2026-10-17；BigDecimal 可能序列化为字符串，消费时 Number() 转换） */
   longitude?: string | number;
-  /** 纬度（BD09） */
+  /** 纬度（出口归一恒 WGS84） */
   latitude?: string | number;
-  /** 坐标系：落库恒为 3（BD09） */
+  /** 该行数据落库时所用坐标系（1=WGS84/3=BD09，出口已按行归一，仅溯源用） */
   coordSystem?: number;
   /** 数据来源 MOBILE/PDA/JT808/NETTY_TCP/HTTP */
   source?: string;

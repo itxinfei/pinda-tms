@@ -54,6 +54,9 @@ export interface LabelStyle {
   borderRadius?: string;
 }
 
+/** 页面可订阅的地图事件（厂商事件名适配在 provider 内完成） */
+export type MapEventName = "zoomend" | "dragstart" | "dragend" | "click";
+
 export interface MapProvider {
   /** 厂商标识 */
   readonly vendor: MapVendor;
@@ -69,6 +72,15 @@ export interface MapProvider {
   createMap(el: HTMLElement, opts?: CreateMapOptions): any;
   /** 构造厂商点对象（仅 provider 方法需要，页面不直接使用返回值做厂商操作） */
   point(lngLat: LngLat): any;
+
+  /** 订阅地图事件（handler 引用须由调用方自持，供 offMapEvent 解绑） */
+  onMapEvent(map: any, name: MapEventName, handler: () => void): void;
+  /** 解绑地图事件 */
+  offMapEvent(map: any, name: MapEventName, handler: () => void): void;
+  /** 当前缩放级别 */
+  getZoom(map: any): number;
+  /** 设置缩放级别 */
+  setZoom(map: any, zoom: number): void;
 
   /** 平移中心点 */
   panTo(map: any, lngLat: LngLat): void;
@@ -89,6 +101,8 @@ export interface MapProvider {
 
   /** 画折线并加入地图，返回覆盖物句柄 */
   drawPolyline(map: any, points: LngLat[], style?: PolylineStyle): any;
+  /** 更新已画折线的路径（回放分段刷新用，避免每帧重建覆盖物） */
+  setPolylinePath(overlay: any, points: LngLat[]): void;
   /** 创建普通标注并加入地图 */
   createMarker(map: any, lngLat: LngLat): any;
   /** 创建文字标签并加入地图 */

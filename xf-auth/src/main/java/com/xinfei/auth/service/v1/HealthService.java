@@ -20,7 +20,7 @@ import java.util.List;
  * 服务健康聚合（服务健康页）：从 Nacos 发现 xf-* 服务实例，
  * 并行探测各实例 /actuator/health（部署探针同款无鉴权端点，超时即 DOWN）。
  *
- * <p>JDK 21：用 HttpClient + parallelStream（IO 密集，底层虚拟线程调度），
+ * <p>JDK 21+：用 HttpClient + parallelStream（IO 密集，底层虚拟线程调度），
  * 14 服务并行探测单请求墙钟 ≈ 单次探测耗时。</p>
  */
 @Slf4j

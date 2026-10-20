@@ -1,0 +1,14 @@
+/*
+ * Element Plus 全量样式（仅编译一次）
+ *
+ * 替代 vite.config.ts 中 unplugin 的 ElementPlusResolver({ importStyle: "sass" })：
+ * 旧写法会在 dev 期对每个用到的 EP 组件分别编译 theme-chalk/src/{comp}.scss
+ * （约 80 个文件，每个 3~4.6s），造成登录页首屏长时间卡死、白屏。
+ * 改为 importStyle:false 后，此处一次性全量引入，整个会话只编译一次。
+ *
+ * 顺序关键：必须先以覆盖值配置 EP 公共变量（主色等），再全量引入主题样式，
+ * 否则编译出的 --el-color-primary 会是默认蓝 #409EFF。
+ * 运行时主题切换（src/settings.ts 默认 #FF0033）仍通过 JS 覆盖 --el-color-*，不受影响。
+ */
+@use "@/styles/element-plus-vars.scss" as *;
+@use "element-plus/theme-chalk/src/index.scss" as *;

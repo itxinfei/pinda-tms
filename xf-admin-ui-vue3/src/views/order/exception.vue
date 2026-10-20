@@ -289,10 +289,11 @@ onMounted(loadList);
 </script>
 
 <style lang="scss" scoped>
+/* 底部批量操作栏：与表格间距统一走 --page-gap（与标准页 toolbar→表格 10px 一致，勿硬编码） */
 .page-toolbar {
   display: flex;
   justify-content: flex-start;
-  margin-top: 12px;
+  margin-top: var(--page-gap);
 }
 
 .handle-desc {
