@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>xinfei-tms</artifactId>
+        <groupId>com.xinfei</groupId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>xfwl-web</artifactId>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>xfwl-web-manager</module>
+        <module>xfwl-web-driver</module>
+        <module>xfwl-web-courier</module>
+        <module>xfwl-web-customer</module>
+    </modules>
+
+    <properties>
+        <xfwl-common.version>1.0.0-SNAPSHOT</xfwl-common.version>
+        <xfwl-service-base-api.version>1.0.0-SNAPSHOT</xfwl-service-base-api.version>
+        <xfwl-service-work-api.version>1.0.0-SNAPSHOT</xfwl-service-work-api.version>
+        <xfwl-service-oms-api.version>1.0.0-SNAPSHOT</xfwl-service-oms-api.version>
+        <xfwl-service-user-api.version>1.0.0-SNAPSHOT</xfwl-service-user-api.version>
+        <xfwl-service-aggregation-api.version>1.0.0-SNAPSHOT</xfwl-service-aggregation-api.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.xinfei</groupId>
+                <artifactId>xfwl-common</artifactId>
+                <version>${xfwl-common.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.xinfei</groupId>
+                <artifactId>xfwl-service-base-api</artifactId>
+                <version>${xfwl-service-base-api.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.xinfei</groupId>
+                <artifactId>xfwl-service-work-api</artifactId>
+                <version>${xfwl-service-work-api.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.xinfei</groupId>
+                <artifactId>xfwl-service-oms-api</artifactId>
+                <version>${xfwl-service-oms-api.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.xinfei</groupId>
+                <artifactId>xfwl-service-user-api</artifactId>
+                <version>${xfwl-service-user-api.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.xinfei</groupId>
+                <artifactId>xfwl-service-aggregation-api</artifactId>
+                <version>${xfwl-service-aggregation-api.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+</project>

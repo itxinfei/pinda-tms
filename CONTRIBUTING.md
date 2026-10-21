@@ -27,7 +27,7 @@
 - **认证请求头为 `token`**（非 `Authorization`）
 - **状态枚举禁止硬编码数字**，统一引用公共包共享常量
 - cron / 阈值 / 地图 Key 一律外部化配置
-- **模块归属**：订单 → `xf-oms`、调度 → `xf-dispatch`、作业 → `xf-work`、基础 → `xf-base`、轨迹 → `xf-netty`，严禁跨模块写业务
+- **模块归属**：订单 → `xfwl-oms`、调度 → `xfwl-dispatch`、作业 → `xfwl-work`、基础 → `xfwl-base`、轨迹 → `xfwl-netty`，严禁跨模块写业务
 - 不过度设计：只做直接需要的事
 - SQL 与种子数据不进仓库，涉及数据结构变更请在 Issue 中说明方案
 

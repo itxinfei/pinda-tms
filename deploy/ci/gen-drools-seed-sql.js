@@ -1,5 +1,5 @@
 /*
- * 从 xf-oms/src/main/resources/rules/orderAmountCalc.drl 生成 docs/sql/运价规则_种子_orderAmountCalc.sql
+ * 从 xfwl-oms/src/main/resources/rules/orderAmountCalc.drl 生成 docs/sql/运价规则_种子_orderAmountCalc.sql
  *
  * 用法（在仓库根目录）：node deploy/ci/gen-drools-seed-sql.js
  * 为什么要有这个生成器：rule 表里的 content 与 .drl 文件是同一份运价的两个副本，
@@ -9,7 +9,7 @@ const fs = require('fs')
 const path = require('path')
 
 const repo = path.resolve(__dirname, '..', '..')
-const drlPath = path.join(repo, 'xf-oms', 'src', 'main', 'resources', 'rules', 'orderAmountCalc.drl')
+const drlPath = path.join(repo, 'xfwl-oms', 'src', 'main', 'resources', 'rules', 'orderAmountCalc.drl')
 const outPath = path.join(repo, 'docs', 'sql', '运价规则_种子_orderAmountCalc.sql')
 
 const drl = fs.readFileSync(drlPath, 'utf8').replace(/\r\n/g, '\n').trimEnd()
@@ -28,12 +28,12 @@ const sql = `-- 运价规则种子：把仓库里的 Drools 规则灌进 xinfei_
 -- OrderServiceImpl.calculateAmount() 直接 return null：下单与报价都算不出运费。
 -- 仓库里从来没有这条 INSERT，所以"计价代码齐全"和"能算出价"是两回事。
 --
--- 单一真源是 xf-oms/src/main/resources/rules/orderAmountCalc.drl；改价后重新生成：
+-- 单一真源是 xfwl-oms/src/main/resources/rules/orderAmountCalc.drl；改价后重新生成：
 --   node deploy/ci/gen-drools-seed-sql.js
 -- 灌完必须让每个运行中的实例重载（规则装在单 JVM 内存里，多实例要逐台刷）：
---   curl -X POST http://<xf-oms 实例>:8186/rules/reload
+--   curl -X POST http://<xfwl-oms 实例>:8186/rules/reload
 -- 库名口径（2026-10-10 架构重置）：原 8 分库已合并为单库 xinfei_tms，
---   xf-oms 的 datasource 实测即 MYSQL_DATABASE 默认值 xinfei_tms（application.yml:52），旧的 pd_oms 库已不存在。
+--   xfwl-oms 的 datasource 实测即 MYSQL_DATABASE 默认值 xinfei_tms（application.yml:52），旧的 pd_oms 库已不存在。
 --
 -- ⚠️ 重构/删码提示（2026-10-09）：本 content 里三条续重规则调用
 --   new DroolsRulesServiceImpl().calcFee(addressRule)（.drl 第 33/50/67 行）。该调用

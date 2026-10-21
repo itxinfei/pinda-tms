@@ -12,13 +12,13 @@ digraph tms_business_flow {
   edge  [fontname="Microsoft YaHei", fontsize=10];
 
   // ---------- 角色 ----------
-  customer [label="客户\n(xf-web-customer)", shape=ellipse, fillcolor="#e8f0fe"];
+  customer [label="客户\n(xfwl-web-customer)", shape=ellipse, fillcolor="#e8f0fe"];
   dispatcher [label="调度/网点操作员\n(pd-admin-ui)", shape=ellipse, fillcolor="#e8f0fe"];
-  courier [label="快递员\n(xf-web-courier)", shape=ellipse, fillcolor="#e8f0fe"];
-  driver [label="司机\n(xf-web-driver)", shape=ellipse, fillcolor="#e8f0fe"];
+  courier [label="快递员\n(xfwl-web-courier)", shape=ellipse, fillcolor="#e8f0fe"];
+  driver [label="司机\n(xfwl-web-driver)", shape=ellipse, fillcolor="#e8f0fe"];
 
   // ---------- 主干业务步骤 ----------
-  subgraph cluster_order { label="订单域 xf-oms (库 pd_oms)"; style=dashed; color="#9aa0a6";
+  subgraph cluster_order { label="订单域 xfwl-oms (库 pd_oms)"; style=dashed; color="#9aa0a6";
     create [label="下单\nstatus=23000/23002\nOrderServiceImpl:142-153"];
     pay [label="支付确认\npayment_status 1→2\nOrderController:184-192"];
   }
@@ -26,11 +26,11 @@ digraph tms_business_flow {
     picked [label="取件\n23001\nCourierController:283-298\n@GlobalTransactional:278"];
     inbound [label="网点入库\n23003\nCourierController:401\n无事务 ⚠"];
   }
-  subgraph cluster_dispatch { label="调度域 xf-dispatch (库 pd_dispatch)"; style=dashed; color="#9aa0a6";
+  subgraph cluster_dispatch { label="调度域 xfwl-dispatch (库 pd_dispatch)"; style=dashed; color="#9aa0a6";
     classify [label="订单分类→路线规划→建任务→车次派司机\nDispatchTask:33-47\n仅 Quartz 触发"];
     toload [label="待装车 23004\nBusinessOperationServiceImpl:82"];
   }
-  subgraph cluster_transit { label="运输域 xf-work / xf-web-driver (库 pd_work)"; style=dashed; color="#9aa0a6";
+  subgraph cluster_transit { label="运输域 xfwl-work / xfwl-web-driver (库 pd_work)"; style=dashed; color="#9aa0a6";
     depart [label="发车→运输中 23005\nCargoController:519 ✅联动订单"];
     exware [label="网点出库 23006\nCargoController:647"];
     arrive [label="到达\nTransportTaskStatus 2→4\n跳过 3待确认 ⚠"];
@@ -39,7 +39,7 @@ digraph tms_business_flow {
     dispatching [label="派送中 23008\nCourierController:447\n（23007 待派送被跳过）⚠"];
     signed [label="签收 23009 / 拒收 23010\nCourierController:504-505\n无事务 ⚠"];
   }
-  subgraph cluster_trace { label="轨迹域 xf-netty / pd-druid（已删；旧实现也写 pd_oms）"; style=dashed; color="#9aa0a6";
+  subgraph cluster_trace { label="轨迹域 xfwl-netty / pd-druid（已删；旧实现也写 pd_oms）"; style=dashed; color="#9aa0a6";
     gpsin [label="HTTP /netty/push + TCP 8194\n→ RabbitMQ tms_order_location\nNettyController:44 / NettyServerHandler:97"];
     store [label="消费落库 pd_truck_location\n(列 report_time)\nGpsTraceConsumer:248,294 ✅实测200/200"];
     alert [label="超速/停留/偏航告警\nGpsAlertService:55 仅 log.error\n无表 无接口 无页面 ⚠"];

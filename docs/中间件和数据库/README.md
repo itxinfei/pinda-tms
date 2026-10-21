@@ -37,20 +37,20 @@
     ├── rabbitmq-defs.json            # RabbitMQ 拓扑定义（交换机/队列/绑定）
     └── nacos-configs/               # Nacos 配置文件（yaml，逐条导入用）
         ├── MANIFEST.txt             # 配置清单
-        ├── xf-gateway.yml.xinfei-tms.yaml
-        ├── xf-auth.yaml.xinfei-tms.yaml
-        ├── xf-base.yml.xinfei-tms.yaml
-        ├── xf-oms.yml.xinfei-tms.yaml
-        ├── xf-work.yml.xinfei-tms.yaml
-        ├── xf-dispatch.yml.xinfei-tms.yaml
-        ├── xf-user.yml.xinfei-tms.yaml
-        ├── xf-netty.yml.xinfei-tms.yaml
-        ├── xf-aggregation.yml.xinfei-tms.yaml
-        ├── xf-file-server.yml.xinfei-tms.yaml
-        ├── xf-web-manager.yml.xinfei-tms.yaml
-        ├── xf-web-driver.yml.xinfei-tms.yaml
-        ├── xf-web-courier.yml.xinfei-tms.yaml
-        └── xf-web-customer.yml.xinfei-tms.yaml
+        ├── xfwl-gateway.yml.xinfei-tms.yaml
+        ├── xfwl-auth.yaml.xinfei-tms.yaml
+        ├── xfwl-base.yml.xinfei-tms.yaml
+        ├── xfwl-oms.yml.xinfei-tms.yaml
+        ├── xfwl-work.yml.xinfei-tms.yaml
+        ├── xfwl-dispatch.yml.xinfei-tms.yaml
+        ├── xfwl-user.yml.xinfei-tms.yaml
+        ├── xfwl-netty.yml.xinfei-tms.yaml
+        ├── xfwl-aggregation.yml.xinfei-tms.yaml
+        ├── xfwl-file-server.yml.xinfei-tms.yaml
+        ├── xfwl-web-manager.yml.xinfei-tms.yaml
+        ├── xfwl-web-driver.yml.xinfei-tms.yaml
+        ├── xfwl-web-courier.yml.xinfei-tms.yaml
+        └── xfwl-web-customer.yml.xinfei-tms.yaml
 ```
 
 ---

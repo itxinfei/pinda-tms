@@ -1,0 +1,5 @@
+# 2026-10-15 新建：xfwl-file-server（附件上传/查看，POD 照片链路）无数据库、无 redis，
+# 云端只需要端口这一项；上传根目录与查看 URL 前缀由 compose 环境变量注入
+# （XINFEI_FILE_UPLOAD_ROOT / XINFEI_FILE_PUBLIC_BASE_URL），不写进 Nacos 正文。
+server:
+  port: 8195

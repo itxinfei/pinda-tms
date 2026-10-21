@@ -16,19 +16,19 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>xf-common</module>
-        <module>xf-base</module>
-        <module>xf-oms</module>
-        <module>xf-work</module>
-        <module>xf-user</module>
-        <module>xf-file-server</module>
-        <module>xf-service-api</module>
-        <module>xf-web</module>
-        <module>xf-dispatch</module>
-        <module>xf-aggregation</module>
-        <module>xf-netty</module>
-        <module>xf-gateway</module>
-        <module>xf-auth</module>
+        <module>xfwl-common</module>
+        <module>xfwl-base</module>
+        <module>xfwl-oms</module>
+        <module>xfwl-work</module>
+        <module>xfwl-user</module>
+        <module>xfwl-file-server</module>
+        <module>xfwl-service-api</module>
+        <module>xfwl-web</module>
+        <module>xfwl-dispatch</module>
+        <module>xfwl-aggregation</module>
+        <module>xfwl-netty</module>
+        <module>xfwl-gateway</module>
+        <module>xfwl-auth</module>
     </modules>
 
     <properties>
@@ -59,9 +59,9 @@
         <guava.version>33.4.8-jre</guava.version>
         <!-- Commons IO（Spring Boot 3.x BOM 不再托管，需统一显式版本） -->
         <commons-io.version>2.17.0</commons-io.version>
-        <!-- Drools（xf-oms 运费规则；8.38 为 8.x 最高、已 jakarta 化，纯 KIE API 编程式装配） -->
+        <!-- Drools（xfwl-oms 运费规则；8.38 为 8.x 最高、已 jakarta 化，纯 KIE API 编程式装配） -->
         <drools.version>8.38.0.Final</drools.version>
-        <!-- HttpClient 4（xf-oms HttpRequestUtil 过渡使用，Boot3 BOM 已不托管；迁 5 需重写工具类） -->
+        <!-- HttpClient 4（xfwl-oms HttpRequestUtil 过渡使用，Boot3 BOM 已不托管；迁 5 需重写工具类） -->
         <httpclient.version>4.5.14</httpclient.version>
         <!-- MapStruct：编译期 DTO/Entity 映射，替代 BeanUtils.copyProperties（全栈 238 处，逐步迁移） -->
         <mapstruct.version>1.6.3</mapstruct.version>
@@ -158,7 +158,7 @@
                 <artifactId>mybatis-plus-extension</artifactId>
                 <version>${mybatis-plus.version}</version>
             </dependency>
-            <!-- MyBatis-Plus 核心（IdentifierGenerator 等；xf-common 以 optional 引入做 ID 适配） -->
+            <!-- MyBatis-Plus 核心（IdentifierGenerator 等；xfwl-common 以 optional 引入做 ID 适配） -->
             <dependency>
                 <groupId>com.baomidou</groupId>
                 <artifactId>mybatis-plus-core</artifactId>

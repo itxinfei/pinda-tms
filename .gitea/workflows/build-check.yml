@@ -10,7 +10,7 @@
 #   历史浪费点只有一个：只 compile 不 install，内部 SNAPSHOT 从不进仓库。
 # - mvn clean install（不再只 compile）双重作用：
 #     ① 编译门禁，主干不可编译直接红；
-#     ② 全部 SNAPSHOT（xf-common/xf-service-api 等内部模块）装进 /root/.m2/repository，
+#     ② 全部 SNAPSHOT（xfwl-common/xfwl-service-api 等内部模块）装进 /root/.m2/repository，
 #        作为 deploy-backend.yml / deploy-be.sh 单服务发布去掉 -am 后的上游制品基线；
 #        成功后把 HEAD 写入 /root/.m2/.xinfei-baseline.revision（=宿主 /data/m2/ 同名文件）。
 # - concurrency：连续 push 只保留最新一轮，旧 run 自动取消，配合 runner capacity=1 不排队空转。
@@ -79,17 +79,17 @@ jobs:
         timeout-minutes: 25
 
       - name: Maven 测试门禁（ArchUnit 架构红线 + 各模块单测）
-        # 曾经的盲区：push 只编译零测试。此步把《12》§8 横切红线（ArchUnit，如 xf-dispatch
+        # 曾经的盲区：push 只编译零测试。此步把《12》§8 横切红线（ArchUnit，如 xfwl-dispatch
         # ModuleArchitectureTest）与各模块单测接入 CI；install 已装好内部 SNAPSHOT，test 复用、无需 -am。
         # 2026-10-14 提速：全 reactor `mvn test` 串行空转 13 个模块（实际仅 4 个有测试）是主要耗时。
-        #   ① 收窄到有测试的 4 个模块（xf-oms/xf-dispatch/xf-work/xf-netty），其余 9 个无测试模块不再空转；
+        #   ① 收窄到有测试的 4 个模块（xfwl-oms/xfwl-dispatch/xfwl-work/xfwl-netty），其余 9 个无测试模块不再空转；
         #   ② 加 -T 1C 并行；
         #   ③ 漏测兜底：一旦这 4 个模块之外出现新测试文件，自动回退全量 mvn test，不静默漏测。
         run: |
           set -e
           ls -ld /root/.m2 || { echo "::error::/root/.m2 未挂载，检查 act_runner container.options"; exit 1; }
-          TEST_MODS="xf-oms,xf-dispatch,xf-work,xf-netty"
-          EXTRA=$(git ls-files 'Test*.java' '*Test.java' '*Tests.java' '*TestCase.java' | grep -vE '^xf-(oms|dispatch|work|netty)/' || true)
+          TEST_MODS="xfwl-oms,xfwl-dispatch,xfwl-work,xfwl-netty"
+          EXTRA=$(git ls-files 'Test*.java' '*Test.java' '*Tests.java' '*TestCase.java' | grep -vE '^xfwl-(oms|dispatch|work|netty)/' || true)
           if [ -n "$EXTRA" ]; then
             echo "::warning::检测到 4 个测试模块之外的测试文件，回退全量 mvn test（避免漏测）："
             echo "$EXTRA"
@@ -104,9 +104,9 @@ jobs:
     # ============================================================
     # 变更感知自动部署（2026-10-14 用户拍板）：编译+测试门禁绿后自动执行。
     # 以「部署基线」/root/.m2/.xinfei-deploy.revision（上次成功部署的 HEAD）做 diff：
-    #   - 后端：服务模块变更→只部署该服务；共享库(xf-common/xf-service-api 等)/
+    #   - 后端：服务模块变更→只部署该服务；共享库(xfwl-common/xfwl-service-api 等)/
     #     根 pom/deploy 编排/.gitea 变更→全量收敛（保守正确）
-    #   - 前端：xf-admin-ui-vue3→admin；xf-mobile/<端>→对应端；xf-mobile 共享→三端
+    #   - 前端：xfwl-admin-ui-vue3→admin；xfwl-mobile/<端>→对应端；xfwl-mobile 共享→三端
     #   - diff 含 *.sql → 中止（DB 门禁），转人工以 db_approved=true 手动部署
     #   - 任一服务/端探活(后端4min/前端60s)未过→自动回滚 PREV；
     #     部署基线仅在全部成功后刷新
@@ -156,13 +156,13 @@ jobs:
         run: |
           {
             echo 'declare -A MOD_OF=('
-            echo '  [xf-auth]=xf-auth [xf-base]=xf-base [xf-oms]=xf-oms [xf-work]=xf-work'
-            echo '  [xf-user]=xf-user [xf-file-server]=xf-file-server [xf-dispatch]=xf-dispatch [xf-aggregation]=xf-aggregation [xf-netty]=xf-netty'
-            echo '  [xf-web-manager]=xf-web/xf-web-manager [xf-web-driver]=xf-web/xf-web-driver'
-            echo '  [xf-web-courier]=xf-web/xf-web-courier [xf-web-customer]=xf-web/xf-web-customer'
-            echo '  [xf-gateway]=xf-gateway'
+            echo '  [xfwl-auth]=xfwl-auth [xfwl-base]=xfwl-base [xfwl-oms]=xfwl-oms [xfwl-work]=xfwl-work'
+            echo '  [xfwl-user]=xfwl-user [xfwl-file-server]=xfwl-file-server [xfwl-dispatch]=xfwl-dispatch [xfwl-aggregation]=xfwl-aggregation [xfwl-netty]=xfwl-netty'
+            echo '  [xfwl-web-manager]=xfwl-web/xfwl-web-manager [xfwl-web-driver]=xfwl-web/xfwl-web-driver'
+            echo '  [xfwl-web-courier]=xfwl-web/xfwl-web-courier [xfwl-web-customer]=xfwl-web/xfwl-web-customer'
+            echo '  [xfwl-gateway]=xfwl-gateway'
             echo ')'
-            echo 'ORDER="xf-auth xf-base xf-oms xf-work xf-user xf-file-server xf-dispatch xf-aggregation xf-netty xf-web-manager xf-web-driver xf-web-courier xf-web-customer xf-gateway"'
+            echo 'ORDER="xfwl-auth xfwl-base xfwl-oms xfwl-work xfwl-user xfwl-file-server xfwl-dispatch xfwl-aggregation xfwl-netty xfwl-web-manager xfwl-web-driver xfwl-web-courier xfwl-web-customer xfwl-gateway"'
           } > /tmp/svc.sh
           source /tmp/svc.sh
           BASE=$(cat /root/.m2/.xinfei-deploy.revision 2>/dev/null || true)
@@ -228,11 +228,11 @@ jobs:
           while IFS= read -r f; do
             if [ -z "$f" ]; then continue; fi
             case "$f" in
-              xf-admin-ui-vue3/*) fa=1 ;;
-              xf-mobile/driver/*) fd=1 ;;
-              xf-mobile/courier/*) fc=1 ;;
-              xf-mobile/customer/*) fu=1 ;;
-              xf-mobile/*) fs=1 ;;
+              xfwl-admin-ui-vue3/*) fa=1 ;;
+              xfwl-mobile/driver/*) fd=1 ;;
+              xfwl-mobile/courier/*) fc=1 ;;
+              xfwl-mobile/customer/*) fu=1 ;;
+              xfwl-mobile/*) fs=1 ;;
             esac
           done <<< "$CHANGED"
           apps=""
@@ -371,11 +371,11 @@ jobs:
           #       随后“并行等待健康”——探活等待（每服务常 30~60s）才是串行滚动的耗时大头，并行后一波只等最慢的一个；
           # 波间：严格串行，保证依赖方向；单服务探活上限仍是 48×5s=240s，不放松。
           # 保护：5 波并集必须恰好覆盖整个 ORDER，否则（如以后新增服务忘记归波）自动回退原串行路径，绝不漏部署。
-          W1=$(for s in $ORDER; do case "$s" in xf-auth|xf-base) echo "$s";; esac; done)
-          W2=$(for s in $ORDER; do case "$s" in xf-oms|xf-work|xf-user|xf-file-server) echo "$s";; esac; done)
-          W3=$(for s in $ORDER; do case "$s" in xf-dispatch|xf-aggregation|xf-netty) echo "$s";; esac; done)
-          W4=$(for s in $ORDER; do case "$s" in xf-web-manager|xf-web-driver|xf-web-courier|xf-web-customer) echo "$s";; esac; done)
-          W5=xf-gateway
+          W1=$(for s in $ORDER; do case "$s" in xfwl-auth|xfwl-base) echo "$s";; esac; done)
+          W2=$(for s in $ORDER; do case "$s" in xfwl-oms|xfwl-work|xfwl-user|xfwl-file-server) echo "$s";; esac; done)
+          W3=$(for s in $ORDER; do case "$s" in xfwl-dispatch|xfwl-aggregation|xfwl-netty) echo "$s";; esac; done)
+          W4=$(for s in $ORDER; do case "$s" in xfwl-web-manager|xfwl-web-driver|xfwl-web-courier|xfwl-web-customer) echo "$s";; esac; done)
+          W5=xfwl-gateway
           WAVES_OK=1
           for s in $ORDER; do
             flat=" $(echo "$W1 $W2 $W3 $W4 $W5" | tr '\n' ' ') "
@@ -474,10 +474,10 @@ jobs:
           echo "FE_TAG=$FE_TAG" >> "$GITHUB_ENV"
           build_one() {
             case "$1" in
-              admin) docker build -f deploy/apps/Dockerfile.admin-h5 -t "xinfei/xf-admin-h5:${FE_TAG}" . ;;
+              admin) docker build -f deploy/apps/Dockerfile.admin-h5 -t "xinfei/xfwl-admin-h5:${FE_TAG}" . ;;
               *) docker build -f deploy/apps/Dockerfile.mobile-h5 \
-                   --build-arg APP_PATH=xf-mobile --build-arg APP_SUBDIR="$1" \
-                   --build-arg APP_NAME="xf-mobile-$1" -t "xinfei/xf-${1}-h5:${FE_TAG}" . ;;
+                   --build-arg APP_PATH=xfwl-mobile --build-arg APP_SUBDIR="$1" \
+                   --build-arg APP_NAME="xfwl-mobile-$1" -t "xinfei/xfwl-${1}-h5:${FE_TAG}" . ;;
             esac
           }
 
@@ -505,7 +505,7 @@ jobs:
 
           # ---- 阶段 B：逐端串行切换容器 + 健康检查 + 失败当场回滚（逻辑同改造前）----
           for app in $APPS; do
-            img="xf-${app}-h5"; tv="$(echo "$img" | tr 'a-z-' 'A-Z_')_TAG"
+            img="xfwl-${app}-h5"; tv="$(echo "$img" | tr 'a-z-' 'A-Z_')_TAG"
             prev=$(docker inspect -f '{{.Config.Image}}' "$img" 2>/dev/null | sed -n 's/.*://p' || true)
             echo ">> [$app] 回滚基线 PREV=${prev:-（首次部署）}"
             proj=$(docker inspect -f '{{index .Config.Labels "com.docker.compose.project"}}' "$img" 2>/dev/null || echo "")

@@ -98,7 +98,7 @@ Xinfei TMS was built to solve exactly this — it moves the whole chain of "reso
 | 1 | **4-End Synergy** | Admin + Customer + Courier + Driver apps covering all roles — most open-source TMS only ship an admin console |
 | 2 | **JDK 25 + SB 4.1.1 + Vue 3.5** | The most modern stack among similar open-source TMS; most still sit on JDK 8 + SB 2.x + Vue 2 |
 | 3 | **Drools + XXL-Job Intelligent Dispatch** | Rule-engine driven dispatch &amp; freight calculation instead of hard-coded if-else; distributed scheduling replaces Quartz |
-| 4 | **Netty Self-Built Tracking Ingestion** | No third-party SDK dependency; independent `xf-netty` microservice for high-concurrency device access |
+| 4 | **Netty Self-Built Tracking Ingestion** | No third-party SDK dependency; independent `xfwl-netty` microservice for high-concurrency device access |
 | 5 | **Sa-Token Multi-Tenancy** | SaaS-ready — one codebase serving multiple tenants |
 | 6 | **Clear Evolution Roadmap** | Kafka → TDengine/鹰眼 → OR-Tools → Spring AI planned; this is not a "ship and stop" project |
 
@@ -219,27 +219,27 @@ Booking 📦 → Order creation 📋 → Intelligent dispatch 🤖 (Drools) → 
 ```
 xinfei-tms/
 ├── Microservices (14)
-│   ├── xf-gateway/           # Unified gateway (Spring Cloud Gateway)
-│   ├── xf-auth/              # Auth center (Sa-Token + multi-tenant)
-│   ├── xf-base/              # Master data (org / vehicle / line / cargo)
-│   ├── xf-oms/               # Order management (OMS)
-│   ├── xf-dispatch/          # Intelligent dispatch (Drools + XXL-Job)
-│   ├── xf-work/              # Operations (pickup/delivery & transport tasks)
-│   ├── xf-user/              # Users & members
-│   ├── xf-file-server/       # Attachments (POD photos upload/view, no DB)
-│   ├── xf-netty/             # Tracking ingestion (Netty TCP)
-│   ├── xf-aggregation/       # Data aggregation
-│   └── xf-web/               # BFF layer (4-end APIs)
-│       ├── xf-web-manager/   #   Admin BFF
-│       ├── xf-web-courier/   #   Courier BFF
-│       ├── xf-web-customer/  #   Customer BFF
-│       └── xf-web-driver/    #   Driver BFF
+│   ├── xfwl-gateway/           # Unified gateway (Spring Cloud Gateway)
+│   ├── xfwl-auth/              # Auth center (Sa-Token + multi-tenant)
+│   ├── xfwl-base/              # Master data (org / vehicle / line / cargo)
+│   ├── xfwl-oms/               # Order management (OMS)
+│   ├── xfwl-dispatch/          # Intelligent dispatch (Drools + XXL-Job)
+│   ├── xfwl-work/              # Operations (pickup/delivery & transport tasks)
+│   ├── xfwl-user/              # Users & members
+│   ├── xfwl-file-server/       # Attachments (POD photos upload/view, no DB)
+│   ├── xfwl-netty/             # Tracking ingestion (Netty TCP)
+│   ├── xfwl-aggregation/       # Data aggregation
+│   └── xfwl-web/               # BFF layer (4-end APIs)
+│       ├── xfwl-web-manager/   #   Admin BFF
+│       ├── xfwl-web-courier/   #   Courier BFF
+│       ├── xfwl-web-customer/  #   Customer BFF
+│       └── xfwl-web-driver/    #   Driver BFF
 ├── Support libs (2 jars)
-│   ├── xf-common/            # Common components (utils / context / interceptors)
-│   └── xf-service-api/       # Inter-service API contracts (Feign)
+│   ├── xfwl-common/            # Common components (utils / context / interceptors)
+│   └── xfwl-service-api/       # Inter-service API contracts (Feign)
 ├── Frontend (4 ends)
-│   ├── xf-admin-ui-vue3/     # Admin (Vue3 + Element Plus)
-│   └── xf-mobile/            # Mobile 3 ends (uni-app Vue3)
+│   ├── xfwl-admin-ui-vue3/     # Admin (Vue3 + Element Plus)
+│   └── xfwl-mobile/            # Mobile 3 ends (uni-app Vue3)
 │       ├── customer/         #   Customer · Xinfei Express
 │       ├── courier/          #   Courier · Xinfei Courier
 │       └── driver/           #   Driver · Xinfei Driver
@@ -257,7 +257,7 @@ xinfei-tms/
 
 ![Microservice architecture](docs/microservice-arch.png)
 
-> Microservices split by business domain: `xf-auth`, `xf-gateway`, `xf-base`, `xf-oms`, `xf-dispatch`, `xf-work`, `xf-netty`, `xf-aggregation`, etc., communicating via OpenFeign, registered &amp; discovered via Nacos.
+> Microservices split by business domain: `xfwl-auth`, `xfwl-gateway`, `xfwl-base`, `xfwl-oms`, `xfwl-dispatch`, `xfwl-work`, `xfwl-netty`, `xfwl-aggregation`, etc., communicating via OpenFeign, registered &amp; discovered via Nacos.
 
 ### 6.3 Technology Architecture
 
@@ -331,7 +331,7 @@ xinfei-tms/
 
 #### 6.4.3 Code Snippets
 
-**Drools dispatch rule** (`xf-dispatch`) — rules are configuration, hot-reloaded without redeploy:
+**Drools dispatch rule** (`xfwl-dispatch`) — rules are configuration, hot-reloaded without redeploy:
 
 ```java
 rule "same-city order priority"
@@ -343,7 +343,7 @@ then
 end
 ```
 
-**Netty tracking ingestion** (`xf-netty`) — self-built TCP channel, no third-party SDK:
+**Netty tracking ingestion** (`xfwl-netty`) — self-built TCP channel, no third-party SDK:
 
 ```java
 @ChannelHandler.Sharable
@@ -398,7 +398,7 @@ After the full refactor the system converges to a **single MySQL database** (`xi
 ### 7.1 Environment &amp; Stack
 
 - **Backend**: JDK 25 + Spring Boot 4.1.1 + Spring Cloud 2025.1.2 (Spring Cloud Alibaba 2025.1.0.0), Nacos registry/config, OpenFeign, Spring Cloud Gateway auth, Sa-Token multi-tenant auth, XXL-Job, Drools.
-- **Frontend**: Admin `xf-admin-ui-vue3` (Vue 3 + Vite + Element Plus + Pinia + ECharts); Mobile uni-app (Vue 3 / Vite + uview-plus) for 3 apps.
+- **Frontend**: Admin `xfwl-admin-ui-vue3` (Vue 3 + Vite + Element Plus + Pinia + ECharts); Mobile uni-app (Vue 3 / Vite + uview-plus) for 3 apps.
 - **Storage &amp; middleware**: MySQL (single-db-by-domain), Redis cache, RabbitMQ, Druid; MinIO &amp; ES are planned (see §6.4).
 - **Support**: unified auth center (Sa-Token multi-tenant + captcha), gateway anti-direct-access, Netty tracking ingestion.
 
@@ -410,7 +410,7 @@ cd xinfei-tms
 docker-compose up -d        # start middleware: MySQL / Redis / RabbitMQ / Nacos
 # ① Initialize the database: DDL & seed scripts are bundled in the pre-built VM image (see "10. Pre-built VM Image");
 #    the sql/ directory is not distributed with this repo — contact the author if needed
-# ② start xf-auth → xf-gateway → business microservices (mvn spring-boot:run or deploy scripts)
+# ② start xfwl-auth → xfwl-gateway → business microservices (mvn spring-boot:run or deploy scripts)
 # ③ start admin (pnpm i && pnpm dev) and mobile (run uni-app in HBuilderX)
 ```
 
@@ -587,8 +587,29 @@ In-repo resources you can browse directly; internal design documents (requiremen
 
 ## 10. 📦 Pre-built VM Image
 
-> This project's learning &amp; deployment rely on a **pre-built VM image** — middleware, database and base environment are pre-installed, saving you the setup effort.
-> The image is distributed via **Baidu Netdisk**; the link is **not public** — contact the author for the latest address.
+> This project's learning &amp; deployment **strongly rely on a pre-built VM image**. Everything needed to run the system is **pre-installed and persisted inside the image** — **all middleware, database data and the full configuration required by the microservices live in this VM**, ready to use out of the box. No external setup or data migration is needed.
+
+### 10.1 What's inside the image (data + config shipped together)
+
+| Category | Component | State inside the image |
+| --- | --- | --- |
+| Database | MySQL 8.0 | Business DB `xinfei_tms` (all tables + demo data) and scheduler DB `xxl_job`, **persisted on disk** |
+| Cache | Redis 7 | Sa-Token sessions / J2Cache L2 cache, `dump.rdb` **persisted** |
+| Message queue | RabbitMQ | Exchanges / queues / accounts **persisted** |
+| Registry / Config | Nacos | Namespace `pinda-tms`; **all microservice configs (per-service dataIds) are already published in the image** |
+| Job scheduling | XXL-Job | Scheduler center + executor config ready |
+| Reverse proxy | Nginx | Frontend static assets + backend gateway proxy, **pre-configured in the image** |
+| Source / CI | Gitea + Runner | Project source repo and CI/CD pipeline built-in |
+
+### 10.2 Key points
+
+- **Data is part of the image**: MySQL / Redis / RabbitMQ business data, the full Nacos configuration, and each microservice's `.env` are all delivered with the VM — import and run, no dependency on any external service.
+- The VM's internal IP is `192.168.20.130` (VMware NAT segment); accessible right after import. To change the IP/segment, see `docs/05-部署文档.md`.
+- Default accounts: `pdwl / 123456` (SSH), `MySQL root / 123456`; for the application admin login, see the `docs/` login notes or contact the author.
+
+### 10.3 How to get it
+
+The image is distributed via **Baidu Netdisk**; the link is **not public** — contact the author for the latest address (see Chapter 11).
 
 ---
 

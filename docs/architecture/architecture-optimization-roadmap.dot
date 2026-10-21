@@ -21,7 +21,7 @@ digraph architecture_optimization_roadmap {
   green  [label="mvn compile 在 JDK21 全模块通过\n14服务可启动", shape=box, style=rounded, fillcolor="#dff0d8", color="#2e7d32"];
 
   // ---------- P0 ----------
-  R1 [label="R-1 零回归网\n876文件/18测试\n接入层与xf-base/xf-user 测试=0", shape=diamond, style=filled, fillcolor="#ffd9d9", color="#b00000"];
+  R1 [label="R-1 零回归网\n876文件/18测试\n接入层与xfwl-base/xfwl-user 测试=0", shape=diamond, style=filled, fillcolor="#ffd9d9", color="#b00000"];
   R1a [label="补运费试算 输入/金额矩阵\n（旧栈上跑，产出升级前基线）", shape=box, style=filled, fillcolor="#ffd9d9"];
   R1b [label="补网关鉴权矩阵\n已注册/未注册/降级 三态期望值", shape=box, style=filled, fillcolor="#ffd9d9"];
   R1c [label="rule表0行→算费返回null\n先修规则数据，否则基线为空", shape=diamond, style="filled,dashed", fillcolor="#fff2cc"];
@@ -45,7 +45,7 @@ digraph architecture_optimization_roadmap {
   S2 [label="S-2 数据归属是假的\n7库同1实例/12张无人写的副本\nnetty+druid 寄养 pd_oms", shape=diamond, style=filled, fillcolor="#ffe3b3", color="#cc6600"];
   S2a [label="每个共享对象定归属：owner读 or Feign\n禁止第三态；pinda_tms 改名归档", shape=box, style=filled, fillcolor="#ffe3b3"];
 
-  S3 [label="S-3 公共层双轨\nxf-common 与 pd-tools-common\n同根包 com.xinfei.common\n（当前无重复类=风险敞口）", shape=diamond, style=filled, fillcolor="#ffe3b3", color="#cc6600"];
+  S3 [label="S-3 公共层双轨\nxfwl-common 与 pd-tools-common\n同根包 com.xinfei.common\n（当前无重复类=风险敞口）", shape=diamond, style=filled, fillcolor="#ffe3b3", color="#cc6600"];
   S3a [label="advice/返回体/枚举/包名 收敛为一份\n与阶段0 同期做", shape=box, style=filled, fillcolor="#ffe3b3"];
 
   S5 [label="S-5 一致性策略缺决策\n@GlobalTransactional 仅5处\n转发中心77写/0事务", shape=diamond, style=filled, fillcolor="#ffe3b3", color="#cc6600"];
@@ -54,10 +54,10 @@ digraph architecture_optimization_roadmap {
   S5c [label="IdWorker(1,1) 硬编码×2\n机器位固定→扩实例撞号", shape=diamond, style=filled, fillcolor="#ffe3b3"];
 
   // ---------- P2 ----------
-  S1 [label="S-1 粒度拆错地方\npd-druid 9文件独立服务\nxf-aggregation 15文件+独立库\nBFF 4份复制无共享模块", shape=diamond, style=filled, fillcolor="#eeeeee", color="#666666"];
+  S1 [label="S-1 粒度拆错地方\npd-druid 9文件独立服务\nxfwl-aggregation 15文件+独立库\nBFF 4份复制无共享模块", shape=diamond, style=filled, fillcolor="#eeeeee", color="#666666"];
   S1a [label="BFF 4→1（按端前缀分路由）\n省约3个JVM ≈0.5–0.7G 内存", shape=box, style="filled,dashed", fillcolor="#eeeeee"];
-  S1b [label="✅ pd-druid 已删除（2026-10-11 模块整体移除）\n原案：并入 xf-oms 或删除", shape=box, style="filled,dashed", fillcolor="#e8f5e9"];
-  S1c [label="xf-aggregation 去留", shape=box, style="filled,dashed", fillcolor="#eeeeee"];
+  S1b [label="✅ pd-druid 已删除（2026-10-11 模块整体移除）\n原案：并入 xfwl-oms 或删除", shape=box, style="filled,dashed", fillcolor="#e8f5e9"];
+  S1c [label="xfwl-aggregation 去留", shape=box, style="filled,dashed", fillcolor="#eeeeee"];
   OBS [label="可观测性 / 主从 / 多实例 / 灰度回滚\n按《32》D4=D5=D1= P0 口径推进", shape=box, style=filled, fillcolor="#eeeeee", color="#666666"];
 
   // ---------- 禁止项 ----------

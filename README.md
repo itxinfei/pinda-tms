@@ -219,27 +219,27 @@
 ```
 xinfei-tms/
 ├── 微服务（14 个）
-│   ├── xf-gateway/           # 统一网关（Spring Cloud Gateway）
-│   ├── xf-auth/              # 认证中心（Sa-Token + 多租户）
-│   ├── xf-base/              # 基础数据（机构 / 车辆 / 线路 / 货物）
-│   ├── xf-oms/               # 订单管理（OMS）
-│   ├── xf-dispatch/          # 智能调度（Drools + XXL-Job）
-│   ├── xf-work/              # 作业管理（取派件 / 运输任务）
-│   ├── xf-user/              # 用户与会员
-│   ├── xf-file-server/       # 附件服务（POD 照片上传/查看，无数据库）
-│   ├── xf-netty/             # 轨迹接入（Netty TCP）
-│   ├── xf-aggregation/       # 数据聚合
-│   └── xf-web/               # BFF 聚合层（四端接口）
-│       ├── xf-web-manager/   #   管理端 BFF
-│       ├── xf-web-courier/   #   快递员端 BFF
-│       ├── xf-web-customer/  #   客户端 BFF
-│       └── xf-web-driver/    #   司机端 BFF
+│   ├── xfwl-gateway/           # 统一网关（Spring Cloud Gateway）
+│   ├── xfwl-auth/              # 认证中心（Sa-Token + 多租户）
+│   ├── xfwl-base/              # 基础数据（机构 / 车辆 / 线路 / 货物）
+│   ├── xfwl-oms/               # 订单管理（OMS）
+│   ├── xfwl-dispatch/          # 智能调度（Drools + XXL-Job）
+│   ├── xfwl-work/              # 作业管理（取派件 / 运输任务）
+│   ├── xfwl-user/              # 用户与会员
+│   ├── xfwl-file-server/       # 附件服务（POD 照片上传/查看，无数据库）
+│   ├── xfwl-netty/             # 轨迹接入（Netty TCP）
+│   ├── xfwl-aggregation/       # 数据聚合
+│   └── xfwl-web/               # BFF 聚合层（四端接口）
+│       ├── xfwl-web-manager/   #   管理端 BFF
+│       ├── xfwl-web-courier/   #   快递员端 BFF
+│       ├── xfwl-web-customer/  #   客户端 BFF
+│       └── xfwl-web-driver/    #   司机端 BFF
 ├── 支撑库（2 个 jar）
-│   ├── xf-common/            # 公共组件（工具 / 上下文 / 拦截器）
-│   └── xf-service-api/       # 服务间 API 契约（Feign 接口）
+│   ├── xfwl-common/            # 公共组件（工具 / 上下文 / 拦截器）
+│   └── xfwl-service-api/       # 服务间 API 契约（Feign 接口）
 ├── 前端（4 端）
-│   ├── xf-admin-ui-vue3/     # 管理端（Vue3 + Element Plus）
-│   └── xf-mobile/            # 移动三端（uni-app Vue3）
+│   ├── xfwl-admin-ui-vue3/     # 管理端（Vue3 + Element Plus）
+│   └── xfwl-mobile/            # 移动三端（uni-app Vue3）
 │       ├── customer/         #   客户端 · 心飞速运
 │       ├── courier/          #   快递员端 · 心飞快递员
 │       └── driver/           #   司机端 · 心飞司机宝
@@ -257,7 +257,7 @@ xinfei-tms/
 
 ![微服务架构](docs/microservice-arch.png)
 
-> 微服务按业务域拆分：`xf-auth`（认证）、`xf-gateway`（网关）、`xf-base`（基础数据）、`xf-oms`（订单）、`xf-dispatch`（调度）、`xf-work`（作业）、`xf-netty`（轨迹接入）、`xf-aggregation`（聚合）等，通过 OpenFeign 互调，Nacos 统一注册发现。
+> 微服务按业务域拆分：`xfwl-auth`（认证）、`xfwl-gateway`（网关）、`xfwl-base`（基础数据）、`xfwl-oms`（订单）、`xfwl-dispatch`（调度）、`xfwl-work`（作业）、`xfwl-netty`（轨迹接入）、`xfwl-aggregation`（聚合）等，通过 OpenFeign 互调，Nacos 统一注册发现。
 
 ### 6.3 技术架构
 
@@ -362,7 +362,7 @@ cd xinfei-tms
 docker-compose up -d        # 起中间件：MySQL / Redis / RabbitMQ / Nacos
 # ① 初始化数据库：建库与种子脚本随配套虚拟机镜像内置（见「10. 配套虚拟机」）；
 #    sql/ 脚本目录不随本仓库分发，需要可联系作者索取
-# ② 启动 xf-auth → xf-gateway → 业务微服务（mvn spring-boot:run 或部署脚本）
+# ② 启动 xfwl-auth → xfwl-gateway → 业务微服务（mvn spring-boot:run 或部署脚本）
 # ③ 启动管理端（pnpm i && pnpm dev）与移动端（HBuilderX 运行 uni-app）
 ```
 
@@ -539,8 +539,29 @@ docker-compose up -d        # 起中间件：MySQL / Redis / RabbitMQ / Nacos
 
 ## 十、📦 配套虚拟机（环境镜像）
 
-> 本项目的学习与部署**依赖配套的虚拟机镜像**——镜像中已预置好运行所需的中间件、数据库与基础环境，省去自行搭建的繁琐。  
-> 镜像通过**百度网盘**分发，**链接不公开**，索取请直接联系作者。
+> 本项目的学习与部署**强依赖配套的虚拟机镜像**。镜像内已**预置并持久化**了运行所需的全部依赖——**所有中间件、数据库数据以及微服务运行所需的全部配置都在这台虚拟机里**，开箱即用，无需在外部另行搭建或迁移数据。
+
+### 10.1 镜像内已包含（数据 + 配置都随镜像交付）
+
+| 类别 | 组件 | 镜像内状态 |
+| --- | --- | --- |
+| 数据库 | MySQL 8.0 | 业务库 `xinfei_tms`（全部表与演示数据）、调度库 `xxl_job`，数据**已落盘持久化** |
+| 缓存 | Redis 7 | Sa-Token 会话 / J2Cache 二级缓存，`dump.rdb`**已持久化** |
+| 消息队列 | RabbitMQ | 业务交换机 / 队列 / 账号定义**已持久化** |
+| 注册 / 配置中心 | Nacos | 命名空间 `pinda-tms`，**所有微服务的配置（含各服务 dataId）均已发布在镜像内** |
+| 任务调度 | XXL-Job | 调度中心与执行器配置已就绪 |
+| 反向代理 | Nginx | 前端静态资源 + 后端网关反代，**已在镜像内配置好** |
+| 源码 / CI | Gitea + Runner | 项目源码仓库与 CI/CD 流水线已内置 |
+
+### 10.2 关键点
+
+- **数据是镜像的一部分**：MySQL / Redis / RabbitMQ 的业务数据、Nacos 的全部配置、各微服务运行所需的 `.env` 环境变量，全部随虚拟机交付，导入即用，不依赖任何外部服务。
+- 虚拟机内网 IP 为 `192.168.20.130`（VMware NAT 网段），导入后直接访问；如需改 IP 或网段，参见 `docs/05-部署文档.md`。
+- 默认账号：`pdwl / 123456`（SSH）、`MySQL root / 123456`；应用管理端默认登录方式见 `docs/` 登录说明或联系作者。
+
+### 10.3 如何获取
+
+镜像通过**百度网盘**分发，链接**不公开**，索取请直接联系作者（见第十一章联系方式）。
 
 ---
 

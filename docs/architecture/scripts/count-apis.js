@@ -6,34 +6,34 @@
 const fs = require('fs');
 const path = require('path');
 
-// 从 cwd 向上找仓库根（以 xf-web + docs 同时存在为标记），避免 __dirname/相对路径带来的坑
+// 从 cwd 向上找仓库根（以 xfwl-web + docs 同时存在为标记），避免 __dirname/相对路径带来的坑
 function findRoot() {
   let dir = path.resolve(process.cwd());
   for (let i = 0; i < 8; i++) {
-    if (fs.existsSync(path.join(dir, 'xf-web')) && fs.existsSync(path.join(dir, 'docs'))) return dir;
+    if (fs.existsSync(path.join(dir, 'xfwl-web')) && fs.existsSync(path.join(dir, 'docs'))) return dir;
     const up = path.dirname(dir);
     if (up === dir) break;
     dir = up;
   }
-  throw new Error('找不到仓库根（需同时有 xf-web 与 docs 目录），请在项目内运行或修正');
+  throw new Error('找不到仓库根（需同时有 xfwl-web 与 docs 目录），请在项目内运行或修正');
 }
 
 const ROOT = findRoot();
 
 const MODULES = [
-  'xf-web/xf-web-manager',
-  'xf-web/xf-web-driver',
-  'xf-web/xf-web-courier',
-  'xf-web/xf-web-customer',
-  'xf-netty',
+  'xfwl-web/xfwl-web-manager',
+  'xfwl-web/xfwl-web-driver',
+  'xfwl-web/xfwl-web-courier',
+  'xfwl-web/xfwl-web-customer',
+  'xfwl-netty',
   // ↓↓ 这两条是 2026-10-09 基线的旧栈扫描目标（史料口径）：pd-authority 链已于 2026-10-10 架构重置时删除，
-  //    源码仅存本地归档 codeback/pd-authority/...；现行认证模块为根 xf-auth（SB3.5.7 + Sa-Token），旧计数口径不适用，故清单不改名为新模块。
+  //    源码仅存本地归档 codeback/pd-authority/...；现行认证模块为根 xfwl-auth（SB3.5.7 + Sa-Token），旧计数口径不适用，故清单不改名为新模块。
   'pd-authority/pd-apps/pd-auth/pd-auth-server',
   'pd-authority/pd-apps/pd-gateway',
-  'xf-dispatch',
-  'xf-oms',
-  'xf-work',
-  'xf-base',
+  'xfwl-dispatch',
+  'xfwl-oms',
+  'xfwl-work',
+  'xfwl-base',
 ];
 
 function walk(dir, out) {

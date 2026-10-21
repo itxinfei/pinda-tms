@@ -6,8 +6,8 @@
 #   bash deploy-be.sh <svc>[,<svc>...]   # 部署指定服务
 #   bash deploy-be.sh all                # 按固定顺序部署全部 14 个后端
 # 例:
-#   bash deploy-be.sh xf-dispatch
-#   bash deploy-be.sh xf-base,xf-oms
+#   bash deploy-be.sh xfwl-dispatch
+#   bash deploy-be.sh xfwl-base,xfwl-oms
 #
 # 流程: 白名单校验 -> 容器归属检查 -> 记录 PREV 镜像基线
 #       -> ci/xinfei-ci 容器内 mvn 打包 -> 硬链接 fat jar 到 .ctx
@@ -26,7 +26,7 @@
 #     部署前自行确认 /data/xinfei-tms 已检出目标提交（脚本会打印当前 HEAD）。
 #   - Maven 在 ci/xinfei-ci 容器内执行（与 Gitea Actions 同一 JDK25/Maven3.9.9/aliyun 源），
 #     镜像构建与 compose 在宿主执行。
-#   - compose 顶层 name: xinfei-apps；逐服务以 XF_<SVC>_TAG 覆盖镜像 tag。
+#   - compose 顶层 name: xinfei-apps；逐服务以 XFWL_<SVC>_TAG 覆盖镜像 tag。
 # ============================================================
 set -uo pipefail
 
@@ -39,16 +39,16 @@ SETTINGS=/ci/maven-settings.xml
 CTX_ROOT=$REPO_DIR/.ctx
 HEALTH_TRIES=48   # 每 5s 一次，最长 4 分钟
 
-# 固定部署顺序：基础/业务先上，网关 xf-gateway 始终最后切
-ORDER=(xf-auth xf-base xf-oms xf-work xf-user xf-file-server xf-dispatch xf-aggregation xf-netty \
-       xf-web-manager xf-web-driver xf-web-courier xf-web-customer xf-gateway)
+# 固定部署顺序：基础/业务先上，网关 xfwl-gateway 始终最后切
+ORDER=(xfwl-auth xfwl-base xfwl-oms xfwl-work xfwl-user xfwl-file-server xfwl-dispatch xfwl-aggregation xfwl-netty \
+       xfwl-web-manager xfwl-web-driver xfwl-web-courier xfwl-web-customer xfwl-gateway)
 declare -A MOD_OF=(
-  [xf-auth]=xf-auth [xf-base]=xf-base [xf-oms]=xf-oms [xf-work]=xf-work
-  [xf-user]=xf-user [xf-file-server]=xf-file-server [xf-dispatch]=xf-dispatch [xf-aggregation]=xf-aggregation
-  [xf-netty]=xf-netty
-  [xf-web-manager]=xf-web/xf-web-manager [xf-web-driver]=xf-web/xf-web-driver
-  [xf-web-courier]=xf-web/xf-web-courier [xf-web-customer]=xf-web/xf-web-customer
-  [xf-gateway]=xf-gateway
+  [xfwl-auth]=xfwl-auth [xfwl-base]=xfwl-base [xfwl-oms]=xfwl-oms [xfwl-work]=xfwl-work
+  [xfwl-user]=xfwl-user [xfwl-file-server]=xfwl-file-server [xfwl-dispatch]=xfwl-dispatch [xfwl-aggregation]=xfwl-aggregation
+  [xfwl-netty]=xfwl-netty
+  [xfwl-web-manager]=xfwl-web/xfwl-web-manager [xfwl-web-driver]=xfwl-web/xfwl-web-driver
+  [xfwl-web-courier]=xfwl-web/xfwl-web-courier [xfwl-web-customer]=xfwl-web/xfwl-web-customer
+  [xfwl-gateway]=xfwl-gateway
 )
 
 usage() {

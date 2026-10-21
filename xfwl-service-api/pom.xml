@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>xfwl-service-api</artifactId>
+    <packaging>pom</packaging>
+
+    <parent>
+        <groupId>com.xinfei</groupId>
+        <artifactId>xinfei-tms</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <modules>
+        <module>xfwl-service-base-api</module>
+        <module>xfwl-service-oms-api</module>
+        <module>xfwl-service-work-api</module>
+        <module>xfwl-service-user-api</module>
+        <module>xfwl-service-aggregation-api</module>
+        <module>xfwl-service-auth-api</module>
+        <module>xfwl-service-base-domain</module>
+        <module>xfwl-service-oms-domain</module>
+        <module>xfwl-service-work-domain</module>
+        <module>xfwl-service-user-domain</module>
+        <module>xfwl-service-aggregation-domain</module>
+        <module>xfwl-service-auth-domain</module>
+    </modules>
+
+    <dependencies>
+        <!-- swagger v3 注解（domain 的 @Schema、Feign 的 @Hidden） -->
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-annotations-jakarta</artifactId>
+        </dependency>
+        <!-- Jackson 注解（domain 的 @JsonFormat，版本随 Spring Boot BOM） -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+        </dependency>
+        <!-- Bean 校验约束注解（编译期；实现由可启动服务提供） -->
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+        </dependency>
+    </dependencies>
+</project>

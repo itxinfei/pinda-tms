@@ -12,8 +12,8 @@ help() {
 用法: bash deploy.sh <命令> [参数]
 
 后端微服务（14 个，失败自动回滚）:
-  deploy.sh be <服务>          例: deploy.sh be xf-base
-  deploy.sh be <服务,服务>     例: deploy.sh be xf-base,xf-oms （逗号分隔多服务）
+  deploy.sh be <服务>          例: deploy.sh be xfwl-base
+  deploy.sh be <服务,服务>     例: deploy.sh be xfwl-base,xfwl-oms （逗号分隔多服务）
   deploy.sh be all             全部 14 个后端
 
 前端 H5（4 端，失败自动回滚）:
@@ -30,8 +30,8 @@ help() {
   deploy.sh help               本帮助
 
 后端可选服务清单:
-  xf-auth xf-base xf-oms xf-work xf-user xf-file-server xf-dispatch xf-aggregation xf-netty
-  xf-web-manager xf-web-driver xf-web-courier xf-web-customer xf-gateway
+  xfwl-auth xfwl-base xfwl-oms xfwl-work xfwl-user xfwl-file-server xfwl-dispatch xfwl-aggregation xfwl-netty
+  xfwl-web-manager xfwl-web-driver xfwl-web-courier xfwl-web-customer xfwl-gateway
 
 也可在 Gitea UI 下拉选择部署（免记命令）:
   Actions → deploy-backend（后端，下拉选服务/全部）

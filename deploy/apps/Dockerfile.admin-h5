@@ -1,7 +1,7 @@
 # ============================================
 # 心飞物流TMS 新版后台管理系统（Vue3 + Vite + Element Plus）
 #
-# 构建上下文 = 仓库根目录（需要 xf-admin-ui-vue3/ 下的源码与 pnpm-lock.yaml）：
+# 构建上下文 = 仓库根目录（需要 xfwl-admin-ui-vue3/ 下的源码与 pnpm-lock.yaml）：
 #   docker build -f deploy/apps/Dockerfile.admin-ui-vue3 \
 #     -t xinfei/xf-admin-h5:<tag> .
 #
@@ -10,7 +10,7 @@
 #   分阶段后运行层只有 nginx + 产物，镜像约 60MB（老版单阶段连 node_modules 一起带，约 175MB）。
 #
 # 为什么 Node 22：
-#   xf-admin-ui-vue3/package.json 的 engines 明确要求 node ^20.19.0 || >=22.12.0，
+#   xfwl-admin-ui-vue3/package.json 的 engines 明确要求 node ^20.19.0 || >=22.12.0，
 #   且 CI 旧作业镜像固定 Node 14（为老 React 后台的 node-sass 4.x 兼容）。
 #   新版用的是 sass(dart-sass) + Vite 8，Node 14 跑不起来，必须换。
 #
@@ -29,7 +29,7 @@ WORKDIR /build
 
 # 先只拷依赖清单做安装，充分利用镜像层缓存：
 # 只要 package.json / pnpm-lock.yaml 没变，改业务代码重建时这层直接命中，不用重装依赖
-COPY xf-admin-ui-vue3/package.json xf-admin-ui-vue3/pnpm-lock.yaml ./
+COPY xfwl-admin-ui-vue3/package.json xfwl-admin-ui-vue3/pnpm-lock.yaml ./
 # 增加 fetch 重试参数：内网服务器对外 npm 源偶发 DNS/网络抖动（EAI_AGAIN），
 # 默认重试 2 次不够，放宽到 5 次 + 更长超时
 # cache 固定 id=pnpm-admin + sharing=locked：让 pnpm store 在多次构建间持久复用、并行构建写 store 串行安全；
@@ -48,7 +48,7 @@ RUN --mount=type=cache,id=pnpm-admin,sharing=locked,target=/root/.local/share/pn
     done
 
 # 再拷源码并构建
-COPY xf-admin-ui-vue3/ ./
+COPY xfwl-admin-ui-vue3/ ./
 
 # 只做构建，不跑 vue-tsc 类型检查：
 # CI 拉全量代码时偶发类型报错会直接卡死发布（且 vite build 本身不做类型检查），
@@ -69,7 +69,7 @@ COPY deploy/apps/nginx/admin-h5.conf /etc/nginx/templates/default.conf.template
 # 环境变量占位符，nginx 官方镜像的 docker-entrypoint 会自动替换
 ARG NGINX_HOST=192.168.20.130
 ENV NGINX_HOST=${NGINX_HOST} \
-    DOCKER_REQUEST_DOMAIN_PREFIX=http://xf-gateway:8760
+    DOCKER_REQUEST_DOMAIN_PREFIX=http://xfwl-gateway:8760
 
 EXPOSE 80
 

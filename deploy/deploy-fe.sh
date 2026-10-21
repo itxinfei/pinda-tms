@@ -38,16 +38,16 @@ deploy_one() {
     docker build -f deploy/apps/Dockerfile.admin-h5 -t "xinfei/$img:$TAG" .
   else
     docker build -f deploy/apps/Dockerfile.mobile-h5 \
-      --build-arg APP_PATH=xf-mobile \
+      --build-arg APP_PATH=xfwl-mobile \
       --build-arg APP_SUBDIR="$sub" \
-      --build-arg APP_NAME="xf-mobile-$sub" \
+      --build-arg APP_NAME="xfwl-mobile-$sub" \
       -t "xinfei/$img:$TAG" .
   fi
   # 记录回滚基线：当前运行镜像 tag（无运行容器=首次部署，无基线则不回滚）
   prev=$(docker inspect -f '{{.Config.Image}}' "$img" 2>/dev/null | sed -n 's/.*://p')
   echo ">> [$sub] 回滚基线 PREV=${prev:-（首次部署，无基线）}"
   echo ">> [$sub] 滚动更新容器 ..."
-  export XF_ADMIN_H5_TAG="$TAG" XF_DRIVER_H5_TAG="$TAG" XF_COURIER_H5_TAG="$TAG" XF_CUSTOMER_H5_TAG="$TAG"
+  export XFWL_ADMIN_H5_TAG="$TAG" XFWL_DRIVER_H5_TAG="$TAG" XFWL_COURIER_H5_TAG="$TAG" XFWL_CUSTOMER_H5_TAG="$TAG"
   # 容器归属检查：compose 文件声明 name: xinfei-apps；历史手动 docker run 的容器无归属，
   # 会让 compose 报容器名冲突。非 xinfei-apps 归属的目标容器先删除，改由 compose 接管。
   proj=$(docker inspect -f '{{index .Config.Labels "com.docker.compose.project"}}' "$img" 2>/dev/null || echo "")
@@ -90,15 +90,15 @@ deploy_one() {
 }
 
 case "$APP" in
-  admin)    deploy_one admin xf-admin-h5 ;;
-  driver)   deploy_one driver xf-driver-h5 ;;
-  courier)  deploy_one courier xf-courier-h5 ;;
-  customer) deploy_one customer xf-customer-h5 ;;
+  admin)    deploy_one admin xfwl-admin-h5 ;;
+  driver)   deploy_one driver xfwl-driver-h5 ;;
+  courier)  deploy_one courier xfwl-courier-h5 ;;
+  customer) deploy_one customer xfwl-customer-h5 ;;
   all)
-    deploy_one admin xf-admin-h5
-    deploy_one driver xf-driver-h5
-    deploy_one courier xf-courier-h5
-    deploy_one customer xf-customer-h5
+    deploy_one admin xfwl-admin-h5
+    deploy_one driver xfwl-driver-h5
+    deploy_one courier xfwl-courier-h5
+    deploy_one customer xfwl-customer-h5
     ;;
   *) echo "用法: bash deploy-fe.sh [admin|driver|courier|customer|all]"; exit 1 ;;
 esac

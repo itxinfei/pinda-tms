@@ -1,4 +1,4 @@
-// 🔴 2026-10-10 已过时：本图为重构前（2026-10-09 HEAD）快照。数据库已由"7 库同 1 实例"重构为【单一物理库 xinfei_tms（55 表）+ 业务表 tenant_id 多租户】，认证 = xf-auth(Sa-Token)、网关 = xf-gateway。现行口径见 docs/02-架构设计.md、《需求文档/45》。图内"7 库 / pd_oms / pd_auth ..."仅作历史问题留痕，禁止当现状。
+// 🔴 2026-10-10 已过时：本图为重构前（2026-10-09 HEAD）快照。数据库已由"7 库同 1 实例"重构为【单一物理库 xinfei_tms（55 表）+ 业务表 tenant_id 多租户】，认证 = xfwl-auth(Sa-Token)、网关 = xfwl-gateway。现行口径见 docs/02-架构设计.md、《需求文档/45》。图内"7 库 / pd_oms / pd_auth ..."仅作历史问题留痕，禁止当现状。
 // 心飞物流TMS 当前运行时拓扑 + 信任边界（技术栈与系统架构体检配图）· 历史快照
 // 维护：本图与 tech-stack-and-system-architecture-review.md 的编号（T-x/S-x）一一对应，改文必改图。
 // 读法：实线=代码/配置双证；虚线=推断或本次未取证；红=边界违规；黄=归属漂移；灰=未开工。
@@ -27,31 +27,31 @@ digraph current_runtime_topology {
     subgraph cluster_fe {
       label="前端容器"; style=rounded; color="#999999";
       fe_old  [label="pd-admin-ui :8080\nVue2.6 运行中（120 .vue）", shape=box, style=filled, fillcolor="#fff2cc"];
-      fe_new  [label="xf-admin-ui-vue3\nVue3.5 基座就位（144 .vue）\n未部署", shape=box, style="filled,dashed", fillcolor="#dff0d8"];
-      mobile  [label="xf-mobile 三端\nuni-app 仅2个.vue ≈未开工", shape=box, style="filled,dashed", fillcolor="#eeeeee"];
+      fe_new  [label="xfwl-admin-ui-vue3\nVue3.5 基座就位（144 .vue）\n未部署", shape=box, style="filled,dashed", fillcolor="#dff0d8"];
+      mobile  [label="xfwl-mobile 三端\nuni-app 仅2个.vue ≈未开工", shape=box, style="filled,dashed", fillcolor="#eeeeee"];
     }
 
     // ----- 接入层 -----
     subgraph cluster_access {
       label="接入层（同一 Maven 链的两条 parent 之外：gateway 属 pd-authority 链）"; style=rounded; color="#b00000";
-      gw [label="xf-gateway :8760/api\n🔴 现状 Zuul 1.x（非Gateway）\n5个自写Filter", shape=box, style=filled, fillcolor="#ffd9d9"];
-      auth [label="旧 xf-auth-server :9000\nShiro1.4+JWT\n⚠️ 唯一依赖 Hystrix 的模块", shape=box, style=filled, fillcolor="#fff2cc"];
-      webm [label="xf-web-manager :8161", shape=box];
-      webd [label="xf-web-driver :8162", shape=box];
-      webc [label="xf-web-courier :8163\n⚠️ 缺 AttachmentClient(S-1)→B-21", shape=box, style=filled, fillcolor="#ffe3e3"];
-      webu [label="xf-web-customer :8164", shape=box];
+      gw [label="xfwl-gateway :8760/api\n🔴 现状 Zuul 1.x（非Gateway）\n5个自写Filter", shape=box, style=filled, fillcolor="#ffd9d9"];
+      auth [label="旧 xfwl-auth-server :9000\nShiro1.4+JWT\n⚠️ 唯一依赖 Hystrix 的模块", shape=box, style=filled, fillcolor="#fff2cc"];
+      webm [label="xfwl-web-manager :8161", shape=box];
+      webd [label="xfwl-web-driver :8162", shape=box];
+      webc [label="xfwl-web-courier :8163\n⚠️ 缺 AttachmentClient(S-1)→B-21", shape=box, style=filled, fillcolor="#ffe3e3"];
+      webu [label="xfwl-web-customer :8164", shape=box];
     }
 
     // ----- 业务服务层 -----
     subgraph cluster_biz {
       label="业务服务层（Nacos 注册，group=xinfei-tms，实测14个）"; style=rounded; color="#336699";
-      oms  [label="xf-oms :8186\n订单/状态机/Drools计价", shape=box];
-      work [label="xf-work :8187\n运单/作业", shape=box];
-      base [label="xf-base :8185\n主数据", shape=box];
-      disp [label="xf-dispatch :8190\nQuartz5阶段+DFS\nisClustered=true ✓", shape=box];
-      usr  [label="xf-user :8189", shape=box];
-      net  [label="xf-netty :8192(+8194 TCP)\nNetty+RabbitMQ轨迹", shape=box, style=filled, fillcolor="#fff2cc"];
-      agg  [label="xf-aggregation :8191\n15个文件/独立服务\n只读12张副本表(S-2)", shape=box, style=filled, fillcolor="#ffe3e3"];
+      oms  [label="xfwl-oms :8186\n订单/状态机/Drools计价", shape=box];
+      work [label="xfwl-work :8187\n运单/作业", shape=box];
+      base [label="xfwl-base :8185\n主数据", shape=box];
+      disp [label="xfwl-dispatch :8190\nQuartz5阶段+DFS\nisClustered=true ✓", shape=box];
+      usr  [label="xfwl-user :8189", shape=box];
+      net  [label="xfwl-netty :8192(+8194 TCP)\nNetty+RabbitMQ轨迹", shape=box, style=filled, fillcolor="#fff2cc"];
+      agg  [label="xfwl-aggregation :8191\n15个文件/独立服务\n只读12张副本表(S-2)", shape=box, style=filled, fillcolor="#ffe3e3"];
       drd  [label="pd-druid :8193\n✅ 2026-10-11 已删除（模块整体移除）\n原9文件独立服务，查不存在的表、无调用方→B-05(S-1)", shape=box, style="filled,dashed", fillcolor="#e8f5e9"];
     }
 

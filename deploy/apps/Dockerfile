@@ -2,8 +2,8 @@
 # 心飞物流TMS 微服务通用镜像（一份复用，全部 14 个 Spring Boot 服务）
 #
 # 构建上下文 = 只含该服务 jar 的目录（CI 里用硬链接准备，见 .gitea/workflows/deploy-backend.yml）：
-#   mkdir -p .ctx/xf-base && ln -f deploy/jars/xf-base.jar .ctx/xf-base/app.jar
-#   docker build -f deploy/apps/Dockerfile -t xinfei/xf-base:<tag> .ctx/xf-base
+#   mkdir -p .ctx/xfwl-base && ln -f deploy/jars/xfwl-base.jar .ctx/xfwl-base/app.jar
+#   docker build -f deploy/apps/Dockerfile -t xinfei/xfwl-base:<tag> .ctx/xfwl-base
 #
 # 为什么不用仓库根目录当上下文：legacy builder 每次 build 都要把整个上下文打包传给
 # daemon，而 deploy/jars 里放着 14 个 fat jar，实测上下文 1.119GB、每个镜像白传一次

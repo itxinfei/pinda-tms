@@ -9,9 +9,9 @@
 #
 # 构建示例（司机端）：
 #   docker build -f deploy/apps/Dockerfile.mobile-h5 \
-#     --build-arg APP_PATH=xf-mobile \
+#     --build-arg APP_PATH=xfwl-mobile \
 #     --build-arg APP_SUBDIR=driver \
-#     --build-arg APP_NAME=xf-mobile-driver \
+#     --build-arg APP_NAME=xfwl-mobile-driver \
 #     -t xinfei/xf-driver-h5:<tag> .
 #
 # 为什么 Node 22 + pnpm 10：
@@ -26,11 +26,11 @@ RUN npm config set registry https://registry.npmmirror.com \
  && npm install -g pnpm@10 --registry=https://registry.npmmirror.com
 
 # APP_PATH：移动端 monorepo 在仓库中的相对路径
-ARG APP_PATH=xf-mobile
+ARG APP_PATH=xfwl-mobile
 # APP_SUBDIR：目标端在 workspace 内的子目录（driver/courier/customer）
 ARG APP_SUBDIR=driver
 # APP_NAME：目标端包名（pnpm -F 过滤用）
-ARG APP_NAME=xf-mobile-driver
+ARG APP_NAME=xfwl-mobile-driver
 
 WORKDIR /build
 
@@ -78,6 +78,6 @@ COPY deploy/apps/nginx/mobile-h5.conf /etc/nginx/templates/default.conf.template
 
 ARG NGINX_HOST=192.168.20.130
 ENV NGINX_HOST=${NGINX_HOST} \
-    DOCKER_REQUEST_DOMAIN_PREFIX=http://xf-gateway:8760
+    DOCKER_REQUEST_DOMAIN_PREFIX=http://xfwl-gateway:8760
 
 EXPOSE 80

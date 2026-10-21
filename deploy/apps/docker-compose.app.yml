@@ -61,7 +61,7 @@ x-jvm-core: &jvm-core
   # 追加（2026-10-09）：mybatis-plus.mapper-locations / typeAliasesPackage 在各服务 bootstrap-prod.yml 里
   # 也是自引用占位符（${mybatis-plus.mapper-locations}），Nacos 未提供，jar 内也无默认值 → Circular。
   # 业务服务的 mapper 资源在 classpath:/mapper/**，实体包统一为 com.xinfei.entity（aggregation 的
-  # mapper 用 FQN DTO，给该包名仅用于占位符破环，不影响功能）。xf-gateway 因显式覆写 JAVA_TOOL_OPTIONS 不受本锚点影响。
+  # mapper 用 FQN DTO，给该包名仅用于占位符破环，不影响功能）。xfwl-gateway 因显式覆写 JAVA_TOOL_OPTIONS 不受本锚点影响。
   JAVA_TOOL_OPTIONS: "-Dbaidu.map.ak=${BAIDU_MAP_AK:-} -Dspring.datasource.druid.stat-view-servlet.enabled=false -Dspring.datasource.druid.web-stat-filter.enabled=false -Dspring.servlet.multipart.enabled=true -Dspring.servlet.multipart.max-file-size=100MB -Dspring.servlet.multipart.max-request-size=1000MB -Dspring.jackson.time-zone=GMT+8 -Dmybatis-plus.configuration.map-underscore-to-camel-case=true -Dmybatis-plus.configuration.cache-enabled=true -Dmybatis-plus.configuration.call-setters-on-nulls=false -Dmybatis-plus.configuration.jdbc-type-for-null=NULL -Dmybatis-plus.global-config.db-config.id-type=ASSIGN_ID -Dmybatis-plus.global-config.banner=false -Dmybatis-plus.mapper-locations=classpath*:/mapper/**/*.xml -Dmybatis-plus.typeAliasesPackage=com.xinfei.entity -Dspring.datasource.druid.type=com.alibaba.druid.pool.DruidDataSource -Dspring.datasource.druid.driver-class-name=com.mysql.cj.jdbc.Driver -Dspring.datasource.druid.initial-size=5 -Dspring.datasource.druid.min-idle=5 -Dspring.datasource.druid.max-active=20 -Dspring.datasource.druid.max-wait=60000 -Dspring.datasource.druid.pool-prepared-statements=false -Dspring.datasource.druid.max-pool-prepared-statement-per-connection-size=20 -Dspring.datasource.druid.time-between-eviction-runs-millis=60000 -Dspring.datasource.druid.min-evictable-idle-time-millis=300000 -Dspring.datasource.druid.test-while-idle=true -Dspring.datasource.druid.test-on-borrow=false -Dspring.datasource.druid.test-on-return=false -Dspring.datasource.druid.stat-view-servlet.url-pattern=/druid/* -Dspring.datasource.druid.filter.stat.log-slow-sql=true -Dspring.datasource.druid.filter.stat.slow-sql-millis=5000 -Dspring.datasource.druid.filter.stat.merge-sql=true -Dspring.datasource.druid.filter.wall.config.multi-statement-allow=true"
   # 含空格的值（如日期格式）不能放进 JAVA_TOOL_OPTIONS（JVM 按空白切分参数会断裂），
   # 改用环境变量注入，Spring 松弛绑定 SPRINT_JACKSON_DATE_FORMAT -> spring.jackson.date-format，且不触发占位符死循环。
@@ -108,7 +108,7 @@ x-jvm-core: &jvm-core
   MYBATIS_PLUS_GLOBAL_CONFIG_DB_CONFIG_FIELD_STRATEGY: "NOT_NULL"
   MYBATIS_PLUS_GLOBAL_CONFIG_DB_CONFIG_COLUMN_UNDERLINE: "true"
   # 逻辑删除口径与全项目 @TableLogic 实体对齐：deleted 0=未删 1=已删（MP 默认值）。
-  # 历史上这里配反（DELETE=0/NOT_DELETE=1），新 xf-auth 切 sys_ 表后登录查租户拼 deleted=1 必然落空。
+  # 历史上这里配反（DELETE=0/NOT_DELETE=1），新 xfwl-auth 切 sys_ 表后登录查租户拼 deleted=1 必然落空。
   MYBATIS_PLUS_GLOBAL_CONFIG_DB_CONFIG_LOGIC_DELETE_VALUE: "1"
   MYBATIS_PLUS_GLOBAL_CONFIG_DB_CONFIG_LOGIC_NOT_DELETE_VALUE: "0"
   MYBATIS_PLUS_GLOBAL_CONFIG_BANNER: "false"
@@ -159,7 +159,7 @@ x-jvm-small: &jvm-small
   MYBATIS_PLUS_GLOBAL_CONFIG_DB_CONFIG_FIELD_STRATEGY: "NOT_NULL"
   MYBATIS_PLUS_GLOBAL_CONFIG_DB_CONFIG_COLUMN_UNDERLINE: "true"
   # 逻辑删除口径与全项目 @TableLogic 实体对齐：deleted 0=未删 1=已删（MP 默认值）。
-  # 历史上这里配反（DELETE=0/NOT_DELETE=1），新 xf-auth 切 sys_ 表后登录查租户拼 deleted=1 必然落空。
+  # 历史上这里配反（DELETE=0/NOT_DELETE=1），新 xfwl-auth 切 sys_ 表后登录查租户拼 deleted=1 必然落空。
   MYBATIS_PLUS_GLOBAL_CONFIG_DB_CONFIG_LOGIC_DELETE_VALUE: "1"
   MYBATIS_PLUS_GLOBAL_CONFIG_DB_CONFIG_LOGIC_NOT_DELETE_VALUE: "0"
   MYBATIS_PLUS_GLOBAL_CONFIG_BANNER: "false"
@@ -209,7 +209,7 @@ x-nacos-env: &nacos-env
   # （connection timeout）。统一注册为宿主 IP 后，本地与容器间都走可路由地址；
   # 换部署服务器只需改 .env 里的 NACOS_DISCOVERY_IP（或本行默认值）。
   # ⚠️ 前置条件：宿主防火墙必须放行各服务端口（8161~8192/8194/8760/9000 等）对 Docker 网段的
-  # 入站，否则容器间互调（原走容器 IP 直连）会超时——实测踩过（见 xf-gateway 段注释）。
+  # 入站，否则容器间互调（原走容器 IP 直连）会超时——实测踩过（见 xfwl-gateway 段注释）。
   SPRING_CLOUD_NACOS_DISCOVERY_IP: ${NACOS_DISCOVERY_IP:-192.168.20.130}
   # 2026-10-11 Nacos 鉴权实际开启（NACOS_AUTH_ENABLE=true；2026-10-09 仅配了密钥但开关为 false，
   # 登录接口固定回 AUTH_DISABLED，任何人可读写含 MySQL/RabbitMQ 明文口令的配置）。
@@ -247,10 +247,10 @@ x-redis-env: &redis-env
 
 services:
   # ---------- 网关与鉴权（profile=test） ----------
-  xf-gateway:
+  xfwl-gateway:
     <<: *app-edge
-    image: xinfei/xf-gateway:${XF_GATEWAY_TAG:-${TAG:?TAG_not_set}}
-    container_name: xf-gateway
+    image: xinfei/xfwl-gateway:${XFWL_GATEWAY_TAG:-${TAG:?TAG_not_set}}
+    container_name: xfwl-gateway
     restart: unless-stopped
     ports: ["8760:8760"]
     healthcheck:
@@ -263,7 +263,7 @@ services:
       # 注意：本服务显式写了 JAVA_OPTS，会整体覆盖 x-jvm-core 锚点，
       # 所以堆外与 OOM 参数必须在下面这一行重复一遍，否则锚点的加固对网关无效。
       JAVA_OPTS: "-Xms96m -Xmx192m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:MaxMetaspaceSize=192m -XX:MaxDirectMemorySize=128m -Xss512k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -Dcors.allowed.origins=http://${DEPLOY_HOST:-192.168.20.130},http://${DEPLOY_HOST:-192.168.20.130}:8080,http://${DEPLOY_HOST:-192.168.20.130}:8081,http://${DEPLOY_HOST:-192.168.20.130}:8082,http://${DEPLOY_HOST:-192.168.20.130}:8083,http://${DEPLOY_HOST:-192.168.20.130}:8084,http://localhost:8080,http://localhost:3000"
-      # JWT 验签公钥的外部来源（详见 xf-auth 段注释与部署文档 §2.11）
+      # JWT 验签公钥的外部来源（详见 xfwl-auth 段注释与部署文档 §2.11）
       XINFEI_JWT_PUB_KEY_PATH: ${XINFEI_JWT_PUB_KEY_PATH:-}
       # 网关镜像不含任何 JDBC 连接池（无 druid/hikari/tomcat-jdbc），却因 mysql.yml 强制
       # spring.datasource.type=com.alibaba.druid.pool.DruidDataSource 而触发 DataSourceAutoConfiguration
@@ -273,10 +273,10 @@ services:
     volumes:
       - ${XINFEI_JWT_HOST_DIR:-/data/xinfei-jwt}:/data/xinfei-jwt:ro
 
-  xf-auth:
+  xfwl-auth:
     <<: *app-edge
-    image: xinfei/xf-auth:${XF_AUTH_TAG:-${TAG:?TAG_not_set}}
-    container_name: xf-auth
+    image: xinfei/xfwl-auth:${XFWL_AUTH_TAG:-${TAG:?TAG_not_set}}
+    container_name: xfwl-auth
     restart: unless-stopped
     ports: ["9000:9000"]
     healthcheck:
@@ -286,7 +286,7 @@ services:
       <<: [*jvm-core, *nacos-env, *redis-env]
       # JWT 签名密钥对的外部来源。
       #
-      # 背景：仓内旧模块 xf-auth-server/src/main/resources/client/pri.key 与
+      # 背景：仓内旧模块 xfwl-auth-server/src/main/resources/client/pri.key 与
       # pd-tools-jwt/src/main/resources/pri.key 是被 git 跟踪的真实 RSA-2048 私钥（该旧链已于
       # 2026-10-10 删除，此处仅为历史口径），而仓库同时推到公开的 Gitee——任何读到源码的人都能
       # 签发任意 userId 的合法 token，网关的验签与吊销黑名单因此形同虚设。
@@ -301,10 +301,10 @@ services:
       - ${XINFEI_JWT_HOST_DIR:-/data/xinfei-jwt}:/data/xinfei-jwt:ro
 
   # ---------- 基础微服务 ----------
-  xf-base:
+  xfwl-base:
     <<: *app-core
-    image: xinfei/xf-base:${XF_BASE_TAG:-${TAG:?TAG_not_set}}
-    container_name: xf-base
+    image: xinfei/xfwl-base:${XFWL_BASE_TAG:-${TAG:?TAG_not_set}}
+    container_name: xfwl-base
     restart: unless-stopped
     ports: ["8185:8185"]
     healthcheck:
@@ -313,10 +313,10 @@ services:
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
 
-  xf-oms:
+  xfwl-oms:
     <<: *app-core
-    image: xinfei/xf-oms:${XF_OMS_TAG:-${TAG:?TAG_not_set}}
-    container_name: xf-oms
+    image: xinfei/xfwl-oms:${XFWL_OMS_TAG:-${TAG:?TAG_not_set}}
+    container_name: xfwl-oms
     restart: unless-stopped
     ports: ["8186:8186"]
     healthcheck:
@@ -326,15 +326,15 @@ services:
       <<: [*jvm-core, *nacos-env, *redis-env]
       # 真实使用 rabbit（消费 ORDER_DELIVERED 触发结算）→ 显式开启其健康指标
       MANAGEMENT_HEALTH_RABBIT_ENABLED: "true"
-      # RabbitMQ 在 xinfei-infra 网络，跨网走宿主 IP（rabbitmq 在 xinfei-infra_default、xf-oms 在 xinfei-apps_default）
+      # RabbitMQ 在 xinfei-infra 网络，跨网走宿主 IP（rabbitmq 在 xinfei-infra_default、xfwl-oms 在 xinfei-apps_default）
       RABBITMQ_HOST: ${DEPLOY_HOST:-192.168.20.130}
       RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-xinfei}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
 
-  xf-work:
+  xfwl-work:
     <<: *app-core
-    image: xinfei/xf-work:${XF_WORK_TAG:-${TAG:?TAG_not_set}}
-    container_name: xf-work
+    image: xinfei/xfwl-work:${XFWL_WORK_TAG:-${TAG:?TAG_not_set}}
+    container_name: xfwl-work
     restart: unless-stopped
     ports: ["8187:8187"]
     healthcheck:
@@ -343,10 +343,10 @@ services:
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
 
-  xf-user:
+  xfwl-user:
     <<: *app-core
-    image: xinfei/xf-user:${XF_USER_TAG:-${TAG:?TAG_not_set}}
-    container_name: xf-user
+    image: xinfei/xfwl-user:${XFWL_USER_TAG:-${TAG:?TAG_not_set}}
+    container_name: xfwl-user
     restart: unless-stopped
     ports: ["8189:8189"]
     healthcheck:
@@ -355,10 +355,10 @@ services:
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
 
-  xf-dispatch:
+  xfwl-dispatch:
     <<: *app-core
-    image: xinfei/xf-dispatch:${XF_DISPATCH_TAG:-${TAG:?TAG_not_set}}
-    container_name: xf-dispatch
+    image: xinfei/xfwl-dispatch:${XFWL_DISPATCH_TAG:-${TAG:?TAG_not_set}}
+    container_name: xfwl-dispatch
     restart: unless-stopped
     # 9999 = XXL-Job 执行器回调端口：xxl-job-admin 位于默认 bridge 网（172.17.x），
     # 与本服务的 172.21 网不互通，必须发布到宿主机并让执行器以宿主 IP 注册（见下 XXL_JOB_EXECUTOR_IP），
@@ -369,7 +369,7 @@ services:
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8190; printf \"GET /actuator/health HTTP/1.0\\r\\n\\r\\n\">&3; read -r L<&3; [[ $$L == *200* ]]' || exit 1"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
-      # 真实使用 rabbit（调度事件消费）→ 显式开启其健康指标（连接参数在 Nacos xf-dispatch.yml）
+      # 真实使用 rabbit（调度事件消费）→ 显式开启其健康指标（连接参数在 Nacos xfwl-dispatch.yml）
       MANAGEMENT_HEALTH_RABBIT_ENABLED: "true"
       # XXL-Job 执行器注册（2026-10-11 接入）：token 必须与 xxl-job-admin 容器启动参数同值，
       # 否则 admin 注册接口回 "The access token is wrong."、执行器地址列表恒为 null（42 次空转根因）。
@@ -379,10 +379,10 @@ services:
       # admin 跨 Docker 网经 192.168.20.130:9999 反向回调；换部署服务器时在 .env 覆盖。
       XXL_JOB_EXECUTOR_IP: ${NACOS_DISCOVERY_IP:-192.168.20.130}
 
-  xf-aggregation:
+  xfwl-aggregation:
     <<: *app-core
-    image: xinfei/xf-aggregation:${XF_AGGREGATION_TAG:-${TAG:?TAG_not_set}}
-    container_name: xf-aggregation
+    image: xinfei/xfwl-aggregation:${XFWL_AGGREGATION_TAG:-${TAG:?TAG_not_set}}
+    container_name: xfwl-aggregation
     restart: unless-stopped
     ports: ["8191:8191"]
     healthcheck:
@@ -394,10 +394,10 @@ services:
       # 库名统一走单库 xinfei_tms，URL 由 jar 内 application.yml 的 ${MYSQL_DATABASE} 给出。
 
   # netty 承载长连接与直接内存，按 core 档给足堆外额度
-  xf-netty:
+  xfwl-netty:
     <<: *app-edge
-    image: xinfei/xf-netty:${XF_NETTY_TAG:-${TAG:?TAG_not_set}}
-    container_name: xf-netty
+    image: xinfei/xfwl-netty:${XFWL_NETTY_TAG:-${TAG:?TAG_not_set}}
+    container_name: xfwl-netty
     restart: unless-stopped
     ports: ["8192:8192"]
     healthcheck:
@@ -405,7 +405,7 @@ services:
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8192; printf \"GET /actuator/health HTTP/1.0\\r\\n\\r\\n\">&3; read -r L<&3; [[ $$L == *200* ]]' || exit 1"]
     environment:
       <<: [*jvm-core, *nacos-env, *redis-env]
-      # 真实使用 rabbit（GPS/告警上报消费）→ 显式开启其健康指标（连接参数在 Nacos xf-netty.yml）
+      # 真实使用 rabbit（GPS/告警上报消费）→ 显式开启其健康指标（连接参数在 Nacos xfwl-netty.yml）
       MANAGEMENT_HEALTH_RABBIT_ENABLED: "true"
       # netty TCP 长连接吃堆外内存，显式恢复 256m（覆盖 jvm-core 锚点的 128m）
       JAVA_OPTS: "-Xms96m -Xmx192m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:MaxMetaspaceSize=192m -XX:MaxDirectMemorySize=256m -Xss512k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -Dmybatis-plus.mapper-locations=classpath*:/mapper/**/*.xml -Dmybatis-plus.typeAliasesPackage=com.xinfei.entity -Dmybatis-plus.configuration.map-underscore-to-camel-case=true -Dmybatis-plus.configuration.cache-enabled=true -Dmybatis-plus.configuration.call-setters-on-nulls=false -Dmybatis-plus.configuration.jdbc-type-for-null=NULL -Dmybatis-plus.global-config.db-config.id-type=ASSIGN_ID -Dmybatis-plus.global-config.banner=false"
@@ -414,10 +414,10 @@ services:
   # ---------- 附件服务（POD 照片，无数据库） ----------
   # 落盘目录与宿主同路径挂载，容器重建/换镜像不丢已上传文件。
   # 查看 URL 走网关匿名白名单 /api/file/view/**（前端 <img src> 不带 token），故不做鉴权。
-  xf-file-server:
+  xfwl-file-server:
     <<: *app-small
-    image: xinfei/xf-file-server:${XF_FILE_SERVER_TAG:-${TAG:?TAG_not_set}}
-    container_name: xf-file-server
+    image: xinfei/xfwl-file-server:${XFWL_FILE_SERVER_TAG:-${TAG:?TAG_not_set}}
+    container_name: xfwl-file-server
     restart: unless-stopped
     ports: ["8195:8195"]
     volumes:
@@ -431,10 +431,10 @@ services:
       XINFEI_FILE_PUBLIC_BASE_URL: http://${DEPLOY_HOST:-192.168.20.130}:8760/api/file/view
 
   # ---------- Web 聚合层 ----------
-  xf-web-manager:
+  xfwl-web-manager:
     <<: *app-small
-    image: xinfei/xf-web-manager:${XF_WEB_MANAGER_TAG:-${TAG:?TAG_not_set}}
-    container_name: xf-web-manager
+    image: xinfei/xfwl-web-manager:${XFWL_WEB_MANAGER_TAG:-${TAG:?TAG_not_set}}
+    container_name: xfwl-web-manager
     restart: unless-stopped
     ports: ["8161:8161"]
     healthcheck:
@@ -443,10 +443,10 @@ services:
     environment:
       <<: [*jvm-small, *nacos-env, *redis-env]
 
-  xf-web-driver:
+  xfwl-web-driver:
     <<: *app-small
-    image: xinfei/xf-web-driver:${XF_WEB_DRIVER_TAG:-${TAG:?TAG_not_set}}
-    container_name: xf-web-driver
+    image: xinfei/xfwl-web-driver:${XFWL_WEB_DRIVER_TAG:-${TAG:?TAG_not_set}}
+    container_name: xfwl-web-driver
     restart: unless-stopped
     ports: ["8162:8162"]
     healthcheck:
@@ -455,10 +455,10 @@ services:
     environment:
       <<: [*jvm-small, *nacos-env, *redis-env]
 
-  xf-web-courier:
+  xfwl-web-courier:
     <<: *app-small
-    image: xinfei/xf-web-courier:${XF_WEB_COURIER_TAG:-${TAG:?TAG_not_set}}
-    container_name: xf-web-courier
+    image: xinfei/xfwl-web-courier:${XFWL_WEB_COURIER_TAG:-${TAG:?TAG_not_set}}
+    container_name: xfwl-web-courier
     restart: unless-stopped
     ports: ["8163:8163"]
     healthcheck:
@@ -467,10 +467,10 @@ services:
     environment:
       <<: [*jvm-small, *nacos-env, *redis-env]
 
-  xf-web-customer:
+  xfwl-web-customer:
     <<: *app-small
-    image: xinfei/xf-web-customer:${XF_WEB_CUSTOMER_TAG:-${TAG:?TAG_not_set}}
-    container_name: xf-web-customer
+    image: xinfei/xfwl-web-customer:${XFWL_WEB_CUSTOMER_TAG:-${TAG:?TAG_not_set}}
+    container_name: xfwl-web-customer
     restart: unless-stopped
     ports: ["8164:8164"]
     healthcheck:
@@ -478,18 +478,18 @@ services:
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8164; printf \"GET /actuator/health HTTP/1.0\\r\\n\\r\\n\">&3; read -r L<&3; [[ $$L == *200* ]]' || exit 1"]
     environment:
       <<: [*jvm-small, *nacos-env, *redis-env]
-      # Feign 客户端 UserClient 的 base url：web-customer 经 compose 网络直连 xf-user:8189。
+      # Feign 客户端 UserClient 的 base url：web-customer 经 compose 网络直连 xfwl-user:8189。
       # client.user.url 在 Nacos 缺失，这里用环境变量注入（CLIENT_USER_URL 经 Spring 松弛绑定映射到 client.user.url）。
-      CLIENT_USER_URL: "http://xf-user:8189"
+      CLIENT_USER_URL: "http://xfwl-user:8189"
 
   # ============================================================
   #  4 端前端（容器名按业务角色命名，端口自 2026-10-09 起固定，不再变动）
   # ============================================================
   #  端            容器名           端口   对应后端聚合层        状态
-  #  后台管理      xf-admin-h5      8081   xf-web-manager:8161   Vue3 已就位
-  #  司机端        xf-driver-h5     8082   xf-web-driver:8162    uniapp 已就位
-  #  快递员端      xf-courier-h5    8083   xf-web-courier:8163   已就位
-  #  客户小程序    xf-customer-h5   8084   xf-web-customer:8164  已就位
+  #  后台管理      xfwl-admin-h5      8081   xfwl-web-manager:8161   Vue3 已就位
+  #  司机端        xfwl-driver-h5     8082   xfwl-web-driver:8162    uniapp 已就位
+  #  快递员端      xfwl-courier-h5    8083   xfwl-web-courier:8163   已就位
+  #  客户小程序    xfwl-customer-h5   8084   xfwl-web-customer:8164  已就位
   #
   #  业务角色取自 docs/03-功能规划与需求说明.md 的「三端移动应用」：
   #  司机端 / 快递员端 / 客户小程序，加后台管理共 4 端。
@@ -498,10 +498,10 @@ services:
   # ---------- 后台管理（Vue3 + Vite） ----------
   # 替代老 React 版后台（2026-10-09 下线：容器停用、镜像删除、git 取消跟踪，代码仅存本地）。
   # 端口 8081：老后台曾占用 8080，下线后不沿用，避免与历史书签/监控混淆。
-  xf-admin-h5:
+  xfwl-admin-h5:
     <<: *app-static
-    image: xinfei/xf-admin-h5:${XF_ADMIN_H5_TAG:-${TAG:?TAG_not_set}}
-    container_name: xf-admin-h5
+    image: xinfei/xfwl-admin-h5:${XFWL_ADMIN_H5_TAG:-${TAG:?TAG_not_set}}
+    container_name: xfwl-admin-h5
     restart: unless-stopped
     ports: ["8081:80"]
     healthcheck:
@@ -512,16 +512,16 @@ services:
       # server_name，容器间/内网访问用
       NGINX_HOST: ${DEPLOY_HOST:-192.168.20.130}
       # nginx 将 /prod-api 反代到网关。
-      # 走 compose 同网络服务名 xf-gateway（容器间直连），不用宿主 eth0 IP
+      # 走 compose 同网络服务名 xfwl-gateway（容器间直连），不用宿主 eth0 IP
       # ——容器内访问宿主 bridge IP会被防火墙拦（实测超时）。
-      DOCKER_REQUEST_DOMAIN_PREFIX: http://xf-gateway:8760
+      DOCKER_REQUEST_DOMAIN_PREFIX: http://xfwl-gateway:8760
 
   # ---------- 司机端（uniapp H5，8082） ----------
   # 只有 H5 产物走 nginx 托管；微信小程序与 App 打包产物不走这里。
-  xf-driver-h5:
+  xfwl-driver-h5:
     <<: *app-static
-    image: xinfei/xf-driver-h5:${XF_DRIVER_H5_TAG:-${TAG:?TAG_not_set}}
-    container_name: xf-driver-h5
+    image: xinfei/xfwl-driver-h5:${XFWL_DRIVER_H5_TAG:-${TAG:?TAG_not_set}}
+    container_name: xfwl-driver-h5
     restart: unless-stopped
     ports: ["8082:80"]
     healthcheck:
@@ -529,17 +529,17 @@ services:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
     environment:
       NGINX_HOST: ${DEPLOY_HOST:-192.168.20.130}
-      DOCKER_REQUEST_DOMAIN_PREFIX: http://xf-gateway:8760
+      DOCKER_REQUEST_DOMAIN_PREFIX: http://xfwl-gateway:8760
 
   # ---------- 快递员端（uniapp H5，8083，已就位） ----------
   # 构建方式（deploy-frontend 流水线已删除，现由宿主 deploy-fe.sh 构建）：
   #   docker build -f deploy/apps/Dockerfile.mobile-h5 \
-  #     --build-arg APP_PATH=xf-mobile --build-arg APP_SUBDIR=courier \
-  #     --build-arg APP_NAME=xf-mobile-courier -t xinfei/xf-courier-h5:<tag> .
-  xf-courier-h5:
+  #     --build-arg APP_PATH=xfwl-mobile --build-arg APP_SUBDIR=courier \
+  #     --build-arg APP_NAME=xfwl-mobile-courier -t xinfei/xfwl-courier-h5:<tag> .
+  xfwl-courier-h5:
     <<: *app-static
-    image: xinfei/xf-courier-h5:${XF_COURIER_H5_TAG:-${TAG:?TAG_not_set}}
-    container_name: xf-courier-h5
+    image: xinfei/xfwl-courier-h5:${XFWL_COURIER_H5_TAG:-${TAG:?TAG_not_set}}
+    container_name: xfwl-courier-h5
     restart: unless-stopped
     ports: ["8083:80"]
     healthcheck:
@@ -547,17 +547,17 @@ services:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
     environment:
       NGINX_HOST: ${DEPLOY_HOST:-192.168.20.130}
-      DOCKER_REQUEST_DOMAIN_PREFIX: http://xf-gateway:8760
+      DOCKER_REQUEST_DOMAIN_PREFIX: http://xfwl-gateway:8760
 
   # ---------- 客户端（uniapp H5，8084，已就位） ----------
   # 构建方式（deploy-frontend 流水线已删除，现由宿主 deploy-fe.sh 构建）：
   #   docker build -f deploy/apps/Dockerfile.mobile-h5 \
-  #     --build-arg APP_PATH=xf-mobile --build-arg APP_SUBDIR=customer \
-  #     --build-arg APP_NAME=xf-mobile-customer -t xinfei/xf-customer-h5:<tag> .
-  xf-customer-h5:
+  #     --build-arg APP_PATH=xfwl-mobile --build-arg APP_SUBDIR=customer \
+  #     --build-arg APP_NAME=xfwl-mobile-customer -t xinfei/xfwl-customer-h5:<tag> .
+  xfwl-customer-h5:
     <<: *app-static
-    image: xinfei/xf-customer-h5:${XF_CUSTOMER_H5_TAG:-${TAG:?TAG_not_set}}
-    container_name: xf-customer-h5
+    image: xinfei/xfwl-customer-h5:${XFWL_CUSTOMER_H5_TAG:-${TAG:?TAG_not_set}}
+    container_name: xfwl-customer-h5
     restart: unless-stopped
     ports: ["8084:80"]
     healthcheck:
@@ -565,5 +565,5 @@ services:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
     environment:
       NGINX_HOST: ${DEPLOY_HOST:-192.168.20.130}
-      DOCKER_REQUEST_DOMAIN_PREFIX: http://xf-gateway:8760
+      DOCKER_REQUEST_DOMAIN_PREFIX: http://xfwl-gateway:8760
 

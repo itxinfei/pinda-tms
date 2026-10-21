@@ -7,7 +7,7 @@
 #
 # 能力：
 #   - inputs.services 必填：选择本次发布的后端服务（逗号分隔，不默认任何服务，防误触 auth/网关；all=全部 14 个）
-#   - 固定部署顺序：基础/业务服务先上，xf-gateway 始终最后切（见解析步骤 ORDER）
+#   - 固定部署顺序：基础/业务服务先上，xfwl-gateway 始终最后切（见解析步骤 ORDER）
 #   - Maven 构建（2026-10-12 提速）：单服务默认只 package 目标模块，上游 SNAPSHOT 取自
 #     build-check 预热的持久 /data/m2；基线之后改过的内部模块先 install 刷新；
 #     无基线 / 命中 pom.xml 变更 / 直接打包失败，三种情况自动回退 -am 全链构建（旧行为，稳妥兜底）。
@@ -20,13 +20,13 @@
 #   - /data/ci/maven-settings.xml = 阿里云 Maven settings（挂为 /ci，只读）
 #   - /data/ci/apps.env           = 密钥（NACOS_*/REDIS_PASSWORD/XXL_JOB_ACCESS_TOKEN，0600）
 #   - xinfei/jre25-fontconfig:1    = 后端运行时基础镜像
-#   - compose 顶层 name: xinfei-apps；镜像 tag 支持 XF_<SVC>_TAG 逐服务覆盖
+#   - compose 顶层 name: xinfei-apps；镜像 tag 支持 XFWL_<SVC>_TAG 逐服务覆盖
 #
 # 14 个可部署后端（compose 服务名 = 容器名 = 镜像名 xinfei/<svc>）：
-#   xf-auth(9000) xf-base(8185) xf-oms(8186) xf-work(8187) xf-user(8189) xf-file-server(8195)
-#   xf-dispatch(8190) xf-aggregation(8191) xf-netty(8192)
-#   xf-web-manager(8161) xf-web-driver(8162) xf-web-courier(8163) xf-web-customer(8164)
-#   xf-gateway(8760)
+#   xfwl-auth(9000) xfwl-base(8185) xfwl-oms(8186) xfwl-work(8187) xfwl-user(8189) xfwl-file-server(8195)
+#   xfwl-dispatch(8190) xfwl-aggregation(8191) xfwl-netty(8192)
+#   xfwl-web-manager(8161) xfwl-web-driver(8162) xfwl-web-courier(8163) xfwl-web-customer(8164)
+#   xfwl-gateway(8760)
 # ============================================
 name: "部署-后端微服务（手动·下拉选服务或全部）"
 
@@ -38,20 +38,20 @@ on:
         type: choice
         options:
           - all
-          - xf-auth
-          - xf-base
-          - xf-oms
-          - xf-work
-          - xf-user
-          - xf-file-server
-          - xf-dispatch
-          - xf-aggregation
-          - xf-netty
-          - xf-web-manager
-          - xf-web-driver
-          - xf-web-courier
-          - xf-web-customer
-          - xf-gateway
+          - xfwl-auth
+          - xfwl-base
+          - xfwl-oms
+          - xfwl-work
+          - xfwl-user
+          - xfwl-file-server
+          - xfwl-dispatch
+          - xfwl-aggregation
+          - xfwl-netty
+          - xfwl-web-manager
+          - xfwl-web-driver
+          - xfwl-web-courier
+          - xfwl-web-customer
+          - xfwl-gateway
         default: all
       db_approved:
         description: "DB 变更门禁放行（diff 含 *.sql 时须人工审核后置 true）"
@@ -119,22 +119,22 @@ jobs:
           set -e
           {
             echo 'declare -A MOD_OF=('
-            echo '  [xf-auth]=xf-auth'
-            echo '  [xf-base]=xf-base'
-            echo '  [xf-oms]=xf-oms'
-            echo '  [xf-work]=xf-work'
-            echo '  [xf-user]=xf-user'
-            echo '  [xf-file-server]=xf-file-server'
-            echo '  [xf-dispatch]=xf-dispatch'
-            echo '  [xf-aggregation]=xf-aggregation'
-            echo '  [xf-netty]=xf-netty'
-            echo '  [xf-web-manager]=xf-web/xf-web-manager'
-            echo '  [xf-web-driver]=xf-web/xf-web-driver'
-            echo '  [xf-web-courier]=xf-web/xf-web-courier'
-            echo '  [xf-web-customer]=xf-web/xf-web-customer'
-            echo '  [xf-gateway]=xf-gateway'
+            echo '  [xfwl-auth]=xfwl-auth'
+            echo '  [xfwl-base]=xfwl-base'
+            echo '  [xfwl-oms]=xfwl-oms'
+            echo '  [xfwl-work]=xfwl-work'
+            echo '  [xfwl-user]=xfwl-user'
+            echo '  [xfwl-file-server]=xfwl-file-server'
+            echo '  [xfwl-dispatch]=xfwl-dispatch'
+            echo '  [xfwl-aggregation]=xfwl-aggregation'
+            echo '  [xfwl-netty]=xfwl-netty'
+            echo '  [xfwl-web-manager]=xfwl-web/xfwl-web-manager'
+            echo '  [xfwl-web-driver]=xfwl-web/xfwl-web-driver'
+            echo '  [xfwl-web-courier]=xfwl-web/xfwl-web-courier'
+            echo '  [xfwl-web-customer]=xfwl-web/xfwl-web-customer'
+            echo '  [xfwl-gateway]=xfwl-gateway'
             echo ')'
-            echo 'ORDER="xf-auth xf-base xf-oms xf-work xf-user xf-file-server xf-dispatch xf-aggregation xf-netty xf-web-manager xf-web-driver xf-web-courier xf-web-customer xf-gateway"'
+            echo 'ORDER="xfwl-auth xfwl-base xfwl-oms xfwl-work xfwl-user xfwl-file-server xfwl-dispatch xfwl-aggregation xfwl-netty xfwl-web-manager xfwl-web-driver xfwl-web-courier xfwl-web-customer xfwl-gateway"'
           } > /tmp/xinfei-svc.sh
           source /tmp/xinfei-svc.sh
 
@@ -334,7 +334,7 @@ jobs:
 
       - name: 按序部署并逐服务健康检查（网关最后切）
         if: ${{ github.event.inputs.check_only != 'true' }}
-        # XF_<SVC>_TAG 逐服务覆盖 compose 的 ${XF_<SVC>_TAG:-${TAG:-latest}}。
+        # XFWL_<SVC>_TAG 逐服务覆盖 compose 的 ${XFWL_<SVC>_TAG:-${TAG:-latest}}。
         # 健康检查走 docker.sock 的 docker inspect（job 容器独立网络，curl 宿主不可靠）。
         run: |
           set -e
@@ -410,7 +410,7 @@ jobs:
       - name: 清理旧镜像与构建缓存
         # 构建产物不保留（代码在 git，可随时重构建）：
         #   1. 悬空层直接清；
-        #   2. xinfei/xf-* 与遗留 xinfei/pd-* 应用镜像删除所有未被运行容器引用的 tag（当前版本、回滚基线自动受 docker ps 检查保护；
+        #   2. xinfei/xfwl-* 与遗留 xinfei/pd-* 应用镜像删除所有未被运行容器引用的 tag（当前版本、回滚基线自动受 docker ps 检查保护；
         #      基础镜像 xinfei/jre25-fontconfig 不匹配 xinfei/[xf|pd]-* 前缀，天然不受影响）；
         #   3. 仅清悬空构建层（builder prune 不带 -a）——保留 BuildKit cache mount（pnpm store，id=pnpm-admin/pnpm-mobile）：
         #      带 -a 会把未被镜像引用的缓存连同 cache mount 一起删，下次 h5 构建冷装依赖约 5min 且更易撞外网 DNS 抖动（EAI_AGAIN）；
@@ -419,7 +419,7 @@ jobs:
         run: |
           docker image prune -f
           for img in $(docker images --format '{{.Repository}}:{{.Tag}}' \
-              --filter=reference='xinfei/xf-*' --filter=reference='xinfei/pd-*' | grep -v ":$TAG$" || true); do
+              --filter=reference='xinfei/xfwl-*' --filter=reference='xinfei/pd-*' | grep -v ":$TAG$" || true); do
             if ! docker ps --format '{{.Image}}' | grep -qxF "$img"; then
               echo ">> 清理未使用镜像 $img"
               docker rmi "$img" 2>/dev/null || true

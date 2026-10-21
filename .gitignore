@@ -36,7 +36,7 @@ logs/
 log.path_IS_UNDEFINED/
 *.log
 
-# 前端依赖目录（全仓库任意层级，覆盖 xf-admin-ui-vue3 / xf-mobile 各端及包内嵌套 node_modules）
+# 前端依赖目录（全仓库任意层级，覆盖 xfwl-admin-ui-vue3 / xfwl-mobile 各端及包内嵌套 node_modules）
 node_modules/
 # 前端构建产物
 dist/
@@ -58,7 +58,7 @@ Thumbs.db
 # 构建必需：VITE_API_BASE 等构建期变量，Docker 构建从 git 拉代码时必须存在，
 # 否则产物 baseURL 为 undefined、/api/* 落进 SPA fallback（2026-10-10 线上故障根因）。
 # 仅放行生产构建所需文件；.env / .env.development 仍禁止入库。
-!xf-admin-ui-vue3/.env.production
+!xfwl-admin-ui-vue3/.env.production
 
 # IDE/工具配置（本地个人工具，非项目代码）
 .codebuddy/
@@ -103,8 +103,17 @@ CLAUDE.md
 # 注意：docs/**/*.md 不覆盖 csv，故整目录显式忽略
 docs/需求文档/
 
-# 中间件导出/迁移快照（含 Nacos 配置导出、MySQL/RabbitMQ/Gitea 配置，疑似含连接串/口令，禁止入库；2026-10-14）
-docs/中间件和数据库/
+# 中间件与数据库（开源分发版，2026-10-21 脱敏后入库）
+# 原 2026-10-14 规则为整目录禁入，现改为开源版放行；口令均已脱敏为 ********
+# data/ 目录下为导出的演示数据（MySQL/Redis/Nacos/RabbitMQ），供开源用户 docker 部署还原
+!docs/中间件和数据库/
+!docs/中间件和数据库/README.md
+!docs/中间件和数据库/.env.example
+!docs/中间件和数据库/docker-compose.infra.yml
+!docs/中间件和数据库/mysql-xinfei.cnf
+!docs/中间件和数据库/rabbitmq-20-xinfei.conf
+!docs/中间件和数据库/data/
+!docs/中间件和数据库/data/**
 
 # 本地调试脚本（含服务器操作，防误提交）
 .seata-*.sh

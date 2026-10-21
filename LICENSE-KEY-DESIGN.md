@@ -1,6 +1,6 @@
 # 软件授权密钥系统设计（临时体验密钥 + 正式密钥）
 
-> 版本：2026-10-19 · 适用产品：心飞TMS（xf-auth 授权体系 / BSL-1.1 许可）
+> 版本：2026-10-19 · 适用产品：心飞TMS（xfwl-auth 授权体系 / BSL-1.1 许可）
 > 前置阅读：`COMMERCIAL-FAQ.md`（商用判定与许可策略）、`README.md` 11.5/11.6 节
 
 ---
@@ -14,7 +14,7 @@ license key = base64url(payloadJson) + "." + base64url(RSA-SHA256 签名)
 ```
 
 - **算法**：RSA-2048 + SHA256withRSA（RS256），与 JWT RS256 同构。
-- **信任根**：私钥仅作者本地离线保管；公钥随软件发布（后端 `xf-auth/resources/license-public.pem` + 前端 `utils/license.ts` 内置）。公钥公开无风险——它只能验签，不能伪造签名。
+- **信任根**：私钥仅作者本地离线保管；公钥随软件发布（后端 `xfwl-auth/resources/license-public.pem` + 前端 `utils/license.ts` 内置）。公钥公开无风险——它只能验签，不能伪造签名。
 - **防伪造本质**：payload 任何一字节被改动（包括有效期），验签即失败。有效期不是"记在数据库里的数"，而是**被私钥签名锁死的承诺**。
 
 ## 二、编码格式与载荷规范
@@ -169,8 +169,8 @@ payload 为 JSON，字段如下（时间戳一律毫秒）：
 
 | 能力 | 载体 | 状态 |
 |------|------|------|
-| 验签（后端） | `xf-auth/.../license/LicenseVerifier.java` | ✅ 已有，无需改 |
-| 验签（前端） | `xf-admin-ui-vue3/src/utils/license.ts` | ✅ 已有，无需改 |
+| 验签（后端） | `xfwl-auth/.../license/LicenseVerifier.java` | ✅ 已有，无需改 |
+| 验签（前端） | `xfwl-admin-ui-vue3/src/utils/license.ts` | ✅ 已有，无需改 |
 | 水印显隐 | `App.vue`（`activated` 驱动） | ✅ 已有 |
 | 体验提示 | `utils/licenseTip.ts` | ✅ 已有（有本地密钥即不弹） |
 | 激活页面 | `views/system/license/index.vue` | ✅ 已有 |
