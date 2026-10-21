@@ -1,7 +1,6 @@
 package com.xinfei.listener;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.xinfei.enums.OrderStatus;
 import com.xinfei.enums.transportorder.TransportOrderStatus;
 import com.xinfei.event.OrderConfirmedEvent;

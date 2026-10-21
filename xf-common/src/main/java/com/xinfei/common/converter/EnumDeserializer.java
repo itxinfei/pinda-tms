@@ -1,22 +1,21 @@
 package com.xinfei.common.converter;
 
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
-
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.JsonToken;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.deser.std.StdDeserializer;
 
 /**
  * enum 反序列化工具（下沉自旧 pd-tools-common）。
  * 从 JSON 中读取 code 字段值，再反射调用枚举类型的静态 get(String) 方法得到枚举实例。
  * Boot3 迁移：仅将 hutool 的 ReflectUtil.getField 替换为等价的纯 JDK 反射实现，行为不变。
+ * Boot4 迁移：Jackson 3 包名 tools.jackson.*，且 serialize/deserialize 不再抛出 checked 异常；
+ * JsonProcessingException 已移除。
  */
 @Slf4j
 public class EnumDeserializer extends StdDeserializer<Enum<?>> {
@@ -29,7 +28,7 @@ public class EnumDeserializer extends StdDeserializer<Enum<?>> {
     }
 
     @Override
-    public Enum<?> deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+    public Enum<?> deserialize(JsonParser p, DeserializationContext ctxt) {
         JsonToken token = p.currentToken();
         String value = null;
         while (!token.isStructEnd()) {

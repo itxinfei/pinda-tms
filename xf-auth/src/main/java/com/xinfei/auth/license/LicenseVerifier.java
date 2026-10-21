@@ -1,7 +1,8 @@
 package com.xinfei.auth.license;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.springframework.util.StringUtils;
 
 import java.nio.charset.StandardCharsets;
@@ -31,7 +32,7 @@ public class LicenseVerifier {
             "/etc/xinfei/license.key"
     };
 
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = new JsonMapper();
     private final PublicKey publicKey;
 
     public LicenseVerifier() {

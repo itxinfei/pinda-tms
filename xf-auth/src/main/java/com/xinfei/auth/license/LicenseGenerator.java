@@ -1,7 +1,8 @@
 package com.xinfei.auth.license;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -39,7 +40,7 @@ public final class LicenseGenerator {
         int days = Integer.parseInt(arg(args, "--days", "365"));
         int instances = Integer.parseInt(arg(args, "--instances", "1"));
 
-        ObjectMapper m = new ObjectMapper();
+        ObjectMapper m = new JsonMapper();
         ObjectNode p = m.createObjectNode();
         p.put("licensee", licensee);
         p.put("type", type);

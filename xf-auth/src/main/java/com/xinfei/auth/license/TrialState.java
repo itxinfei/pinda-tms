@@ -1,6 +1,7 @@
 package com.xinfei.auth.license;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import lombok.Data;
 
 import java.nio.file.Files;
@@ -19,7 +20,7 @@ public class TrialState {
 
     private static final Path FILE = Paths.get(
             System.getProperty("user.home"), ".xinfei", "license-state.json");
-    private static final ObjectMapper M = new ObjectMapper();
+    private static final ObjectMapper M = new JsonMapper();
 
     private String instanceId;
     private long firstRunAt;

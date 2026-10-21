@@ -1,6 +1,6 @@
 package com.xinfei.listener;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.xinfei.event.OrderDeliveredEvent;
 import com.xinfei.service.SettlementService;
 import lombok.extern.slf4j.Slf4j;
