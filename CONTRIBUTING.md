@@ -1,6 +1,6 @@
 # 贡献指南 · Contributing to Xinfei TMS
 
-感谢关注心飞 TMS！推荐流程：**Issue 讨论 → Fork → 开发 → PR**。提交前请花两分钟读完本指南。
+感谢关注心飞物流TMS！推荐流程：**Issue 讨论 → Fork → 开发 → PR**。提交前请花两分钟读完本指南。
 
 ## 1. 环境准备
 
