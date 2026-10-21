@@ -1,13 +1,15 @@
 package com.xinfei.config;
 
-import com.fasterxml.jackson.databind.ser.std.DateSerializer;
-import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
-import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
-import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
-import com.fasterxml.jackson.datatype.jsr310.deser.LocalTimeDeserializer;
-import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
-import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
-import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;
+import tools.jackson.databind.ser.jdk.JavaUtilDateSerializer;
+import tools.jackson.databind.ser.std.ToStringSerializer;
+import tools.jackson.datatype.jsr310.deser.LocalDateDeserializer;
+import tools.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import tools.jackson.datatype.jsr310.deser.LocalTimeDeserializer;
+import tools.jackson.datatype.jsr310.ser.LocalDateSerializer;
+import tools.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
+import tools.jackson.datatype.jsr310.ser.LocalTimeSerializer;
+import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.databind.module.SimpleModule;
 import com.xinfei.common.converter.EnumDeserializer;
 import com.xinfei.common.interceptor.SameTokenAuthInterceptor;
 import com.xinfei.common.json.BigDecimalSerializer;
@@ -15,7 +17,7 @@ import com.xinfei.common.utils.DatePatterns;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
+import org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -30,7 +32,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
-import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
+import static tools.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 
 /**
  * MVC / Jackson / 接口文档统一配置（数据聚合服务）。
@@ -46,22 +48,27 @@ public class ConfigurationSupport implements WebMvcConfigurer {
      * Jackson 序列化 / 反序列化定制（枚举、时间格式，BigDecimal/BigInteger 转字符串）
      */
     @Bean
-    public Jackson2ObjectMapperBuilderCustomizer jackson2ObjectMapperBuilderCustomizer() {
+    public JsonMapperBuilderCustomizer jsonMapperBuilderCustomizer() {
         log.info("初始化jackson配置( 枚举类型、时间格式 )");
-        return builder -> builder
-                .featuresToDisable(FAIL_ON_UNKNOWN_PROPERTIES)
-                // 反序列化
-                .deserializerByType(Enum.class, EnumDeserializer.INSTANCE)
-                .deserializerByType(LocalDateTime.class, new LocalDateTimeDeserializer(DateTimeFormatter.ofPattern(DatePatterns.DATE_TIME)))
-                .deserializerByType(LocalDate.class, new LocalDateDeserializer(DateTimeFormatter.ofPattern(DatePatterns.DATE)))
-                .deserializerByType(LocalTime.class, new LocalTimeDeserializer(DateTimeFormatter.ofPattern(DatePatterns.TIME)))
-                // 序列化（保持本服务原有项）
-                .serializerByType(BigInteger.class, ToStringSerializer.instance)
-                .serializerByType(BigDecimal.class, new BigDecimalSerializer())
-                .serializerByType(LocalDateTime.class, new LocalDateTimeSerializer(DateTimeFormatter.ofPattern(DatePatterns.DATE_TIME)))
-                .serializerByType(LocalDate.class, new LocalDateSerializer(DateTimeFormatter.ofPattern(DatePatterns.DATE)))
-                .serializerByType(LocalTime.class, new LocalTimeSerializer(DateTimeFormatter.ofPattern(DatePatterns.TIME)))
-                .serializerByType(Date.class, new DateSerializer(false, new SimpleDateFormat(DatePatterns.DATE_TIME)));
+        // Boot 4（Jackson 3）：Jackson2ObjectMapperBuilderCustomizer 已废弃，改用 JsonMapperBuilderCustomizer，
+        // 通过 SimpleModule 承载同款 per-type 序列化/反序列化注册。
+        SimpleModule module = new SimpleModule();
+        // 反序列化
+        module.addDeserializer((Class) Enum.class, (ValueDeserializer) EnumDeserializer.INSTANCE);
+        module.addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer(DateTimeFormatter.ofPattern(DatePatterns.DATE_TIME)));
+        module.addDeserializer(LocalDate.class, new LocalDateDeserializer(DateTimeFormatter.ofPattern(DatePatterns.DATE)));
+        module.addDeserializer(LocalTime.class, new LocalTimeDeserializer(DateTimeFormatter.ofPattern(DatePatterns.TIME)));
+        // 序列化（保持本服务原有项）
+        module.addSerializer(BigInteger.class, ToStringSerializer.instance);
+        module.addSerializer(BigDecimal.class, new BigDecimalSerializer());
+        module.addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(DateTimeFormatter.ofPattern(DatePatterns.DATE_TIME)));
+        module.addSerializer(LocalDate.class, new LocalDateSerializer(DateTimeFormatter.ofPattern(DatePatterns.DATE)));
+        module.addSerializer(LocalTime.class, new LocalTimeSerializer(DateTimeFormatter.ofPattern(DatePatterns.TIME)));
+        module.addSerializer(Date.class, new JavaUtilDateSerializer(false, new SimpleDateFormat(DatePatterns.DATE_TIME)));
+        return builder -> {
+            builder.disable(FAIL_ON_UNKNOWN_PROPERTIES);
+            builder.addModule(module);
+        };
     }
 
     /**

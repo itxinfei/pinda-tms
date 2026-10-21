@@ -66,7 +66,7 @@ public class RequestSanitizeFilter implements GlobalFilter, Ordered {
 
         // ---- 规格限制：请求头总量 / 请求体长度 ----
         int headerBytes = 0;
-        for (String name : request.getHeaders().keySet()) {
+        for (String name : request.getHeaders().headerNames()) {
             headerBytes += name.length();
             for (String value : request.getHeaders().get(name)) {
                 headerBytes += value == null ? 0 : value.length();

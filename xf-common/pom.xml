@@ -23,6 +23,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+        <!-- Boot 4 的 Jackson 3 支撑（org.springframework.boot.jackson.JacksonComponent 等），starter-web 不传递，需显式引入 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-jackson</artifactId>
+        </dependency>
         <!-- jakarta 命名空间（编译期，由容器提供实现，不打进 fat jar） -->
         <dependency>
             <groupId>jakarta.servlet</groupId>

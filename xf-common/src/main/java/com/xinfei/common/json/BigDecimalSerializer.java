@@ -1,31 +1,28 @@
 package com.xinfei.common.json;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.BeanProperty;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.ser.ContextualSerializer;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.jackson.JsonComponent;
+import org.springframework.boot.jackson.JacksonComponent;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.BeanProperty;
+import tools.jackson.databind.ValueSerializer;
+import tools.jackson.databind.SerializationContext;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.Objects;
 
 @Slf4j
-@JsonComponent
-public class BigDecimalSerializer extends JsonSerializer<BigDecimal> implements ContextualSerializer {
+@JacksonComponent
+public class BigDecimalSerializer extends ValueSerializer<BigDecimal> {
     private String format = "##0.00";
 
     @Override
-    public void serialize(BigDecimal bigDecimal, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
+    public void serialize(BigDecimal bigDecimal, JsonGenerator jsonGenerator, SerializationContext serializerProvider) {
         jsonGenerator.writeString(new DecimalFormat(format).format(bigDecimal));
     }
 
     @Override
-    public JsonSerializer<?> createContextual(SerializerProvider serializerProvider, BeanProperty beanProperty) throws JsonMappingException {
+    public ValueSerializer<?> createContextual(SerializationContext serializerProvider, BeanProperty beanProperty) {
         if (beanProperty != null) {
             if (Objects.equals(beanProperty.getType().getRawClass(), BigDecimal.class)) {
                 BigDecimalFormat bigDecimalFormat = beanProperty.getAnnotation((BigDecimalFormat.class));
@@ -38,7 +35,7 @@ public class BigDecimalSerializer extends JsonSerializer<BigDecimal> implements 
                 }
                 return bigDecimalSerializer;
             }
-            return serializerProvider.findValueSerializer(beanProperty.getType(), beanProperty);
+            return serializerProvider.findValueSerializer(beanProperty.getType());
         }
         // 修改点：Map 值/根级序列化无 BeanProperty 上下文，必须返回可正常输出的默认序列化器；
         // 原实现返回 findNullValueSerializer 会把【非空】BigDecimal 写成 null

@@ -1,28 +1,28 @@
 package com.xinfei;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.json.JsonReadFeature;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
-import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
-import com.fasterxml.jackson.datatype.jsr310.deser.LocalTimeDeserializer;
-import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
-import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
-import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;
+import tools.jackson.core.json.JsonFactory;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.json.JsonReadFeature;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.module.SimpleModule;
+import tools.jackson.databind.ser.std.ToStringSerializer;
+import tools.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.datatype.jsr310.deser.LocalDateDeserializer;
+import tools.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import tools.jackson.datatype.jsr310.deser.LocalTimeDeserializer;
+import tools.jackson.datatype.jsr310.ser.LocalDateSerializer;
+import tools.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
+import tools.jackson.datatype.jsr310.ser.LocalTimeSerializer;
 import com.xinfei.common.converter.EnumDeserializer;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
+import org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.cloud.openfeign.FeignFormatterRegistrar;
@@ -63,10 +63,10 @@ public class WebManagerApplication {
      * ② ISO "yyyy-MM-dd'T'HH:mm:ss"（xf-oms 的 LocalDateTime 字段经 JavaTimeModule 默认序列化输出）。
      * 只认①时，xf-oms 订单分页响应（含 estimatedArrivalTime）解码失败被 fallback 吞成空页。
      */
-    private static final JsonDeserializer<LocalDateTime> FLEXIBLE_LOCAL_DATE_TIME_DESERIALIZER =
-            new JsonDeserializer<LocalDateTime>() {
+    private static final ValueDeserializer<LocalDateTime> FLEXIBLE_LOCAL_DATE_TIME_DESERIALIZER =
+            new ValueDeserializer<LocalDateTime>() {
                 @Override
-                public LocalDateTime deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+                public LocalDateTime deserialize(JsonParser p, DeserializationContext ctxt) {
                     String value = p.getValueAsString();
                     if (value == null || value.isBlank()) {
                         return null;
@@ -82,35 +82,23 @@ public class WebManagerApplication {
             };
 
     @Bean
-    public Jackson2ObjectMapperBuilderCustomizer jackson2ObjectMapperBuilderCustomizer() {
+    public JsonMapperBuilderCustomizer jsonMapperBuilderCustomizer() {
         // 日期时间序列化契约（沿用旧 DateUtils 常量：date-time / date / time）
         // LocalDateTime 反序列化必须同时兼容两种线上格式：
         //   ① "yyyy-MM-dd HH:mm:ss"（xf-work/xf-base 等经全局 Jackson 序列化输出）；
         //   ② ISO "yyyy-MM-dd'T'HH:mm:ss"（xf-oms 的 LocalDateTime 字段经 JavaTimeModule 默认序列化输出，
         //      如 OrderDTO.estimatedArrivalTime）。只认①时，xf-oms 分页响应解码失败被 fallback 吞成空页。
+        // Boot 4（Jackson 3）：Jackson2ObjectMapperBuilderCustomizer 已废弃，改用 JsonMapperBuilderCustomizer，
+        // 通过 SimpleModule 承载同款 per-type 序列化/反序列化注册。
         DateTimeFormatter spaceDateTime = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        return builder -> builder
-                .serializerByType(LocalDateTime.class, new LocalDateTimeSerializer(spaceDateTime))
-                .serializerByType(LocalDate.class, new LocalDateSerializer(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
-                .serializerByType(LocalTime.class, new LocalTimeSerializer(DateTimeFormatter.ofPattern("HH:mm:ss")))
-                .deserializerByType(LocalDateTime.class, new JsonDeserializer<LocalDateTime>() {
-                    @Override
-                    public LocalDateTime deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-                        String value = p.getValueAsString();
-                        if (value == null || value.isBlank()) {
-                            return null;
-                        }
-                        value = value.trim();
-                        try {
-                            return LocalDateTime.parse(value, spaceDateTime);
-                        } catch (DateTimeParseException ignored) {
-                            // 非"空格"格式，按 ISO-8601 兜底解析
-                            return LocalDateTime.parse(value);
-                        }
-                    }
-                })
-                .deserializerByType(LocalDate.class, new LocalDateDeserializer(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
-                .deserializerByType(LocalTime.class, new LocalTimeDeserializer(DateTimeFormatter.ofPattern("HH:mm:ss")));
+        SimpleModule module = new SimpleModule()
+                .addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(spaceDateTime))
+                .addSerializer(LocalDate.class, new LocalDateSerializer(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
+                .addSerializer(LocalTime.class, new LocalTimeSerializer(DateTimeFormatter.ofPattern("HH:mm:ss")))
+                .addDeserializer(LocalDateTime.class, FLEXIBLE_LOCAL_DATE_TIME_DESERIALIZER)
+                .addDeserializer(LocalDate.class, new LocalDateDeserializer(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
+                .addDeserializer(LocalTime.class, new LocalTimeDeserializer(DateTimeFormatter.ofPattern("HH:mm:ss")));
+        return builder -> builder.addModule(module);
     }
     /**
      * 解决序列化和反序列化时，参数转换问题
@@ -127,62 +115,46 @@ public class WebManagerApplication {
     @Bean
     @Primary
     @ConditionalOnMissingBean
-    public ObjectMapper jacksonObjectMapper(Jackson2ObjectMapperBuilder builder) {
-        builder.simpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        ObjectMapper objectMapper = builder.createXmlMapper(false)
-                .featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-                .timeZone(TimeZone.getTimeZone("Asia/Shanghai"))
-                .build();
+    public ObjectMapper jacksonObjectMapper() {
+        DateTimeFormatter spaceDateTime = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-        objectMapper
-                .setLocale(Locale.CHINA)
-                .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
-                //忽略未知字段
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                //日期格式
-                .setDateFormat(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
-
-        //该特性决定parser是否允许JSON字符串包含非引号控制字符（值小于32的ASCII字符，包含制表符和换行符）。 如果该属性关闭，则如果遇到这些字符，则会抛出异常。JSON标准说明书要求所有控制符必须使用引号，因此这是一个非标准的特性
+        // 单引号 / 转义 / 控制字符：Jackson 3 中 JsonParser.Feature 已改名为 tools.jackson.core.json.JsonReadFeature
         JsonFactory jsonFactory = JsonFactory.builder()
                 .enable(JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS)
-                // 忽略不能转移的字符
                 .enable(JsonReadFeature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER)
-                //单引号处理
                 .enable(JsonReadFeature.ALLOW_SINGLE_QUOTES)
                 .build();
-        objectMapper = JsonMapper.builder(jsonFactory).build();
 
-        // 注意：JsonMapper.builder(jsonFactory).build() 产出的是全新裸 ObjectMapper，
-        // 前面 builder 上的配置与 Spring Boot 自动注册的 JavaTimeModule 都不会继承，
-        // 必须在此重新配置；否则 Feign 解码含 LocalDateTime 的 DTO（运单/运输任务聚合接口）
-        // 会抛 InvalidDefinitionException: Java 8 date/time type not supported。
-        objectMapper
-                .setLocale(Locale.CHINA)
-                .setTimeZone(TimeZone.getTimeZone("Asia/Shanghai"))
-                .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
-                //忽略未知字段（原写法 getDeserializationConfig().withoutFeatures(...) 返回新对象未接住，等于没配）
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                //时间序列化为格式化字符串，不输出时间戳数组
-                .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
-                //旧 Date 类型统一格式
-                .setDateFormat(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
-
-        // Java 8 时间模块（显式注册，与上方 customizer 的契约保持一致）
-        // LocalDateTime 反序列化同 customizer：兼容"空格"与 ISO 两种线上格式
-        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        // Java 8 时间默认模块：Jackson 3 的 JavaTimeModule 为 final 且不再暴露 addSerializer/addDeserializer，
+        // 自定义格式化注册改由下方 SimpleModule 承载；本模块仍提供 Instant/ZonedDateTime 等默认注册。
         JavaTimeModule javaTimeModule = new JavaTimeModule();
-        javaTimeModule.addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(dateTimeFormatter));
-        javaTimeModule.addSerializer(LocalDate.class, new LocalDateSerializer(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
-        javaTimeModule.addSerializer(LocalTime.class, new LocalTimeSerializer(DateTimeFormatter.ofPattern("HH:mm:ss")));
-        javaTimeModule.addDeserializer(LocalDateTime.class, FLEXIBLE_LOCAL_DATE_TIME_DESERIALIZER);
-        javaTimeModule.addDeserializer(LocalDate.class, new LocalDateDeserializer(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
-        javaTimeModule.addDeserializer(LocalTime.class, new LocalTimeDeserializer(DateTimeFormatter.ofPattern("HH:mm:ss")));
 
         SimpleModule simpleModule = new SimpleModule()
                 .addSerializer(BigInteger.class, ToStringSerializer.instance)
                 .addSerializer(BigDecimal.class, ToStringSerializer.instance)
-                .addDeserializer(Enum.class, EnumDeserializer.INSTANCE);
+                .addDeserializer((Class) Enum.class, (ValueDeserializer) EnumDeserializer.INSTANCE)
+                // 时间序列化契约（与上方 customizer 保持一致）
+                .addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(spaceDateTime))
+                .addSerializer(LocalDate.class, new LocalDateSerializer(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
+                .addSerializer(LocalTime.class, new LocalTimeSerializer(DateTimeFormatter.ofPattern("HH:mm:ss")))
+                // LocalDateTime 反序列化同 customizer：兼容"空格"与 ISO 两种线上格式
+                .addDeserializer(LocalDateTime.class, FLEXIBLE_LOCAL_DATE_TIME_DESERIALIZER)
+                .addDeserializer(LocalDate.class, new LocalDateDeserializer(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
+                .addDeserializer(LocalTime.class, new LocalTimeDeserializer(DateTimeFormatter.ofPattern("HH:mm:ss")));
 
-        return objectMapper.registerModule(javaTimeModule).registerModule(simpleModule);
+        // Jackson 3：ObjectMapper 不可变，所有配置经 JsonMapper.builder() 一次性完成
+        // 注意：Builder 方法名为 defaultLocale/defaultTimeZone/defaultDateFormat；
+        // SerializationFeature.WRITE_DATES_AS_TIMESTAMPS 在 Jackson 3 已移除（时间类型默认按字符串输出）。
+        return JsonMapper.builder(jsonFactory)
+                .defaultLocale(Locale.CHINA)
+                .defaultTimeZone(TimeZone.getTimeZone("Asia/Shanghai"))
+                .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
+                //忽略未知字段（兼容前端多余字段）
+                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                //旧 Date 类型统一格式
+                .defaultDateFormat(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"))
+                .addModule(javaTimeModule)
+                .addModule(simpleModule)
+                .build();
     }
 }
