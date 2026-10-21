@@ -31,6 +31,10 @@
         <dependency><groupId>com.baomidou</groupId><artifactId>mybatis-plus-jsqlparser</artifactId></dependency>
         <dependency><groupId>com.mysql</groupId><artifactId>mysql-connector-j</artifactId><scope>runtime</scope></dependency>
         <dependency><groupId>org.springdoc</groupId><artifactId>springdoc-openapi-starter-webmvc-ui</artifactId></dependency>
+        <!-- Druid 连接池：application.yml 与启动参数均指定 spring.datasource.type=com.alibaba.druid.pool.DruidDataSource，
+             本模块此前未显式声明 druid 依赖（仅 Boot3 时代经 xf-common 传递获得），Boot4 迁移后传递链断裂，
+             启动报 ClassNotFoundException: com.alibaba.druid.pool.DruidDataSource。补 Boot4 starter（版本由根 pom 托管）。 -->
+        <dependency><groupId>com.alibaba</groupId><artifactId>druid-spring-boot-4-starter</artifactId></dependency>
     </dependencies>
 
     <build>
