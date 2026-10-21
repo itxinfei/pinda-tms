@@ -1,0 +1,3 @@
+spring:
+  datasource:
+    password: "${MYSQL_PASSWORD:123456}"

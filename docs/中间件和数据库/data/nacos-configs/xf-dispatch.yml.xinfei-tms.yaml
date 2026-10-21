@@ -1,0 +1,18 @@
+# 2026-10-10 清理：原 spring.datasource.db-name: pd_dispatch 为旧分库残留，已无消费者
+# （本地 application.yml datasource 单库直连 xinfei_tms，凭据走环境变量）。
+server:
+  port: 8190
+
+# 2026-10-11 补：RabbitMQ 连接信息。本地 application.yml 与容器环境变量均未配置，
+# 此前回退 Spring 默认 localhost:5672（容器自身），三个领域事件监听器持续 Connection refused。
+spring:
+  rabbitmq:
+    host: 192.168.20.130
+    port: 5672
+    username: ${RABBITMQ_USERNAME:xinfei}
+    password: "${RABBITMQ_PASSWORD:123456}"
+    virtual-host: /
+    listener:
+      simple:
+        # 监听器未注入 Channel、不手动 basicAck，工厂 setDefaultRequeueRejected(false)，走自动确认
+        acknowledge-mode: auto

@@ -1,0 +1,71 @@
+# ============================================
+# 心飞物流TMS MySQL 8.0 运行参数
+# 挂载到容器 /etc/mysql/conf.d/xinfei.cnf（由 docker-compose.infra.yml 管理）
+#
+# 为什么单独落 my.cnf 而不是写进 compose 的 command 参数：
+#   command 里的 --xxx 只在容器"重建"时才重读，改了参数就得删容器重建；
+#   my.cnf 挂在数据目录之外，docker restart / 重建都不丢，
+#   也方便 DBA 直接 cat 核对当前生效参数。
+#
+# 调整依据（2026-10-09 实测）：
+#   max_connections  151 -> 500  ：8 服务 × Druid max-active=20 = 160 > 151，
+#                                   高并发下会报 "Too many connections"；
+#                                   留 340 余量给运维/备份/mysqldump 内部线程。
+#   buffer_pool 128M-> 1G      ：数据 43.5MB 但 pd_area 在增长，128M 偏小；
+#                                   主机 15GiB / 可用 10GiB，1G 安全。
+#   binlog_expire 30天 -> 7天   ：磁盘 71G 空闲，但重构期写入频繁，7 天足够回滚。
+# ============================================
+
+[mysqld]
+# ---- 字符集：与应用层统一 utf8mb4 ----
+character-set-server = utf8mb4
+collation-server     = utf8mb4_0900_ai_ci
+
+# ---- 连接数 ----
+max_connections      = 500
+max_connect_errors   = 10000
+# 与应用侧 Druid maxWait=60000 对齐，避免服务端先掐断
+wait_timeout         = 600
+interactive_timeout  = 600
+connect_timeout      = 10
+
+# ---- InnoDB 缓冲池 ----
+innodb_buffer_pool_size             = 1G
+innodb_buffer_pool_instances        = 4
+innodb_buffer_pool_dump_at_shutdown = ON
+innodb_buffer_pool_load_at_startup  = ON
+
+# ---- 持久化与崩溃安全（显式固化，防被全局变量覆盖）----
+innodb_flush_log_at_trx_commit = 1
+innodb_doublewrite            = ON
+innodb_file_per_table         = ON
+innodb_fast_shutdown          = 1
+
+# ---- redo log 容量 ----
+# 用 innodb_redo_log_capacity，不要写 innodb_log_file_size：
+#   后者在 8.0.30+ 已被取代，写进来对 8.0.46 是空操作（服务器那份 xinfei.cnf
+#   里的 innodb_log_file_size = 50331648 就一直没生效，实际用的是默认 100M）。
+#   100M 在重构期批量写入下会频繁触发 checkpoint 刷脏，给 512M。
+innodb_redo_log_capacity      = 512M
+
+# ---- binlog：时间点恢复 PITR（重构期误删误改可回滚）----
+# 不要写 log_bin / log_bin_basename：
+#   log_bin_basename 是只读变量，写进配置会报 "unknown variable" 导致 mysqld 起不来；
+#   log_bin = ON 则会把 ON 当成日志文件名前缀，生成 ON.000001 这种怪文件，
+#   导致 mysqldump --source-data 解析 binlog 文件名失败。
+# mysql:8.0 官方镜像默认已开 log_bin（见镜像内 /etc/mysql/mysql.conf.d/mysqld.cnf），
+# 这里只固化格式/留存/刷盘策略。
+binlog_format                   = ROW
+binlog_expire_logs_seconds      = 604800
+max_binlog_size                 = 256M
+sync_binlog                     = 1
+server_id                       = 1
+
+# ---- 慢查询：重构期定位 N+1 / 缺索引 ----
+slow_query_log              = ON
+long_query_time             = 1
+log_queries_not_using_indexes = OFF
+
+# ---- 其他 ----
+lower_case_table_names = 0
+default_time_zone      = "+08:00"

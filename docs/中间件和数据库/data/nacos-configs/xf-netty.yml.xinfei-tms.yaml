@@ -1,0 +1,26 @@
+# 轨迹通道服务（businessId+type 契约）
+server:
+  port: 8192
+
+# Netty TCP 设备上报端口（NettyServer @Value("${netty.port}")；旧 Nacos 即 8194，迁移时丢失，2026-10-11 补回）
+netty:
+  port: 8194
+
+spring:
+  rabbitmq:
+    host: 192.168.20.130
+    port: 5672
+    username: ${RABBITMQ_USERNAME:xinfei}
+    password: "${RABBITMQ_PASSWORD:123456}"
+    virtual-host: /
+    listener:
+      simple:
+        acknowledge-mode: manual
+  # 2026-10-11：单库 xinfei_tms，轨迹三表已切 iot_alarm_record / iot_truck_location / iot_truck_location_archive；
+  # 数据源走各服务 application.yml，部署由环境变量 SPRING_DATASOURCE_DRUID_URL 覆盖，不再使用旧 db-name。
+
+# dev 测试数据生成器开关（三把锁之一，仅 dev 配置存在；生产无此 key 即不装配，见 com.xinfei.mock.MockGuardCondition）
+xinfei:
+  mock:
+    generator:
+      enabled: true

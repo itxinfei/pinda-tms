@@ -1,0 +1,4 @@
+# 2026-10-10 清理：原 spring.datasource.db-name: pd_aggregation 为旧分库残留，已无消费者
+# （本地 application.yml datasource 单库直连 xinfei_tms，凭据走环境变量）。
+server:
+  port: 8191

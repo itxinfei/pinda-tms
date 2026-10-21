@@ -1,0 +1,13 @@
+# xf-gateway 网关配置（SCG/WebFlux，端口 8760）
+server:
+  port: 8760
+
+# 网关不需要数据库，排除数据源自动配置。
+# 注意：spring.autoconfigure.exclude 以逗号分隔字符串读取，不能用 YAML 列表 [0]/[1] 形式
+# （那种形式会被忽略，导致 DataSourceProperties 仍被创建并去绑定 spring.datasource.type=druid，
+# 而网关 classpath 上没有 Druid 类 -> 启动失败）。
+# 2026-10-11 配置体检清理：原 servlet.context-path: /api 为 WebFlux 忽略的无效配置
+# （SCG 非 Servlet 栈，/api 前缀由各路由 Path 自身处理），已删除。
+spring:
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,com.alibaba.druid.spring.boot.autoconfigure.DruidDataSourceAutoConfigure

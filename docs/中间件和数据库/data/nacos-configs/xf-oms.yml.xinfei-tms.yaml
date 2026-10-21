@@ -1,0 +1,10 @@
+# 2026-10-10 清理：原 spring.datasource.db-name: pd_oms 为旧分库残留，已无消费者
+# （本地 application.yml datasource 单库直连 xinfei_tms，凭据走环境变量）。
+server:
+  port: 8186
+
+# dev 测试数据生成器开关（三把锁之一，仅 dev 配置存在；生产无此 key 即不装配，见 com.xinfei.mock.MockGuardCondition）
+xinfei:
+  mock:
+    generator:
+      enabled: true
