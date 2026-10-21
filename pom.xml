@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.16</version>
+        <version>4.1.1</version>
         <relativePath/>
     </parent>
 
@@ -32,15 +32,17 @@
     </modules>
 
     <properties>
-        <!-- 编译目标：JDK 25 LTS（2026-10 升级，Spring Boot 3.5.x 官方支持至 Java 25） -->
+        <!-- 编译目标：JDK 25 LTS（2026-10 升级；Spring Boot 4.1.1 要求 Java 17+，上限 Java 26，JDK25 完全兼容） -->
         <java.version>25</java.version>
-        <!-- Spring Cloud 版本信息（2026-10-10 基线上调：SB3.5 / Cloud2025.0 / SCA2025.0.0.0，见 SRS §2.1） -->
-        <spring-cloud.version>2025.0.0</spring-cloud.version>
-        <spring-cloud-alibaba.version>2025.0.0.0</spring-cloud-alibaba.version>
+        <!-- Spring Cloud 版本信息：Boot 4.1 配套线（2025.1.x，对应 Spring Cloud 2025.1.2） -->
+        <spring-cloud.version>2025.1.2</spring-cloud.version>
+        <spring-cloud-alibaba.version>2025.1.0.0</spring-cloud-alibaba.version>
         <!-- 鉴权：Sa-Token（本次拍板，替代 Shiro） -->
         <sa-token.version>1.46.0</sa-token.version>
         <!-- MyBatis-Plus -->
         <mybatis-plus.version>3.5.17</mybatis-plus.version>
+        <!-- MyBatis-Spring（Spring Framework 7 兼容线；Boot4 强制需 4.0.0） -->
+        <mybatis-spring.version>4.0.0</mybatis-spring.version>
         <!-- 算术/图形验证码（登录） -->
         <easy-captcha.version>1.6.2</easy-captcha.version>
         <!-- Excel 导入导出（用户等管理端，SYS#4） -->
@@ -48,19 +50,19 @@
         <!-- ↓↓↓ 新栈第三方版本（Boot3 / jakarta） ↓↓↓ -->
         <!-- FastJSON2（替换 fastjson 1.2.x） -->
         <fastjson2.version>2.0.53</fastjson2.version>
-        <!-- springdoc-openapi（替换 springfox）；其内部 swagger-core 2.2.22 -->
-        <springdoc.version>2.6.0</springdoc.version>
+        <!-- springdoc-openapi（替换 springfox）；Boot4/Spring7 需 3.x 大版本 -->
+        <springdoc.version>3.1.1</springdoc.version>
         <swagger-core.version>2.2.22</swagger-core.version>
-        <!-- Druid Spring Boot 3 starter -->
-        <druid-boot3.version>1.2.24</druid-boot3.version>
+        <!-- Druid Spring Boot 4 starter（Boot4 专用，1.2.28 起提供 boot4-starter） -->
+        <druid-boot4.version>1.2.28</druid-boot4.version>
         <!-- Google Guava（原由 seata-core 传递，移除 Seata 后显式声明；33.4 修复旧版 CVE） -->
         <guava.version>33.4.8-jre</guava.version>
         <!-- Commons IO（Spring Boot 3.x BOM 不再托管，需统一显式版本） -->
-        <commons-io.version>2.16.1</commons-io.version>
+        <commons-io.version>2.17.0</commons-io.version>
         <!-- Drools（xf-oms 运费规则；8.38 为 8.x 最高、已 jakarta 化，纯 KIE API 编程式装配） -->
         <drools.version>8.38.0.Final</drools.version>
         <!-- HttpClient 4（xf-oms HttpRequestUtil 过渡使用，Boot3 BOM 已不托管；迁 5 需重写工具类） -->
-        <httpclient.version>4.5.11</httpclient.version>
+        <httpclient.version>4.5.14</httpclient.version>
         <!-- MapStruct：编译期 DTO/Entity 映射，替代 BeanUtils.copyProperties（全栈 238 处，逐步迁移） -->
         <mapstruct.version>1.6.3</mapstruct.version>
         <!-- Lombok（annotationProcessorPaths 引用；缺失会导致注解处理器不加载、全仓编译失败） -->
@@ -86,6 +88,16 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <!-- Gateway 在 Cloud 2025.1.x 中被拆到独立嵌套 BOM（spring-cloud-gateway-dependencies），
+                 其版本管理不会随 spring-cloud-dependencies 一并传递给消费方，故需在此显式 import，
+                 否则直接声明 spring-cloud-starter-gateway-server-webflux 会报"缺版本"。Boot4 线 gateway=5.0.2（旧 spring-cloud-starter-gateway 已拆为 -server-webflux / -server-webmvc）。 -->
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-gateway-dependencies</artifactId>
+                <version>5.0.2</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <!-- Spring Cloud end -->
             <!-- Spring Cloud Alibaba（Nacos 注册/配置） -->
             <dependency>
@@ -96,19 +108,19 @@
                 <scope>import</scope>
             </dependency>
 
-            <!-- Sa-Token（Servlet / WebMVC） -->
+            <!-- Sa-Token（Servlet / WebMVC，Boot4 专用 starter） -->
             <dependency>
                 <groupId>cn.dev33</groupId>
-                <artifactId>sa-token-spring-boot3-starter</artifactId>
+                <artifactId>sa-token-spring-boot4-starter</artifactId>
                 <version>${sa-token.version}</version>
             </dependency>
-            <!-- Sa-Token（响应式 / 网关 WebFlux） -->
+            <!-- Sa-Token（响应式 / 网关 WebFlux，Boot4 专用 starter） -->
             <dependency>
                 <groupId>cn.dev33</groupId>
-                <artifactId>sa-token-reactor-spring-boot3-starter</artifactId>
+                <artifactId>sa-token-reactor-spring-boot4-starter</artifactId>
                 <version>${sa-token.version}</version>
             </dependency>
-            <!-- Sa-Token 会话/踢人 Redis 持久化（jackson 序列化） -->
+            <!-- Sa-Token 会话/踢人 Redis 持久化（Jackson 3 序列化，Boot4 配套） -->
             <dependency>
                 <groupId>cn.dev33</groupId>
                 <artifactId>sa-token-redis-jackson</artifactId>
@@ -128,11 +140,17 @@
                 <version>${easyexcel.version}</version>
             </dependency>
 
-            <!-- MyBatis-Plus（Spring Boot 3 专用 starter） -->
+            <!-- MyBatis-Plus（与 Boot4 / Spring Framework 7 兼容；mybatis-spring 显式覆盖为 4.0.0，见下方） -->
             <dependency>
                 <groupId>com.baomidou</groupId>
-                <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+                <artifactId>mybatis-plus-spring-boot4-starter</artifactId>
                 <version>${mybatis-plus.version}</version>
+            </dependency>
+            <!-- MyBatis-Spring 4.0.0：支持 Spring Framework 7（Boot4 强制）；覆盖 MP starter 传递的 3.x -->
+            <dependency>
+                <groupId>org.mybatis</groupId>
+                <artifactId>mybatis-spring</artifactId>
+                <version>${mybatis-spring.version}</version>
             </dependency>
             <!-- MyBatis-Plus 扩展（MybatisPlusInterceptor / Page 等） -->
             <dependency>
@@ -179,11 +197,11 @@
                 <artifactId>swagger-annotations-jakarta</artifactId>
                 <version>${swagger-core.version}</version>
             </dependency>
-            <!-- Druid Spring Boot 3 starter -->
+            <!-- Druid Spring Boot 4 starter -->
             <dependency>
                 <groupId>com.alibaba</groupId>
-                <artifactId>druid-spring-boot-3-starter</artifactId>
-                <version>${druid-boot3.version}</version>
+                <artifactId>druid-spring-boot-4-starter</artifactId>
+                <version>${druid-boot4.version}</version>
             </dependency>
             <!-- Google Guava（业务公共工具，版本显式托管） -->
             <dependency>
@@ -224,8 +242,23 @@
                 <version>${lombok-mapstruct-binding.version}</version>
             </dependency>
             <!-- Resilience4j 版本由 Spring Cloud Circuit Breaker BOM 3.3.0 托管（resilience4j 2.2.0），此处不声明 -->
+            <!-- Jackson 3 的 JavaTime 数据类型模块：Boot4 的 ObjectMapper 为 tools.jackson 3.x，需配套 3.x jsr310；
+                 仅 2.x 的 com.fasterxml.jackson.datatype.jsr310 会被 sa-token-jackson3 传递引入，3.x 命名空间须显式声明 -->
+            <dependency>
+                <groupId>tools.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jsr310</artifactId>
+                <version>3.0.0-rc2</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <!-- Jackson 3 JavaTime 模块：顶层声明使所有模块继承（ConfigurationSupport/WebManagerApplication 需 tools.jackson.datatype.jsr310） -->
+    <dependencies>
+        <dependency>
+            <groupId>tools.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
+    </dependencies>
 
     <build>
         <pluginManagement>

@@ -28,7 +28,7 @@
 		     同一共享存储的令牌；spring-boot-starter-data-redis 由 sa-token-redis-template 传递引入 -->
 		<dependency>
 			<groupId>cn.dev33</groupId>
-			<artifactId>sa-token-spring-boot3-starter</artifactId>
+			<artifactId>sa-token-spring-boot4-starter</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>cn.dev33</groupId>

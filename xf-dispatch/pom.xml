@@ -114,7 +114,7 @@
         <!-- MyBatis-Plus（Spring Boot 3 starter；版本由根 pom 统一托管） -->
         <dependency>
             <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+            <artifactId>mybatis-plus-spring-boot4-starter</artifactId>
         </dependency>
         <dependency>
             <groupId>com.baomidou</groupId>
@@ -128,7 +128,7 @@
         <!-- Druid（Spring Boot 3 专用 starter，替换旧 Boot2 starter） -->
         <dependency>
             <groupId>com.alibaba</groupId>
-            <artifactId>druid-spring-boot-3-starter</artifactId>
+            <artifactId>druid-spring-boot-4-starter</artifactId>
         </dependency>
 
         <!-- RabbitMQ -->
@@ -140,7 +140,7 @@
         <!-- Sa-Token：Quartz 线程需经 starter 装配 Redis Dao 才能取到与 xf-auth 一致的 Same-Token -->
         <dependency>
             <groupId>cn.dev33</groupId>
-            <artifactId>sa-token-spring-boot3-starter</artifactId>
+            <artifactId>sa-token-spring-boot4-starter</artifactId>
         </dependency>
         <dependency>
             <groupId>cn.dev33</groupId>

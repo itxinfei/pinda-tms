@@ -20,10 +20,10 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
-        <!-- Spring Cloud Gateway（WebFlux，勿引 starter-web） -->
+        <!-- Spring Cloud Gateway（WebFlux，勿引 starter-web）；版本由根 pom 导入的 spring-cloud-gateway-dependencies BOM 统一管理（Cloud 2025.1.2 → gateway 5.0.2，Boot4 线） -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-gateway</artifactId>
+            <artifactId>spring-cloud-starter-gateway-server-webflux</artifactId>
         </dependency>
         <!-- 负载均衡：网关按 lb://服务名 转发 -->
         <dependency>
@@ -39,7 +39,7 @@
         <!-- Sa-Token 响应式鉴权（网关专用） -->
         <dependency>
             <groupId>cn.dev33</groupId>
-            <artifactId>sa-token-reactor-spring-boot3-starter</artifactId>
+            <artifactId>sa-token-reactor-spring-boot4-starter</artifactId>
         </dependency>
         <!-- Sa-Token 会话/踢人 Redis 持久化（jackson 序列化） -->
         <dependency>

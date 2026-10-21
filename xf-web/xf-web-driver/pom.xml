@@ -82,7 +82,7 @@
              需从同一 Redis 读取网关签发的 Same-Token；版本根 pom 统管，redis-jackson 传递 data-redis -->
         <dependency>
             <groupId>cn.dev33</groupId>
-            <artifactId>sa-token-spring-boot3-starter</artifactId>
+            <artifactId>sa-token-spring-boot4-starter</artifactId>
         </dependency>
         <dependency>
             <groupId>cn.dev33</groupId>
