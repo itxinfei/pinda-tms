@@ -42,7 +42,7 @@
 
 <p align="center"><b>简体中文</b> · <a href="README.en.md">English</a></p>
 
-> **心飞 TMS** 是一款**四端协同**（管理端 + 客户端 + 快递员端 + 司机端）的开源运输管理系统，基于 **JDK 25 + Spring Boot 3.5.16 + Vue 3.5** 构建，覆盖寄件 → 订单 → 智能调度 → 作业 → 轨迹 → 回单全链路。Drools 规则引擎驱动智能调度，Netty 自建轨迹接入，Sa-Token 多租户 SaaS 就绪。
+> **心飞 TMS** 是一款**四端协同**（管理端 + 客户端 + 快递员端 + 司机端）的开源运输管理系统，基于 **JDK 25 + Spring Boot 4.1.1 + Vue 3.5** 构建，覆盖寄件 → 订单 → 智能调度 → 作业 → 轨迹 → 回单全链路。Drools 规则引擎驱动智能调度，Netty 自建轨迹接入，Sa-Token 多租户 SaaS 就绪。
 
 <p align="center">  
 <b><a href="#sec-tech"><code>14</code></a></b> 个微服务 · <b><code>4</code></b> 端协同 · <b><code>106</code></b> 条功能需求 · <b><code>71</code></b> 张数据表 · <b><code>27</code></b> 项技术栈 · 全链路业务闭环  
@@ -101,7 +101,7 @@
 | 能力                       | 心飞 TMS            | 同类开源 TMS      | 商业 TMS     |
 | ------------------------ | ----------------- | ------------- | ---------- |
 | 四端协同（管理+客户+快递员+司机）       | ✅                 | ❌ 仅管理端        | ✅          |
-| JDK 25 + Spring Boot 3.5 | ✅                 | ❌ 多为 JDK 8    | 部分已升级      |
+| JDK 25 + Spring Boot 4.1 | ✅                 | ❌ 多为 JDK 8    | 部分已升级      |
 | 多租户 SaaS                 | ✅                 | ❌             | ✅          |
 | 智能调度（Drools 规则引擎）        | ✅                 | ❌ if-else 硬编码 | ✅          |
 | Netty 自建轨迹接入             | ✅                 | ❌             | ✅          |
@@ -263,7 +263,46 @@ xinfei-tms/
 
 ![技术架构](docs/tech-arch.png)
 
-> 后端 JDK 25 + Spring Boot 3.5.16 + Spring Cloud 2025.0.0 + MyBatis-Plus + Drools + XXL-Job；前端 Vue 3 + Vite + Element Plus + Pinia + ECharts；移动端 uni-app Vue3 + uview-plus；中间件 MySQL 8 + Redis 7 + RabbitMQ + Nacos + Docker Compose。
+#### 后端技术栈
+
+| 分类 | 技术 | 版本 | 说明 |
+|---|---|---|---|
+| **基础** | JDK | 25 (LTS) | 虚拟线程支持 |
+| | Spring Boot | 4.1.1 | Boot 4 大版本，Jakarta EE 10 |
+| | Spring Cloud | 2025.1.2 | 配套 Boot 4.1 |
+| | Spring Cloud Alibaba | 2025.1.0.0 | Nacos 注册/配置 |
+| | Spring Cloud Gateway | 5.0.2 | 响应式网关（WebFlux） |
+| **持久层** | MyBatis-Plus | 3.5.17 | boot4 starter，MyBatis-Spring 4.0.0 |
+| | Druid | 1.2.28 | boot4 starter 连接池 |
+| | MySQL | 8.0.x | utf8mb4 单库分域 |
+| **认证** | Sa-Token | 1.46.0 | boot4 starter，多租户 |
+| **规则引擎** | Drools | 8.38.0.Final | 运费计算与调度规则 |
+| **调度** | XXL-Job | 2.4.1 | 分布式任务调度 |
+| **其他** | FastJSON2 | 2.0.53 | JSON 序列化 |
+| | springdoc-openapi | 3.1.1 | API 文档（Boot4 兼容） |
+| | MapStruct | 1.6.3 | DTO/Entity 映射 |
+| | Lombok | 1.18.42 | 注解处理器 |
+| | EasyExcel | 3.3.4 | Excel 导入导出 |
+| | EasyCaptcha | 1.6.2 | 登录验证码 |
+
+#### 中间件
+
+| 中间件 | 版本 | 端口 | 用途 |
+|---|---|---|---|
+| MySQL | 8.0.46 | 3306 | 业务数据库 |
+| Redis | 7.x | 6379 | 缓存 + 会话 |
+| Nacos | 2.3.2 | 8848 / 9848 | 注册中心 + 配置中心 |
+| RabbitMQ | 3.12 | 5672 / 15672 | 消息总线 |
+| XXL-Job | 2.4.1 | 8090 | 分布式任务调度 |
+
+#### 前端技术栈
+
+| 端 | 技术 | 说明 |
+|---|---|---|
+| 管理端 | Vue 3.5 + Vite + Element Plus + Pinia + ECharts | 后台管理系统 |
+| 司机端 | uni-app Vue3 + uview-plus | H5 移动应用 |
+| 快递员端 | uni-app Vue3 + uview-plus | H5 移动应用 |
+| 客户端 | uni-app Vue3 + uview-plus | H5 移动应用 |
 
 ### 6.4 技术亮点
 
@@ -284,7 +323,7 @@ xinfei-tms/
 
 | 选型                          | 为什么不是别的？                                 |
 | --------------------------- | ---------------------------------------- |
-| **Sa-Token** 而非 Shiro       | 更轻量、多租户原生、中文文档全、Boot3 生态无兼容包袱            |
+| **Sa-Token** 而非 Shiro       | 更轻量、多租户原生、中文文档全、Boot4 生态无兼容包袱            |
 | **XXL-Job** 而非 Quartz       | 分布式调度自带管理台，Quartz 只能自研调度面                |
 | **Drools** 而非 if-else       | 调度规则可视化、可热更新、不用改代码发版                     |
 | **单库分域** 而非 8 分库            | dev / 中小规模运维成本低，规模化再演进时序库                |
@@ -605,7 +644,8 @@ docker-compose up -d        # 起中间件：MySQL / Redis / RabbitMQ / Nacos
 | 时间      | 进展                                                         |
 | ------- | ---------------------------------------------------------- |
 | 2026-09 | ✅ 项目立项：四端骨架 + 13 微服务 + 全链路业务闭环                             |
-| 2026-10 | ✅ 技术栈现代化：JDK 25 + SB 3.5.16 + Vue3 + Sa-Token 多租户 + XXL-Job |
+| 2026-10 | ✅ 技术栈现代化：JDK 25 + Spring Boot 4.1.1 + Vue3 + Sa-Token 多租户 + XXL-Job |
+| 2026-10-21 | ✅ Boot 4 依赖对齐：MyBatis-Plus boot4 starter（3.5.17）+ springdoc-openapi 3.1.1 + Sa-Token boot4（1.46.0）+ Druid boot4（1.2.28）；commons-io 2.17.0 / httpclient 4.5.14 安全升级 |
 | 2026-Q4 | 🔲 轨迹链路升级：Kafka + TDengine / 鹰眼 + ES 运单检索                  |
 | 2027-H1 | 🔲 智能排线 OR-Tools + MinIO 回单 + Doris 报表                     |
 | 2027-H2 | 🔲 Spring AI 智能客服 + 回单 OCR + 动态 ETA                        |
@@ -622,7 +662,7 @@ A: 个人学习、研究、教学、毕设免费；企业商用（生产环境�
 **Q: Gitee 仓库页为什么显示"未知许可证"？**  
 A: BUSL-1.1 是较新的协议，暂未被 Gitee 平台的许可证徽章收录，属平台限制；协议全文以仓库 [LICENSE](LICENSE) 文件为准，不影响授权效力。
 
-**Q: 技术栈为什么这么新（JDK 25 + Spring Boot 3.5）？**  
+**Q: 技术栈为什么这么新（JDK 25 + Spring Boot 4.1）？**  
 A: 2026 年的新项目没有历史包袱，直接采用最新 LTS，避免日后被迫升级。
 
 **Q: 有文档吗？**  

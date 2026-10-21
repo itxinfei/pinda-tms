@@ -42,9 +42,9 @@
 
 <p align="center"><a href="README.md">简体中文</a> · <b>English</b></p>
 
-> *Xinfei TMS — Open-source Transportation Management System with 4-end synergy, powered by JDK 25 + Spring Boot 3.5 + Vue 3.5.*
+> *Xinfei TMS — Open-source Transportation Management System with 4-end synergy, powered by JDK 25 + Spring Boot 4.1.1 + Vue 3.5.*
 
-> **Xinfei TMS** is a **4-end synergistic** (Admin + Customer + Courier + Driver) open-source Transportation Management System built on **JDK 25 + Spring Boot 3.5.16 + Vue 3.5**, covering the full chain: booking → order → intelligent dispatch → operations → tracking → proof of delivery. Drools rule engine drives intelligent dispatch, Netty powers self-built GPS tracking ingestion, Sa-Token provides multi-tenant SaaS readiness — order management, load planning, dispatch, driving management, GPS vehicle tracking and data reporting, all in one system for operational efficiency and cost control.
+> **Xinfei TMS** is a **4-end synergistic** (Admin + Customer + Courier + Driver) open-source Transportation Management System built on **JDK 25 + Spring Boot 4.1.1 + Vue 3.5**, covering the full chain: booking → order → intelligent dispatch → operations → tracking → proof of delivery. Drools rule engine drives intelligent dispatch, Netty powers self-built GPS tracking ingestion, Sa-Token provides multi-tenant SaaS readiness — order management, load planning, dispatch, driving management, GPS vehicle tracking and data reporting, all in one system for operational efficiency and cost control.
 
 <p align="center">
 <b><a href="#sec-tech"><code>14</code></a></b> microservices · <b><code>4</code></b> apps · <b><code>101</code></b> functional requirements · <b><code>55</code></b> database tables · <b><code>27</code></b> technologies · full business closed loop
@@ -96,7 +96,7 @@ Xinfei TMS was built to solve exactly this — it moves the whole chain of "reso
 | # | Highlight | Why others don't have it |
 | --- | --- | --- |
 | 1 | **4-End Synergy** | Admin + Customer + Courier + Driver apps covering all roles — most open-source TMS only ship an admin console |
-| 2 | **JDK 25 + SB 3.5.16 + Vue 3.5** | The most modern stack among similar open-source TMS; most still sit on JDK 8 + SB 2.x + Vue 2 |
+| 2 | **JDK 25 + SB 4.1.1 + Vue 3.5** | The most modern stack among similar open-source TMS; most still sit on JDK 8 + SB 2.x + Vue 2 |
 | 3 | **Drools + XXL-Job Intelligent Dispatch** | Rule-engine driven dispatch &amp; freight calculation instead of hard-coded if-else; distributed scheduling replaces Quartz |
 | 4 | **Netty Self-Built Tracking Ingestion** | No third-party SDK dependency; independent `xf-netty` microservice for high-concurrency device access |
 | 5 | **Sa-Token Multi-Tenancy** | SaaS-ready — one codebase serving multiple tenants |
@@ -114,7 +114,7 @@ Xinfei TMS was built to solve exactly this — it moves the whole chain of "reso
 | Capability | Xinfei TMS | Similar open-source TMS | Commercial TMS |
 | --- | --- | --- | --- |
 | 4-end synergy (Admin+Customer+Courier+Driver) | ✅ | ❌ admin only | ✅ |
-| JDK 25 + Spring Boot 3.5 | ✅ | ❌ mostly JDK 8 | partially |
+| JDK 25 + Spring Boot 4.1 | ✅ | ❌ mostly JDK 8 | partially |
 | Multi-tenant SaaS | ✅ | ❌ | ✅ |
 | Intelligent dispatch (Drools) | ✅ | ❌ if-else | ✅ |
 | Netty self-built tracking ingestion | ✅ | ❌ | ✅ |
@@ -263,7 +263,46 @@ xinfei-tms/
 
 ![Technology architecture](docs/tech-arch.png)
 
-> Backend JDK 25 + Spring Boot 3.5.16 + Spring Cloud 2025.0.0 + MyBatis-Plus + Drools + XXL-Job; Frontend Vue 3 + Vite + Element Plus + Pinia + ECharts; Mobile uni-app Vue3 + uview-plus; Middleware MySQL 8 + Redis 7 + RabbitMQ + Nacos + Docker Compose.
+#### Backend Stack
+
+| Category | Technology | Version | Notes |
+|---|---|---|---|
+| **Core** | JDK | 25 (LTS) | Virtual threads |
+| | Spring Boot | 4.1.1 | Jakarta EE 10 |
+| | Spring Cloud | 2025.1.2 | Aligned with Boot 4.1 |
+| | Spring Cloud Alibaba | 2025.1.0.0 | Nacos registry/config |
+| | Spring Cloud Gateway | 5.0.2 | Reactive (WebFlux) |
+| **Persistence** | MyBatis-Plus | 3.5.17 | boot4 starter, MyBatis-Spring 4.0.0 |
+| | Druid | 1.2.28 | boot4 starter connection pool |
+| | MySQL | 8.0.x | utf8mb4, single-db-by-domain |
+| **Auth** | Sa-Token | 1.46.0 | boot4 starter, multi-tenant |
+| **Rule Engine** | Drools | 8.38.0.Final | Freight calculation & dispatch rules |
+| **Scheduling** | XXL-Job | 2.4.1 | Distributed task scheduling |
+| **Others** | FastJSON2 | 2.0.53 | JSON serialization |
+| | springdoc-openapi | 3.1.1 | API docs (Boot4 compatible) |
+| | MapStruct | 1.6.3 | DTO/Entity mapping |
+| | Lombok | 1.18.42 | Annotation processor |
+| | EasyExcel | 3.3.4 | Excel import/export |
+| | EasyCaptcha | 1.6.2 | Login captcha |
+
+#### Middleware
+
+| Middleware | Version | Port | Purpose |
+|---|---|---|---|
+| MySQL | 8.0.46 | 3306 | Business database |
+| Redis | 7.x | 6379 | Cache + session |
+| Nacos | 2.3.2 | 8848 / 9848 | Registry + config center |
+| RabbitMQ | 3.12 | 5672 / 15672 | Message bus |
+| XXL-Job | 2.4.1 | 8090 | Distributed scheduling |
+
+#### Frontend Stack
+
+| App | Technology | Notes |
+|---|---|---|
+| Admin | Vue 3.5 + Vite + Element Plus + Pinia + ECharts | Management console |
+| Driver | uni-app Vue3 + uview-plus | H5 mobile app |
+| Courier | uni-app Vue3 + uview-plus | H5 mobile app |
+| Customer | uni-app Vue3 + uview-plus | H5 mobile app |
 
 ### 6.4 Tech Highlights
 
@@ -358,7 +397,7 @@ After the full refactor the system converges to a **single MySQL database** (`xi
 
 ### 7.1 Environment &amp; Stack
 
-- **Backend**: JDK 25 + Spring Boot 3.5.16 + Spring Cloud 2025.0.0 (Spring Cloud Alibaba 2025.0.0.0), Nacos registry/config, OpenFeign, Spring Cloud Gateway auth, Sa-Token multi-tenant auth, XXL-Job, Drools.
+- **Backend**: JDK 25 + Spring Boot 4.1.1 + Spring Cloud 2025.1.2 (Spring Cloud Alibaba 2025.1.0.0), Nacos registry/config, OpenFeign, Spring Cloud Gateway auth, Sa-Token multi-tenant auth, XXL-Job, Drools.
 - **Frontend**: Admin `xf-admin-ui-vue3` (Vue 3 + Vite + Element Plus + Pinia + ECharts); Mobile uni-app (Vue 3 / Vite + uview-plus) for 3 apps.
 - **Storage &amp; middleware**: MySQL (single-db-by-domain), Redis cache, RabbitMQ, Druid; MinIO &amp; ES are planned (see §6.4).
 - **Support**: unified auth center (Sa-Token multi-tenant + captcha), gateway anti-direct-access, Netty tracking ingestion.
@@ -614,7 +653,7 @@ This project is licensed under **BUSL-1.1**: free for personal learning, researc
 | Time | Progress |
 | --- | --- |
 | 2026-09 | ✅ Project kickoff: 4-end skeleton + 13 microservices + full business closed loop |
-| 2026-10 | ✅ Stack modernization: JDK 25 + SB 3.5.16 + Vue3 + Sa-Token multi-tenant + XXL-Job |
+| 2026-10 | ✅ Stack modernization: JDK 25 + SB 4.1.1 + Vue3 + Sa-Token multi-tenant + XXL-Job |
 | 2026-Q4 | 🔲 Tracking pipeline: Kafka + TDengine / Yingyan + ES waybill search |
 | 2027-H1 | 🔲 OR-Tools route planning + MinIO POD + Doris reports |
 | 2027-H2 | 🔲 Spring AI assistant + POD OCR + dynamic ETA |
@@ -631,7 +670,7 @@ A: Free for personal learning, research, teaching and graduation projects; comme
 **Q: Why does Gitee show "Unknown license"?**
 A: BUSL-1.1 is a newer license not yet indexed by Gitee's badge catalog — a platform limitation. The authoritative text is the [LICENSE](LICENSE) file in this repo, which remains fully effective.
 
-**Q: Why such a modern stack (JDK 25 + Spring Boot 3.5)?**
+**Q: Why such a modern stack (JDK 25 + Spring Boot 4.1)?**
 A: A new project in 2026 carries no legacy baggage; we adopt the latest LTS to avoid forced upgrades later.
 
 **Q: Is there documentation?**
