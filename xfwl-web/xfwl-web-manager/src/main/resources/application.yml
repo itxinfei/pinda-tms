@@ -8,11 +8,11 @@ spring:
     active: ${SPRING_PROFILES_ACTIVE:dev}
   main:
     allow-bean-definition-overriding: true
-  # JDK 21+ 虚拟线程（原 bootstrap.yml 已开启，JDK 25 下生效，保留）
+  # JDK 25+ 虚拟线程（原 bootstrap.yml 已开启，JDK 25 下生效，保留）
   threads:
     virtual:
       enabled: true
-  # SB3.5/SCA2025 下 bootstrap 上下文默认关闭，bootstrap*.yml 不再被加载；
+  # SB4.1.1/SCA2025.1.2 下 bootstrap 上下文默认关闭，bootstrap*.yml 不再被加载；
   # 远程配置改由 config.import 接入，姿势对齐已上线的 xfwl-oms/xfwl-auth。optional = 远程缺失不阻断启动。
   config:
     import:

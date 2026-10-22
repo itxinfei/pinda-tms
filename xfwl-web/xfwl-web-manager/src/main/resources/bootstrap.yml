@@ -16,7 +16,7 @@ spring:
     active: prod
   main:
     allow-bean-definition-overriding: true
-  # JDK 21+ 虚拟线程：Tomcat 请求处理与阻塞式 Feign 调用改跑虚拟线程（JDK 25 下生效），免调平台线程池
+  # JDK 25+ 虚拟线程：Tomcat 请求处理与阻塞式 Feign 调用改跑虚拟线程（JDK 25 下生效），免调平台线程池
   threads:
     virtual:
       enabled: true

@@ -27,7 +27,7 @@ const MODULES = [
   'xfwl-web/xfwl-web-customer',
   'xfwl-netty',
   // ↓↓ 这两条是 2026-10-09 基线的旧栈扫描目标（史料口径）：pd-authority 链已于 2026-10-10 架构重置时删除，
-  //    源码仅存本地归档 codeback/pd-authority/...；现行认证模块为根 xfwl-auth（SB3.5.7 + Sa-Token），旧计数口径不适用，故清单不改名为新模块。
+  //    源码仅存本地归档 codeback/pd-authority/...；现行认证模块为根 xfwl-auth（SB4.1.1 + Sa-Token），旧计数口径不适用，故清单不改名为新模块。
   'pd-authority/pd-apps/pd-auth/pd-auth-server',
   'pd-authority/pd-apps/pd-gateway',
   'xfwl-dispatch',

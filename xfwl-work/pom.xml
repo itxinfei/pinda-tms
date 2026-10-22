@@ -29,7 +29,7 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
-		<!-- Bean Validation（Hibernate Validator）：Spring Boot 3 的 web starter 不再传递校验实现，
+		<!-- Bean Validation（Hibernate Validator）：Spring Boot 4 的 web starter 不再传递校验实现，
 		     缺它启动报 NoProviderFound、@Valid 不生效（T-SEC-08/B4） -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -74,7 +74,7 @@
 			<artifactId>xfwl-service-oms-api</artifactId>
 			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
-		<!-- MyBatis-Plus（Spring Boot 3 starter；版本由根 pom 统一托管） -->
+		<!-- MyBatis-Plus（Spring Boot 4 starter；版本由根 pom 统一托管） -->
 		<dependency>
 			<groupId>com.baomidou</groupId>
 			<artifactId>mybatis-plus-spring-boot4-starter</artifactId>
@@ -89,7 +89,7 @@
 			<groupId>com.baomidou</groupId>
 			<artifactId>mybatis-plus-jsqlparser</artifactId>
 		</dependency>
-		<!-- Druid（Spring Boot 3 专用 starter） -->
+		<!-- Druid（Spring Boot 4 专用 starter） -->
 		<dependency>
 			<groupId>com.alibaba</groupId>
 			<artifactId>druid-spring-boot-4-starter</artifactId>

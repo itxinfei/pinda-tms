@@ -14,7 +14,7 @@ spring:
     active: ${SPRING_PROFILES_ACTIVE:dev}
   main:
     allow-bean-definition-overriding: true
-  # 2026-10-10：SB3.5/SCA2025 下 bootstrap 上下文默认关闭，bootstrap*.yml 不再被加载；
+  # 2026-10-10：SB4.1.1/SCA2025.1.2 下 bootstrap 上下文默认关闭，bootstrap*.yml 不再被加载；
   # 远程配置改由 config.import 接入，姿势对齐已上线的 xfwl-auth。optional = 远程缺失不阻断启动。
   config:
     import:
@@ -90,7 +90,7 @@ spring:
         # 消费失败不重回队列，防止消息无限重投；与监听器内部 catch 不抛异常一致
         default-requeue-rejected: false
   # Redis：Same-Token 入站校验（T-SEC-04）经 sa-token-redis-jackson 连接与 xfwl-auth 同一共享存储
-  # 口径对齐 xfwl-dispatch/xfwl-auth/xfwl-gateway；Boot3 下键名为 spring.data.redis.*
+  # 口径对齐 xfwl-dispatch/xfwl-auth/xfwl-gateway；Boot4 下键名为 spring.data.redis.*
   data:
     redis:
       host: ${REDIS_HOST:192.168.20.130}

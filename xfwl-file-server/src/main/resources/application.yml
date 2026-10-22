@@ -44,7 +44,7 @@ spring:
       max-file-size: ${MULTIPART_MAX_FILE_SIZE:10MB}
       max-request-size: ${MULTIPART_MAX_REQUEST_SIZE:12MB}
   # Redis：Same-Token 入站校验（T-SEC-04）经 sa-token-redis-jackson 连接与 xfwl-auth 同一共享存储
-  # 口径对齐 xfwl-dispatch/xfwl-auth/xfwl-gateway；Boot3 下键名为 spring.data.redis.*
+  # 口径对齐 xfwl-dispatch/xfwl-auth/xfwl-gateway；Boot4 下键名为 spring.data.redis.*
   data:
     redis:
       host: ${REDIS_HOST:192.168.20.130}

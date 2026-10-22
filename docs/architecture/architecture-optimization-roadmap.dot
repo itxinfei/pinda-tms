@@ -17,8 +17,8 @@ digraph architecture_optimization_roadmap {
 
   // ---------- 外部前提 ----------
   phase0 [label="《29》阶段0\n合并双 parent 链基线", shape=box, style=rounded, fillcolor="#dbe7ff", color="#336699"];
-  w1     [label="《29》W1\nSB3.3 + jakarta + 网关重写 + Drools8", shape=box, style=rounded, fillcolor="#dbe7ff", color="#336699"];
-  green  [label="mvn compile 在 JDK21 全模块通过\n14服务可启动", shape=box, style=rounded, fillcolor="#dff0d8", color="#2e7d32"];
+  w1     [label="《29》W1\nSB4.1.1 + jakarta + 网关重写 + Drools8", shape=box, style=rounded, fillcolor="#dbe7ff", color="#336699"];
+  green  [label="mvn compile 在 JDK 25 全模块通过\n14服务可启动", shape=box, style=rounded, fillcolor="#dff0d8", color="#2e7d32"];
 
   // ---------- P0 ----------
   R1 [label="R-1 零回归网\n876文件/18测试\n接入层与xfwl-base/xfwl-user 测试=0", shape=diamond, style=filled, fillcolor="#ffd9d9", color="#b00000"];

@@ -15,7 +15,7 @@ spring:
   main:
     allow-bean-definition-overriding: true
   # Spring Cloud 标准接入方式（2026-10-10 R6 演练迁移，取代旧 bootstrap.yml）；
-  # SB3/SCA 2025 下 bootstrap 上下文默认关闭，远程配置改由 config.import 拉取；
+  # SB4.1.1/SCA 2025.1.2 下 bootstrap 上下文默认关闭，远程配置改由 config.import 拉取；
   # optional 表示远程配置缺失不阻断启动。
   config:
     import:
@@ -53,7 +53,7 @@ spring:
       max-wait: 60000
       test-while-idle: true
   # Redis：Same-Token 入站校验（T-SEC-04）经 sa-token-redis-jackson 连接与 xfwl-auth 同一共享存储
-  # 口径对齐 xfwl-dispatch/xfwl-auth/xfwl-gateway；Boot3 下键名为 spring.data.redis.*
+  # 口径对齐 xfwl-dispatch/xfwl-auth/xfwl-gateway；Boot4 下键名为 spring.data.redis.*
   data:
     redis:
       host: ${REDIS_HOST:192.168.20.130}

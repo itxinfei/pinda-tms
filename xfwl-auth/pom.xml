@@ -76,7 +76,7 @@
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
 
-        <!-- MyBatis-Plus（Spring Boot 3 专用 starter） -->
+        <!-- MyBatis-Plus（Spring Boot 4 专用 starter） -->
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-spring-boot4-starter</artifactId>
@@ -87,7 +87,7 @@
             <artifactId>mybatis-plus-jsqlparser</artifactId>
         </dependency>
 
-        <!-- MySQL 驱动（SB3 新坐标 com.mysql:mysql-connector-j） -->
+        <!-- MySQL 驱动（SB4 新坐标 com.mysql:mysql-connector-j） -->
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
