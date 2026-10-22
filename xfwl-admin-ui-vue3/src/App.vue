@@ -24,12 +24,13 @@ const settingsStore = useSettingsStore();
 const locale = computed(() => appStore.locale);
 const size = computed(() => appStore.size as ComponentSize);
 const licenseStore = useLicenseStore();
-// 应用启动即恢复授权状态：读 localStorage 密钥重新验签，刷新/重新登录后保持生效
-licenseStore.restore();
+// 应用启动即从后端拉取授权状态（真伪只由后端判定），失败不影响渲染
+void licenseStore.fetchStatus();
 
-// 水印内容：未授权（体验版）所有页面强制显示「体验版」水印；已授权回落到用户水印设置
+// 水印内容：仅在「购买商业授权」通知弹出期间对未激活实例显示「体验版」，通知关闭即消失；
+// 正常试用期不显示；已激活则回落到用户水印设置
 const watermarkContent = computed(() => {
-  if (!licenseStore.activated) return "心飞TMS · 体验版";
+  if (!licenseStore.activated && licenseStore.purchaseTipVisible) return "心飞TMS · 体验版";
   return settingsStore.showWatermark ? appConfig.name : "";
 });
 

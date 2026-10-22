@@ -1,11 +1,9 @@
 import { ElNotification } from "element-plus";
-import LicenseAPI, { type LicenseInfo } from "@/api/license";
-import { hasStoredLicenseKey } from "@/utils/license";
 import { useLicenseStore } from "@/stores";
 
 /**
- * 未授权提示的展示频率限制：
- * 同一浏览器每 3 天最多弹一次，避免一直打扰用户（"偶然弹一下"）。
+ * 未授权"购买商业授权"提示的展示频率限制：
+ * 同一浏览器每 3 天最多弹一次，避免打扰（"偶然弹一下"）。
  */
 const TIP_LAST_KEY = "xinfei_license_tip_last";
 const TIP_INTERVAL_MS = 3 * 24 * 60 * 60 * 1000;
@@ -31,52 +29,35 @@ function markTipShown(): void {
 }
 
 /**
- * 拉取授权状态，若未授权且距上次提示已超 3 天，则弹一次通知。
- * 已授权（VALID）不弹；可重复激活体验码本轮到期时提示"可重新激活"；
- * 接口不可达静默失败，不影响业务。
+ * 拉取后端授权状态；未激活（试用/到期/机器不匹配等）且距上次提示超 3 天，
+ * 则弹一次购买通知。体验版水印严格绑定本通知：弹出期间显示，关闭（手动/超时/点击）
+ * 立即消失，正常试用期不显示水印。接口不可达静默失败，不影响业务。
  */
 export async function maybeShowLicenseTip(): Promise<void> {
   const store = useLicenseStore();
   try {
-    await store.restore();
-  } catch {
-    /* 恢复失败按未授权处理 */
-  }
-  if (store.activated) return;
-
-  // 可重复激活体验码本轮到期：提示用同一码重新激活（密钥仍在本地）
-  if (store.expired) {
+    const info = await store.fetchStatus();
+    if (info.activated) return;
     if (!throttleAllowed()) return;
     markTipShown();
-    ElNotification({
-      title: "本轮体验已到期",
-      message: "进入「系统管理 → 授权管理」用同一体验码重新激活，可再体验 7 天；如需正式授权请购买商业授权。",
-      type: "error",
-      duration: 8000,
-      showClose: true,
-      onClick: () => window.open(BUY_URL, "_blank", "noopener"),
-    });
-    return;
-  }
 
-  if (hasStoredLicenseKey()) return; // 前端已持有有效授权，不再弹体验提示
-  if (!throttleAllowed()) return;
-
-  try {
-    const info: LicenseInfo = await LicenseAPI.getStatus();
-    if (info.status === "VALID") return;
-    markTipShown();
-
-    const expired = info.status === "TRIAL_EXPIRED";
+    const expired = info.status === "TRIAL_EXPIRED" || info.status === "EXPIRED";
+    const hideWatermark = () => store.setPurchaseTipVisible(false);
+    store.setPurchaseTipVisible(true);
     ElNotification({
       title: expired ? "试用已到期" : "未授权提示",
-      message: `${info.message ?? ""} 如需商用，请购买商业授权。`,
+      message: `${info.message ?? "当前为体验版。"} 如需商用，请购买商业授权。`,
       type: expired ? "error" : "warning",
       duration: 8000,
       showClose: true,
-      onClick: () => window.open(BUY_URL, "_blank", "noopener"),
+      onClick: () => {
+        hideWatermark();
+        window.open(BUY_URL, "_blank", "noopener");
+      },
+      onClose: hideWatermark,
     });
   } catch {
+    store.setPurchaseTipVisible(false);
     /* 接口不可达，静默 */
   }
 }
