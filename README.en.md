@@ -553,7 +553,7 @@ docker-compose up -d        # start middleware: MySQL / Redis / RabbitMQ / Nacos
 <tr>
 <td align="center" width="50%">
   <img src="docs/screenshots/ops-mysql.png" alt="MySQL database"/>
-  <br/><sub><b>MySQL 8.0</b> · direct query · xinfei_tms all 54 tables (InnoDB)</sub>
+  <br/><sub><b>MySQL 8.0</b> · direct query · xinfei_tms all 71 tables (InnoDB)</sub>
 </td>
 <td align="center" width="50%">
   <img src="docs/screenshots/ops-redis.png" alt="Redis keys"/>
