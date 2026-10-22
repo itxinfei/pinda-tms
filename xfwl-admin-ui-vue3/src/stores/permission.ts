@@ -8,6 +8,7 @@ import { isExternal, joinRoutePath, resolveExternalUrl } from "@/utils";
 
 import MenuAPI from "@/api/system/menu";
 import type { RouteItem } from "@/api/system/menu";
+import { ROLE_ROOT } from "@/constants";
 
 const Layout = () => import("../layouts/index.vue");
 
@@ -150,10 +151,12 @@ const buildRoutes = (menus: RouteItem[]): RouteRecordRaw[] => menus.map(buildTop
 const SYSTEM_MANAGE_TITLE = "系统管理";
 
 /**
- * 顶层菜单整理（体验版授权，2026-10-19）：
+ * 顶层菜单整理：
  * 1. 「授权管理」入口由前端合成、注入「系统管理」目录末尾——授权校验是框架级能力，
- *    不依赖后端 sys_menu 配置与角色授权过滤，所有登录用户（含体验用户）均可见可操作；
+ *    不依赖后端 sys_menu 配置；2026-10-22 起收紧为仅超级管理员（ADMIN 角色）可见，
+ *    普通角色不再出现该入口（激活/清除授权属平台级操作）；
  * 2. 「系统管理」强制置底，始终作为菜单栏最后一项；Array.sort 为稳定排序，其余菜单保持后端原序。
+ * 调用时机：路由守卫已先拉取 /users/me，userInfo.roles 就绪后才生成本树。
  */
 function normalizeMenus(menus: RouteItem[]): void {
   const licenseEntry: RouteItem = {
@@ -163,12 +166,13 @@ function normalizeMenus(menus: RouteItem[]): void {
     meta: { title: "授权管理", icon: "el-icon-Key" },
     children: [],
   };
+  const isRoot = useUserStoreHook().userInfo.roles?.includes(ROLE_ROOT) ?? false;
   menus.forEach((menu) => {
     if (menu.meta?.title === SYSTEM_MANAGE_TITLE) {
-      menu.children = [
-        ...(menu.children ?? []).filter((child) => child.name !== "License"),
-        licenseEntry,
-      ];
+      menu.children = (menu.children ?? []).filter((child) => child.name !== "License");
+      if (isRoot) {
+        menu.children.push(licenseEntry);
+      }
     }
   });
   menus.sort(

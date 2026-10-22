@@ -54,12 +54,12 @@ const FileAPI = {
 
   /**
    * 删除文件。
-   * xfwl-file-server 暂无删除端点（统一文件能力含保留期治理，属后续迭代），
-   * 保留方法签名兼容 Upload 组件；调用失败由拦截器统一提示。
+   * 后端端点 DELETE /attachment（经网关 /api/file/attachment），入参兼容完整 view URL
+   * 或相对存储路径，服务端做路径穿越防护；仅登录态可调用。
    */
   delete(filePath?: string) {
     return request({
-      url: FILE_UPLOAD_URL,
+      url: "/api/file/attachment",
       method: "delete",
       params: { filePath },
     });

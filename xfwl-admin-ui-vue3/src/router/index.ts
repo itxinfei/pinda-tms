@@ -80,6 +80,13 @@ export const constantRoutes: RouteRecordRaw[] = [
         component: () => import("@/views/profile/index.vue"),
         meta: { title: "个人中心", icon: "el-icon-User", hidden: true },
       },
+      {
+        // 我的通知：顶栏铃铛「查看更多」进入，走 NoticeAPI REST（SSE 实时推送后端待补，暂不影响使用）
+        path: "profile/notice",
+        name: "MyNotice",
+        component: () => import("@/views/profile/notice/index.vue"),
+        meta: { title: "我的通知", icon: "el-icon-Bell", hidden: true },
+      },
     ],
   },
 ];

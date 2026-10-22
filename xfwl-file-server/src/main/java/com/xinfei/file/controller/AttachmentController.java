@@ -5,6 +5,7 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -123,6 +124,64 @@ public class AttachmentController {
                 .contentType(mediaType)
                 .header("Cache-Control", "public, max-age=86400")
                 .body(new FileSystemResource(target));
+    }
+
+    /**
+     * 删除附件。经网关 /api/file/attachment（登录态；网关白名单仅 /view/** 匿名，删除不在其列）。
+     * 入参兼容上传后返回的完整 view URL 与库内相对存储路径；
+     * 防穿越范式同 view()：normalize 后必须仍在 uploadRoot 内，并复核扩展名白名单。
+     */
+    @DeleteMapping("/attachment")
+    public Map<String, Object> delete(@RequestParam("filePath") String filePath) {
+        String relative = resolveRelative(filePath);
+        if (relative == null || relative.isEmpty()) {
+            return body(1, "非法文件路径", null);
+        }
+        Path target = uploadRoot.resolve(relative).normalize();
+        if (!target.startsWith(uploadRoot)) {
+            return body(1, "非法文件路径", null);
+        }
+        String ext = extensionOf(target.getFileName().toString());
+        if (ext == null || !ALLOWED_EXT.contains(ext)) {
+            return body(1, "不允许删除该类型文件", null);
+        }
+        if (!Files.isRegularFile(target)) {
+            return body(1, "文件不存在", null);
+        }
+        try {
+            Files.deleteIfExists(target);
+            return body(0, "success", "");
+        } catch (IOException e) {
+            return body(1, "删除失败", null);
+        }
+    }
+
+    /**
+     * 从完整 view URL（http(s)://host/api/file/view/… 或 …/attachment/view/…）或
+     * 相对存储路径（如 common/202610/uuid.jpg）解析出 uploadRoot 相对段并做 URL 解码。
+     * 注意两个前缀的匹配顺序：/attachment/view/ 必须在 /view/ 之前。
+     */
+    private static String resolveRelative(String raw) {
+        if (raw == null) {
+            return null;
+        }
+        String value = raw.trim();
+        for (String prefix : new String[]{"/attachment/view/", "/view/"}) {
+            int idx = value.indexOf(prefix);
+            if (idx >= 0) {
+                value = value.substring(idx + prefix.length());
+                break;
+            }
+        }
+        // 防御性去除 query 串（view URL 现行不带）
+        int query = value.indexOf('?');
+        if (query >= 0) {
+            value = value.substring(0, query);
+        }
+        while (value.startsWith("/")) {
+            value = value.substring(1);
+        }
+        return value.isEmpty() ? null : UriUtils.decode(value, StandardCharsets.UTF_8);
     }
 
     private static String extensionOf(String filename) {

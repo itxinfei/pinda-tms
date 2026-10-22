@@ -17,11 +17,10 @@
         <LangSelect />
       </div>
 
-      <!-- 临时关掉：通知中心（心飞后端暂无此接口）
+      <!-- 通知中心：REST（我的通知/已读/详情）已打通，进页面拉取；SSE 实时推送后端待补 -->
       <div class="layout-toolbar__item">
         <NoticeCenter />
       </div>
-      -->
 
       <div v-if="showTenantSwitcher" class="layout-toolbar__item">
         <TenantSwitcher @change="handleTenantChange" />
@@ -65,6 +64,7 @@ import { useAppStore, useSettingsStore, useUserStore } from "@/stores";
 import { User } from "@element-plus/icons-vue";
 
 import { useTenantStoreHook } from "@/stores/tenant";
+import NoticeCenter from "@/components/NoticeCenter/index.vue";
 
 const { t } = useI18n();
 const appStore = useAppStore();
