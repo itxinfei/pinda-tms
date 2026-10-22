@@ -9,6 +9,7 @@ import org.springframework.amqp.rabbit.annotation.Queue;
 import org.springframework.amqp.rabbit.annotation.QueueBinding;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 /**
@@ -42,6 +43,7 @@ public class SettlementDeliveredListener {
     public static final String ROUTING_KEY_ORDER_DELIVERED = "ORDER_DELIVERED";
 
     @Autowired
+    @Qualifier("jacksonJsonMapper")
     private ObjectMapper objectMapper;
 
     @Autowired
