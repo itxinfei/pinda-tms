@@ -20,12 +20,10 @@ import tools.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import tools.jackson.datatype.jsr310.ser.LocalTimeSerializer;
 import com.xinfei.common.converter.EnumDeserializer;
 import com.xinfei.common.interceptor.TokenAuthInterceptor;
-import com.xinfei.common.satoken.RequiredRoleInterceptor;
 import com.xinfei.common.json.BigDecimalSerializer;
 import com.xinfei.common.json.NullValueSerializerModifier;
 import com.xinfei.common.utils.DatePatterns;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -34,7 +32,7 @@ import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupport;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -54,15 +52,13 @@ import static tools.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROP
 
 @Slf4j
 @Configuration
-public class ConfigurationSupport extends WebMvcConfigurationSupport {
+public class ConfigurationSupport implements WebMvcConfigurer {
 
     /**
-     * 端级角色绑定（X-01 下沉落点）：本类 extends WebMvcConfigurationSupport 使 Boot MVC
-     * 自动装配退避，xfwl-common 经 WebMvcConfigurer 注册的角色拦截器不被收集，须在此显式注册；
-     * 属性为空（未配置 xinfei.auth.required-roles）时不注册。
+     * 端级角色绑定（X-01 下沉落点）：本服务改为 implements WebMvcConfigurer 后，Boot MVC
+     * 自动配置生效，RequiredRoleInterceptor 改由 xfwl-common 的 SaTokenPermissionAutoConfiguration
+     * 在配置了 xinfei.auth.required-roles 时自动注册，此处不再手动注册，避免双重注册。
      */
-    @Value("${xinfei.auth.required-roles:}")
-    private String requiredRoles;
 
     /**
      * LocalDateTime 反序列化兼容两种线上格式：
@@ -112,7 +108,7 @@ public class ConfigurationSupport extends WebMvcConfigurationSupport {
      * @param registry
      */
     @Override
-    protected void addResourceHandlers(ResourceHandlerRegistry registry) {
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
         // 解决静态资源无法访问
         registry.addResourceHandler("/**").addResourceLocations("classpath:/static/");
         // 解决swagger无法访问
@@ -128,11 +124,9 @@ public class ConfigurationSupport extends WebMvcConfigurationSupport {
      * @param registry 拦截器注册器
      */
     @Override
-    protected void addInterceptors(InterceptorRegistry registry) {
+    public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(new TokenAuthInterceptor())
             .addPathPatterns("/**");
-        // 端级角色绑定（X-01）：属性空则不注册，actuator 探针在静态方法内已排除
-        RequiredRoleInterceptor.registerIfConfigured(registry, requiredRoles);
     }
 
     /**
@@ -140,16 +134,19 @@ public class ConfigurationSupport extends WebMvcConfigurationSupport {
      * 默认转成 ''
      */
     @Override
-    public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
+    public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
         log.info("初始化jackson配置( null -> ''、枚举类型、时间格式 )");
-        //在json转换之前先进行string转换
-        converters.add(new StringHttpMessageConverter());
-        //添加json转换
-        // Jackson 3：MappingJackson2HttpMessageConverter.setObjectMapper 已移除，mapper 改由构造函数注入
+        // Boot4 迁移：不再继承 WebMvcConfigurationSupport（其 configureMessageConverters /
+        // addDefaultHttpMessageConverters 已 @Deprecated(forRemoval=true)，Spring Framework 7 将移除）。
+        // 改用 WebMvcConfigurer.extendMessageConverters 在 Boot 默认转换器列表上做增量：
+        // 移除 Boot 自动注入的默认 Jackson converter，替换为保留 null->''、Long->String 等
+        // 全局 JSON 契约的定制版，并保留其余默认 converter（表单/字节/资源等）。
+        converters.removeIf(c -> c instanceof JacksonJsonHttpMessageConverter);
+        // 在 json 转换之前先进行 string 转换
+        converters.add(0, new StringHttpMessageConverter());
+        // 添加自定义 json 转换（保留现有序列化契约）
         JacksonJsonHttpMessageConverter jacksonJsonHttpMessageConverter = new JacksonJsonHttpMessageConverter(buildJacksonObjectMapper());
-        converters.add(jacksonJsonHttpMessageConverter);
-        //追加默认转换器
-        super.addDefaultHttpMessageConverters(converters);
+        converters.add(1, jacksonJsonHttpMessageConverter);
     }
 
     private static JsonMapper buildJacksonObjectMapper() {

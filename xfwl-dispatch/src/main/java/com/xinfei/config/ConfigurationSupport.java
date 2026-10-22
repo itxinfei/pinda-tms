@@ -32,7 +32,7 @@ import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupport;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -54,7 +54,7 @@ import static tools.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROP
 @Slf4j
 @Configuration
 @lombok.RequiredArgsConstructor
-public class ConfigurationSupport extends WebMvcConfigurationSupport {
+public class ConfigurationSupport implements WebMvcConfigurer {
 
     private final com.xinfei.interceptor.OperLogInterceptor operLogInterceptor;
 
@@ -107,7 +107,7 @@ public class ConfigurationSupport extends WebMvcConfigurationSupport {
      * @param registry
      */
     @Override
-    protected void addResourceHandlers(ResourceHandlerRegistry registry) {
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
         // 解决静态资源无法访问
         registry.addResourceHandler("/**").addResourceLocations("classpath:/static/");
         // 解决swagger无法访问
@@ -126,7 +126,7 @@ public class ConfigurationSupport extends WebMvcConfigurationSupport {
      * @param registry 拦截器注册器
      */
     @Override
-    protected void addInterceptors(InterceptorRegistry registry) {
+    public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(new SameTokenAuthInterceptor())
                 .addPathPatterns("/**")
                 .excludePathPatterns("/actuator/**", "/favicon.ico", "/error",
@@ -142,16 +142,19 @@ public class ConfigurationSupport extends WebMvcConfigurationSupport {
      * 默认转成 ''
      */
     @Override
-    public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
+    public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
         log.info("初始化jackson配置( null -> ''、枚举类型、时间格式 )");
-        //在json转换之前先进行string转换
-        converters.add(new StringHttpMessageConverter());
-        //添加json转换
-        // Jackson 3：MappingJackson2HttpMessageConverter.setObjectMapper 已移除，mapper 改由构造函数注入
+        // Boot4 迁移：不再继承 WebMvcConfigurationSupport（其 configureMessageConverters /
+        // addDefaultHttpMessageConverters 已 @Deprecated(forRemoval=true)，Spring Framework 7 将移除）。
+        // 改用 WebMvcConfigurer.extendMessageConverters 在 Boot 默认转换器列表上做增量：
+        // 移除 Boot 自动注入的默认 Jackson converter，替换为保留 null->''、Long->String 等
+        // 全局 JSON 契约的定制版，并保留其余默认 converter（表单/字节/资源等）。
+        converters.removeIf(c -> c instanceof JacksonJsonHttpMessageConverter);
+        // 在 json 转换之前先进行 string 转换
+        converters.add(0, new StringHttpMessageConverter());
+        // 添加自定义 json 转换（保留现有序列化契约）
         JacksonJsonHttpMessageConverter jacksonJsonHttpMessageConverter = new JacksonJsonHttpMessageConverter(buildJacksonObjectMapper());
-        converters.add(jacksonJsonHttpMessageConverter);
-        //追加默认转换器
-        super.addDefaultHttpMessageConverters(converters);
+        converters.add(1, jacksonJsonHttpMessageConverter);
     }
 
     private static JsonMapper buildJacksonObjectMapper() {
