@@ -34,9 +34,10 @@ public class SaTokenConfigure implements WebMvcConfigurer {
                 .addPathPatterns("/**")
                 .excludePathPatterns("/anno/**", "/internal/**", "/actuator/**");
 
-        // 写请求审计：记录 /api/v1/** 的 POST/PUT/DELETE 与 /logs/export（异常不影响业务）
+        // 写请求审计：网关 StripPrefix=2 后到达本服务的 URI 已剥掉 /api/v1 前缀（实为 /users、/roles 等），
+        // 故按 /** 注册并排除匿名/内部 Feign/探针路径；记录 POST/PUT/DELETE 与 GET /logs/export（异常不影响业务）
         registry.addInterceptor(operLogInterceptor)
-                .addPathPatterns("/api/v1/**")
-                .excludePathPatterns("/actuator/**");
+                .addPathPatterns("/**")
+                .excludePathPatterns("/anno/**", "/internal/**", "/actuator/**", "/favicon.ico");
     }
 }

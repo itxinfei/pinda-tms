@@ -59,14 +59,6 @@ const OrgAPI = {
     const tree = await this.getTree();
     return orgTreeToOptions(tree);
   },
-  /** 组织详情 */
-  getDetail(id: number) {
-    return request<unknown, OrgNode>({
-      url: `${ORG_BASE_URL}/detail`,
-      method: "get",
-      params: { id },
-    });
-  },
   /** 新增组织，返回新组织ID */
   create(data: OrgForm) {
     return request<unknown, number>({ url: `${ORG_BASE_URL}`, method: "post", data });

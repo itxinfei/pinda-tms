@@ -16,8 +16,13 @@ import org.springframework.web.servlet.HandlerInterceptor;
 import java.util.Map;
 
 /**
- * 写请求操作日志拦截器：对 /api/v1/** 的 POST/PUT/DELETE 自动落 OPER 日志
+ * 写请求操作日志拦截器：对本服务管理端点的 POST/PUT/DELETE 自动落 OPER 日志
  * （SYS-06 审计口径；业务写操作落点在 web-manager 等服务，本拦截器只覆盖 xfwl-auth 自身管理端点）。
+ *
+ * <p>路径口径：外部经网关访问 /api/v1/users 时 StripPrefix=2 会剥掉 /api/v1，
+ * 到达本服务的 requestURI 实为 /users；旧契约 /api/auth/org 同理剥成 /org。
+ * 故本拦截器在 SaTokenConfigure 中按 /** 注册（排除 /anno、/internal、/actuator），
+ * 这里不得再以前缀 /api/v1/ 判定（2026-10-22 修复：旧写法导致系统管理写操作零审计）。</p>
  *
  * <p>导出（GET /logs/export）虽是 GET 也需留痕，由 path 白名单单独放行。
  * 落库异常绝不打断业务请求。</p>
@@ -27,8 +32,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class OperLogInterceptor implements HandlerInterceptor {
 
-    /** GET 白名单：虽非写方法但属关键审计动作 */
-    private static final String[] GET_AUDIT_PATHS = {"/api/v1/logs/export"};
+    /** GET 白名单：虽非写方法但属关键审计动作（URI 为网关剥前缀后的服务内路径） */
+    private static final String[] GET_AUDIT_PATHS = {"/logs/export"};
 
     private static final Map<String, String> ACTION_BY_METHOD =
             Map.of("POST", "新增", "PUT", "修改", "DELETE", "删除");
@@ -53,7 +58,9 @@ public class OperLogInterceptor implements HandlerInterceptor {
             boolean audited = "GET".equalsIgnoreCase(method)
                     ? startsWithAny(uri, GET_AUDIT_PATHS)
                     : ACTION_BY_METHOD.containsKey(method.toUpperCase());
-            if (!audited || !uri.startsWith("/api/v1/")) {
+            // 注册层已排除 /anno、/internal、/actuator；此处不再做 /api/v1 前缀判断
+            // （网关已剥前缀，服务内 URI 为 /users、/org 等，加前缀判断会导致审计全部漏记）
+            if (!audited) {
                 return;
             }
 
@@ -124,10 +131,13 @@ public class OperLogInterceptor implements HandlerInterceptor {
         }
     }
 
-    /** 模块名取 /api/v1 后第一段，如 /api/v1/users → users */
+    /**
+     * 模块名取服务内 URI 首段，如 /users → users、/tenant-plans/{id}/menus → tenant-plans。
+     * 网关已剥 /api/v1、/api/auth 前缀，不能再按固定下标取段。
+     */
     private String moduleOf(String uri) {
         String[] parts = uri.split("/");
-        return parts.length > 3 ? parts[3] : uri;
+        return parts.length > 1 ? parts[1] : uri;
     }
 
     private boolean startsWithAny(String uri, String[] prefixes) {

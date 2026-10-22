@@ -50,14 +50,6 @@ const StationAPI = {
       params,
     });
   },
-  /** 岗位详情 */
-  getDetail(id: number) {
-    return request<unknown, Station>({
-      url: `${STATION_BASE_URL}/detail`,
-      method: "get",
-      params: { id },
-    });
-  },
   /** 新增岗位，返回新岗位ID */
   create(data: StationForm) {
     return request<unknown, number>({ url: `${STATION_BASE_URL}`, method: "post", data });

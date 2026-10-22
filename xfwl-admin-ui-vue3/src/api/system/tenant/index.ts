@@ -101,17 +101,6 @@ const TenantAPI = {
   },
 
   /**
-   * 修改租户状态
-   */
-  updateStatus(tenantId: string, status: number) {
-    return request({
-      url: `${TENANT_BASE_URL}/${tenantId}/status`,
-      method: "put",
-      params: { status },
-    });
-  },
-
-  /**
    * 获取租户菜单 ID 集合
    */
   getTenantMenuIds(tenantId: number) {

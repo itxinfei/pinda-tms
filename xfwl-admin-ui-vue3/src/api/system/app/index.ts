@@ -46,7 +46,8 @@ const AppAPI = {
    * 修改应用状态
    */
   updateStatus(id: string, status: number) {
-    return request({ url: `${APP_BASE_URL}/${id}/status`, method: "put", data: { status } });
+    // 后端 @RequestParam 只认 query 参数（对照租户/用户启停），放 data 体里必 400
+    return request({ url: `${APP_BASE_URL}/${id}/status`, method: "put", params: { status } });
   },
 };
 
