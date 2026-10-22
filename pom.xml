@@ -52,7 +52,7 @@
         <fastjson2.version>2.0.53</fastjson2.version>
         <!-- springdoc-openapi（替换 springfox）；Boot4/Spring7 需 3.x 大版本 -->
         <springdoc.version>3.1.1</springdoc.version>
-        <swagger-core.version>2.2.22</swagger-core.version>
+        <swagger-core.version>2.2.55</swagger-core.version>
         <!-- Druid Spring Boot 4 starter（Boot4 专用，1.2.28 起提供 boot4-starter） -->
         <druid-boot4.version>1.2.28</druid-boot4.version>
         <!-- Google Guava（原由 seata-core 传递，移除 Seata 后显式声明；33.4 修复旧版 CVE） -->
