@@ -23,7 +23,8 @@
 #
 # 约定:
 #   - 不自动 git pull：服务器 compose/env 含本地-only 配置，自动拉取有冲突风险；
-#     部署前自行确认 /data/xinfei-tms 已检出目标提交（脚本会打印当前 HEAD）。
+#     但部署前会 fetch 对账，检出落后 origin/master 即中止并提示 pull（SKIP_BEHIND_CHECK=1 可放行），
+#     防止静默打旧码；脚本同时打印当前 HEAD。
 #   - Maven 在 ci/xinfei-ci 容器内执行（与 Gitea Actions 同一 JDK25/Maven3.9.9/aliyun 源），
 #     镜像构建与 compose 在宿主执行。
 #   - compose 顶层 name: xinfei-apps；逐服务以 XFWL_<SVC>_TAG 覆盖镜像 tag。
@@ -84,6 +85,20 @@ done
 if [ "$RAW" = "all" ] || [ "$RAW" = "ALL" ]; then FULL_BUILD=true; else FULL_BUILD=false; fi
 
 cd "$REPO_DIR" || { echo "仓库目录不存在: $REPO_DIR"; exit 1; }
+# 防打旧码护栏：本脚本不自动 pull（见文件头约定），但检出落后 origin/master 时直接中止，
+# 杜绝"服务器 checkout 旧、手工部署打旧码"。fetch 失败仅告警不阻断（内网瞬态故障）；
+# 确需部署旧提交时 SKIP_BEHIND_CHECK=1 显式放行。
+if git fetch origin master -q 2>/dev/null; then
+  BEHIND=$(git rev-list --count HEAD..origin/master 2>/dev/null || echo 0)
+  if [ "${BEHIND:-0}" -gt 0 ] && [ "${SKIP_BEHIND_CHECK:-0}" != "1" ]; then
+    echo "!! 当前检出 $(git rev-parse --short HEAD) 落后 origin/master $BEHIND 个提交，部署会打旧码，已中止。"
+    echo "   确认工作区无本地-only 改动后执行：git -C $REPO_DIR pull --ff-only"
+    echo "   确需部署当前旧提交：SKIP_BEHIND_CHECK=1 bash deploy-be.sh ..."
+    exit 1
+  fi
+else
+  echo "!! git fetch origin master 失败，跳过落后对账（请自行确认 HEAD 为目标提交）"
+fi
 TAG="manual-$(date +%Y%m%d%H%M%S)"
 HEAD=$(git rev-parse --short HEAD 2>/dev/null || echo unknown)
 echo "==> 仓库 $REPO_DIR  HEAD=$HEAD  TAG=$TAG"

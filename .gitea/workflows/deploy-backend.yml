@@ -336,15 +336,62 @@ jobs:
         if: ${{ github.event.inputs.check_only != 'true' }}
         # XFWL_<SVC>_TAG 逐服务覆盖 compose 的 ${XFWL_<SVC>_TAG:-${TAG:-latest}}。
         # 健康检查走 docker.sock 的 docker inspect（job 容器独立网络，curl 宿主不可靠）。
+        # 回滚必须内联在本 shell：run#287 实测后置独立回滚 step（if: failure()）在本
+        # act_runner 失败路径被整体跳过、回滚不生效（与 build-check.yml 同构教训）。
         run: |
-          set -e
+          # 不用 set -e：compose up 失败也必须先走 rollback_all 再退出，不能直接跳出 shell
+          source /tmp/xinfei-svc.sh
+          deployed=""   # 本轮已 compose up 切换到新 tag 的服务（按部署序）
+
+          rollback_all() {
+            rlist=""
+            for s in $deployed; do rlist="$s $rlist"; done   # 逆序
+            echo "::error::部署失败，按部署逆序回滚本轮已切换的 $(echo $deployed | wc -w) 个服务：$rlist"
+            rolled=""
+            for s in $rlist; do
+              prev=$(awk -v x="$s" '$1==x{print $2; exit}' /tmp/prev-tags 2>/dev/null || true)
+              if [ -z "$prev" ]; then
+                echo ">> 回滚跳过 $s（首次部署无旧 tag），需人工处理"
+                continue
+              fi
+              tagvar="$(echo "$s" | tr 'a-z-' 'A-Z_')_TAG"
+              echo ">> 回滚 $s -> $prev"
+              if env TAG="$TAG" "$tagvar=$prev" docker compose --env-file /ci/apps.env \
+                   -f deploy/apps/docker-compose.app.yml up -d "$s"; then
+                rolled="$rolled $s"
+              else
+                echo "::error::回滚 $s 的 compose up 失败，需人工处理"
+              fi
+            done
+            if [ -z "$rolled" ]; then
+              echo "::error::部署失败且无可回滚服务（首次部署或回滚全失败），需人工处理"
+              exit 1
+            fi
+            ok=0
+            for i in $(seq 1 48); do
+              ok=1
+              for s in $rolled; do
+                st=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$s" 2>/dev/null || echo missing)
+                [ "$st" = "healthy" ] || ok=0
+              done
+              [ "$ok" = "1" ] && break
+              sleep 5
+            done
+            echo "::error::部署失败，已回滚：$rolled（复检 ok=$ok）——run 保持失败状态，发布未成功"
+            exit 1
+          }
+
           for s in $SERVICES; do
             echo ">> 部署 $s:$TAG"
             tagvar="$(echo "$s" | tr 'a-z-' 'A-Z_')_TAG"
-            env TAG="$TAG" "$tagvar=$TAG" docker compose --env-file /ci/apps.env \
-              -f deploy/apps/docker-compose.app.yml up -d "$s"
+            if ! env TAG="$TAG" "$tagvar=$TAG" docker compose --env-file /ci/apps.env \
+                 -f deploy/apps/docker-compose.app.yml up -d "$s"; then
+              echo "::error::$s compose up 失败"
+              rollback_all
+            fi
             env TAG="$TAG" "$tagvar=$TAG" docker compose --env-file /ci/apps.env \
               -f deploy/apps/docker-compose.app.yml ps "$s"
+            deployed="$deployed $s"
             ok=0
             for i in $(seq 1 48); do
               st=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$s" 2>/dev/null || echo missing)
@@ -354,11 +401,11 @@ jobs:
             docker inspect -f '{{.Name}} health={{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$s" || true
             if [ "$ok" != "1" ]; then
               echo "::error::$s 部署后 4 分钟内未健康"
-              exit 1
+              rollback_all
             fi
             if [ "${{ github.event.inputs.simulate_failure }}" = "true" ]; then
-              echo "::warning::simulate_failure=true，$s 健康后人为失败以验证自动回滚"
-              exit 1
+              echo "::warning::simulate_failure=true，$s 健康后人为失败以验证内联自动回滚"
+              rollback_all
             fi
           done
         timeout-minutes: 25
@@ -370,42 +417,8 @@ jobs:
           git rev-parse HEAD > /root/.m2/.xinfei-deploy.revision
           echo "部署基线已刷新: $(cat /root/.m2/.xinfei-deploy.revision)"
 
-      - name: 失败自动回滚到上一版本
-        # 逆序回滚（先网关后业务），仅回滚有 PREV 基线的服务；首次部署无基线则跳过。
-        if: ${{ failure() && github.event.inputs.check_only != 'true' }}
-        run: |
-          rolled=""
-          if [ -f /tmp/prev-tags ]; then
-            while read -r s prev; do
-              [ -z "$s" ] && continue
-              if [ -z "$prev" ]; then
-                echo "跳过 $s（首次部署无基线，需人工处理）"
-                continue
-              fi
-              tagvar="$(echo "$s" | tr 'a-z-' 'A-Z_')_TAG"
-              echo ">> 回滚 $s -> $prev"
-              if env TAG="$TAG" "$tagvar=$prev" docker compose --env-file /ci/apps.env \
-                   -f deploy/apps/docker-compose.app.yml up -d "$s"; then
-                rolled="$rolled $s"
-              fi
-            done < <(tac /tmp/prev-tags)
-          fi
-          if [ -z "$rolled" ]; then
-            echo "::error::部署失败且无可回滚基线（首次部署），需人工处理"
-            exit 1
-          fi
-          ok=0
-          for i in $(seq 1 48); do
-            ok=1
-            for s in $rolled; do
-              st=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$s" 2>/dev/null || echo missing)
-              [ "$st" = "healthy" ] || ok=0
-            done
-            [ "$ok" = "1" ] && break
-            sleep 5
-          done
-          echo "::error::部署失败，已回滚：$rolled（复检 ok=$ok）——run 保持失败状态，发布未成功"
-          exit 1
+      # 失败回滚已内联在上方部署 step（rollback_all）：run#287 实测后置独立 step
+      # 在本 act_runner 失败路径会被整体跳过，故不再保留独立回滚 step。
 
       - name: 清理旧镜像与构建缓存
         # 构建产物不保留（代码在 git，可随时重构建）：
@@ -415,7 +428,9 @@ jobs:
         #   3. 仅清悬空构建层（builder prune 不带 -a）——保留 BuildKit cache mount（pnpm store，id=pnpm-admin/pnpm-mobile）：
         #      带 -a 会把未被镜像引用的缓存连同 cache mount 一起删，下次 h5 构建冷装依赖约 5min 且更易撞外网 DNS 抖动（EAI_AGAIN）；
         #      Maven 依赖缓存在 /data/m2 持久共享，本来就不在 docker build cache 内，不受影响。
-        if: always()
+        # 仅成功时清理（原为 always()）：部署失败时保留上代镜像与构建现场供人工回滚/排障，
+        # 避免回滚目标镜像被 rmi（run#287 同因防护）。
+        if: success()
         run: |
           docker image prune -f
           for img in $(docker images --format '{{.Repository}}:{{.Tag}}' \
