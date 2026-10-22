@@ -78,6 +78,17 @@ xinfei:
     max-fail: 5
     # 锁定时长（秒）
     lock-seconds: 1800
+  license:
+    # 页面激活授权码的落盘目录（容器内路径），compose 挂卷持久化；环境变量 XINFEI_LICENSE 优先且只读
+    dir: ${XINFEI_LICENSE_DIR:/data/xinfei-license}
+    # 特殊环境人工指定机器因子（最高优先），一般留空走宿主 machine-id
+    node-id: ${XINFEI_NODE_ID:}
+    # 未授权试用天数（按机器指纹首见时间，落库 sys_license_usage）
+    trial-days: 7
+    # 正式码到期后的宽限天数（GRACE，仍算激活）
+    grace-days: 7
+    # 应急码有效期上限（天），后端二次兜底（签发器同样限制）
+    emergency-max-days: 14
 auth:
   # 短信验证码开关（P0-7d）：true=经 xfwl-dispatch 渠道路由发真实短信（需 SMS_ALIYUN_* 与已报备签名/模板）；false=dev 固定码
   sms-code-enabled: ${AUTH_SMS_CODE_ENABLED:false}

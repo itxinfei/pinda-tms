@@ -2,15 +2,14 @@ package com.xinfei.auth.license;
 
 import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
-import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
 /**
- * PEM 密钥解析工具（RSA）。仅做去头、去换行、Base64 解码，
- * 不依赖 BouncyCastle，JDK 原生即可。
+ * PEM 公钥解析工具（RSA X.509 SPKI）。仅做去头、去换行、Base64 解码，
+ * 不依赖 BouncyCastle，JDK 原生即可。业务侧只验签、永远不接触私钥，
+ * 故本类不提供私钥解析。
  */
 public final class PemUtils {
 
@@ -30,12 +29,7 @@ public final class PemUtils {
         return KeyFactory.getInstance("RSA").generatePublic(spec);
     }
 
-    public static PrivateKey privateKey(String pem) throws Exception {
-        PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(parse(pem));
-        return KeyFactory.getInstance("RSA").generatePrivate(spec);
-    }
-
-    /** 从 classpath 读取公钥资源文本（license-public.pem 已随包发布）。 */
+    /** 从 classpath 读取公钥资源文本（license-public.pub 随包发布，仅含验签公钥）。 */
     public static String readClasspath(String resource) throws Exception {
         try (var in = PemUtils.class.getClassLoader().getResourceAsStream(resource)) {
             if (in == null) {

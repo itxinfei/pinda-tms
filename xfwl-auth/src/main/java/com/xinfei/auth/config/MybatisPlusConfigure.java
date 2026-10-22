@@ -53,7 +53,9 @@ public class MybatisPlusConfigure {
             // 导致超管被误判为无角色（403）/ 空菜单，故与 sys_menu 同口径全局放行
             "sys_user_role",
             "sys_role",
-            "sys_role_menu"
+            "sys_role_menu",
+            // 授权机器指纹试用台账为平台级数据（无 tenant_id，授权对象是机器而非租户）
+            "sys_license_usage"
     );
 
     @Bean

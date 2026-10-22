@@ -299,6 +299,10 @@ services:
       XINFEI_JWT_PUB_KEY_PATH: ${XINFEI_JWT_PUB_KEY_PATH:-}
     volumes:
       - ${XINFEI_JWT_HOST_DIR:-/data/xinfei-jwt}:/data/xinfei-jwt:ro
+      # License：授权码落盘卷（页面激活写入 license.key，须持久化，故不挂只读）
+      - ${XINFEI_LICENSE_HOST_DIR:-/data/xinfei-license}:/data/xinfei-license
+      # License：只读透传宿主 machine-id，作为机器指纹首选稳定因子（重建容器不变）
+      - /etc/machine-id:/data/host/machine-id:ro
 
   # ---------- 基础微服务 ----------
   xfwl-base:

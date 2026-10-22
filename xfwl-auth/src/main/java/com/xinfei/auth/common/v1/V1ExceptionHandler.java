@@ -2,6 +2,7 @@ package com.xinfei.auth.common.v1;
 
 import cn.dev33.satoken.exception.NotLoginException;
 import cn.dev33.satoken.exception.NotPermissionException;
+import cn.dev33.satoken.exception.NotRoleException;
 import cn.dev33.satoken.exception.SameTokenInvalidException;
 import com.xinfei.auth.common.BizException;
 import jakarta.validation.ConstraintViolationException;
@@ -76,6 +77,13 @@ public class V1ExceptionHandler {
     @ExceptionHandler(NotPermissionException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
     public ApiResult<Void> handleNoPermission(NotPermissionException e) {
+        return ApiResult.fail(ApiResult.FORBIDDEN, "权限不足");
+    }
+
+    /** Sa-Token 角色不足（@SaCheckRole，如激活/清除授权仅超管） */
+    @ExceptionHandler(NotRoleException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ApiResult<Void> handleNoRole(NotRoleException e) {
         return ApiResult.fail(ApiResult.FORBIDDEN, "权限不足");
     }
 
