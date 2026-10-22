@@ -30,71 +30,77 @@ spring:
         username: ${NACOS_USERNAME:nacos}
         password: ${NACOS_PASSWORD:123456}
     gateway:
-      # 不开启按服务名自动路由，路由显式声明，避免内部服务被意外暴露
-      discovery:
-        locator:
-          enabled: false
-      routes:
-        # 认证服务：/api/auth/** -> xfwl-auth，去掉 /api/auth 两段前缀（/api/auth/anno/login -> /anno/login）
-        - id: xfwl-auth
-          uri: lb://xfwl-auth
-          predicates:
-            - Path=/api/auth/**
-          filters:
-            - StripPrefix=2
-        # 系统管理（youlai 契约）：/api/v1/** -> xfwl-auth，去掉 /api/v1 两段前缀
-        # （/api/v1/users -> /users；/api/v1/menus/routes -> /menus/routes）。
-        # 同样过网关登录态校验并由网关注入 Same-Token；xfwl-auth 侧放 controller.v1 包。
-        - id: xfwl-auth-v1
-          uri: lb://xfwl-auth
-          predicates:
-            - Path=/api/v1/**
-          filters:
-            - StripPrefix=2
-        # 管理端 BFF：/api/manager/** -> xfwl-web-manager，去掉 /api/manager 两段前缀
-        - id: xfwl-web-manager
-          uri: lb://xfwl-web-manager
-          predicates:
-            - Path=/api/manager/**
-          filters:
-            - StripPrefix=2
-        # 移动三端 BFF：/api/web-{driver,courier,customer}/** -> 对应 xfwl-web-*，去掉 /api/web-* 两段前缀
-        # 前端 H5 走 /prod-api/web-*（容器 nginx rewrite 成网关 /api/web-*），App/小程序直连 :8760/api/web-*
-        - id: xfwl-web-driver
-          uri: lb://xfwl-web-driver
-          predicates:
-            - Path=/api/web-driver/**
-          filters:
-            - StripPrefix=2
-        - id: xfwl-web-courier
-          uri: lb://xfwl-web-courier
-          predicates:
-            - Path=/api/web-courier/**
-          filters:
-            - StripPrefix=2
-        - id: xfwl-web-customer
-          uri: lb://xfwl-web-customer
-          predicates:
-            - Path=/api/web-customer/**
-          filters:
-            - StripPrefix=2
-        # 轨迹/定位服务：/api/netty-service/** -> xfwl-netty，去掉 /api/netty-service 两段前缀
-        # （/api/netty-service/trace/replay -> /trace/replay；/api/netty-service/netty/push -> /netty/push）
-        - id: xfwl-netty
-          uri: lb://xfwl-netty
-          predicates:
-            - Path=/api/netty-service/**
-          filters:
-            - StripPrefix=2
-        # 文件服务：/api/file/** -> xfwl-file-server，去掉 /api/file 两段前缀
-        # （查看图片 /api/file/view/{bizType}/{yyyyMM}/{uuid}.jpg -> /view/...；img src 无法带
-        #  token，匿名放行仅限 /api/file/view/**，见 SaTokenConfigure 白名单）
-        - id: xfwl-file-server
-          uri: lb://xfwl-file-server
-          predicates:
-            - Path=/api/file/**
-          filters:
-            - StripPrefix=2
+      # ⚠️ SCG 5.0（SC 2025.1 列车）属性前缀迁移：spring.cloud.gateway.* -> spring.cloud.gateway.server.webflux.*
+      # starter 已拆分为 -server-webflux / -server-webmvc，5.0.2 GatewayProperties 实测前缀为
+      # spring.cloud.gateway.server.webflux——旧前缀不再绑定，路由表全空：
+      # 白名单路径（/api/auth/anno/** 等）直接 404，非白名单被 Sa-Token 拦 401（2026-10-22 验证码 404 实案）。
+      server:
+        webflux:
+          # 不开启按服务名自动路由，路由显式声明，避免内部服务被意外暴露
+          discovery:
+            locator:
+              enabled: false
+          routes:
+            # 认证服务：/api/auth/** -> xfwl-auth，去掉 /api/auth 两段前缀（/api/auth/anno/login -> /anno/login）
+            - id: xfwl-auth
+              uri: lb://xfwl-auth
+              predicates:
+                - Path=/api/auth/**
+              filters:
+                - StripPrefix=2
+            # 系统管理（youlai 契约）：/api/v1/** -> xfwl-auth，去掉 /api/v1 两段前缀
+            # （/api/v1/users -> /users；/api/v1/menus/routes -> /menus/routes）。
+            # 同样过网关登录态校验并由网关注入 Same-Token；xfwl-auth 侧放 controller.v1 包。
+            - id: xfwl-auth-v1
+              uri: lb://xfwl-auth
+              predicates:
+                - Path=/api/v1/**
+              filters:
+                - StripPrefix=2
+            # 管理端 BFF：/api/manager/** -> xfwl-web-manager，去掉 /api/manager 两段前缀
+            - id: xfwl-web-manager
+              uri: lb://xfwl-web-manager
+              predicates:
+                - Path=/api/manager/**
+              filters:
+                - StripPrefix=2
+            # 移动三端 BFF：/api/web-{driver,courier,customer}/** -> 对应 xfwl-web-*，去掉 /api/web-* 两段前缀
+            # 前端 H5 走 /prod-api/web-*（容器 nginx rewrite 成网关 /api/web-*），App/小程序直连 :8760/api/web-*
+            - id: xfwl-web-driver
+              uri: lb://xfwl-web-driver
+              predicates:
+                - Path=/api/web-driver/**
+              filters:
+                - StripPrefix=2
+            - id: xfwl-web-courier
+              uri: lb://xfwl-web-courier
+              predicates:
+                - Path=/api/web-courier/**
+              filters:
+                - StripPrefix=2
+            - id: xfwl-web-customer
+              uri: lb://xfwl-web-customer
+              predicates:
+                - Path=/api/web-customer/**
+              filters:
+                - StripPrefix=2
+            # 轨迹/定位服务：/api/netty-service/** -> xfwl-netty，去掉 /api/netty-service 两段前缀
+            # （/api/netty-service/trace/replay -> /trace/replay；/api/netty-service/netty/push -> /netty/push）
+            - id: xfwl-netty
+              uri: lb://xfwl-netty
+              predicates:
+                - Path=/api/netty-service/**
+              filters:
+                - StripPrefix=2
+            # 文件服务：/api/file/** -> xfwl-file-server，去掉 /api/file 两段前缀
+            # （查看图片 /api/file/view/{bizType}/{yyyyMM}/{uuid}.jpg -> /view/...；img src 无法带
+            #  token，匿名放行仅限 /api/file/view/**，见 SaTokenConfigure 白名单）
+            - id: xfwl-file-server
+              uri: lb://xfwl-file-server
+              predicates:
+                - Path=/api/file/**
+              filters:
+                - StripPrefix=2
   # Redis（Sa-Token 会话 + Same-Token 读取）
   data:
     redis:
