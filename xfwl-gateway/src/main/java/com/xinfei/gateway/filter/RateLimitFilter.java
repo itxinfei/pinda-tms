@@ -83,7 +83,10 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
 
         // 通用：IP 兜底 + 登录用户双计数
         String userId = resolveUserId(exchange);
-        exchange.getAttributes().put(ATTR_USER_ID, userId);
+        if (userId != null) {
+            // ConcurrentHashMap 禁止 null value，匿名请求（userId=null）不得写入
+            exchange.getAttributes().put(ATTR_USER_ID, userId);
+        }
         String epochMinute = String.valueOf(System.currentTimeMillis() / 60000L);
         Counter ipCounter = new Counter("ip", ip + ":" + epochMinute, ipPerMinute);
         if (userId == null) {
