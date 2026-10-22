@@ -4,7 +4,7 @@
 #   docker build -f deploy/apps/Dockerfile.base -t xinfei/jre25-fontconfig:1 .
 # 改了本文件请把 tag 递增（:2），CI 检测到 tag 不存在会自动重建。
 # ============================================
-# Temurin 25 JRE(Ubuntu 22.04 源持续维护)，匹配 JDK25 / Spring Boot 3.5 构建产物
+# Temurin 25 JRE(Ubuntu 22.04 源持续维护)，匹配 JDK25 / Spring Boot 4.1.1 构建产物
 FROM eclipse-temurin:25-jre-jammy
 
 # 字体库: 验证码(Java2D/SunFontManager)与图表生成必需, 缺失会导致 NoClassDefFoundError

@@ -6,7 +6,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 
 /**
  * 心飞物流TMS 认证授权服务。
- * 登录 / RBAC / 组织 / 租户管理（JDK 25 + Spring Boot 3.5.16 + Sa-Token）。
+ * 登录 / RBAC / 组织 / 租户管理（JDK 25 + Spring Boot 4.1.1 + Sa-Token）。
  */
 @SpringBootApplication
 @EnableFeignClients(basePackages = "com.xinfei.feign")

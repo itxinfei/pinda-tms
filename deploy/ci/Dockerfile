@@ -1,7 +1,7 @@
 # ============================================
 # 心飞物流TMS Gitea Actions 作业镜像
 # 内含：JDK25 + Maven3.9 + Docker CLI + Compose v2 + Buildx 插件
-#   - Maven     ：一次构建全部后端 fat jar（JDK25 / Spring Boot 3.5）
+#   - Maven     ：一次构建全部后端 fat jar（JDK25 / Spring Boot 4.1.1）
 #   - Docker CLI：通过挂载的 /var/run/docker.sock 操作宿主机 Docker 构建/部署
 #   - Buildx    ：docker 29 CLI 无 buildx 时 docker build 回退 legacy builder，
 #                 遇 Dockerfile 的 RUN --mount=type=cache 报

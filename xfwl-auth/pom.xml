@@ -12,7 +12,7 @@
 
     <artifactId>xfwl-auth</artifactId>
     <name>xfwl-auth</name>
-    <description>认证授权服务：登录 / RBAC / 组织 / 租户（JDK 25 + Spring Boot 3.5.16）</description>
+    <description>认证授权服务：登录 / RBAC / 组织 / 租户（JDK 25 + Spring Boot 4.1.1）</description>
 
     <dependencies>
         <!-- OpenFeign（P0-7d：登录/绑定手机验证码经 xfwl-dispatch 走真实短信通道；版本由 Spring Cloud BOM 托管） -->

@@ -13,7 +13,7 @@ import tools.jackson.databind.deser.std.StdDeserializer;
 /**
  * enum 反序列化工具（下沉自旧 pd-tools-common）。
  * 从 JSON 中读取 code 字段值，再反射调用枚举类型的静态 get(String) 方法得到枚举实例。
- * Boot3 迁移：仅将 hutool 的 ReflectUtil.getField 替换为等价的纯 JDK 反射实现，行为不变。
+ * Boot4 迁移：仅将 hutool 的 ReflectUtil.getField 替换为等价的纯 JDK 反射实现，行为不变。
  * Boot4 迁移：Jackson 3 包名 tools.jackson.*，且 serialize/deserialize 不再抛出 checked 异常；
  * JsonProcessingException 已移除。
  */

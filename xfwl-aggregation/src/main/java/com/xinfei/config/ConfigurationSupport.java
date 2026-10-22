@@ -36,7 +36,7 @@ import static tools.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROP
 
 /**
  * MVC / Jackson / 接口文档统一配置（数据聚合服务）。
- * Boot3 迁移：不再继承 WebMvcConfigurationSupport（继承会关闭 Spring MVC 自动配置），
+ * Boot4 迁移：不再继承 WebMvcConfigurationSupport（继承会关闭 Spring MVC 自动配置），
  * Jackson 定制改用 Jackson2ObjectMapperBuilderCustomizer 由自动配置生效；
  * springfox 替换为 springdoc；EnumDeserializer、日期格式常量复用 xfwl-common。
  * 序列化口径与旧版一致（本服务仅 BigInteger/BigDecimal/时间/Date 转字符串）。

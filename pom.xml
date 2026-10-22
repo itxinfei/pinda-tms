@@ -47,7 +47,7 @@
         <easy-captcha.version>1.6.2</easy-captcha.version>
         <!-- Excel 导入导出（用户等管理端，SYS#4） -->
         <easyexcel.version>3.3.4</easyexcel.version>
-        <!-- ↓↓↓ 新栈第三方版本（Boot3 / jakarta） ↓↓↓ -->
+        <!-- ↓↓↓ 新栈第三方版本（Boot4 / jakarta） ↓↓↓ -->
         <!-- FastJSON2（替换 fastjson 1.2.x） -->
         <fastjson2.version>2.0.53</fastjson2.version>
         <!-- springdoc-openapi（替换 springfox）；Boot4/Spring7 需 3.x 大版本 -->
@@ -61,7 +61,7 @@
         <commons-io.version>2.17.0</commons-io.version>
         <!-- Drools（xfwl-oms 运费规则；8.38 为 8.x 最高、已 jakarta 化，纯 KIE API 编程式装配） -->
         <drools.version>8.38.0.Final</drools.version>
-        <!-- HttpClient 4（xfwl-oms HttpRequestUtil 过渡使用，Boot3 BOM 已不托管；迁 5 需重写工具类） -->
+        <!-- HttpClient 4（xfwl-oms HttpRequestUtil 过渡使用，Boot4 BOM 已不托管；迁 5 需重写工具类） -->
         <httpclient.version>4.5.14</httpclient.version>
         <!-- MapStruct：编译期 DTO/Entity 映射，替代 BeanUtils.copyProperties（全栈 238 处，逐步迁移） -->
         <mapstruct.version>1.6.3</mapstruct.version>
@@ -178,7 +178,7 @@
                 <version>${easy-captcha.version}</version>
             </dependency>
 
-            <!-- ===== 新栈第三方坐标（Boot3 / jakarta） ===== -->
+            <!-- ===== 新栈第三方坐标（Boot4 / jakarta） ===== -->
             <!-- FastJSON2 -->
             <dependency>
                 <groupId>com.alibaba.fastjson2</groupId>
@@ -209,7 +209,7 @@
                 <artifactId>guava</artifactId>
                 <version>${guava.version}</version>
             </dependency>
-            <!-- Commons IO（Boot3 BOM 不托管，统一版本） -->
+            <!-- Commons IO（Boot4 BOM 不托管，统一版本） -->
             <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
@@ -319,7 +319,7 @@
                     </configuration>
                 </plugin>
                 <!-- T-SEC-E4：Enforcer 禁依赖基线（log4j2 CVE-2021-44228 受害版本段 / fastjson 1.x 反序列化历史重灾区）。
-                     仓库实际使用 fastjson2 与 Boot3 托管的 log4j-api（无 core），预期恒绿；若未来引入即构建期当场红。 -->
+                     仓库实际使用 fastjson2 与 Boot4 经 log4j-bom 托管的 log4j-api（无 core），预期恒绿；若未来引入即构建期当场红。 -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-enforcer-plugin</artifactId>
