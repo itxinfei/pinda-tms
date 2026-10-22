@@ -1,0 +1,113 @@
+# ============================================
+# 心飞物流TMS 业务容器一键启停（手动触发）
+#
+# 场景：dev 演示/省资源时，在 Gitea 页面 Actions → 本工作流 → Run workflow 选参数执行。
+#   - action：stop 停止（容器保留不删，start 可秒级恢复）/ start 启动 / restart 重启
+#   - target：frontend=管理端+移动三端 4 个 H5；microservices=13 个业务微服务（不含网关）；
+#             gateway=仅网关；all=18 个业务容器全选
+#   - service：填写单个容器名后优先于 target（仅限 18 个业务容器白名单，防误操作中间件）
+#
+# 边界（红线）：
+#   - 只允许操作 xinfei-apps 的 18 个业务容器；mysql/redis/nacos/rabbitmq/kafka 等
+#     中间件不在白名单，输入即拒绝；
+#   - 用 docker stop/start/restart（不 rm），容器、网络、数据卷全部保留；
+#   - 停止期间网关会对已停服务路由 503/无实例，属预期现象，start 后自愈。
+# ============================================
+name: 服务一键启停（手动）
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "操作类型（stop=停止并保留容器 / start=启动 / restart=重启）"
+        type: choice
+        options:
+          - stop
+          - start
+          - restart
+        default: stop
+      target:
+        description: "目标范围（service 留空时生效）"
+        type: choice
+        options:
+          - frontend
+          - microservices
+          - gateway
+          - all
+        default: frontend
+      service:
+        description: "单个容器名（可选；填写后忽略 target，仅限 18 个业务容器）"
+        type: string
+        default: ""
+
+env:
+  DEPLOY_HOST: "192.168.20.130" # 内网 Gitea/部署宿主机，换机器只改这里
+
+jobs:
+  service-control:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: 白名单校验并执行容器操作
+        env:
+          ACT: ${{ github.event.inputs.action }}
+          TARGET: ${{ github.event.inputs.target }}
+          SVC: ${{ github.event.inputs.service }}
+        run: |
+          set -e
+          # 分组（容器名 = compose 里的 container_name，与 docker ps 一致）
+          FRONTEND="xfwl-admin-h5 xfwl-driver-h5 xfwl-courier-h5 xfwl-customer-h5"
+          MICROSERVICES="xfwl-auth xfwl-base xfwl-oms xfwl-work xfwl-user xfwl-file-server \
+                         xfwl-dispatch xfwl-aggregation xfwl-netty \
+                         xfwl-web-manager xfwl-web-driver xfwl-web-courier xfwl-web-customer"
+          GATEWAY="xfwl-gateway"
+          ALL="$FRONTEND $MICROSERVICES $GATEWAY"
+
+          case "$ACT" in
+            stop|start|restart) ;;
+            *) echo "::error::非法操作类型: $ACT"; exit 1 ;;
+          esac
+
+          if [ -n "$(echo "$SVC" | tr -d '[:space:]')" ]; then
+            # 单容器模式：必须在白名单内（字符串边界匹配）
+            case " $ALL " in
+              *" $SVC "*) TARGETS="$SVC" ;;
+              *) echo "::error::容器 '$SVC' 不在 18 个业务容器白名单内（中间件禁止由此操作）"; exit 1 ;;
+            esac
+          else
+            case "$TARGET" in
+              frontend)       TARGETS="$FRONTEND" ;;
+              microservices)  TARGETS="$MICROSERVICES" ;;
+              gateway)        TARGETS="$GATEWAY" ;;
+              all)            TARGETS="$ALL" ;;
+              *) echo "::error::未知目标范围: $TARGET"; exit 1 ;;
+            esac
+          fi
+
+          echo ">> 操作：$ACT"
+          echo ">> 目标（$(echo $TARGETS | wc -w) 个）：$TARGETS"
+
+          # stop 逆序（先业务后排网关的反序，减少网关向已停服务转发的窗口）；
+          # start 正序（业务先起，网关最后恢复对外）；restart 用正序。
+          ordered=""
+          if [ "$ACT" = "stop" ]; then
+            for c in $TARGETS; do ordered="$c $ordered"; done
+          else
+            ordered="$TARGETS"
+          fi
+
+          for c in $ordered; do
+            if ! docker "$ACT" "$c"; then
+              echo "::error::$ACT $c 失败，已中止（其余容器未处理）"
+              exit 1
+            fi
+          done
+
+          sleep 2
+          echo ">> 操作后容器状态："
+          for c in $ordered; do
+            docker inspect -f '{{.Name}} => {{.State.Status}}' "$c"
+          done
+          if [ "$ACT" = "stop" ]; then
+            echo "::notice::容器已停止但未删除，恢复方式：本工作流 action=start 再跑一次"
+          fi
