@@ -7,7 +7,7 @@
       </div>
       <button
         class="page-aside__toggle"
-        :title="sidebarCollapsed ? '展开部门树' : '收起部门树'"
+        :title="sidebarCollapsed ? '展开组织树' : '收起组织树'"
         @click="sidebarCollapsed = !sidebarCollapsed"
       >
         <el-icon :size="14">
@@ -162,7 +162,7 @@
                 <span v-else>-</span>
               </template>
             </el-table-column>
-            <el-table-column label="部门" min-width="140" prop="deptName" show-overflow-tooltip />
+            <el-table-column label="组织" min-width="140" prop="deptName" show-overflow-tooltip />
             <el-table-column label="角色" prop="roleNames" min-width="160" show-overflow-tooltip />
             <el-table-column label="手机号码" prop="mobile" width="130" />
             <el-table-column label="邮箱" prop="email" min-width="180" show-overflow-tooltip />
@@ -235,10 +235,10 @@
           <el-input v-model="formData.nickname" placeholder="请输入用户昵称" />
         </el-form-item>
 
-        <el-form-item label="所属部门" prop="deptId">
+        <el-form-item label="所属组织" prop="deptId">
           <el-tree-select
             v-model="formData.deptId"
-            placeholder="请选择所属部门"
+            placeholder="请选择所属组织"
             :data="deptOptions"
             filterable
             check-strictly
@@ -250,7 +250,7 @@
         <el-form-item label="所属岗位" prop="stationId">
           <el-select
             v-model="formData.stationId"
-            placeholder="请先选择所属部门"
+            placeholder="请先选择所属组织"
             :disabled="!formData.deptId"
             :loading="stationLoading"
             clearable
@@ -459,7 +459,8 @@ const resetPasswordDialogWidth = computed(() =>
 const rules: FormRules<UserForm> = {
   username: [{ required: true, message: "请输入用户名", trigger: "blur" }],
   nickname: [{ required: true, message: "请输入用户昵称", trigger: "blur" }],
-  deptId: [{ required: true, message: "请选择所属部门", trigger: "change" }],
+  // 字段名 deptId 为跨端契约（后端 UserService 注释：deptId ↔ AuthUser.orgId），实际语义是组织，勿改名
+  deptId: [{ required: true, message: "请选择所属组织", trigger: "change" }],
   roleIds: [{ required: true, message: "请选择用户角色", trigger: "change" }],
   email: [{ type: "email", message: "请输入正确的邮箱地址", trigger: "blur" }],
   mobile: [{ pattern: /^1[3-9]\d{9}$/, message: "请输入正确的手机号码", trigger: "blur" }],
@@ -483,7 +484,7 @@ function getAvatarText(row: UserItem): string {
 }
 
 /**
- * 加载表单所需的下拉选项（角色 + 部门），并行请求
+ * 加载表单所需的下拉选项（角色 + 组织），并行请求
  */
 async function loadFormOptions(): Promise<void> {
   [roleOptions.value, deptOptions.value] = await Promise.all([
@@ -513,7 +514,7 @@ async function loadStationsByOrg(deptId?: string): Promise<void> {
 }
 
 /**
- * 表单内切换部门时联动刷新岗位选项
+ * 表单内切换组织时联动刷新岗位选项（参数名 deptId 为历史契约，承载的是 orgId）
  */
 function handleDeptChange(deptId?: string): void {
   loadStationsByOrg(deptId);

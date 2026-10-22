@@ -1,6 +1,6 @@
 <template>
   <el-card shadow="never" class="dept-card">
-    <el-input v-model="deptName" class="dept-card__search" placeholder="搜索部门" clearable>
+    <el-input v-model="deptName" class="dept-card__search" placeholder="搜索组织" clearable>
       <template #prefix>
         <el-icon><Search /></el-icon>
       </template>
@@ -18,7 +18,7 @@
       @node-click="handleNodeClick"
     >
       <template #empty>
-        <el-empty description="暂无部门" :image-size="60" />
+        <el-empty description="暂无组织" :image-size="60" />
       </template>
     </el-tree>
   </el-card>
@@ -30,7 +30,7 @@ import type { OptionItem } from "@/api/common";
 import type { TreeNodeData } from "element-plus/es/components/tree";
 
 /**
- * 用户部门树：按部门筛选用户
+ * 用户组织树：按组织筛选用户（组件名/UserDeptTree 与 dept* 命名为历史遗留，数据源实为 OrgAPI）
  */
 const props = defineProps({
   modelValue: {
@@ -45,7 +45,7 @@ const deptName = ref("");
 const loading = ref(false);
 
 /**
- * 选中部门时上抛部门 ID
+ * 选中组织时上抛组织 ID（v-model 名 deptId 为跨端契约，承载 orgId）
  */
 const emits = defineEmits(["node-click"]);
 
@@ -61,7 +61,7 @@ watchEffect(
 );
 
 /**
- * 部门树的节点过滤
+ * 组织树的节点过滤
  */
 function handleFilter(value: string, data: TreeNodeData): boolean {
   if (!value) {
@@ -71,7 +71,7 @@ function handleFilter(value: string, data: TreeNodeData): boolean {
 }
 
 /**
- * 点击部门树节点
+ * 点击组织树节点
  */
 function handleNodeClick(data: OptionItem): void {
   deptId.value = data.value;
