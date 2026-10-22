@@ -7,13 +7,12 @@ import tools.jackson.databind.ValueDeserializer;
 import tools.jackson.databind.SerializationFeature;
 import tools.jackson.databind.module.SimpleModule;
 import tools.jackson.databind.ser.std.ToStringSerializer;
-import tools.jackson.datatype.jsr310.JavaTimeModule;
-import tools.jackson.datatype.jsr310.deser.LocalDateDeserializer;
-import tools.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
-import tools.jackson.datatype.jsr310.deser.LocalTimeDeserializer;
-import tools.jackson.datatype.jsr310.ser.LocalDateSerializer;
-import tools.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
-import tools.jackson.datatype.jsr310.ser.LocalTimeSerializer;
+import tools.jackson.databind.ext.javatime.deser.LocalDateDeserializer;
+import tools.jackson.databind.ext.javatime.deser.LocalDateTimeDeserializer;
+import tools.jackson.databind.ext.javatime.deser.LocalTimeDeserializer;
+import tools.jackson.databind.ext.javatime.ser.LocalDateSerializer;
+import tools.jackson.databind.ext.javatime.ser.LocalDateTimeSerializer;
+import tools.jackson.databind.ext.javatime.ser.LocalTimeSerializer;
 import com.xinfei.common.converter.EnumDeserializer;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -54,7 +53,7 @@ public class WebManagerApplication {
     /**
      * LocalDateTime 反序列化：兼容两种线上格式——
      * ① "yyyy-MM-dd HH:mm:ss"（xfwl-work/xfwl-base 等全局 Jackson 输出）；
-     * ② ISO "yyyy-MM-dd'T'HH:mm:ss"（xfwl-oms 的 LocalDateTime 字段经 JavaTimeModule 默认序列化输出）。
+     * ② ISO "yyyy-MM-dd'T'HH:mm:ss"（xfwl-oms 的 LocalDateTime 字段经 Jackson3 java.time 内建序列化输出）。
      * 只认①时，xfwl-oms 订单分页响应（含 estimatedArrivalTime）解码失败被 fallback 吞成空页。
      */
     private static final ValueDeserializer<LocalDateTime> FLEXIBLE_LOCAL_DATE_TIME_DESERIALIZER =
@@ -80,7 +79,7 @@ public class WebManagerApplication {
         // 日期时间序列化契约（沿用旧 DateUtils 常量：date-time / date / time）
         // LocalDateTime 反序列化必须同时兼容两种线上格式：
         //   ① "yyyy-MM-dd HH:mm:ss"（xfwl-work/xfwl-base 等经全局 Jackson 序列化输出）；
-        //   ② ISO "yyyy-MM-dd'T'HH:mm:ss"（xfwl-oms 的 LocalDateTime 字段经 JavaTimeModule 默认序列化输出，
+        //   ② ISO "yyyy-MM-dd'T'HH:mm:ss"（xfwl-oms 的 LocalDateTime 字段经 Jackson3 java.time 内建序列化输出，
         //      如 OrderDTO.estimatedArrivalTime）。只认①时，xfwl-oms 分页响应解码失败被 fallback 吞成空页。
         // Boot 4（Jackson 3）：Jackson2ObjectMapperBuilderCustomizer 已废弃，改用 JsonMapperBuilderCustomizer，
         // 通过 SimpleModule 承载同款 per-type 序列化/反序列化注册。
@@ -105,7 +104,7 @@ public class WebManagerApplication {
                 .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
                 // 忽略未知字段（兼容前端多余字段）
                 .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-                .addModule(new JavaTimeModule())
+                // java.time 序列化支持已内建于 Jackson 3 databind（tools.jackson.databind.ext.javatime.*），无需再注册 JavaTimeModule
                 .addModule(module);
     }
 }

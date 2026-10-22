@@ -2,12 +2,12 @@ package com.xinfei.config;
 
 import tools.jackson.databind.ser.jdk.JavaUtilDateSerializer;
 import tools.jackson.databind.ser.std.ToStringSerializer;
-import tools.jackson.datatype.jsr310.deser.LocalDateDeserializer;
-import tools.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
-import tools.jackson.datatype.jsr310.deser.LocalTimeDeserializer;
-import tools.jackson.datatype.jsr310.ser.LocalDateSerializer;
-import tools.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
-import tools.jackson.datatype.jsr310.ser.LocalTimeSerializer;
+import tools.jackson.databind.ext.javatime.deser.LocalDateDeserializer;
+import tools.jackson.databind.ext.javatime.deser.LocalDateTimeDeserializer;
+import tools.jackson.databind.ext.javatime.deser.LocalTimeDeserializer;
+import tools.jackson.databind.ext.javatime.ser.LocalDateSerializer;
+import tools.jackson.databind.ext.javatime.ser.LocalDateTimeSerializer;
+import tools.jackson.databind.ext.javatime.ser.LocalTimeSerializer;
 import tools.jackson.databind.ValueDeserializer;
 import tools.jackson.databind.module.SimpleModule;
 import com.xinfei.common.converter.EnumDeserializer;

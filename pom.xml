@@ -241,24 +241,12 @@
                 <artifactId>lombok-mapstruct-binding</artifactId>
                 <version>${lombok-mapstruct-binding.version}</version>
             </dependency>
-            <!-- Resilience4j 版本由 Spring Cloud Circuit Breaker BOM 3.3.0 托管（resilience4j 2.2.0），此处不声明 -->
-            <!-- Jackson 3 的 JavaTime 数据类型模块：Boot4 的 ObjectMapper 为 tools.jackson 3.x，需配套 3.x jsr310；
-                 仅 2.x 的 com.fasterxml.jackson.datatype.jsr310 会被 sa-token-jackson3 传递引入，3.x 命名空间须显式声明 -->
-            <dependency>
-                <groupId>tools.jackson.datatype</groupId>
-                <artifactId>jackson-datatype-jsr310</artifactId>
-                <version>3.0.0-rc2</version>
-            </dependency>
+            <!-- Resilience4j 版本由 Spring Cloud Circuit Breaker BOM 托管（2025.1 列车 = 5.0.x，托管 resilience4j 2.3.0 及其 spring 适配包），此处不声明 -->
+            <!-- ⚠️ Jackson 3 的 java.time 支持已内建于 jackson-databind 3.x（tools.jackson.databind.ext.javatime.*），
+                 独立模块 tools.jackson.datatype:jackson-datatype-jsr310 停止发版（Central 仅剩 3.0.0-rc1/rc2，无 GA），
+                 故此处不声明该依赖；项目内 6 处引用（5 个 ConfigurationSupport + WebManagerApplication）的 import 已迁到 databind 内建包 -->
         </dependencies>
     </dependencyManagement>
-
-    <!-- Jackson 3 JavaTime 模块：顶层声明使所有模块继承（ConfigurationSupport/WebManagerApplication 需 tools.jackson.datatype.jsr310） -->
-    <dependencies>
-        <dependency>
-            <groupId>tools.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jsr310</artifactId>
-        </dependency>
-    </dependencies>
 
     <build>
         <pluginManagement>
